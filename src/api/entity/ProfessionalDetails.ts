@@ -26,7 +26,7 @@ export class ProfessionalDetails extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   alternateWorks!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'uuid' })
   portfolioDocument!: string;
 
   @Column({ type: 'int', nullable: true })

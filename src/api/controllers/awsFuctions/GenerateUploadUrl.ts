@@ -2,6 +2,8 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
 
+import { DocumentUpload } from '@/api/entity/DocumentUpload';
+
 const s3 = new S3Client({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
@@ -33,7 +35,48 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
     const url = await generateUrlForUploading(bucketName, key, expDate, contentType);
     res.status(200).json({ status: 'success', message: 'Upload URL generated successfully', data: { url } });
   } catch (error) {
-    console.error('Error generating upload URL:', error);
+    console.error('Error generating upload URL :', error);
     res.status(500).json({ status: 'error', message: 'Server error.' });
   }
 };
+
+export const addDocumentUpload = async (req: Request, res: Response) => {
+  try {
+
+    const {
+      bucketName,
+      key,
+      contentType,
+      documentType,
+      documentDescription,
+      documentSize,
+    } = req.body;
+
+    if (!bucketName ||
+      !key ||
+      !contentType ||
+      !documentType ||
+      !documentDescription ||
+      !documentSize) {
+      return res.status(400).json({ status: 'error', message: 'Please provide complete data to upload in DB' });
+    }
+
+    const doc = await DocumentUpload.create({
+      bucketName,
+      key,
+      contentType,
+      documentType,
+      documentDescription,
+      documentSize,
+    }).save();
+
+    res.status(201).json({
+      status: "success", message: "Document uploaded", data: {
+        document: doc
+      }
+    })
+  } catch (error) {
+    console.error('Error uploading document to DB :', error);
+    res.status(500).json({ status: 'error', message: 'Server error.' });
+  }
+}

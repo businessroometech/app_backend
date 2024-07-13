@@ -15,7 +15,7 @@ import {
   signup_phase4,
   signup_phase5,
 } from '../../controllers/auth/Signup';
-import { generateUploadUrl } from '../../controllers/awsFuctions/GenerateUploadUrl';
+import { generateUploadUrl, addDocumentUpload } from '../../controllers/awsFuctions/GenerateUploadUrl';
 import { authenticate } from '../../middlewares/auth/Authenticate';
 
 const Router = express.Router();
@@ -36,6 +36,7 @@ Router.post('/refresh', refresh);
 Router.get('/protected', authenticate, protectedRoute);
 
 Router.post('/generate-upload-url', generateUploadUrl);
+Router.post('/document-upload', addDocumentUpload);
 
 Router.post('/forgot-password/generate', sendNumberVerificationToken);
 Router.post('/forgot-password/verify', verifyCodeForPasswordReset);

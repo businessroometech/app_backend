@@ -20,7 +20,7 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'uuid' })
   sectorId!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'uuid' })
   profilePicture!: string;
 
   @Column({ type: 'varchar', length: 255 })

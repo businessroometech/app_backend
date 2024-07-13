@@ -101,6 +101,8 @@ export const signup_phase3 = async (req: Request, res: Response): Promise<void> 
       panNumber,
     } = req.body;
 
+    console.log("profilePicture :" , profilePicture);
+
     let details: PersonalDetails | null = await PersonalDetails.findOne({ where: { mobileNumber, sectorId } });
 
     if (!details) {

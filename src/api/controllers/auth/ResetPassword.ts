@@ -115,11 +115,11 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'Please provide a new password.' });
     }
 
-    const resetToken: PasswordResetToken | null = await PasswordResetToken.findOne({ where: { mobileNumber, token } });
+    // const resetToken: PasswordResetToken | null = await PasswordResetToken.findOne({ where: { mobileNumber, token } });
 
-    if (!resetToken || !resetToken.isValid) {
-      return res.status(400).json({ status: 'error', message: 'Invalid or expired reset token.' });
-    }
+    // if (!resetToken || !resetToken.isValid) {
+    //   return res.status(400).json({ status: 'error', message: 'Invalid or expired reset token.' });
+    // }
 
     const user: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
 
@@ -131,7 +131,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     user.password = newPassword;
     await user.save();
 
-    await resetToken.remove();
+    // await resetToken.remove();
 
     res.status(200).json({ status: 'success', message: 'Password reset successfully', data: { user } });
   } catch (error) {

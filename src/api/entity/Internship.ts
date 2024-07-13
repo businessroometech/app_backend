@@ -24,7 +24,7 @@ export class Internship extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   companyName!: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', default: 0 })
   yearOfExperience!: number;
 
   @Column({ type: 'varchar', default: 'system' })
