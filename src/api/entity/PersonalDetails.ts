@@ -35,10 +35,10 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   bio!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'json', nullable: true })
   permanentAddress!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'json', nullable: true })
   currentAddress!: string;
 
   @Column({ type: 'varchar', length: 14, unique: true, nullable: true })

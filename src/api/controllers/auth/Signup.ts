@@ -56,7 +56,7 @@ export const signup_phase1 = async (req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     console.error('Error during signup phase 1:', error);
-    res.status(500).json({ status: 'error', message: 'Server error during user signup.' });
+    res.status(500).json({ status: 'error', message: 'Something went wrong! please try again later.' });
   }
 };
 
@@ -81,7 +81,7 @@ export const signup_phase2 = async (req: Request, res: Response): Promise<void> 
     }
   } catch (error) {
     console.error('Error during signup phase 2:', error);
-    res.status(500).json({ status: 'error', message: 'Server error during user signup.' });
+    res.status(500).json({ status: 'error', message: 'Something went wrong! please try again later.' });
   }
 };
 
@@ -155,7 +155,7 @@ export const signup_phase3 = async (req: Request, res: Response): Promise<void> 
     // }
   } catch (error) {
     console.error('Error during signup phase 3:', error);
-    res.status(500).json({ status: 'error', message: 'Server error during user signup.' });
+    res.status(500).json({ status: 'error', message: 'Something went wrong! please try again later.' });
   }
 };
 
@@ -226,7 +226,7 @@ export const signup_phase4 = async (req: Request, res: Response): Promise<void> 
     // }
   } catch (error) {
     console.error('Error during signup phase 4:', error);
-    res.status(500).json({ status: 'error', message: 'Server error during user signup.' });
+    res.status(500).json({ status: 'error', message: 'Something went wrong! please try again later.' });
   }
 };
 
@@ -373,6 +373,6 @@ export const signup_phase5 = async (req: Request, res: Response): Promise<void> 
     }
   } catch (error) {
     console.error('Error during signup phase 5:', error);
-    res.status(500).json({ status: 'error', message: 'Server error during user signup.' });
+    res.status(500).json({ status: 'error', message: 'Something went wrong! please try again later.' });
   }
 };
