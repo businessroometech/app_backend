@@ -101,7 +101,7 @@ export const signup_phase3 = async (req: Request, res: Response): Promise<void> 
       panNumber,
     } = req.body;
 
-    console.log("profilePicture :" , profilePicture);
+    console.log("profilePicture :", profilePicture);
 
     let details: PersonalDetails | null = await PersonalDetails.findOne({ where: { mobileNumber, sectorId } });
 
@@ -153,7 +153,11 @@ export const signup_phase3 = async (req: Request, res: Response): Promise<void> 
     // } else {
     //   res.status(404).json({ status: 'error', message: 'User details not found' });
     // }
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code == 'ER_DUP_ENTRY') {
+      res.status(500).json({ status: 'error', message: 'Duplicate Entry of field' });
+      return;
+    }
     console.error('Error during signup phase 3:', error);
     res.status(500).json({ status: 'error', message: 'Something went wrong! please try again later.' });
   }
