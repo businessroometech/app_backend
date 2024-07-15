@@ -16,4 +16,9 @@ export const env = cleanEnv(process.env, {
   AWS_USERNAME: str(),
   AWS_PASSWORD: str(),
   AWS_DB_NAME: str(),
+
+  // LOCAL DB environment variables
+  LOCAL_DB_USERNAME: str(),
+  LOCAL_DB_PASSWORD: str(),
+  LOCAL_DB_NAME: str(),
 });
