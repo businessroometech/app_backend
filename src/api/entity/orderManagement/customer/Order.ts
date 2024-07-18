@@ -17,7 +17,20 @@ export class Order extends BaseEntity {
     status !: string;
 
     @Column({ type: "text" })
-    note !: string;
+    statusMessage !: string;
+
+    @Column({ type: 'date' })
+    deliveryDate!: string;
+
+    @Column({ type: 'time' })
+    deliveryTime!: string;
+
+    @Column({ type: 'json' })
+    deliveryAddress!: string;
+
+    @Column({ type: 'text', nullable: true })
+    additionalNote!: string;
+
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
