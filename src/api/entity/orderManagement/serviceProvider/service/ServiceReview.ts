@@ -6,17 +6,14 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Provider } from './Provider';
-import { ProductReview } from './ProductReview';
-import { OrderItem } from '../customer/OrderItem';
-import { CartItem } from '../customer/CartItem';
+import { Service } from './Service';
+import { Provider } from '../Provider';
 
-@Entity({ name: 'Product' })
-export class Product extends BaseEntity {
+@Entity({ name: 'ServiceReview' })
+export class ServiceReview extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -24,20 +21,14 @@ export class Product extends BaseEntity {
   @Column({ type: 'uuid' })
   providerId!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  name!: string;
+  @Column({ type: 'uuid' })
+  serviceId!: string;
+
+  @Column({ type: 'int' })
+  rating!: number;
 
   @Column({ type: 'text' })
-  description!: string;
-
-  @Column({ type: 'float' })
-  price!: number;
-
-  @Column({ type: 'int', default: 1 })
-  quantity !: number;
-
-  @Column({ type: "enum", enum: ['Draft', 'Published'] })
-  status !: string;
+  comment!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -65,16 +56,9 @@ export class Product extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @ManyToOne(() => Provider, provider => provider.products)
+  @ManyToOne(() => Provider, provider => provider.serviceReviews)
   provider !: Provider;
 
-  @OneToMany(() => ProductReview, review => review.product)
-  reviews !: ProductReview[];
-
-  @OneToMany(() => OrderItem, orderItem => orderItem.product)
-  orderItems !: OrderItem[];
-
-  @OneToMany(() => CartItem, cartItem => cartItem.product)
-  cartItems !: OrderItem[];
+  @ManyToOne(() => Service, service => service.reviews)
+  service !: Service[];
 }
-

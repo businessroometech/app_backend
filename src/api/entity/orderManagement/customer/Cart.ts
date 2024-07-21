@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
+import { CartItem } from './CartItem';
 
 @Entity({ name: "Cart" })
 export class Cart extends BaseEntity {
@@ -12,6 +13,9 @@ export class Cart extends BaseEntity {
 
     @Column({ type: "float" })
     totalAmount !: number;
+
+    @Column({ type: 'int' })
+    totalItems !: number; 
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -38,5 +42,8 @@ export class Cart extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
+
+    @OneToMany(() => CartItem, item => item.cart)
+    cartItems !: CartItem[];
 
 }

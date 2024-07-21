@@ -5,13 +5,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'ServiceReview' })
-export class ServiceReview extends BaseEntity {
-  
+@Entity({ name: 'AcceptedService' })
+export class AcceptedService extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -19,13 +21,16 @@ export class ServiceReview extends BaseEntity {
   providerId!: string;
 
   @Column({ type: 'uuid' })
-  serviceId!: string;
+  serviceId !: string;
+  
+  @Column({ type: "uuid" })
+  orderId !: string;
 
-  @Column({ type: 'int' })
-  rating!: number;
+  @Column({ type: "uuid" })
+  orderItemId !: string;
 
-  @Column({ type: 'text' })
-  comment!: string;
+  @Column({ type: 'uuid' })
+  note !: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -52,4 +57,5 @@ export class ServiceReview extends BaseEntity {
   private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
+
 }

@@ -1,5 +1,8 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, JoinColumn, } from 'typeorm';
+import { Service } from '../serviceProvider/service/Service';
+import { Product } from '../serviceProvider/Product';
+import { Order } from './Order';
 
 @Entity({ name: "OrderItem" })
 export class OrderItem extends BaseEntity {
@@ -14,18 +17,36 @@ export class OrderItem extends BaseEntity {
     type !: string;
 
     // if it's a product
-    @Column({ type: "uuid", default: "" })
+    @Column({ type: "uuid", default: null })
     productId !: string;
 
     @Column({ type: "int", default: 1 })
     quantity !: number;
 
     // if it's a service
-    @Column({ type: "uuid", default: "" })
-    serviceId !: string;
+    @Column({ type: "uuid", default: null })
+    serviceId!: string;
+
+    @Column({ type: "enum", enum: ["NA", "Pending", "Accepted", "Rejected", "InProcess", "Completed", "Paid"] })
+    serviceStatus !: string;
+
+    @Column({ type: "text", nullable: true })
+    serviceStatusNote !: string;
 
     @Column({ type: "float" })
     price !: number;
+
+    @Column({ type: 'date' })
+    deliveryDate!: string;
+
+    @Column({ type: 'time' })
+    deliveryTime!: string;
+
+    @Column({ type: 'json' })
+    deliveryAddress!: string;
+
+    @Column({ type: 'text', nullable: true })
+    additionalNote!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -53,4 +74,12 @@ export class OrderItem extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
+    @ManyToOne(() => Service, service => service.orderItems)
+    service!: Service;
+
+    @ManyToOne(() => Product, product => product.orderItems)
+    product!: Product;
+
+    @ManyToOne(() => Order, order => order.orderItems)
+    order !: Order;
 }

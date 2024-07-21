@@ -1,5 +1,9 @@
 import { randomBytes } from 'crypto';
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany } from 'typeorm';
+import { Product } from './Product';
+import { ProductReview } from './ProductReview';
+import { Service } from './service/Service';
+import { ServiceReview } from './service/ServiceReview';
 
 @Entity({ name: "Provider" })
 export class Provider extends BaseEntity {
@@ -10,7 +14,7 @@ export class Provider extends BaseEntity {
     @Column({ type: 'uuid' })
     userId !: string;
 
-    @Column({ type: "uuid" }) 
+    @Column({ type: "uuid" })
     userDetails !: string
 
     @Column({ type: 'varchar', default: 'system' })
@@ -39,4 +43,16 @@ export class Provider extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
+    
+    @OneToMany(() => Product, product => product.provider)
+    products !: Product[];
+    
+    @OneToMany(() => Service, service => service.provider)
+    services !: Service[];
+    
+    @OneToMany(() => ProductReview, review => review.provider)
+    serviceReviews !: ProductReview[];
+
+    @OneToMany(() => ServiceReview, review => review.provider)
+    productReviews !: ServiceReview[];
 }

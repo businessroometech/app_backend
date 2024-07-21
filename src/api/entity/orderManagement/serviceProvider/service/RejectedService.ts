@@ -1,21 +1,36 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
-import { OrderItem } from './OrderItem';
+import {
+    BaseEntity,
+    BeforeInsert,
+    Column,
+    CreateDateColumn,
+    Entity,
+    ManyToOne,
+    OneToMany,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+} from 'typeorm';
 
-@Entity({ name: "Order" })
-export class Order extends BaseEntity {
+@Entity({ name: 'RejectedService' })
+export class RejectedService extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
-    id !: string;
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    providerId!: string;
+
+    @Column({ type: 'uuid' })
+    serviceId !: string;
 
     @Column({ type: "uuid" })
-    userId !: string;
+    orderId !: string;
 
-    @Column({ type: "float" })
-    totalAmount !: number;
+    @Column({ type: "uuid" })
+    orderItemId !: string;
 
-    @Column({ type: 'int' })
-    totalItems !: number; 
+    @Column({ type: 'uuid' })
+    reason !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -42,8 +57,5 @@ export class Order extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
-
-    @OneToMany(() => OrderItem, item => item.cart)
-    orderItems !: OrderItem[];
 
 }

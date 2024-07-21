@@ -5,9 +5,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Provider } from '../Provider';
+import { ServiceReview } from '../service/ServiceReview';
+import { OrderItem } from '../../customer/OrderItem';
+import { CartItem } from '../../customer/CartItem';
 
 @Entity({ name: 'Service' })
 export class Service extends BaseEntity {
@@ -19,13 +25,16 @@ export class Service extends BaseEntity {
   providerId!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  name!: string;
+  category!: string;
 
   @Column({ type: 'text' })
   description!: string;
 
   @Column({ type: 'float' })
   price !: number;
+
+  @Column({ type: 'varchar' })
+  duration !: string;
 
   @Column({ type: "enum", enum: ['Draft', 'Published'] })
   status !: string;
@@ -55,4 +64,16 @@ export class Service extends BaseEntity {
   private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
+
+  @ManyToOne(() => Provider, provider => provider.services)
+  provider !: Provider;
+
+  @OneToMany(() => ServiceReview, review => review.service)
+  reviews !: ServiceReview[];
+
+  @OneToMany(() => OrderItem, orderItem => orderItem.service)
+  orderItems !: OrderItem[];
+
+  @OneToMany(() => CartItem, cartItem => cartItem.service)
+  cartItems !: OrderItem[];
 }
