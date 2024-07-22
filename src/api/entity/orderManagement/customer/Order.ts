@@ -43,7 +43,7 @@ export class Order extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @OneToMany(() => OrderItem, item => item.cart)
+    @OneToMany(() => OrderItem, item => item.order)
     orderItems !: OrderItem[];
 
 }

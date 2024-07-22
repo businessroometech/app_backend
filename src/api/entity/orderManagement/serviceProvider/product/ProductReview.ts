@@ -6,13 +6,14 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Product } from './Product';
+import { Provider } from '../Provider';
 
-@Entity({ name: 'AcceptedService' })
-export class AcceptedService extends BaseEntity {
+@Entity({ name: 'ProductReview' })
+export class ProductReview extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -21,16 +22,13 @@ export class AcceptedService extends BaseEntity {
   providerId!: string;
 
   @Column({ type: 'uuid' })
-  serviceId !: string;
-  
-  @Column({ type: "uuid" })
-  orderId !: string;
+  productId!: string;
 
-  @Column({ type: "uuid" })
-  orderItemId !: string;
+  @Column({ type: 'int' })
+  rating!: number;
 
-  @Column({ type: 'uuid' })
-  note !: string;
+  @Column({ type: 'text' })
+  comment!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -58,4 +56,9 @@ export class AcceptedService extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
+  @ManyToOne(() => Provider, provider => provider.productReviews)
+  provider !: Provider;
+
+  @ManyToOne(() => Product, product => product.reviews)
+  product !: Product;
 }

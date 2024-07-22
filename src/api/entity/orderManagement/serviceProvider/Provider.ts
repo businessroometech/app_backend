@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany } from 'typeorm';
 import { Product } from './Product';
-import { ProductReview } from './ProductReview';
+import { ProductReview } from './product/ProductReview';
 import { Service } from './service/Service';
 import { ServiceReview } from './service/ServiceReview';
 

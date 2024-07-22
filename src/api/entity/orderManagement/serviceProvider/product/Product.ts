@@ -10,10 +10,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Provider } from './Provider';
-import { ProductReview } from './ProductReview';
-import { OrderItem } from '../customer/OrderItem';
-import { CartItem } from '../customer/CartItem';
+import { Provider } from '../Provider';
+import { ProductReview } from '../product/ProductReview';
+import { OrderItem } from '../../customer/OrderItem';
+import { CartItem } from '../../customer/CartItem';
 
 @Entity({ name: 'Product' })
 export class Product extends BaseEntity {

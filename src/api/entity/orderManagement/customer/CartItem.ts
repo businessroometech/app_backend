@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, } from 'typeorm';
 import { Service } from '../serviceProvider/service/Service';
-import { Product } from '../serviceProvider/Product';
+import { Product } from '../serviceProvider/product/Product';
 import { Cart } from './Cart';
 
 @Entity({ name: "CartItem" })
