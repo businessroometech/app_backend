@@ -1,26 +1,23 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
 
-@Entity({ name: "OrderItemStatus" })
-export class OrderItemStatus extends BaseEntity {
+@Entity({ name: "Refund" })
+export class Refund extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
 
     @Column({ type: "uuid" })
-    orderId !: string;
+    transactionId !: string;
 
-    @Column({ type: "uuid" })
-    orderItemId !: string;
+    @Column({ type: "varchar" })
+    razorpayRefundId !: string;
 
-    @Column({ type: "enum", enum: ["NA", "Pending", "Accepted", "Rejected", "InProcess", "Completed", "Paid"] })
-    serviceStatus !: string;
+    @Column({ type: "float" })
+    amount !: number;
 
-    @Column({ type: "text", nullable: true })
-    serviceStatusNote !: string;
-
-    @Column({ type: "boolean", default: false })
-    isPaid !: false;
+    @Column({ type: "varchar", nullable: true })
+    reason !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

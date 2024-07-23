@@ -27,6 +27,12 @@ export class OrderItem extends BaseEntity {
     @Column({ type: "uuid", default: null })
     serviceId!: string;
 
+    @Column({ type: "enum", enum: ["NA", "Pending", "Accepted", "Rejected", "InProcess", "Completed", "Paid"] })
+    serviceStatus !: string;
+
+    @Column({ type: "text", nullable: true })
+    serviceStatusNote !: string;
+
     @Column({ type: "float" })
     price !: number;
 
