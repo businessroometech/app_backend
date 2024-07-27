@@ -3,8 +3,8 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, U
 import { Service } from '../serviceProvider/service/Service';
 import { Product } from '../serviceProvider/product/Product';
 import { Order } from './Order';
-import { Sector } from '../../Sector';
-import { UserLogin } from '../../UserLogin';
+import { Sector } from '../../sector/Sector';
+import { UserLogin } from '../../user/UserLogin';
 
 interface Address {
     addressLine1: string,

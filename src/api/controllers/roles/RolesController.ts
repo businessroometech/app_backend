@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { Role } from '@/api/entity/Role';
+import { Role } from '@/api/entity/others/Role';
 
 export const getRoles = async (req: Request, res: Response) => {
   try {

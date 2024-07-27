@@ -2,8 +2,8 @@ import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 import { Request, Response } from 'express';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
-import { ContactVerification } from '../../entity/ContactVerification';
-import { UserLogin } from '../../entity/UserLogin';
+import { ContactVerification } from '../../entity/others/ContactVerification';
+import { UserLogin } from '../../entity/user/UserLogin';
 
 // import AWS from 'aws-sdk';
 

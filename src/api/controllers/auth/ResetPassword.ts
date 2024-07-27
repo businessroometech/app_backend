@@ -2,8 +2,8 @@
 // import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 import { Request, Response } from 'express';
 
-import { PasswordResetToken } from '../../entity/PasswordResetToken';
-import { UserLogin } from '../../entity/UserLogin';
+import { PasswordResetToken } from '../../entity/others/PasswordResetToken';
+import { UserLogin } from '../../entity/user/UserLogin';
 // const snsClient = new SNSClient({
 //   credentials: {
 //     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',

@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 
-import { Award } from '../../entity/Award';
-import { Certification } from '../../entity/Certification';
-import { EducationalDetails } from '../../entity/EducationalDetails';
-import { EducationalDetailsHealthcare } from '../../entity/EducationalDetailsHealthcare';
-import { EducationalDetailsPetcare } from '../../entity/EducationalDetailsPetcare';
-import { Internship } from '../../entity/Internship';
-import { PersonalDetails } from '../../entity/PersonalDetails';
-import { ProfessionalDetails } from '../../entity/ProfessionalDetails';
-import { UserDetails } from '../../entity/UserDetails';
-import { UserLogin } from '../../entity/UserLogin';
+import { Award } from '../../entity/profile/educational/healthcare/Award';
+import { Certification } from '../../entity/profile/educational/healthcare/Certification';
+import { EducationalDetails } from '../../entity/profile/educational/other/EducationalDetails';
+import { EducationalDetailsHealthcare } from '../../entity/profile/educational/healthcare/EducationalDetailsHealthcare';
+import { EducationalDetailsPetcare } from '../../entity/profile/educational/petcare/EducationalDetailsPetcare';
+import { Internship } from '../../entity/profile/educational/healthcare/Internship';
+import { PersonalDetails } from '../../entity/profile/personal/PersonalDetails';
+import { ProfessionalDetails } from '../../entity/profile/professional/ProfessionalDetails';
+import { UserDetails } from '../../entity/user/UserDetails';
+import { UserLogin } from '../../entity/user/UserLogin';
 
 export const signup_phase1 = async (req: Request, res: Response): Promise<void> => {
   try {

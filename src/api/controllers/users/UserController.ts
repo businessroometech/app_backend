@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 
-import { EducationalDetails } from '@/api/entity/EducationalDetails';
-import { PersonalDetails } from '@/api/entity/PersonalDetails';
+import { EducationalDetails } from '@/api/entity/profile/educational/other/EducationalDetails';
+import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
 import { ProfessionalDetails } from '@/api/entity/ProfessionalDetails';
-import { UserDetails } from '@/api/entity/UserDetails';
+import { UserDetails } from '@/api/entity/user/UserDetails';
 
 export const getUserDetails = async (req: Request, res: Response) => {
   try {
