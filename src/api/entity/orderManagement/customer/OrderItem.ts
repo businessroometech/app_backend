@@ -3,6 +3,16 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, U
 import { Service } from '../serviceProvider/service/Service';
 import { Product } from '../serviceProvider/product/Product';
 import { Order } from './Order';
+import { Sector } from '../../Sector';
+import { UserLogin } from '../../UserLogin';
+
+interface Address {
+    addressLine1: string,
+    addressLine2: string,
+    city: string,
+    state: string,
+    pincode: string,
+}
 
 @Entity({ name: "OrderItem" })
 export class OrderItem extends BaseEntity {
@@ -10,8 +20,17 @@ export class OrderItem extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id !: string;
 
+    @Column({ type: 'varchar' })
+    OrderItemId !: string;
+
     @Column({ type: "uuid" })
     orderId !: string;
+
+    @Column({ type: "uuid" })
+    userId !: string;
+
+    @Column({ type: "uuid" })
+    sectorId !: string;
 
     @Column({ type: "enum", enum: ['Product', 'Service'] })
     type !: string;
@@ -43,7 +62,7 @@ export class OrderItem extends BaseEntity {
     deliveryTime!: string;
 
     @Column({ type: 'json' })
-    deliveryAddress!: string;
+    deliveryAddress!: Address;
 
     @Column({ type: 'text', nullable: true })
     additionalNote!: string;
@@ -68,10 +87,41 @@ export class OrderItem extends BaseEntity {
     @BeforeInsert()
     async beforeInsert() {
         this.id = this.generateUUID();
+        this.OrderItemId = await this.generateOrderId();
     }
 
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
+    }
+
+    private async generateOrderId(): Promise<string> {
+        const cityCode = this.deliveryAddress.city.slice(0, 2).toLowerCase();
+        const date = new Date();
+        const dateCode = `${(date.getFullYear() % 100).toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+
+        const sectorCodes: { [key: string]: string } = {
+            construction: '01',
+            heathcare: '02',
+            event: '03',
+            entertainment: '04',
+            petcare: '05',
+            homeservice: '06'
+        };
+
+        const typeCodes: { [key: string]: string } = {
+            Business: 'BA',
+            Individual: 'IA'
+        };
+
+        const sectorName: string = this.sector.sectorName.toLowerCase();
+        const sectorCode: string = sectorCodes[sectorName] || 'XX';
+        const typeCode = typeCodes[this.user.serviceProviderType] || "XX";
+
+        let count = await OrderItem.count();
+        let orderSeq = (count + 1).toString();
+        if (orderSeq.length < 0) orderSeq.padStart(4, '0');
+
+        return `${cityCode}${dateCode}${sectorCode}${typeCode}${orderSeq}`;
     }
 
     @ManyToOne(() => Service, service => service.orderItems)
@@ -82,4 +132,10 @@ export class OrderItem extends BaseEntity {
 
     @ManyToOne(() => Order, order => order.orderItems)
     order !: Order;
+
+    @ManyToOne(() => Sector, sector => sector.orderItems)
+    sector !: Sector
+
+    @ManyToOne(() => UserLogin, user => user.orderItems)
+    user !: UserLogin;
 }

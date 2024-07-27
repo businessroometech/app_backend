@@ -361,7 +361,6 @@ export const signup_phase5 = async (req: Request, res: Response): Promise<void> 
       const newUser = await UserLogin.create({
         mobileNumber,
         password,
-        sectorAssociated: [sectorId],
       }).save();
 
       res.status(201).json({

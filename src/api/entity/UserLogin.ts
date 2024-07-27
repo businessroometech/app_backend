@@ -7,9 +7,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { OrderItem } from './orderManagement/customer/OrderItem';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -22,8 +24,11 @@ export class UserLogin extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   password!: string;
 
-  @Column({ type: 'json' })
-  sectorAssociated: string[] = [];
+  @Column({ type: 'enum', enum: ['Customer', 'ServiceProvider'], default: 'ServiceProvider' })
+  userType!: 'Customer' | 'ServiceProvider';
+
+  @Column({ type: 'enum', enum: ['Individual', 'Business', 'NA'], default: 'NA' })
+  serviceProviderType!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -66,4 +71,7 @@ export class UserLogin extends BaseEntity {
   static async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
     return await bcrypt.compare(password, hashedPassword);
   }
+
+  @OneToMany(() => OrderItem, item => item.user)
+  orderItems !: OrderItem[];
 }

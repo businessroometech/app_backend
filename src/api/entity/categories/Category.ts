@@ -5,19 +5,24 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OrderItem } from './orderManagement/customer/OrderItem';
 
-@Entity({ name: 'Sector' })
-export class Sector extends BaseEntity {
+@Entity({ name: 'Category' })
+export class Category extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ type: 'uuid' })
+  sectorId!: string;
+
   @Column({ type: 'varchar' })
-  sectorName!: string;
+  categoryName!: string;
+
+  @Column({ type: 'text' })
+  categoryDescription!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -44,7 +49,4 @@ export class Sector extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
-
-  @OneToMany(() => OrderItem, item => item.sector)
-  orderItems !: OrderItem;
 }

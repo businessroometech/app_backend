@@ -1,24 +1,31 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
-import { OrderItem } from './OrderItem';
+import {
+    BaseEntity,
+    BeforeInsert,
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+} from 'typeorm';
 
-@Entity({ name: "Order" })
-export class Order extends BaseEntity {
+@Entity({ name: 'SubCategory' })
+export class SubCategory extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
-    id !: string;
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    sectorId!: string;
 
     @Column({ type: "uuid" })
-    userId !: string;
+    categoryId !: string;
 
-    @Column({ type: "uuid" })
-    sectorId !: string;
+    @Column({ type: 'varchar' })
+    subCategoryName!: string;
 
-    @Column({ type: "float" })
-    totalAmount !: number;
-
-    @Column({ type: 'int' })
-    totalItems !: number; 
+    @Column({ type: 'text' })
+    SubCategoryDescription!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -42,11 +49,7 @@ export class Order extends BaseEntity {
         this.id = this.generateUUID();
     }
 
-    private generateUUID(): string {
+    private generateUUID() {
         return randomBytes(16).toString('hex');
     }
-
-    @OneToMany(() => OrderItem, item => item.order)
-    orderItems !: OrderItem[];
-
 }

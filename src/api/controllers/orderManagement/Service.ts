@@ -3,10 +3,6 @@ import { OrderItem } from '@/api/entity/orderManagement/customer/OrderItem';
 import { Between } from 'typeorm';
 import { format } from 'date-fns';
 import { Service } from '@/api/entity/orderManagement/serviceProvider/service/Service';
-import { AcceptedService } from '@/api/entity/orderManagement/serviceProvider/service/AcceptedService';
-import { RejectedService } from '@/api/entity/orderManagement/serviceProvider/service/RejectedService';
-import { InprocessService } from '@/api/entity/orderManagement/serviceProvider/service/InprocessService';
-import { CompletedService } from '@/api/entity/orderManagement/serviceProvider/service/CompletedService';
 
 export const BetweenDates = (from: Date | string, to: Date | string) =>
     Between(
@@ -16,17 +12,19 @@ export const BetweenDates = (from: Date | string, to: Date | string) =>
 
 export const getYourServices = async (req: Request, res: Response) => {
     try {
-        const { type, serviceStatus, priceStart, priceEnd, dateStart, dataEnd, serviceCategory } = req.body;
+        const { type, serviceStatus, priceStart, priceEnd, dateStart, dataEnd, serviceCategory, page, limit } = req.body;
 
         // filter
-        const services = await OrderItem.find({
+        const [services, total] = await OrderItem.findAndCount({
             where: {
                 type,
                 serviceStatus,
                 deliveryDate: BetweenDates(dateStart, dataEnd),
                 price: Between(priceStart, priceEnd)
             },
-            relations: ['Service']
+            relations: ['Service'],
+            skip: (page - 1) * limit,
+            take: limit,
         });
 
         const filteredServices = services.filter(orderItem => serviceCategory.includes(orderItem.service.category));
@@ -36,6 +34,10 @@ export const getYourServices = async (req: Request, res: Response) => {
             message: 'Successfully fetched the services',
             data: {
                 services: filteredServices,
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
             },
         });
 
@@ -70,19 +72,9 @@ export const addService = async (req: Request, res: Response) => {
 // accept the service
 export const acceptService = async (req: Request, res: Response) => {
     try {
-        const { providerId, serviceId, orderId, orderItemId, note, createdBy, updatedBy } = req.body;
+        const { orderId, orderItemId } = req.body;
 
-        const acceptedService = await AcceptedService.create({
-            providerId: providerId,
-            serviceId: serviceId,
-            orderId: orderId,
-            orderItemId: orderItemId,
-            note: note,
-            createdBy: createdBy || 'system',
-            updatedBy: updatedBy || 'system',
-        }).save();
-
-        const orderItem = await OrderItem.findOne({ where: { orderId } });
+        const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
         if (!orderItem) {
             res.status(500).json({ status: "error", message: "OrderItem not found" });
             return;
@@ -91,7 +83,7 @@ export const acceptService = async (req: Request, res: Response) => {
         orderItem!.serviceStatus = "Accepted";
         orderItem.save();
 
-        res.status(201).json({ status: "success", message: "Service accepted successfully", data: { acceptedService } });
+        res.status(201).json({ status: "success", message: "Service accepted successfully", data: { orderItem } });
     } catch (error) {
         console.log("Cannot accept service :", error);
         res.status(500).json({ status: "error", message: 'Something went wrong' });
@@ -101,28 +93,19 @@ export const acceptService = async (req: Request, res: Response) => {
 // reject the service
 export const rejectService = async (req: Request, res: Response) => {
     try {
-        const { providerId, serviceId, orderId, orderItemId, reason, createdBy, updatedBy } = req.body;
+        const { orderId, orderItemId, reason } = req.body;
 
-        const rejectedService = await RejectedService.create({
-            providerId: providerId,
-            serviceId: serviceId,
-            orderId: orderId,
-            orderItemId: orderItemId,
-            reason: reason,
-            createdBy: createdBy || 'system',
-            updatedBy: updatedBy || 'system',
-        }).save();
-
-        const orderItem = await OrderItem.findOne({ where: { orderId } });
+        const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
         if (!orderItem) {
             res.status(500).json({ status: "error", message: "OrderItem not found" });
             return;
         }
 
         orderItem!.serviceStatus = "Rejected";
+        orderItem!.serviceStatusNote = reason;
         orderItem.save();
 
-        res.status(201).json({ status: "success", message: "Service rejected successfully", data: { rejectedService } });
+        res.status(201).json({ status: "success", message: "Service rejected successfully", data: { orderItem } });
     } catch (error) {
         console.log("Cannot accept service :", error);
         res.status(500).json({ status: "error", message: 'Something went wrong' });
@@ -136,22 +119,11 @@ export const generateStartOtp = () => {
 // start the service
 export const startService = async (req: Request, res: Response) => {
     try {
-        const { otp, providerId, serviceId, orderId, orderItemId, note, createdBy, updatedBy } = req.body;
+        const { orderId, orderItemId } = req.body;
 
         // --------------------------verify otp
 
-        // if otp verified add to InProcess
-        const inprocessService = await InprocessService.create({
-            providerId: providerId,
-            serviceId: serviceId,
-            orderId: orderId,
-            orderItemId: orderItemId,
-            note: note,
-            createdBy: createdBy || 'system',
-            updatedBy: updatedBy || 'system',
-        }).save();
-
-        const orderItem = await OrderItem.findOne({ where: { orderId } });
+        const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
         if (!orderItem) {
             res.status(500).json({ status: "error", message: "OrderItem not found" });
             return;
@@ -160,9 +132,7 @@ export const startService = async (req: Request, res: Response) => {
         orderItem!.serviceStatus = "InProcess";
         orderItem.save();
 
-        await AcceptedService.delete({ orderId, providerId, serviceId, orderItemId });
-
-        res.status(201).json({ status: "success", message: "Service InProcess", data: { inprocessService } });
+        res.status(201).json({ status: "success", message: "Service InProcess", data: { orderItem } });
     } catch (error) {
         console.log("Service started :", error);
         res.status(500).json({ status: "error", message: 'Something went wrong' });
@@ -172,23 +142,12 @@ export const startService = async (req: Request, res: Response) => {
 // end the service
 export const endService = async (req: Request, res: Response) => {
     try {
-        const { otp, providerId, serviceId, orderId, orderItemId, note, createdBy, updatedBy } = req.body;
+        const { orderId, orderItemId } = req.body;
 
         //---------------------- verify otp
 
         // if otp verified add to InProcess
-        const completedService = await CompletedService.create({
-            providerId: providerId,
-            serviceId: serviceId,
-            orderId: orderId,
-            orderItemId: orderItemId,
-            note: note,
-            createdBy: createdBy || 'system',
-            updatedBy: updatedBy || 'system',
-
-        }).save();
-
-        const orderItem = await OrderItem.findOne({ where: { orderId } });
+        const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
         if (!orderItem) {
             res.status(500).json({ status: "error", message: "OrderItem not found" });
             return;
@@ -197,9 +156,7 @@ export const endService = async (req: Request, res: Response) => {
         orderItem!.serviceStatus = "Completed";
         orderItem.save();
 
-        await InprocessService.delete({ orderId, providerId, serviceId, orderItemId });
-
-        res.status(201).json({ status: "success", message: "Service completed", data: { completedService } });
+        res.status(201).json({ status: "success", message: "Service completed", data: { orderItem } });
     } catch (error) {
         console.log("Service ended :", error);
         res.status(500).json({ status: "error", message: 'Something went wrong' });
