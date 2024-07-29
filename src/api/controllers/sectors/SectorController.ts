@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { Sector } from '@/api/entity/Sector';
+import { Sector } from '@/api/entity/sector/Sector';
 
 export const getSector = async (req: Request, res: Response) => {
   try {

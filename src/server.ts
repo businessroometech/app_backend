@@ -10,7 +10,6 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
-// import { openAPIRouter } from '@/api-docs/openAPIRouter';
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import sectorsRouter from '../src/api/routes/sectors/SectorRoutes';
 import rolesRouter from './api/routes/roles/RoleRoutes';
@@ -46,9 +45,6 @@ app.use('/api/v1/sectors', sectorsRouter);
 app.use('/api/v1/roles', rolesRouter);
 app.use('/api/v1/users', usersRouter);
 // app.use('/health-check', healthCheckRouter);
-
-// Swagger UI
-// app.use(openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());

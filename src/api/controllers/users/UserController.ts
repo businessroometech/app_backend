@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import { EducationalDetails } from '@/api/entity/profile/educational/other/EducationalDetails';
 import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
-import { ProfessionalDetails } from '@/api/entity/ProfessionalDetails';
+import { ProfessionalDetails } from '@/api/entity/profile/professional/ProfessionalDetails';
 import { UserDetails } from '@/api/entity/user/UserDetails';
 
 export const getUserDetails = async (req: Request, res: Response) => {
