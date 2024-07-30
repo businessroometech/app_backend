@@ -4,6 +4,7 @@ import { sendVerificationCode, verifyCode } from '../../controllers/auth/Contact
 import { login, protectedRoute, refresh } from '../../controllers/auth/Login';
 import { logout } from '../../controllers/auth/Logout';
 import {
+  changePassword,
   resetPassword,
   sendNumberVerificationToken,
   verifyCodeForPasswordReset,
@@ -42,4 +43,5 @@ Router.post('/forgot-password/generate', sendNumberVerificationToken);
 Router.post('/forgot-password/verify', verifyCodeForPasswordReset);
 Router.post('/forgot-password/reset', resetPassword);
 
+Router.post('/change-password', changePassword);
 export default Router;
