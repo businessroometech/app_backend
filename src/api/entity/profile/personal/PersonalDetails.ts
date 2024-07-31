@@ -21,6 +21,9 @@ export class PersonalDetails extends BaseEntity {
   sectorId!: string;
 
   @Column({ type: 'uuid' })
+  userLoginId!: string;
+
+  @Column({ type: 'uuid' })
   profilePicture!: string;
 
   @Column({ type: 'varchar', length: 255 })

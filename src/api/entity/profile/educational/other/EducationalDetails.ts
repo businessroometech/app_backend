@@ -20,6 +20,9 @@ export class EducationalDetails extends BaseEntity {
   @Column({ type: 'uuid' })
   sectorId!: string;
 
+  @Column({ type: 'uuid' })
+  userLoginId!: string;
+
   @Column({ type: 'varchar', length: 255 })
   collegeName!: string;
 

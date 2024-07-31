@@ -21,6 +21,9 @@ export class FinancialDetails extends BaseEntity {
     @Column({ type: 'uuid' })
     sectorId!: string;
 
+    @Column({ type: 'uuid' })
+    userLoginId!: string;
+
     @Column({ type: 'varchar', length: 255 })
     bankName!: string;
 

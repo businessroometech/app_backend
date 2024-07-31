@@ -11,8 +11,12 @@ import {
 
 @Entity({ name: 'Certification' })
 export class Certification extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Column({ type: "uuid" })
+  userLoginId !: string;
 
   @Column({ type: 'uuid' })
   educationalDetailsHealthcareId!: string;

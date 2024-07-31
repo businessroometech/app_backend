@@ -15,6 +15,7 @@ import { OrderItem } from '../orderManagement/customer/OrderItem';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -24,16 +25,16 @@ export class UserLogin extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   password!: string;
 
-  @Column({ type: 'enum', enum: ['Customer', 'ServiceProvider'], default: 'ServiceProvider' })
-  userType!: 'Customer' | 'ServiceProvider';
+  @Column({ type: 'enum', enum: ['Customer', 'ServiceProvider'] })
+  primaryRole !: 'Customer' | 'ServiceProvider';
 
-  @Column({ type: 'enum', enum: ['Individual', 'Business', 'NA'], default: 'NA' })
-  serviceProviderType!: string;
+  @Column({ type: 'enum', enum: ['Individual', 'Business'] })
+  userType !: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
-  @Column({ type: 'varchar', default: 'system', nullable: true })
+  @Column({ type: 'varchar', default: 'system' })
   updatedBy!: string;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })

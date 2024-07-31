@@ -12,8 +12,12 @@ import {
 
 @Entity({ name: 'Internship' })
 export class Internship extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @Column({ type: "uuid" })
+  userLoginId !: string;
 
   @Column({ type: 'uuid' })
   educationalDetailsHealthcareId!: string;
