@@ -11,7 +11,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OrderItem } from '../orderManagement/customer/OrderItem';
+import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
+import { OrderItemProduct } from '../orderManagement/customer/OrderItemProduct';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -73,6 +74,9 @@ export class UserLogin extends BaseEntity {
     return await bcrypt.compare(password, hashedPassword);
   }
 
-  @OneToMany(() => OrderItem, item => item.user)
-  orderItems !: OrderItem[];
+  @OneToMany(() => OrderItemBooking, item => item.user)
+  orderItemBookings !: OrderItemBooking[];
+
+  @OneToMany(() => OrderItemProduct, item => item.user)
+  orderItemProducts !: OrderItemProduct[];
 }

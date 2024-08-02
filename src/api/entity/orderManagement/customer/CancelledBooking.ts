@@ -1,24 +1,26 @@
-import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
-import { CartItemBooking } from './CartItemBooking';
+import { randomBytes } from "crypto";
+import { BaseEntity, BeforeInsert, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
-@Entity({ name: "Cart" })
-export class Cart extends BaseEntity {
+@Entity({ name: "CancelledBooking" })
+export class CancelledBooking extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
 
     @Column({ type: "uuid" })
+    orderId !: string;
+
+    @Column({ type: "uuid" })
+    bookingId !: string;
+
+    @Column({ type: "uuid" })
     customerId !: string;
 
     @Column({ type: "uuid" })
-    sectorId !: string;
+    serviceProviderId !: string;
 
-    @Column({ type: "float" })
-    totalAmount !: number;
-
-    @Column({ type: 'int' })
-    totalItems !: number; 
+    @Column({ type: "text" })
+    reason !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -45,8 +47,5 @@ export class Cart extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
-
-    @OneToMany(() => CartItemBooking, item => item.cart)
-    cartItemBookings !: CartItemBooking[];
 
 }

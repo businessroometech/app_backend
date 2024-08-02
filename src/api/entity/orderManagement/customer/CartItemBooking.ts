@@ -1,11 +1,18 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, } from 'typeorm';
 import { Service } from '../serviceProvider/service/Service';
-import { Product } from '../serviceProvider/product/Product';
 import { Cart } from './Cart';
 
-@Entity({ name: "CartItem" })
-export class CartItem extends BaseEntity {
+interface Address {
+    addressLine1: string,
+    addressLine2: string,
+    city: string,
+    state: string,
+    pincode: string,
+}
+
+@Entity({ name: "CartItemBooking" })
+export class CartItemBooking extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
@@ -13,22 +20,32 @@ export class CartItem extends BaseEntity {
     @Column({ type: "uuid" })
     cartId !: string;
 
-    @Column({ type: "enum", enum: ['Product', 'Service'] })
-    type !: string;
+    @Column({ type: "uuid" })
+    sectorId !: string;
 
-    // if it's a product
-    @Column({ type: "uuid", default: "" })
-    productId !: string;
+    @Column({ type: "uuid" })
+    customerId !: string;
 
-    @Column({ type: "int", default: 1 })
-    quantity !: number;
+    @Column({ type: "uuid" })
+    serviceProviderId !: string;
 
-    // if it's a service
-    @Column({ type: "uuid", default: "" })
+    @Column({ type: "uuid" })
     serviceId !: string;
 
     @Column({ type: "float" })
     price !: number;
+
+    @Column({ type: 'date' })
+    deliveryDate!: string;
+
+    @Column({ type: 'time' })
+    deliveryTime!: string;
+
+    @Column({ type: 'json' })
+    deliveryAddress!: Address;
+
+    @Column({ type: 'text', nullable: true })
+    additionalNote!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -59,9 +76,6 @@ export class CartItem extends BaseEntity {
     @ManyToOne(() => Service, service => service.cartItems)
     service!: Service;
 
-    @ManyToOne(() => Product, product => product.cartItems)
-    product!: Product;
-
-    @ManyToOne(() => Cart, cart => cart.cartItems)
+    @ManyToOne(() => Cart, cart => cart.cartItemBookings)
     cart !: Cart;
 }

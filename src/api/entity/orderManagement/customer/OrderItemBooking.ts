@@ -14,8 +14,8 @@ interface Address {
     pincode: string,
 }
 
-@Entity({ name: "OrderItem" })
-export class OrderItem extends BaseEntity {
+@Entity({ name: "OrderItemBooking" })
+export class OrderItemBooking extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
@@ -27,30 +27,22 @@ export class OrderItem extends BaseEntity {
     orderId !: string;
 
     @Column({ type: "uuid" })
-    userId !: string;
-
-    @Column({ type: "uuid" })
     sectorId !: string;
 
-    @Column({ type: "enum", enum: ['Product', 'Service'] })
-    type !: string;
+    @Column({ type: "uuid" })
+    customerId !: string;
 
-    // if it's a product
-    @Column({ type: "uuid", default: null })
-    productId !: string;
+    @Column({ type: "uuid" })
+    serviceProviderId !: string;
 
-    @Column({ type: "int", default: 1 })
-    quantity !: number;
-
-    // if it's a service
-    @Column({ type: "uuid", default: null })
+    @Column({ type: "uuid" })
     serviceId!: string;
 
-    @Column({ type: "enum", enum: ["NA", "Pending", "Accepted", "Rejected", "InProcess", "Completed", "Paid"] })
-    serviceStatus !: string;
+    @Column({ type: "enum", enum: ["Pending", "Assigned", "Completed", "Cancelled", "Rescheduled"], default: "Pending" })
+    status !: string;
 
     @Column({ type: "text", nullable: true })
-    serviceStatusNote !: string;
+    note !: string;
 
     @Column({ type: "float" })
     price !: number;
@@ -115,9 +107,9 @@ export class OrderItem extends BaseEntity {
 
         const sectorName: string = this.sector.sectorName.toLowerCase();
         const sectorCode: string = sectorCodes[sectorName] || 'XX';
-        const typeCode = typeCodes[this.user.serviceProviderType] || "XX";
+        const typeCode = typeCodes[this.user.userType] || "XX";
 
-        let count = await OrderItem.count();
+        let count = await OrderItemBooking.count();
         let orderSeq = (count + 1).toString();
         if (orderSeq.length < 0) orderSeq.padStart(4, '0');
 
@@ -136,6 +128,6 @@ export class OrderItem extends BaseEntity {
     @ManyToOne(() => Sector, sector => sector.orderItems)
     sector !: Sector
 
-    @ManyToOne(() => UserLogin, user => user.orderItems)
+    @ManyToOne(() => UserLogin, user => user.orderItemBookings)
     user !: UserLogin;
 }

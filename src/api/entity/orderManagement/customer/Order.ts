@@ -9,7 +9,7 @@ export class Order extends BaseEntity {
     id !: string;
 
     @Column({ type: "uuid" })
-    userId !: string;
+    customerId !: string;
 
     @Column({ type: "uuid" })
     sectorId !: string;

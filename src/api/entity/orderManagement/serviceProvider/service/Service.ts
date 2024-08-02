@@ -12,8 +12,8 @@ import {
 } from 'typeorm';
 import { Provider } from '../Provider';
 import { ServiceReview } from '../service/ServiceReview';
-import { OrderItem } from '../../customer/OrderItem';
-import { CartItem } from '../../customer/CartItem';
+import { OrderItem } from '../../customer/OrderItemBooking';
+import { CartItem } from '../../customer/CartItemBooking';
 
 @Entity({ name: 'Service' })
 export class Service extends BaseEntity {
@@ -32,6 +32,9 @@ export class Service extends BaseEntity {
 
   @Column({ type: 'float' })
   price !: number;
+
+  @Column({ type: 'varchar' })
+  per !: string;
 
   @Column({ type: 'varchar' })
   duration !: string;
