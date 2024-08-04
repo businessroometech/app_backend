@@ -2,7 +2,7 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
 
-import { DocumentUpload } from '@/api/entity/DocumentUpload';
+import { DocumentUpload } from '@/api/entity/profile/DocumentUpload';
 
 const s3 = new S3Client({
   credentials: {

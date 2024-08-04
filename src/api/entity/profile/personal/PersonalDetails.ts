@@ -8,24 +8,47 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-// import { EducationalDetailsHealthcare } from "./EducationalDetailsHealthcare";
 
-@Entity({ name: 'Award' })
-export class Award extends BaseEntity {
+@Entity({ name: 'PersonalDetails' })
+export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
-  educationalDetailsHealthcareId!: string;
+  sectorId!: string;
+
+  @Column({ type: 'uuid' })
+  userId!: string;
+
+  @Column({ type: 'uuid' })
+  profilePictureUploadId!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  awardName!: string;
+  fullName!: string;
 
-  @Column({ type: 'int' })
-  yearAwarded!: number;
+  @Column({ type: 'date' })
+  dob!: Date;
 
-  @Column({ type: 'varchar', length: 255 })
-  fieldOfAward!: string;
+  @Column({ type: 'varchar', length: 15, unique: true })
+  mobileNumber!: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  emailAddress!: string;
+
+  @Column({ type: 'text' })
+  bio!: string;
+
+  @Column({ type: 'json' })
+  permanentAddress!: string;
+
+  @Column({ type: 'json' })
+  currentAddress!: string;
+
+  @Column({ type: 'uuid' })
+  aadharNumberUploadId!: string;
+
+  @Column({ type: 'uuid' })
+  panNumberUploadId!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -49,7 +72,7 @@ export class Award extends BaseEntity {
     this.id = this.generateUUID();
   }
 
-  private generateUUID(): string {
+  private generateUUID() {
     return randomBytes(16).toString('hex');
   }
 }

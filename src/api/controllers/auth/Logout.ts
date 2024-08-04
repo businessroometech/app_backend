@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { RefreshToken } from '@/api/entity/RefreshToken';
+import { RefreshToken } from '@/api/entity/others/RefreshToken';
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
   try {

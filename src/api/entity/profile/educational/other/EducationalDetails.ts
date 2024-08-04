@@ -9,22 +9,31 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'Certification' })
-export class Certification extends BaseEntity {
+@Entity({ name: 'EducationalDetails' })
+export class EducationalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
-  educationalDetailsHealthcareId!: string;
+  sectorId!: string;
+
+  @Column({ type: 'uuid' })
+  userId!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  nameOfCertificate!: string;
+  collegeName!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  domain!: string;
+  degree!: string;
 
   @Column({ type: 'int' })
-  year!: number;
+  yearOfCompletion!: number;
+
+  @Column({ type: 'text', nullable: true })
+  otherCertifications!: string;
+
+  @Column({ type: 'text', nullable: true })
+  achievements!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

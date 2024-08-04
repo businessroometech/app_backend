@@ -5,26 +5,30 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+// import { Product } from './Product';
+// import { Provider } from '../Provider';
 
-@Entity({ name: 'UserDetails' })
-export class UserDetails extends BaseEntity {
+@Entity({ name: 'ProductReview' })
+export class ProductReview extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
+  @Column({ type: 'uuid' })
+  serviceProviderId!: string;
 
   @Column({ type: 'uuid' })
-  sectorId!: string;
+  productId!: string;
 
-  @Column({ type: 'uuid', default: '' })
-  roleSelectedId!: string;
+  @Column({ type: 'int' })
+  rating!: number;
 
-  @Column({ type: 'boolean', default: false })
-  detailsCompleted!: boolean;
+  @Column({ type: 'text' })
+  comment!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -48,7 +52,13 @@ export class UserDetails extends BaseEntity {
     this.id = this.generateUUID();
   }
 
-  private generateUUID() {
+  private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
+
+  // @ManyToOne(() => Provider, provider => provider.productReviews)
+  // provider !: Provider;
+
+  // @ManyToOne(() => Product, product => product.reviews)
+  // product !: Product;
 }

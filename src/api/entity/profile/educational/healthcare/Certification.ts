@@ -9,43 +9,26 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'PersonalDetails' })
-export class PersonalDetails extends BaseEntity {
+@Entity({ name: 'Certification' })
+export class Certification extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
+  @Column({ type: "uuid" })
+  userLoginId !: string;
 
   @Column({ type: 'uuid' })
-  sectorId!: string;
-
-  @Column({ type: 'uuid' })
-  profilePicture!: string;
+  educationalDetailsHealthcareId!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  fullName!: string;
+  nameOfCertificate!: string;
 
-  @Column({ type: 'date' })
-  dob!: Date;
+  @Column({ type: 'varchar', length: 255 })
+  domain!: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
-  emailAddress!: string;
-
-  @Column({ type: 'text', nullable: true })
-  bio!: string;
-
-  @Column({ type: 'json', nullable: true })
-  permanentAddress!: string;
-
-  @Column({ type: 'json', nullable: true })
-  currentAddress!: string;
-
-  @Column({ type: 'varchar', length: 14, unique: true, nullable: true })
-  aadharNumber!: string;
-
-  @Column({ type: 'varchar', length: 10, unique: true, nullable: true })
-  panNumber!: string;
+  @Column({ type: 'int' })
+  year!: number;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -69,7 +52,7 @@ export class PersonalDetails extends BaseEntity {
     this.id = this.generateUUID();
   }
 
-  private generateUUID() {
+  private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
 }

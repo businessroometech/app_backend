@@ -20,8 +20,9 @@ export enum DocumentType {
 
 @Entity('DocumentUpload')
 export class DocumentUpload extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
 
   @Column({ type: 'varchar', length: 255 })
   bucketName!: string;
@@ -32,15 +33,12 @@ export class DocumentUpload extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   contentType!: string;
 
-  // @Column({ type: 'varchar', length: 255, nullable: true })
-  // documentName?: string;
-
-  @Column({
-    type: 'enum',
-    enum: DocumentType,
-    nullable: true,
-  })
-  documentType?: DocumentType;
+    @Column({
+        type: 'enum',
+        enum: DocumentType,
+        nullable: true,
+    })
+    documentType?: DocumentType;
 
   @Column({ type: 'text', nullable: true })
   documentDescription?: string;

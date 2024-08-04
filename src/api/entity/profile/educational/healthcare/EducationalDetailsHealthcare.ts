@@ -11,11 +11,15 @@ import {
 
 @Entity({ name: 'EducationalDetailsHealthcare' })
 export class EducationalDetailsHealthcare extends BaseEntity {
+  
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar', length: 15, unique: true })
   mobileNumber!: string;
+
+  @Column({ type: "uuid" })
+  userLoginId !: string;
 
   @Column({ type: 'varchar', length: 255 })
   collegeName!: string;

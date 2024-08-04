@@ -5,9 +5,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
 
 @Entity({ name: 'Sector' })
 export class Sector extends BaseEntity {
@@ -42,4 +44,7 @@ export class Sector extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
+
+  @OneToMany(() => OrderItemBooking, item => item.sector)
+  orderItems !: OrderItemBooking;
 }

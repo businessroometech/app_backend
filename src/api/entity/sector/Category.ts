@@ -8,24 +8,21 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-// import { EducationalDetailsHealthcare } from "./EducationalDetailsHealthcare";
 
-@Entity({ name: 'Internship' })
-export class Internship extends BaseEntity {
+@Entity({ name: 'Category' })
+export class Category extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
-  educationalDetailsHealthcareId!: string;
+  sectorId!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  designation!: string;
+  @Column({ type: 'varchar' })
+  categoryName!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  companyName!: string;
-
-  @Column({ type: 'int', default: 0 })
-  yearOfExperience!: number;
+  @Column({ type: 'text' })
+  categoryDescription!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -49,7 +46,7 @@ export class Internship extends BaseEntity {
     this.id = this.generateUUID();
   }
 
-  private generateUUID(): string {
+  private generateUUID() {
     return randomBytes(16).toString('hex');
   }
 }

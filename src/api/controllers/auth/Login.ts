@@ -3,9 +3,9 @@ import { Request, Response } from 'express';
 import { CookieOptions } from 'express';
 import jwt from 'jsonwebtoken';
 
-import { RefreshToken } from '@/api/entity/RefreshToken';
+import { RefreshToken } from '@/api/entity/others/RefreshToken';
 
-import { UserLogin } from '../../entity/UserLogin';
+import { UserLogin } from '../../entity/user/UserLogin';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {

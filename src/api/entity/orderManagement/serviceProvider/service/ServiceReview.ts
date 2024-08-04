@@ -5,35 +5,30 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+// import { Service } from './Service';
+// import { Provider } from '../Provider';
 
-@Entity({ name: 'EducationalDetails' })
-export class EducationalDetails extends BaseEntity {
+@Entity({ name: 'ServiceReview' })
+export class ServiceReview extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
+  @Column({ type: 'uuid' })
+  serviceProviderId!: string;
 
   @Column({ type: 'uuid' })
-  sectorId!: string;
-
-  @Column({ type: 'varchar', length: 255 })
-  collegeName!: string;
-
-  @Column({ type: 'varchar', length: 255 })
-  degree!: string;
+  serviceId!: string;
 
   @Column({ type: 'int' })
-  yearOfCompletion!: number;
+  rating!: number;
 
-  @Column({ type: 'text', nullable: true })
-  otherCertifications!: string;
-
-  @Column({ type: 'text', nullable: true })
-  achievements!: string;
+  @Column({ type: 'text' })
+  comment!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -60,4 +55,10 @@ export class EducationalDetails extends BaseEntity {
   private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
+
+  // @ManyToOne(() => Provider, provider => provider.serviceReviews)
+  // provider !: Provider;
+
+  // @ManyToOne(() => Service, service => service.reviews)
+  // service !: Service[];
 }
