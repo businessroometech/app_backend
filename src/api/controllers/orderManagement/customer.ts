@@ -8,10 +8,10 @@ import { RescheduledBooking } from '@/api/entity/orderManagement/customer/Resche
 
 // Add to Cart
 export const addToCart = async (req: Request, res: Response) => {
-    const { sectorId, customerId, serviceProviderId, serviceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
+    const { cartId, sectorId, customerId, serviceProviderId, serviceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
 
     try {
-        let cart = await Cart.findOne({ where: { customerId, sectorId } });
+        let cart = await Cart.findOne({ where: { id: cartId } });
 
         if (!cart) {
             cart = await Cart.create({
@@ -84,11 +84,11 @@ export const removeFromCart = async (req: Request, res: Response) => {
 
 // Checkout
 export const checkout = async (req: Request, res: Response) => {
-    const { customerId, sectorId } = req.body;
+    const { cartId, customerId, sectorId } = req.body;
 
     try {
 
-        const cart = await Cart.findOne({ where: { customerId, sectorId } });
+        const cart = await Cart.findOne({ where: { id: cartId } });
 
         if (!cart || cart.totalItems === 0) {
             return res.status(400).json({ message: 'Cart is empty' });
@@ -96,7 +96,6 @@ export const checkout = async (req: Request, res: Response) => {
 
         const order = await Order.create({
             customerId: cart.customerId,
-            sectorId: cart.cartItemBookings[0].sectorId,
             totalAmount: cart.totalAmount,
             totalItems: cart.totalItems,
             createdBy: 'system',
