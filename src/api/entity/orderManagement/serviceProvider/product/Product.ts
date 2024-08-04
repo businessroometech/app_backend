@@ -10,6 +10,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { OrderItemBooking } from '../../customer/OrderItemBooking';
+import { CartItemBooking } from '../../customer/CartItemBooking';
 // import { Provider } from '../Provider';
 // import { ProductReview } from '../product/ProductReview';
 // import { OrderItem } from '../../customer/OrderItem';
@@ -71,10 +73,10 @@ export class Product extends BaseEntity {
   // @OneToMany(() => ProductReview, review => review.product)
   // reviews !: ProductReview[];
 
-  // @OneToMany(() => OrderItem, orderItem => orderItem.product)
-  // orderItems !: OrderItem[];
+  @OneToMany(() => OrderItemBooking, orderItem => orderItem.service)
+  orderItems !: OrderItemBooking[];
 
-  // @OneToMany(() => CartItem, cartItem => cartItem.product)
-  // cartItems !: OrderItem[];
+  @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
+  cartItems !: CartItemBooking[];
 }
 
