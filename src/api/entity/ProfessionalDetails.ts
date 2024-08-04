@@ -29,7 +29,7 @@ export class ProfessionalDetails extends BaseEntity {
   @Column({ type: 'uuid' })
   portfolioDocument!: string;
 
-  @Column({ type: 'int', nullable: true , default: 0})
+  @Column({ type: 'int', nullable: true, default: 0 })
   totalYearsExperience!: number;
 
   @Column({ type: 'text', nullable: true })

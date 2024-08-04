@@ -6,9 +6,8 @@ export const getSector = async (req: Request, res: Response) => {
   try {
     const { sectorName } = req.body;
 
-    if( !sectorName )
-    {
-      res.status(400).json({ status: "error", message: "Provide sectorname!" });
+    if (!sectorName) {
+      res.status(400).json({ status: 'error', message: 'Provide sectorname!' });
       return;
     }
 

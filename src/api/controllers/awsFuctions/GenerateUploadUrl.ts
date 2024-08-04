@@ -42,22 +42,9 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
 
 export const addDocumentUpload = async (req: Request, res: Response) => {
   try {
+    const { bucketName, key, contentType, documentType, documentDescription, documentSize } = req.body;
 
-    const {
-      bucketName,
-      key,
-      contentType,
-      documentType,
-      documentDescription,
-      documentSize,
-    } = req.body;
-
-    if (!bucketName ||
-      !key ||
-      !contentType ||
-      !documentType ||
-      !documentDescription ||
-      !documentSize) {
+    if (!bucketName || !key || !contentType || !documentType || !documentDescription || !documentSize) {
       return res.status(400).json({ status: 'error', message: 'Please provide complete data to upload in DB' });
     }
 
@@ -71,12 +58,14 @@ export const addDocumentUpload = async (req: Request, res: Response) => {
     }).save();
 
     res.status(201).json({
-      status: "success", message: "Document uploaded", data: {
-        document: doc
-      }
-    })
+      status: 'success',
+      message: 'Document uploaded',
+      data: {
+        document: doc,
+      },
+    });
   } catch (error) {
     console.error('Error uploading document to DB :', error);
     res.status(500).json({ status: 'error', message: 'Server error.' });
   }
-}
+};
