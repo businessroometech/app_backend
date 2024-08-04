@@ -7,37 +7,24 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
-} from 'typeorm';
+} from 'typeorm';1
 
-interface ServiceOffered {
-    sector: string;
-    category: string;
-    type: 'primary' | 'secondary';
-    name: string;
-    description: string;
-    price: string;
-    per: string;
+interface SectorCategory {
+    sectorId: string;
+    categoryIds: string[];
 }
 
-@Entity({ name: 'UserSectorRole' })
-export class UserSectorRole extends BaseEntity {
+@Entity({ name: 'UserSectorCategory' })
+export class UserSectorCategory extends BaseEntity {
+
     @PrimaryGeneratedColumn('uuid')
     id!: string;
-
-    @Column({ type: 'varchar', length: 15, unique: true })
-    mobileNumber!: string;
 
     @Column({ type: 'uuid' })
     userId!: string;
 
     @Column({ type: 'simple-json' })
-    sectorsAssociated!: string[];
-
-    @Column({ type: 'simple-json' })
-    categoriesAssociated!: string[];
-
-    @Column({ type: 'simple-json' })
-    servicesOffered!: ServiceOffered[];
+    sectorCategoryAssociation!: SectorCategory[];
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

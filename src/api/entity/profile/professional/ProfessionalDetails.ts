@@ -11,37 +11,29 @@ import {
 
 @Entity({ name: 'ProfessionalDetails' })
 export class ProfessionalDetails extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
 
   @Column({ type: 'uuid' })
   sectorId!: string;
 
   @Column({ type: 'uuid' })
-  userLoginId!: string;
+  userId!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  workType!: string;
+  @Column({ type: "simple-array" })
+  portfolioDocument!: string[];
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  alternateWorks!: string;
-
-  @Column({ type: 'uuid' })
-  portfolioDocument!: string;
-
-  @Column({ type: 'int', nullable: true , default: 0})
+  @Column({ type: 'int', nullable: true, default: 0 })
   totalYearsExperience!: number;
 
   @Column({ type: 'text', nullable: true })
-  anyComments!: string;
+  comments!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255 })
   preferredWorkType!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255 })
   preferredLocation!: string;
 
   @Column({ type: 'varchar', default: 'system' })

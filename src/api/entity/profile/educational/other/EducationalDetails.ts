@@ -14,14 +14,11 @@ export class EducationalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
-
   @Column({ type: 'uuid' })
   sectorId!: string;
 
   @Column({ type: 'uuid' })
-  userLoginId!: string;
+  userId!: string;
 
   @Column({ type: 'varchar', length: 255 })
   collegeName!: string;

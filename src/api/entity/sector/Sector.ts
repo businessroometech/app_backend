@@ -9,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OrderItem } from '../orderManagement/customer/OrderItem';
+import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
 
 @Entity({ name: 'Sector' })
 export class Sector extends BaseEntity {
@@ -45,6 +45,6 @@ export class Sector extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToMany(() => OrderItem, item => item.sector)
-  orderItems !: OrderItem;
+  @OneToMany(() => OrderItemBooking, item => item.sector)
+  orderItems !: OrderItemBooking;
 }

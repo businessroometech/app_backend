@@ -14,6 +14,7 @@ import authRouter from '../src/api/routes/auth/AuthRoutes';
 import sectorsRouter from '../src/api/routes/sectors/SectorRoutes';
 import rolesRouter from './api/routes/roles/RoleRoutes';
 import usersRouter from './api/routes/users/UserRoutes';
+import profileRouter from './api/routes/profile/Profile';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -44,6 +45,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/sectors', sectorsRouter);
 app.use('/api/v1/roles', rolesRouter);
 app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/profile', profileRouter);
 // app.use('/health-check', healthCheckRouter);
 
 // Error handlers

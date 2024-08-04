@@ -11,8 +11,8 @@ export class Cart extends BaseEntity {
     @Column({ type: "uuid" })
     customerId !: string;
 
-    @Column({ type: "uuid" })
-    sectorId !: string;
+    // @Column({ type: "uuid" })
+    // sectorId !: string;
 
     @Column({ type: "float" })
     totalAmount !: number;

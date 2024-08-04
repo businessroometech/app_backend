@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
-import { OrderItem } from './OrderItem';
+import { OrderItemBooking } from './OrderItemBooking';
 
 @Entity({ name: "Order" })
 export class Order extends BaseEntity {
@@ -11,8 +11,8 @@ export class Order extends BaseEntity {
     @Column({ type: "uuid" })
     customerId !: string;
 
-    @Column({ type: "uuid" })
-    sectorId !: string;
+    // @Column({ type: "uuid" })
+    // sectorId !: string;
 
     @Column({ type: "float" })
     totalAmount !: number;
@@ -46,7 +46,7 @@ export class Order extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @OneToMany(() => OrderItem, item => item.order)
-    orderItems !: OrderItem[];
+    @OneToMany(() => OrderItemBooking, item => item.order)
+    orderItems !: OrderItemBooking[];
 
 }

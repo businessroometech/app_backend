@@ -15,14 +15,11 @@ export class FinancialDetails extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 15, unique: true })
-    mobileNumber!: string;
-
     @Column({ type: 'uuid' })
     sectorId!: string;
 
     @Column({ type: 'uuid' })
-    userLoginId!: string;
+    userId!: string;
 
     @Column({ type: 'varchar', length: 255 })
     bankName!: string;
@@ -30,10 +27,10 @@ export class FinancialDetails extends BaseEntity {
     @Column({ type: 'varchar', length: 255 })
     ifscCode!: string;
 
-    @Column({ type: 'json' })
+    @Column({ type: 'simple-array' })
     upiIds!: string[];
 
-    @Column({ type: 'json' })
+    @Column({ type: 'simple-array' })
     cancelledCheques!: string[];
 
     @Column({ type: 'varchar', default: 'system' })

@@ -14,17 +14,14 @@ export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
-
   @Column({ type: 'uuid' })
   sectorId!: string;
 
   @Column({ type: 'uuid' })
-  userLoginId!: string;
+  userId!: string;
 
   @Column({ type: 'uuid' })
-  profilePicture!: string;
+  profilePictureUploadId!: string;
 
   @Column({ type: 'varchar', length: 255 })
   fullName!: string;
@@ -32,23 +29,26 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'date' })
   dob!: Date;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ type: 'varchar', length: 15, unique: true })
+  mobileNumber!: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   emailAddress!: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text' })
   bio!: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'json' })
   permanentAddress!: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'json' })
   currentAddress!: string;
 
-  @Column({ type: 'varchar', length: 14, unique: true, nullable: true })
-  aadharNumber!: string;
+  @Column({ type: 'uuid' })
+  aadharNumberUploadId!: string;
 
-  @Column({ type: 'varchar', length: 10, unique: true, nullable: true })
-  panNumber!: string;
+  @Column({ type: 'uuid' })
+  panNumberUploadId!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

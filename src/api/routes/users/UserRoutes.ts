@@ -4,12 +4,12 @@ import {
   getEducationalDetails,
   getPersonalDetails,
   getProfessionalDetails,
-  getUserDetails,
+  // getUserDetails,
 } from '@/api/controllers/users/UserController';
 
 const Router = express.Router();
 
-Router.post('/user-details', getUserDetails);
+// Router.post('/user-details', getUserDetails);
 Router.post('/personal-details', getPersonalDetails);
 Router.post('/professional-details', getProfessionalDetails);
 Router.post('/educational-details', getEducationalDetails);

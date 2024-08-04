@@ -10,10 +10,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Provider } from '../Provider';
-import { ProductReview } from '../product/ProductReview';
-import { OrderItem } from '../../customer/OrderItem';
-import { CartItem } from '../../customer/CartItem';
+// import { Provider } from '../Provider';
+// import { ProductReview } from '../product/ProductReview';
+// import { OrderItem } from '../../customer/OrderItem';
+// import { CartItem } from '../../customer/CartItem';
 
 @Entity({ name: 'Product' })
 export class Product extends BaseEntity {
@@ -22,7 +22,7 @@ export class Product extends BaseEntity {
   id!: string;
 
   @Column({ type: 'uuid' })
-  providerId!: string;
+  serviceProviderId!: string;
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;
@@ -65,16 +65,16 @@ export class Product extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @ManyToOne(() => Provider, provider => provider.products)
-  provider !: Provider;
+  // @ManyToOne(() => Provider, provider => provider.products)
+  // provider !: Provider;
 
-  @OneToMany(() => ProductReview, review => review.product)
-  reviews !: ProductReview[];
+  // @OneToMany(() => ProductReview, review => review.product)
+  // reviews !: ProductReview[];
 
-  @OneToMany(() => OrderItem, orderItem => orderItem.product)
-  orderItems !: OrderItem[];
+  // @OneToMany(() => OrderItem, orderItem => orderItem.product)
+  // orderItems !: OrderItem[];
 
-  @OneToMany(() => CartItem, cartItem => cartItem.product)
-  cartItems !: OrderItem[];
+  // @OneToMany(() => CartItem, cartItem => cartItem.product)
+  // cartItems !: OrderItem[];
 }
 

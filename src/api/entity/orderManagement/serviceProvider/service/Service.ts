@@ -10,10 +10,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Provider } from '../Provider';
-import { ServiceReview } from '../service/ServiceReview';
-import { OrderItem } from '../../customer/OrderItemBooking';
-import { CartItem } from '../../customer/CartItemBooking';
+
+// import { ServiceReview } from '../service/ServiceReview';
+// import { OrderItem } from '../../customer/OrderItemBooking';
+// import { CartItem } from '../../customer/CartItemBooking';
 
 @Entity({ name: 'Service' })
 export class Service extends BaseEntity {
@@ -22,10 +22,16 @@ export class Service extends BaseEntity {
   id!: string;
 
   @Column({ type: 'uuid' })
-  providerId!: string;
+  serviceProviderId!: string;
+
+  @Column({ type: 'uuid' })
+  sectorId!: string;
+  
+  @Column({ type: 'uuid' })
+  categoryId!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  category!: string;
+  name!: string;
 
   @Column({ type: 'text' })
   description!: string;
@@ -35,9 +41,6 @@ export class Service extends BaseEntity {
 
   @Column({ type: 'varchar' })
   per !: string;
-
-  @Column({ type: 'varchar' })
-  duration !: string;
 
   @Column({ type: "enum", enum: ['Draft', 'Published'] })
   status !: string;
@@ -68,15 +71,15 @@ export class Service extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @ManyToOne(() => Provider, provider => provider.services)
-  provider !: Provider;
+  // @ManyToOne(() => Provider, provider => provider.services)
+  // provider !: Provider;
 
-  @OneToMany(() => ServiceReview, review => review.service)
-  reviews !: ServiceReview[];
+  // @OneToMany(() => ServiceReview, review => review.service)
+  // reviews !: ServiceReview[];
 
-  @OneToMany(() => OrderItem, orderItem => orderItem.service)
-  orderItems !: OrderItem[];
+  // @OneToMany(() => OrderItem, orderItem => orderItem.service)
+  // orderItems !: OrderItem[];
 
-  @OneToMany(() => CartItem, cartItem => cartItem.service)
-  cartItems !: OrderItem[];
+  // @OneToMany(() => CartItem, cartItem => cartItem.service)
+  // cartItems !: OrderItem[];
 }

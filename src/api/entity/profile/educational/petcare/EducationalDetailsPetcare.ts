@@ -15,11 +15,8 @@ export class EducationalDetailsPetcare extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
-
   @Column({ type: "uuid" })
-  userLoginId !: string;
+  userId !: string;
 
   @Column({ type: 'int' })
   yearsOfExperience!: number;

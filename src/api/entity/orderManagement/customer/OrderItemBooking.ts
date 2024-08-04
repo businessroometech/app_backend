@@ -1,10 +1,11 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, JoinColumn, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, JoinColumn, OneToOne, } from 'typeorm';
 import { Service } from '../serviceProvider/service/Service';
 import { Product } from '../serviceProvider/product/Product';
 import { Order } from './Order';
 import { Sector } from '../../sector/Sector';
 import { UserLogin } from '../../user/UserLogin';
+import { ServiceJob } from '../serviceProvider/serviceJob/ServiceJob';
 
 interface Address {
     addressLine1: string,
@@ -130,4 +131,7 @@ export class OrderItemBooking extends BaseEntity {
 
     @ManyToOne(() => UserLogin, user => user.orderItemBookings)
     user !: UserLogin;
+
+    @OneToOne(() => ServiceJob, job => job.orderItemBooking)
+    serviceJobs !: ServiceJob;
 }

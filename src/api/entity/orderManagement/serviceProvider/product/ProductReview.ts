@@ -9,8 +9,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Product } from './Product';
-import { Provider } from '../Provider';
+// import { Product } from './Product';
+// import { Provider } from '../Provider';
 
 @Entity({ name: 'ProductReview' })
 export class ProductReview extends BaseEntity {
@@ -19,7 +19,7 @@ export class ProductReview extends BaseEntity {
   id!: string;
 
   @Column({ type: 'uuid' })
-  providerId!: string;
+  serviceProviderId!: string;
 
   @Column({ type: 'uuid' })
   productId!: string;
@@ -56,9 +56,9 @@ export class ProductReview extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @ManyToOne(() => Provider, provider => provider.productReviews)
-  provider !: Provider;
+  // @ManyToOne(() => Provider, provider => provider.productReviews)
+  // provider !: Provider;
 
-  @ManyToOne(() => Product, product => product.reviews)
-  product !: Product;
+  // @ManyToOne(() => Product, product => product.reviews)
+  // product !: Product;
 }
