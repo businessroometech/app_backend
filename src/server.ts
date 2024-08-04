@@ -14,7 +14,10 @@ import authRouter from '../src/api/routes/auth/AuthRoutes';
 import sectorsRouter from '../src/api/routes/sectors/SectorRoutes';
 import rolesRouter from './api/routes/roles/RoleRoutes';
 import usersRouter from './api/routes/users/UserRoutes';
-import profileRouter from './api/routes/profile/Profile';
+import profileRouter from './api/routes/profile/ProfileRoutes';
+import customerRouter from './api/routes/orderManagement/CustomerRoutes';
+import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
+
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -46,6 +49,8 @@ app.use('/api/v1/sectors', sectorsRouter);
 app.use('/api/v1/roles', rolesRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/profile', profileRouter);
+app.use('/api/v1/order-management', customerRouter);
+app.use('/api/v1/order-management', serviceProviderRouter);
 // app.use('/health-check', healthCheckRouter);
 
 // Error handlers

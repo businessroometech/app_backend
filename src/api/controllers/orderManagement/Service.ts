@@ -4,6 +4,7 @@ import { Between } from 'typeorm';
 import { format } from 'date-fns';
 import { Service } from '@/api/entity/orderManagement/serviceProvider/service/Service';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
+import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 
 export const BetweenDates = (from: Date | string, to: Date | string) =>
     Between(
@@ -13,22 +14,28 @@ export const BetweenDates = (from: Date | string, to: Date | string) =>
 
 export const getYourServices = async (req: Request, res: Response) => {
     try {
-        const { status, priceStart, priceEnd, dateStart, dataEnd, serviceCategory, page, limit } = req.body;
+        const { status, priceStart, priceEnd, dateStart, dateEnd, serviceCategory, page, limit } = req.query;
+
+        const parsedPriceStart = parseFloat(priceStart as string);
+        const parsedPriceEnd = parseFloat(priceEnd as string);
+        const parsedPage = parseInt(page as string);
+        const parsedLimit = parseInt(limit as string);
+        const serviceCategories = (serviceCategory as string).split(',');
 
         const [jobs, total] = await ServiceJob.findAndCount({
             where: {
-                status: status,
+                status: status as string,
                 orderItemBooking: {
-                    deliveryDate: BetweenDates(dateStart, dataEnd),
-                    price: Between(priceStart, priceEnd),
+                    deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
+                    price: Between(parsedPriceStart, parsedPriceEnd),
                 },
             },
             relations: ['orderItemBooking', 'orderItemBooking.service'],
-            skip: (page - 1) * limit,
-            take: limit,
+            skip: (parsedPage - 1) * parsedLimit,
+            take: parsedLimit,
         });
 
-        const filteredJobs = jobs.filter(job => serviceCategory.includes(job.orderItemBooking.service.name));
+        const filteredJobs = jobs.filter(job => serviceCategories.includes(job.orderItemBooking.service.name));
 
         res.status(200).json({
             status: 'success',
@@ -36,9 +43,9 @@ export const getYourServices = async (req: Request, res: Response) => {
             data: {
                 services: filteredJobs,
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
+                page: parsedPage,
+                limit: parsedLimit,
+                totalPages: Math.ceil(total / parsedLimit),
             },
         });
 
@@ -75,15 +82,15 @@ export const addService = async (req: Request, res: Response) => {
 // // accept the service
 export const acceptService = async (req: Request, res: Response) => {
     try {
-        const { orderId, orderItemId } = req.body;
+        const { orderItemBookingId } = req.body;
 
-        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemId } });
+        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId } });
         if (!serviceJob) {
             res.status(404).json({ status: "error", message: "ServiceJob not found" });
             return;
         }
 
-        const orderItemBooking = await OrderItemBooking.findOne({ where: { orderId, id: orderItemId } });
+        const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemBookingId } });
         if (!orderItemBooking) {
             res.status(404).json({ status: "error", message: "OrderItemBooking not found" });
             return;
@@ -102,27 +109,43 @@ export const acceptService = async (req: Request, res: Response) => {
     }
 };
 
-// // reject the service
-// export const rejectService = async (req: Request, res: Response) => {
-//     try {
-//         const { orderId, orderItemId, reason } = req.body;
+// reject the service
+export const rejectService = async (req: Request, res: Response) => {
+    try {
+        const { orderId, orderItemId, reason, userId } = req.body;
 
-//         const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
-//         if (!orderItem) {
-//             res.status(500).json({ status: "error", message: "OrderItem not found" });
-//             return;
-//         }
+        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemId } });
+        if (!serviceJob) {
+            res.status(404).json({ status: "error", message: "ServiceJob not found" });
+            return;
+        }
 
-//         orderItem!.serviceStatus = "Rejected";
-//         orderItem!.serviceStatusNote = reason;
-//         orderItem.save();
+        const orderItemBooking = await OrderItemBooking.findOne({ where: { orderId, id: orderItemId } });
+        if (!orderItemBooking) {
+            res.status(404).json({ status: "error", message: "OrderItemBooking not found" });
+            return;
+        }
 
-//         res.status(201).json({ status: "success", message: "Service rejected successfully", data: { orderItem } });
-//     } catch (error) {
-//         console.log("Cannot accept service :", error);
-//         res.status(500).json({ status: "error", message: 'Something went wrong' });
-//     }
-// }
+        serviceJob.status = "Rejected";
+        await serviceJob.save();
+
+        orderItemBooking.status = "Rejected";
+        await orderItemBooking.save();
+
+        const rejectedServiceJob = RejectedServiceJob.create({
+            serviceJobId: serviceJob.id,
+            reason: reason,
+            createdBy: userId || 'system',
+            updatedBy: userId || 'system',
+        });
+        await rejectedServiceJob.save();
+
+        res.status(200).json({ status: "success", message: "Service rejected successfully", data: { serviceJob, orderItemBooking, rejectedServiceJob } });
+    } catch (error) {
+        console.log("Cannot reject service :", error);
+        res.status(500).json({ status: "error", message: 'Something went wrong' });
+    }
+};
 
 // export const generateStartOtp = () => {
 
