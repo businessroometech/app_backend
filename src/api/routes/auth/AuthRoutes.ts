@@ -27,7 +27,7 @@ Router.post('/refresh', refresh);
 Router.get('/protected', authenticate, protectedRoute);
 
 Router.post('/generate-upload-url', generateUploadUrl);
-Router.post('/document-upload', addDocumentUpload);
+Router.post('/list-uploaded-document', addDocumentUpload);
 
 Router.post('/forgot-password/generate', sendNumberVerificationToken);
 Router.post('/forgot-password/verify', verifyCodeForPasswordReset);
