@@ -9,6 +9,14 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+interface Address {
+  addressLine1: string,
+  addressLine2: string,
+  city: string,
+  state: string,
+  pincode: string,
+}
+
 @Entity({ name: 'PersonalDetails' })
 export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -39,10 +47,10 @@ export class PersonalDetails extends BaseEntity {
   bio!: string;
 
   @Column({ type: 'json' })
-  permanentAddress!: string;
+  permanentAddress!: Address;
 
   @Column({ type: 'json' })
-  currentAddress!: string;
+  currentAddress!: Address;
 
   @Column({ type: 'uuid' })
   aadharNumberUploadId!: string;

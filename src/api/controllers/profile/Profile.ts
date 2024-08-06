@@ -18,23 +18,23 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
             sectorId,
             userId,
             mobileNumber,
-            profilePicture,
+            profilePictureId,
             fullName,
             dob,
             emailAddress,
             bio,
             permanentAddress,
             currentAddress,
-            aadharNumber,
-            panNumber,
+            aadharNumberId,
+            panNumberId,
             createdBy,
             updatedBy,
         } = req.body;
 
         // Ensure DocumentUpload entries for profile picture, Aadhar, and PAN numbers
-        const profilePictureUpload = await DocumentUpload.findOne({ where: { id: profilePicture } });
-        const aadharNumberUpload = await DocumentUpload.findOne({ where: { id: aadharNumber } });
-        const panNumberUpload = await DocumentUpload.findOne({ where: { id: panNumber } });
+        const profilePictureUpload = await DocumentUpload.findOne({ where: { id: profilePictureId } });
+        const aadharNumberUpload = await DocumentUpload.findOne({ where: { id: aadharNumberId } });
+        const panNumberUpload = await DocumentUpload.findOne({ where: { id: panNumberId } });
 
         if (!profilePictureUpload || !aadharNumberUpload || !panNumberUpload) {
             res.status(400).json({ status: 'error', message: 'Invalid document upload IDs' });
@@ -103,7 +103,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
         const {
             sectorId,
             userId,
-            portfolioDocument,
+            portfolioDocumentIds,
             exp,
             comments,
             preferredWorkType,
@@ -113,10 +113,10 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
         } = req.body;
 
         const portfolioUploads = await DocumentUpload.find({
-            where: { id: In(portfolioDocument) }
+            where: { id: In(portfolioDocumentIds) }
         });
 
-        if (portfolioUploads.length !== portfolioDocument.length) {
+        if (portfolioUploads.length !== portfolioDocumentIds.length) {
             res.status(400).json({ status: 'error', message: 'Invalid portfolio document IDs' });
             return;
         }
@@ -129,7 +129,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             details = ProfessionalDetails.create({
                 sectorId,
                 userId,
-                portfolioDocument,
+                portfolioDocumentUploadIds: portfolioDocumentIds,
                 totalYearsExperience: exp,
                 comments,
                 preferredWorkType,
@@ -142,7 +142,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             await ProfessionalDetails.update(
                 { sectorId, userId },
                 {
-                    portfolioDocument,
+                    portfolioDocumentUploadIds: portfolioDocumentIds,
                     totalYearsExperience: exp,
                     comments,
                     preferredWorkType,
@@ -449,7 +449,7 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
             bankName,
             ifscCode,
             upiIds,
-            cancelledCheques,
+            cancelledChequesIds,
             createdBy,
             updatedBy,
         } = req.body;
@@ -465,7 +465,7 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 bankName,
                 ifscCode,
                 upiIds,
-                cancelledCheques,
+                cancelledChequeUploadIds: cancelledChequesIds,
                 createdBy: createdBy || 'system',
                 updatedBy: updatedBy || 'system',
             }).save();
@@ -476,7 +476,7 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                     bankName,
                     ifscCode,
                     upiIds,
-                    cancelledCheques,
+                    cancelledChequeUploadIds: cancelledChequesIds,
                     updatedBy: updatedBy || 'system',
                 }
             );
