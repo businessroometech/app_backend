@@ -64,8 +64,8 @@ export const addDocumentUpload = async (req: Request, res: Response) => {
         document: doc,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading document to DB :', error);
-    res.status(500).json({ status: 'error', message: 'Server error.' });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };
