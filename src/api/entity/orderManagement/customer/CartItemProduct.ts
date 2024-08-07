@@ -11,8 +11,8 @@ interface Address {
     pincode: string,
 }
 
-@Entity({ name: "CartItem" })
-export class CartItem extends BaseEntity {
+@Entity({ name: "CartItemProduct" })
+export class CartItemProduct extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
@@ -76,9 +76,9 @@ export class CartItem extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Product, product => product.cartItems)
-    product!: Product;
+    @ManyToOne(() => Product, product => product.cartItemProducts)
+    cartProduct!: Product;
 
-    @ManyToOne(() => Cart, cart => cart.cartItems)
+    @ManyToOne(() => Cart, cart => cart.cartItemProducts)
     cart !: Cart;
 }

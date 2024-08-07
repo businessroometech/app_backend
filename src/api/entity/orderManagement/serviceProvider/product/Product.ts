@@ -12,10 +12,8 @@ import {
 } from 'typeorm';
 import { OrderItemBooking } from '../../customer/OrderItemBooking';
 import { CartItemBooking } from '../../customer/CartItemBooking';
-// import { Provider } from '../Provider';
-// import { ProductReview } from '../product/ProductReview';
-// import { OrderItem } from '../../customer/OrderItem';
-// import { CartItem } from '../../customer/CartItem';
+import { OrderItemProduct } from '../../customer/OrderItemProduct';
+import { CartItemProduct } from '../../customer/CartItemProduct';
 
 @Entity({ name: 'Product' })
 export class Product extends BaseEntity {
@@ -73,10 +71,10 @@ export class Product extends BaseEntity {
   // @OneToMany(() => ProductReview, review => review.product)
   // reviews !: ProductReview[];
 
-  @OneToMany(() => OrderItemBooking, orderItem => orderItem.service)
-  orderItems !: OrderItemBooking[];
+  @OneToMany(() => OrderItemProduct, orderItem => orderItem.orderProduct)
+  orderItemProducts !: OrderItemProduct[];
 
-  @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
-  cartItems !: CartItemBooking[];
+  @OneToMany(() => CartItemProduct, cartItem => cartItem.cartProduct)
+  cartItemProducts !: CartItemProduct[];
 }
 

@@ -73,7 +73,7 @@ export class CartItemBooking extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Service, service => service.cartItems)
+    @ManyToOne(() => Service, service => service.cartItemBookings)
     service!: Service;
 
     @ManyToOne(() => Cart, cart => cart.cartItemBookings)

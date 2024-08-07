@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
 import { CartItemBooking } from './CartItemBooking';
+import { CartItemProduct } from './CartItemProduct';
 
 @Entity({ name: "Cart" })
 export class Cart extends BaseEntity {
@@ -49,4 +50,6 @@ export class Cart extends BaseEntity {
     @OneToMany(() => CartItemBooking, item => item.cart)
     cartItemBookings !: CartItemBooking[];
 
+    @OneToMany(() => CartItemProduct, item => item.cart)
+    cartItemProducts !: CartItemProduct[];
 }

@@ -119,11 +119,8 @@ export class OrderItemProduct extends BaseEntity {
         return `${cityCode}${dateCode}${sectorCode}${typeCode}${orderSeq}`;
     }
 
-    @ManyToOne(() => Service, service => service.orderItems)
-    service!: Service;
-
-    @ManyToOne(() => Product, product => product.orderItems)
-    product!: Product;
+    @ManyToOne(() => Product, product => product.orderItemProducts)
+    orderProduct!: Product;
 
     @ManyToOne(() => Order, order => order.orderItems)
     order !: Order;

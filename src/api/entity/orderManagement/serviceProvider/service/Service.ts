@@ -80,8 +80,8 @@ export class Service extends BaseEntity {
   // reviews !: ServiceReview[];
 
   @OneToMany(() => OrderItemBooking, orderItem => orderItem.service)
-  orderItems !: OrderItemBooking[];
+  orderItemBookings !: OrderItemBooking[];
 
   @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
-  cartItems !: CartItemBooking[];
+  cartItemBookings !: CartItemBooking[];
 }
