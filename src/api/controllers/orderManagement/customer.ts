@@ -5,13 +5,21 @@ import { Order } from '../../entity/orderManagement/customer/Order';
 import { OrderItemBooking } from '../../entity/orderManagement/customer/OrderItemBooking';
 import { CancelledBooking } from '@/api/entity/orderManagement/customer/CancelledBooking';
 import { RescheduledBooking } from '@/api/entity/orderManagement/customer/RescheduledBooking';
+import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
+
+
+
+// ----------------------------------------------** IMP ** NEED TO ADD ACID PROPERTIES------------------------------------------
+
+
+
 
 // Add to Cart
 export const addToCart = async (req: Request, res: Response) => {
-    const { sectorId, customerId, serviceProviderId, serviceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
+    const { cartId, sectorId, customerId, serviceProviderId, serviceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
 
     try {
-        let cart = await Cart.findOne({ where: { customerId, sectorId } });
+        let cart = await Cart.findOne({ where: { id: cartId } });
 
         if (!cart) {
             cart = await Cart.create({
@@ -84,11 +92,10 @@ export const removeFromCart = async (req: Request, res: Response) => {
 
 // Checkout
 export const checkout = async (req: Request, res: Response) => {
-    const { customerId, sectorId } = req.body;
+    const { cartId } = req.body;
 
     try {
-
-        const cart = await Cart.findOne({ where: { customerId, sectorId } });
+        const cart = await Cart.findOne({ where: { id: cartId } });
 
         if (!cart || cart.totalItems === 0) {
             return res.status(400).json({ message: 'Cart is empty' });
@@ -96,16 +103,15 @@ export const checkout = async (req: Request, res: Response) => {
 
         const order = await Order.create({
             customerId: cart.customerId,
-            sectorId: cart.cartItemBookings[0].sectorId,
             totalAmount: cart.totalAmount,
             totalItems: cart.totalItems,
             createdBy: 'system',
             updatedBy: 'system'
         }).save();
 
-        let orderItems;
+        const orderItems = [];
         for (const cartItem of cart.cartItemBookings) {
-            orderItems = OrderItemBooking.create({
+            const orderItemBooking = await OrderItemBooking.create({
                 orderId: order.id,
                 sectorId: cartItem.sectorId,
                 customerId: cartItem.customerId,
@@ -118,6 +124,17 @@ export const checkout = async (req: Request, res: Response) => {
                 deliveryTime: cartItem.deliveryTime,
                 deliveryAddress: cartItem.deliveryAddress,
                 additionalNote: cartItem.additionalNote,
+                createdBy: 'system',
+                updatedBy: 'system'
+            }).save();
+            orderItems.push(orderItemBooking);
+
+            await ServiceJob.create({
+                orderItemBookingId: orderItemBooking.id,
+                customerId: cartItem.customerId,
+                serviceProviderId: cartItem.serviceProviderId,
+                status: 'Pending',
+                note: cartItem.additionalNote,
                 createdBy: 'system',
                 updatedBy: 'system'
             }).save();
@@ -159,6 +176,14 @@ export const cancelOrderItemBooking = async (req: Request, res: Response) => {
         orderItemBooking.status = 'Cancelled';
         orderItemBooking.updatedBy = updatedBy || 'system';
         await orderItemBooking.save();
+
+        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemBooking.id } });
+
+        if (serviceJob) {
+            serviceJob.status = 'Cancelled';
+            serviceJob.updatedBy = updatedBy || 'system';
+            await serviceJob.save();
+        }
 
         res.status(200).json({ status: "success", message: 'Order item booking cancelled successfully', data: { orderItemBooking, cancelledBooking } });
     } catch (error) {
@@ -209,6 +234,24 @@ export const rescheduleOrderItemBooking = async (req: Request, res: Response) =>
         orderItemBooking.status = 'Rescheduled';
         orderItemBooking.updatedBy = updatedBy || 'system';
         await orderItemBooking.save();
+
+        const oldServiceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemBooking.id } });
+
+        if (oldServiceJob) {
+            oldServiceJob.status = 'Rescheduled';
+            oldServiceJob.updatedBy = updatedBy || 'system';
+            await oldServiceJob.save();
+        }
+
+        await ServiceJob.create({
+            orderItemBookingId: newOrderItemBooking.id,
+            customerId: newOrderItemBooking.customerId,
+            serviceProviderId: newOrderItemBooking.serviceProviderId,
+            status: 'Pending',
+            note: newOrderItemBooking.note,
+            createdBy: createdBy || 'system',
+            updatedBy: updatedBy || 'system'
+        }).save();
 
         res.status(200).json({ status: "success", message: 'Order item booking rescheduled successfully', data: { rescheduledBooking, newOrderItemBooking } });
     } catch (error) {

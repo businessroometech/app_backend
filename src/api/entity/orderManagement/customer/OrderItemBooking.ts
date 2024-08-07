@@ -39,7 +39,7 @@ export class OrderItemBooking extends BaseEntity {
     @Column({ type: "uuid" })
     serviceId!: string;
 
-    @Column({ type: "enum", enum: ["Pending", "Assigned", "Completed", "Cancelled", "Rescheduled"], default: "Pending" })
+    @Column({ type: "enum", enum: ["Pending", "Assigned", "Rejected", "Completed", "Cancelled", "Rescheduled"], default: "Pending" })
     status !: string;
 
     @Column({ type: "text", nullable: true })

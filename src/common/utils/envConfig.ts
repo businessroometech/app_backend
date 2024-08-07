@@ -12,10 +12,10 @@ export const env = cleanEnv(process.env, {
   COMMON_RATE_LIMIT_WINDOW_MS: num({ devDefault: testOnly(1000) }),
 
   // AWS DB environment variables
-  AWS_HOST: host(),
-  AWS_USERNAME: str(),
-  AWS_PASSWORD: str(),
-  AWS_DB_NAME: str(),
+  DEV_AWS_HOST: host(),
+  DEV_AWS_USERNAME: str(),
+  DEV_AWS_PASSWORD: str(),
+  DEV_AWS_DB_NAME: str(),
 
   // LOCAL DB environment variables
   LOCAL_DB_USERNAME: str(),

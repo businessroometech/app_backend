@@ -142,9 +142,9 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 export const changePassword = async (req: Request, res: Response) => {
   try {
-    const { mobileNumber, password, newPassword } = req.body;
+    const { userId, password, newPassword } = req.body;
 
-    const user: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } })
+    const user: UserLogin | null = await UserLogin.findOne({ where: { id: userId } })
 
     if (!user) {
       return res.status(404).json({ status: 'error', message: 'User not found' });

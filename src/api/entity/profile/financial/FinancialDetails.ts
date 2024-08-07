@@ -31,7 +31,7 @@ export class FinancialDetails extends BaseEntity {
     upiIds!: string[];
 
     @Column({ type: 'simple-array' })
-    cancelledCheques!: string[];
+    cancelledChequeUploadIds!: string[];
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

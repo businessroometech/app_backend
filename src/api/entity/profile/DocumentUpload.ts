@@ -1,3 +1,4 @@
+import { IsEnum, validateOrReject } from 'class-validator';
 import { randomBytes } from 'crypto';
 import {
   BaseEntity,
@@ -21,8 +22,8 @@ export enum DocumentType {
 @Entity('DocumentUpload')
 export class DocumentUpload extends BaseEntity {
 
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
   @Column({ type: 'varchar', length: 255 })
   bucketName!: string;
@@ -33,12 +34,12 @@ export class DocumentUpload extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   contentType!: string;
 
-    @Column({
-        type: 'enum',
-        enum: DocumentType,
-        nullable: true,
-    })
-    documentType?: DocumentType;
+  @Column({
+    type: 'enum',
+    enum: DocumentType,
+  })
+  @IsEnum(DocumentType)
+  documentType?: DocumentType;
 
   @Column({ type: 'text', nullable: true })
   documentDescription?: string;
@@ -66,9 +67,18 @@ export class DocumentUpload extends BaseEntity {
   @BeforeInsert()
   async beforeInsert() {
     this.id = this.generateUUID();
+    await this.validate();
   }
 
   private generateUUID() {
     return randomBytes(16).toString('hex');
+  }
+
+  private async validate() {
+    try {
+      await validateOrReject(this);
+    } catch (errors) {
+      throw new Error(`Validation failed! ${errors}`);
+    }
   }
 }

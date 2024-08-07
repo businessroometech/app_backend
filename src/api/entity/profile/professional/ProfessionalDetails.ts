@@ -22,7 +22,7 @@ export class ProfessionalDetails extends BaseEntity {
   userId!: string;
 
   @Column({ type: "simple-array" })
-  portfolioDocument!: string[];
+  portfolioDocumentUploadIds!: string[];
 
   @Column({ type: 'int', nullable: true, default: 0 })
   totalYearsExperience!: number;
