@@ -1,4 +1,4 @@
-import { env } from './src/common/utils/envConfig';
+import { env } from './common/utils/envConfig';
 
 export default {
   type: 'mysql',

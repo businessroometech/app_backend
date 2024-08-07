@@ -79,6 +79,6 @@ export class CartItem extends BaseEntity {
     @ManyToOne(() => Product, product => product.cartItems)
     product!: Product;
 
-    @ManyToOne(() => Cart, cart => cart.cartItems)
+    // @ManyToOne(() => Cart, cart => cart.cartItems)
     cart !: Cart;
 }
