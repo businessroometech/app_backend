@@ -10,7 +10,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
   await queryRunner.startTransaction();
 
   try {
-    const { mobileNumber, password, firstName, lastName, emailAddress, primaryRole, userType, sectorId, categoryId, createdBy, updatedBy } = req.body;
+    const { mobileNumber, password, fullName, emailAddress, primaryRole, userType, sectorId, categoryId, createdBy, updatedBy } = req.body;
 
     if (!mobileNumber || !password) {
       res.status(400).json({ status: 'error', message: 'Please provide a mobile number and password.' });
@@ -51,7 +51,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       mobileNumber,
       sectorId,
       userLoginId: newUser.id,
-      fullName: `${firstName} ${lastName}`,
+      fullName,
       emailAddress: emailAddress || null,
     });
     await queryRunner.manager.save(personalDetails);
