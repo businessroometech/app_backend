@@ -12,7 +12,7 @@ import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import sectorsRouter from '../src/api/routes/sectors/SectorRoutes';
-import rolesRouter from './api/routes/roles/RoleRoutes';
+import CategoriesRouter from './api/routes/category/CategoryRoutes';
 import usersRouter from './api/routes/users/UserRoutes';
 import profileRouter from './api/routes/profile/ProfileRoutes';
 import customerRouter from './api/routes/orderManagement/CustomerRoutes';
@@ -46,7 +46,7 @@ app.use(requestLogger);
 // Routes mounting
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/sectors', sectorsRouter);
-app.use('/api/v1/roles', rolesRouter);
+app.use('/api/v1/categories', CategoriesRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/profile', profileRouter);
 app.use('/api/v1/order-management', customerRouter);
