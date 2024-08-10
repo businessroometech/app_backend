@@ -447,6 +447,8 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
             sectorId,
             userId,
             bankName,
+            accountName,
+            accountNumber,
             ifscCode,
             upiIds,
             cancelledChequesIds,
@@ -463,6 +465,8 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 sectorId,
                 userId,
                 bankName,
+                accountName,
+                accountNumber,
                 ifscCode,
                 upiIds,
                 cancelledChequeUploadIds: cancelledChequesIds,
@@ -474,6 +478,8 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 { sectorId, userId },
                 {
                     bankName,
+                    accountName,
+                    accountNumber,
                     ifscCode,
                     upiIds,
                     cancelledChequeUploadIds: cancelledChequesIds,
@@ -500,5 +506,81 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
         }
         console.error('Error during filling financial details:', error);
         res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
+    }
+};
+
+export const getPersonalDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await PersonalDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Personal details fetched for user with id: ${userId}`,
+            data: {
+                personalDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching personal details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch personal details' });
+    }
+};
+
+export const getProfessionalDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await ProfessionalDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Professional details fetched for user with id: ${userId}`,
+            data: {
+                professionalDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching professional details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch professional details' });
+    }
+};
+
+export const getEducationalDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId, sectortype } = req.body;
+        if (sectortype === 'healthcare') {
+
+        }
+        else if (sectortype === 'petcare') {
+
+        }
+        else {
+            const details = await EducationalDetails.findOne({ where: { userId, sectorId } });
+            res.status(200).json({
+                status: 'success',
+                message: `Educational details fetched for user with id: ${userId}`,
+                data: {
+                    educationalDetails: details,
+                },
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching educational details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch educational details' });
+    }
+};
+
+export const getFinancialDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await FinancialDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Financial details fetched for user with id: ${userId}`,
+            data: {
+                financialDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching financial details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch financial details' });
     }
 };

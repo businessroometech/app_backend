@@ -53,7 +53,7 @@ export const addToCart = async (req: Request, res: Response) => {
 
         res.status(201).json({ status: "status", message: "Added to cart", data: { cart, cartItem } });
     } catch (error) {
-        res.status(500).json({ status: "error", message: 'Error adding to cart' });
+        res.status(500).json({ status: "error", message: 'Error adding to cart' , error});
     }
 };
 
@@ -125,7 +125,7 @@ export const checkout = async (req: Request, res: Response) => {
                 deliveryAddress: cartItem.deliveryAddress,
                 additionalNote: cartItem.additionalNote,
                 createdBy: 'system',
-                updatedBy: 'system'
+                updatedBy: 'system' 
             }).save();
             orderItems.push(orderItemBooking);
 
