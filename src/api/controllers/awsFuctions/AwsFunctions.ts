@@ -1,6 +1,7 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
+import { Readable } from 'stream';
 
 import { DocumentUpload } from '@/api/entity/profile/DocumentUpload';
 
@@ -69,3 +70,39 @@ export const addDocumentUpload = async (req: Request, res: Response) => {
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
+
+export const getDocumentFromBucket = async (req: Request, res: Response) => {
+  try {
+
+    const { documentId } = req.body;
+
+    const document = await DocumentUpload.findOne({ where: { id: documentId } });
+
+    if (!document) {
+      res.status(404).json({ status: "error", message: "Invalid document Id" });
+      return;
+    }
+
+    const params = {
+      Bucket: document.bucketName,
+      Key: document.key
+    }
+
+    const command = new GetObjectCommand(params);
+    const s3Object = await s3.send(command);
+
+    res.setHeader('Content-Type', document.contentType);
+
+    const stream = s3Object.Body as Readable;
+    if (stream instanceof Readable) {
+      stream.pipe(res);
+    }
+    else {
+      res.status(500).json({ status: 'error', message: 'Unable to retrieve document content' });
+    }
+
+  } catch (error) {
+    console.error('Error retrieving document:', error);
+    res.status(500).json({ status: "error", message: 'Internal Server Error' });
+  }
+}

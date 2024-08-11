@@ -10,7 +10,7 @@ import {
   verifyCodeForPasswordReset,
 } from '../../controllers/auth/ResetPassword';
 import { signup } from '../../controllers/auth/Signup';
-import { generateUploadUrl, addDocumentUpload } from '../../controllers/awsFuctions/GenerateUploadUrl';
+import { generateUploadUrl, addDocumentUpload, getDocumentFromBucket } from '../../controllers/awsFuctions/AwsFunctions';
 import { authenticate } from '../../middlewares/auth/Authenticate';
 
 const Router = express.Router();
@@ -27,6 +27,7 @@ Router.post('/refresh', refresh);
 Router.get('/protected', authenticate, protectedRoute);
 
 Router.post('/generate-upload-url', generateUploadUrl);
+Router.post('/document-retrival', getDocumentFromBucket);
 Router.post('/list-uploaded-document', addDocumentUpload);
 
 Router.post('/forgot-password/generate', sendNumberVerificationToken);
