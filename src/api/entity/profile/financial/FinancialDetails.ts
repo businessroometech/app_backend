@@ -25,7 +25,7 @@ export class FinancialDetails extends BaseEntity {
     bankName!: string;
 
     @Column({ type: 'varchar', length: 255 })
-    accountName!: string;
+    accountHolder!: string;
 
     @Column({ type: 'varchar', length: 255 })
     accountNumber!: string;
