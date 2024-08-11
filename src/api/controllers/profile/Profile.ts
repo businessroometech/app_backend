@@ -545,7 +545,8 @@ export const getProfessionalDetails = async (req: Request, res: Response) => {
 
 export const getEducationalDetails = async (req: Request, res: Response) => {
     try {
-        const { userId, sectorId, sectortype } = req.body;
+        const { sectortype } = req.params;
+        const { userId, sectorId } = req.body;
         if (sectortype === 'healthcare') {
 
         }

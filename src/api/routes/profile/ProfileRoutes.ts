@@ -4,10 +4,10 @@ import { getPersonalDetails, getEducationalDetails, getFinancialDetails, getProf
 
 const Router = express.Router();
 
-Router.post('/personal', getPersonalDetails);
-Router.post('/professional', getProfessionalDetails);
-Router.post('/educational/:sectortype', getEducationalDetails);
-Router.post('/financial', getFinancialDetails);
+Router.post('/your-personal-details', getPersonalDetails);
+Router.post('/your-professional-details', getProfessionalDetails);
+Router.post('/your-educational-details/:sectortype', getEducationalDetails);
+Router.post('/your-financial-details', getFinancialDetails);
 
 Router.post('/personal', setPersonalDetails);
 Router.post('/professional', setProfessionalDetails);
