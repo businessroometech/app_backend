@@ -127,7 +127,7 @@ export const getDocumentFromBucket = async (req: Request, res: Response) => {
     const command = new GetObjectCommand(params);
     const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL expires in 1 hour
 
-    res.status(200).json({ status: "success", url: presignedUrl });
+    res.status(200).json({ status: "success", message: "Document url recieved", data: { url: presignedUrl } });
 
   } catch (error) {
     console.error('Error retrieving document:', error);
