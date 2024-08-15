@@ -43,7 +43,7 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
 
 export const addDocumentUpload = async (req: Request, res: Response) => {
   try {
-    const { bucketName, key, contentType, documentType, documentDescription, documentSize } = req.body;
+    const { bucketName, key, contentType, documentName, documentType, documentDescription, documentSize } = req.body;
 
     if (!bucketName || !key || !contentType || !documentType || !documentDescription || !documentSize) {
       return res.status(400).json({ status: 'error', message: 'Please provide complete data to upload in DB' });
@@ -52,6 +52,7 @@ export const addDocumentUpload = async (req: Request, res: Response) => {
     const doc = await DocumentUpload.create({
       bucketName,
       key,
+      documentName,
       contentType,
       documentType,
       documentDescription,
@@ -127,8 +128,9 @@ export const getDocumentFromBucket = async (req: Request, res: Response) => {
     const command = new GetObjectCommand(params);
     const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL expires in 1 hour
     const documentType = document.contentType;
+    const documentName = document.documentName;
 
-    res.status(200).json({ status: "success", message: "Document url recieved", data: { url: presignedUrl, type: documentType } });
+    res.status(200).json({ status: "success", message: "Document url recieved", data: { url: presignedUrl, type: documentType, name: documentName } });
 
   } catch (error) {
     console.error('Error retrieving document:', error);
