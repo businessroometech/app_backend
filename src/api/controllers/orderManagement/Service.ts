@@ -6,42 +6,59 @@ import { format } from 'date-fns';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 
-export const BetweenDates = (from: Date | string, to: Date | string) =>
-    Between(
-        format(typeof from === 'string' ? new Date(from) : from, 'yyyy-MM-dd HH:mm:ss'),
-        format(typeof to === 'string' ? new Date(to) : to, 'yyyy-MM-dd HH:mm:ss'),
-    );
+export const BetweenDates = (from: Date | string, to: Date | string) => {
+    const formattedFrom = format(typeof from === 'string' ? new Date(from) : from, 'yyyy-MM-dd HH:mm:ss');
+    const formattedTo = format(typeof to === 'string' ? new Date(to) : to, 'yyyy-MM-dd HH:mm:ss');
+    return Between(formattedFrom, formattedTo);
+};
 
 export const getYourServices = async (req: Request, res: Response) => {
     try {
-        const { status, priceStart, priceEnd, dateStart, dateEnd, serviceCategory, page, limit } = req.query;
+        const {
+            status,
+            priceStart = '0',   // Default value
+            priceEnd = '100000', // Default value
+            dateStart = new Date(0), // Epoch start date
+            dateEnd = new Date(),    // Current date
+            serviceCategory,
+            page = '1',    // Default to first page
+            limit = '10'   // Default limit
+        } = req.query;
 
         const parsedPriceStart = parseFloat(priceStart as string);
         const parsedPriceEnd = parseFloat(priceEnd as string);
         const parsedPage = parseInt(page as string);
         const parsedLimit = parseInt(limit as string);
-        const serviceCategories = (serviceCategory as string).split(',');
+
+        let whereClause: any = {
+            status: status as string,
+            orderItemBooking: {
+                deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
+                price: Between(parsedPriceStart, parsedPriceEnd),
+            },
+        };
+
+        if (serviceCategory) {
+            const serviceCategories = (serviceCategory as string).split(',');
+            whereClause.orderItemBooking.service = {
+                category: {
+                    categoryName: Between(serviceCategories, serviceCategories)
+                }
+            };
+        }
 
         const [jobs, total] = await ServiceJob.findAndCount({
-            where: {
-                status: status as string,
-                orderItemBooking: {
-                    deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
-                    price: Between(parsedPriceStart, parsedPriceEnd),
-                },
-            },
-            relations: ['orderItemBooking', 'orderItemBooking.service'],
+            where: whereClause,
+            relations: ['orderItemBooking', 'orderItemBooking.providedService'],
             skip: (parsedPage - 1) * parsedLimit,
             take: parsedLimit,
         });
-
-        const filteredJobs = jobs.filter(job => serviceCategories.includes(job.orderItemBooking.providedService.category.categoryName));
 
         res.status(200).json({
             status: 'success',
             message: 'Successfully fetched the services',
             data: {
-                services: filteredJobs,
+                services: jobs,
                 total,
                 page: parsedPage,
                 limit: parsedLimit,
@@ -50,10 +67,11 @@ export const getYourServices = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
-        console.log("Error fetching services :", error);
+        console.error("Error fetching services:", error);
         res.status(500).json({ status: "error", message: "Something went wrong!" });
     }
 };
+
 
 // export const addService = async (req: Request, res: Response) => {
 //     try {

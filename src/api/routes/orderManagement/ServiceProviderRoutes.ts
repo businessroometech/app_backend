@@ -9,7 +9,7 @@ import {
 
 const Router = express.Router();
 
-Router.post('/service-provider', getYourServices);
+Router.get('/service-provider', getYourServices);
 // Router.post('/service-provider/add-service', addService);
 Router.post('/service-provider/accept', acceptService);
 Router.post('/service-provider/reject', rejectService);
