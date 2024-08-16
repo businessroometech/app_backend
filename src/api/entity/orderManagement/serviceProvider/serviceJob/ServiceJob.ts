@@ -24,6 +24,9 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: "enum", enum: ["Pending", "Accepted", "Rejected", "InProcess", "Completed", "Cancelled"], default: "Pending" })
     status!: string;
 
+    @Column({ type: "text"})
+    description!: string;
+
     @Column({ type: "text", nullable: true })
     note!: string;
 

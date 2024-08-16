@@ -8,6 +8,7 @@ import { RescheduledBooking } from '@/api/entity/orderManagement/customer/Resche
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
 import { Sector } from '@/api/entity/sector/Sector';
 import { UserLogin } from '@/api/entity/user/UserLogin';
+import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 
 
 
@@ -55,13 +56,15 @@ export const addBooking = async (req: Request, res: Response) => {
 
         await orderItemBooking.save();
 
+        const providedService = await ProvidedService.findOne({ where: { id: providedServiceId } })
         const serviceJob = await ServiceJob.create({
             orderItemBookingId: orderItemBooking.id,
             jobId: orderItemBooking.OrderItemId,
             customerId: customerId,
             serviceProviderId: serviceProviderId,
             status: 'Pending',
-            note: "",
+            description: providedService?.bio,
+            note: additionalNote,
             createdBy: 'system' || createdBy,
             updatedBy: 'system' || updatedBy
         }).save();
