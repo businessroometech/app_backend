@@ -6,6 +6,8 @@ import { OrderItemBooking } from '../../entity/orderManagement/customer/OrderIte
 import { CancelledBooking } from '@/api/entity/orderManagement/customer/CancelledBooking';
 import { RescheduledBooking } from '@/api/entity/orderManagement/customer/RescheduledBooking';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
+import { Sector } from '@/api/entity/sector/Sector';
+import { UserLogin } from '@/api/entity/user/UserLogin';
 
 
 
@@ -17,17 +19,20 @@ import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/service
 export const addBooking = async (req: Request, res: Response) => {
     try {
 
-        const { providedServiceId, sectorId, customerId, serviceProviderId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
+        const { sectorId, customerId, serviceProviderId, providedServiceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
 
         const order = await Order.create({
             customerId: customerId,
-            totalAmount: 0,
-            totalItems: 0,
+            totalAmount: price,
+            totalItems: 1,
             createdBy: 'system' || createdBy,
             updatedBy: 'system' || updatedBy
         }).save();
 
-        const orderItemBooking = await OrderItemBooking.create({
+        const sector = await Sector.findOne({ where: { id: sectorId } });
+        const user = await UserLogin.findOne({ where: { id: customerId } });
+
+        const orderItemBooking = OrderItemBooking.create({
             orderId: order.id,
             sectorId: sectorId,
             customerId: customerId,
@@ -41,10 +46,16 @@ export const addBooking = async (req: Request, res: Response) => {
             deliveryAddress: deliveryAddress,
             additionalNote: additionalNote,
             createdBy: 'system' || createdBy,
-            updatedBy: 'system' || updatedBy
-        }).save();
+            updatedBy: 'system' || updatedBy,
+        });
 
-        await ServiceJob.create({
+        // Assign relations after creation
+        orderItemBooking.sector = sector!;
+        orderItemBooking.user = user!;
+
+        await orderItemBooking.save();
+
+        const serviceJob = await ServiceJob.create({
             orderItemBookingId: orderItemBooking.id,
             jobId: orderItemBooking.OrderItemId,
             customerId: customerId,
@@ -54,6 +65,8 @@ export const addBooking = async (req: Request, res: Response) => {
             createdBy: 'system' || createdBy,
             updatedBy: 'system' || updatedBy
         }).save();
+
+        res.status(201).json({ status: "status", message: "Booking created", data: { order, orderItemBooking, serviceJob } });
 
     } catch (error) {
         res.status(500).json({ status: "error", message: 'Error adding orderBooking ', error });
