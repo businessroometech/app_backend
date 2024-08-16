@@ -15,8 +15,8 @@ import { CartItemBooking } from '../../customer/CartItemBooking';
 import { OrderItemProduct } from '../../customer/OrderItemProduct';
 import { CartItemProduct } from '../../customer/CartItemProduct';
 
-@Entity({ name: 'Product' })
-export class Product extends BaseEntity {
+@Entity({ name: 'ProvidedProduct' })
+export class ProvidedProduct extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;

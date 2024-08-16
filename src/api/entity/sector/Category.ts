@@ -5,9 +5,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
 @Entity({ name: 'Category' })
 export class Category extends BaseEntity {
@@ -49,4 +51,7 @@ export class Category extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
+
+  @OneToOne(() => ProvidedService, providedService => providedService.category)
+  providedService !: ProvidedService;
 }

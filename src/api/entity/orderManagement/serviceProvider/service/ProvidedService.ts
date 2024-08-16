@@ -5,20 +5,21 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderItemBooking } from '../../customer/OrderItemBooking';
-import { CartItemBooking } from '../../customer/CartItemBooking';
+// import { CartItemBooking } from '../../customer/CartItemBooking';
+import { Category } from '@/api/entity/sector/Category';
 
 // import { ServiceReview } from '../service/ServiceReview';
 // import { OrderItem } from '../../customer/OrderItemBooking';
 // import { CartItem } from '../../customer/CartItemBooking';
 
-@Entity({ name: 'Service' })
-export class Service extends BaseEntity {
+@Entity({ name: 'ProvidedService' })
+export class ProvidedService extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -28,21 +29,39 @@ export class Service extends BaseEntity {
 
   @Column({ type: 'uuid' })
   sectorId!: string;
-  
+
   @Column({ type: 'uuid' })
   categoryId!: string;
 
+  @Column({ type: 'uuid' })
+  subCategoryId!: string;
+
+  @Column({ type: 'simple-array' })
+  serviceIds!: string[];
+
   @Column({ type: 'varchar', length: 255 })
-  name!: string;
+  experience!: string;
+
+  // @Column({ type: 'varchar', length: 255 })
+  // workType!: string;
+
+  // @Column({ type: 'varchar', length: 255 })
+  // whenCanStart!: string;
+
+  // @Column({ type: 'varchar', length: 255 })
+  // name!: string;
 
   @Column({ type: 'text' })
-  description!: string;
+  bio!: string;
 
   @Column({ type: 'float' })
   price !: number;
 
   @Column({ type: 'varchar' })
   per !: string;
+
+  @Column({ type: "simple-array" })
+  uploadedImageIds !: string[];
 
   @Column({ type: "enum", enum: ['Draft', 'Published'] })
   status !: string;
@@ -79,9 +98,12 @@ export class Service extends BaseEntity {
   // @OneToMany(() => ServiceReview, review => review.service)
   // reviews !: ServiceReview[];
 
-  @OneToMany(() => OrderItemBooking, orderItem => orderItem.service)
+  @OneToOne(() => Category, category => category.providedService)
+  category !: Category;
+
+  @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
   orderItemBookings !: OrderItemBooking[];
 
-  @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
-  cartItemBookings !: CartItemBooking[];
+  // @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
+  // cartItemBookings !: CartItemBooking[];
 }

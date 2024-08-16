@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
 import { Between } from 'typeorm';
 import { format } from 'date-fns';
-import { Service } from '@/api/entity/orderManagement/serviceProvider/service/Service';
+// import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 
@@ -35,7 +35,7 @@ export const getYourServices = async (req: Request, res: Response) => {
             take: parsedLimit,
         });
 
-        const filteredJobs = jobs.filter(job => serviceCategories.includes(job.orderItemBooking.service.name));
+        const filteredJobs = jobs.filter(job => serviceCategories.includes(job.orderItemBooking.providedService.category.categoryName));
 
         res.status(200).json({
             status: 'success',
@@ -55,29 +55,29 @@ export const getYourServices = async (req: Request, res: Response) => {
     }
 };
 
-export const addService = async (req: Request, res: Response) => {
-    try {
-        const { serviceProviderId, sectorId, categoryId, name, description, price, per, status, createdBy, updatedBy } = req.body;
+// export const addService = async (req: Request, res: Response) => {
+//     try {
+//         const { serviceProviderId, sectorId, categoryId, name, description, price, per, status, createdBy, updatedBy } = req.body;
 
-        const service = await Service.create({
-            serviceProviderId: serviceProviderId,
-            sectorId,
-            categoryId,
-            name: name,
-            description: description,
-            price: price,
-            per: per,
-            status: status,
-            createdBy: createdBy || 'system',
-            updatedBy: updatedBy || 'system',
-        }).save();
+//         const service = await Service.create({
+//             serviceProviderId: serviceProviderId,
+//             sectorId,
+//             categoryId,
+//             name: name,
+//             description: description,
+//             price: price,
+//             per: per,
+//             status: status,
+//             createdBy: createdBy || 'system',
+//             updatedBy: updatedBy || 'system',
+//         }).save();
 
-        res.status(201).json({ status: "success", message: "Service added successfully", data: { service } });
-    } catch (error) {
-        console.log("Cannot add service :", error);
-        res.status(500).json({ status: "error", message: 'Something went wrong' });
-    }
-};
+//         res.status(201).json({ status: "success", message: "Service added successfully", data: { service } });
+//     } catch (error) {
+//         console.log("Cannot add service :", error);
+//         res.status(500).json({ status: "error", message: 'Something went wrong' });
+//     }
+// };
 
 // // accept the service
 export const acceptService = async (req: Request, res: Response) => {

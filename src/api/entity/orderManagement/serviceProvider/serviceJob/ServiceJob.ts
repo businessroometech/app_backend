@@ -12,6 +12,9 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: 'uuid' })
     orderItemBookingId!: string;
 
+    @Column({ type: 'varchar' })
+    jobId !: string;
+
     @Column({ type: 'uuid' })
     customerId!: string;
 
