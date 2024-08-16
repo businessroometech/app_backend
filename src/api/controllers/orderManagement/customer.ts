@@ -20,7 +20,7 @@ import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/se
 export const addBooking = async (req: Request, res: Response) => {
     try {
 
-        const { sectorId, customerId, serviceProviderId, providedServiceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
+        const { sectorId, customerId, serviceProviderId, providedServiceId, price, description, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
 
         const order = await Order.create({
             customerId: customerId,
@@ -63,7 +63,7 @@ export const addBooking = async (req: Request, res: Response) => {
             customerId: customerId,
             serviceProviderId: serviceProviderId,
             status: 'Pending',
-            description: providedService?.bio,
+            description: description || providedService?.bio,
             note: additionalNote,
             createdBy: 'system' || createdBy,
             updatedBy: 'system' || updatedBy
