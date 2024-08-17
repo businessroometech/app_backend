@@ -49,7 +49,7 @@ export const getYourServices = async (req: Request, res: Response) => {
 
         const [jobs, total] = await ServiceJob.findAndCount({
             where: whereClause,
-            relations: ['orderItemBooking', 'orderItemBooking.providedService'],
+            // relations: ['orderItemBooking', 'orderItemBooking.providedService'],
             skip: (parsedPage - 1) * parsedLimit,
             take: parsedLimit,
         });

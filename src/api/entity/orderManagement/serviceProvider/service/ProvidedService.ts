@@ -101,8 +101,8 @@ export class ProvidedService extends BaseEntity {
   @OneToOne(() => Category, category => category.providedService)
   category !: Category;
 
-  @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
-  orderItemBookings !: OrderItemBooking[];
+  // @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
+  // orderItemBookings !: OrderItemBooking[];
 
   // @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
   // cartItemBookings !: CartItemBooking[];
