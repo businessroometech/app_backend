@@ -5,9 +5,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
 @Entity({ name: 'SubCategory' })
 export class SubCategory extends BaseEntity {
@@ -46,4 +48,7 @@ export class SubCategory extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
+
+  @OneToMany(() => ProvidedService, providedService => providedService.subCategory)
+  providedServices !: ProvidedService[];
 }

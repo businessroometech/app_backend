@@ -41,10 +41,10 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }).save();
 
     const personalDetails = await PersonalDetails.create({
+      fullName,
       mobileNumber,
       sectorId,
       userId: newUser.id,
-      fullName,
       emailAddress: emailAddress || null,
     }).save();
 

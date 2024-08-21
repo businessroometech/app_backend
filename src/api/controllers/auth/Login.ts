@@ -46,11 +46,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       cookieOptions = { ...cookieOptions, secure: true };
     }
 
-    res.cookie('accessToken', accessToken, cookieOptions);
+    // res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { mobileNumber } });
+    const rt = await RefreshToken.findOne({ where: { userId: user.id } });
 
     const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
     const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -66,7 +66,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       await rt.save();
     } else {
       await RefreshToken.create({
-        mobileNumber,
+        userId: user.id,
         token: refreshToken,
         expiresAt: new Date(Date.now() + expiresIn),
       }).save();
@@ -88,15 +88,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { mobileNumber } = req.body;
+    // const { mobileNumber } = req.body;
     const refreshToken = req.cookies.refreshToken;
 
-    if (!mobileNumber || !refreshToken) {
-      res.status(401).json({ status: 'error', message: 'Mobile number and refresh token required' });
+    if (!refreshToken) {
+      res.status(401).json({ status: 'error', message: 'Refresh token is not present in cookies' });
       return;
     }
 
-    const refresh = await RefreshToken.findOne({ where: { mobileNumber } });
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
+
+    const refresh = await RefreshToken.findOne({ where: { userId: payload.id } });
 
     if (!refresh) {
       res.status(401).json({ status: 'error', message: 'Refresh token not found' });
@@ -115,8 +117,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
-
     const newAccessToken = generateAccessToken({ id: payload.id });
     const newRefreshToken = generateRefreshToken({ id: payload.id });
 
@@ -134,7 +134,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       cookieOptions.secure = true;
     }
 
-    res.cookie('accessToken', newAccessToken, cookieOptions);
+    // res.cookie('accessToken', newAccessToken, cookieOptions);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
     res.status(200).json({

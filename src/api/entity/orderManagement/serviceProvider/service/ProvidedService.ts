@@ -5,18 +5,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderItemBooking } from '../../customer/OrderItemBooking';
-// import { CartItemBooking } from '../../customer/CartItemBooking';
 import { Category } from '@/api/entity/sector/Category';
-
-// import { ServiceReview } from '../service/ServiceReview';
-// import { OrderItem } from '../../customer/OrderItemBooking';
-// import { CartItem } from '../../customer/CartItemBooking';
+import { SubCategory } from '@/api/entity/sector/SubCategory';
 
 @Entity({ name: 'ProvidedService' })
 export class ProvidedService extends BaseEntity {
@@ -92,18 +89,15 @@ export class ProvidedService extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  // @ManyToOne(() => Provider, provider => provider.services)
-  // provider !: Provider;
 
-  // @OneToMany(() => ServiceReview, review => review.service)
-  // reviews !: ServiceReview[];
-
-  @OneToOne(() => Category, category => category.providedService)
+  @ManyToOne(() => Category, category => category.providedServices)
   category !: Category;
 
-  // @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
-  // orderItemBookings !: OrderItemBooking[];
+  @ManyToOne(() => SubCategory, subCategory => subCategory.providedServices)
+  subCategory !: SubCategory;
 
-  // @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
-  // cartItemBookings !: CartItemBooking[];
+
+  @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
+  orderItemBookings !: OrderItemBooking[];
+
 }

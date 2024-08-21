@@ -9,6 +9,8 @@ import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/service
 import { Sector } from '@/api/entity/sector/Sector';
 import { UserLogin } from '@/api/entity/user/UserLogin';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
+import { Category } from '@/api/entity/sector/Category';
+import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
 
 
 
@@ -57,6 +59,9 @@ export const addBooking = async (req: Request, res: Response) => {
         await orderItemBooking.save();
 
         const providedService = await ProvidedService.findOne({ where: { id: providedServiceId } })
+        const category = await Category.findOne({ where: { id: providedService?.categoryId } });
+        const customerPersonalDetails = await PersonalDetails.findOne({ where: { sectorId: sectorId, userId: customerId } });
+
         const serviceJob = await ServiceJob.create({
             orderItemBookingId: orderItemBooking.id,
             jobId: orderItemBooking.OrderItemId,
@@ -65,6 +70,13 @@ export const addBooking = async (req: Request, res: Response) => {
             status: 'Pending',
             description: description || providedService?.bio,
             note: additionalNote,
+            serviceCategory: category?.categoryName,
+            price: price,
+            deliveryDate: deliveryDate,
+            deliveryTime: deliveryTime,
+            deliveryAddress: deliveryAddress,
+            customerName: customerPersonalDetails?.fullName,
+            customerMobileNumber: customerPersonalDetails?.mobileNumber,
             createdBy: 'system' || createdBy,
             updatedBy: 'system' || updatedBy
         }).save();

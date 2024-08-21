@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -52,6 +53,6 @@ export class Category extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToOne(() => ProvidedService, providedService => providedService.category)
-  providedService !: ProvidedService;
+  @OneToMany(() => ProvidedService, providedService => providedService.category)
+  providedServices !: ProvidedService[];
 }

@@ -1,14 +1,28 @@
 import { Request, Response } from 'express';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
-import { Between } from 'typeorm';
-import { format } from 'date-fns';
+import { Between, In } from 'typeorm';
+import { format, isValid } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 
+// export const BetweenDates = (from: Date | string, to: Date | string) => {
+//     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
+//     const formattedTo = format(new Date(to), 'yyyy-MM-dd HH:mm:ss');
+//     return Between(formattedFrom, formattedTo);
+// };
+
 export const BetweenDates = (from: Date | string, to: Date | string) => {
-    const formattedFrom = format(typeof from === 'string' ? new Date(from) : from, 'yyyy-MM-dd HH:mm:ss');
-    const formattedTo = format(typeof to === 'string' ? new Date(to) : to, 'yyyy-MM-dd HH:mm:ss');
+    console.log(from, to);
+    const parsedFrom = new Date(from);
+    const parsedTo = new Date(to);
+
+    if (!isValid(parsedFrom) || !isValid(parsedTo)) {
+        throw new RangeError('Invalid date value');
+    }
+
+    const formattedFrom = format(parsedFrom, 'yyyy-MM-dd HH:mm:ss');
+    const formattedTo = format(parsedTo, 'yyyy-MM-dd HH:mm:ss');
     return Between(formattedFrom, formattedTo);
 };
 
@@ -18,12 +32,14 @@ export const getYourServices = async (req: Request, res: Response) => {
             status,
             priceStart = '0',   // Default value
             priceEnd = '100000', // Default value
-            dateStart = new Date(0), // Epoch start date
-            dateEnd = new Date(),    // Current date
-            serviceCategory,
+            dateStart = '1970-01-01T00:00:00.000Z', // Epoch start date as ISO string
+            dateEnd = new Date().toISOString(),    // Current date as ISO string
+            subCategory,
             page = '1',    // Default to first page
             limit = '10'   // Default limit
         } = req.query;
+
+        console.log(subCategory);
 
         const parsedPriceStart = parseFloat(priceStart as string);
         const parsedPriceEnd = parseFloat(priceEnd as string);
@@ -38,20 +54,25 @@ export const getYourServices = async (req: Request, res: Response) => {
             },
         };
 
-        if (serviceCategory) {
-            const serviceCategories = (serviceCategory as string).split(',');
-            whereClause.orderItemBooking.service = {
-                category: {
-                    categoryName: Between(serviceCategories, serviceCategories)
+        if (subCategory) {
+            const subCategories = (subCategory as string).split(',');
+            console.log(subCategories);
+            whereClause.orderItemBooking.providedService = {
+                subCategory: {
+                    subCategoryName: In(subCategories)
                 }
             };
         }
 
         const [jobs, total] = await ServiceJob.findAndCount({
             where: whereClause,
-            // relations: ['orderItemBooking', 'orderItemBooking.providedService'],
             skip: (parsedPage - 1) * parsedLimit,
             take: parsedLimit,
+            relations: [
+                'orderItemBooking',
+                'orderItemBooking.providedService',
+                'orderItemBooking.providedService.subCategory',
+            ],
         });
 
         res.status(200).json({
@@ -68,7 +89,11 @@ export const getYourServices = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error("Error fetching services:", error);
-        res.status(500).json({ status: "error", message: "Something went wrong!" });
+        if (error instanceof RangeError) {
+            res.status(400).json({ status: "error", message: error.message });
+        } else {
+            res.status(500).json({ status: "error", message: "Something went wrong!" });
+        }
     }
 };
 
@@ -130,35 +155,29 @@ export const acceptService = async (req: Request, res: Response) => {
 // reject the service
 export const rejectService = async (req: Request, res: Response) => {
     try {
-        const { orderId, orderItemId, reason, userId } = req.body;
+        const { orderItemBookingId, reason, updatedBy } = req.body;
 
-        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemId } });
+        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId } });
         if (!serviceJob) {
             res.status(404).json({ status: "error", message: "ServiceJob not found" });
             return;
         }
 
-        const orderItemBooking = await OrderItemBooking.findOne({ where: { orderId, id: orderItemId } });
+        const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemBookingId } });
         if (!orderItemBooking) {
             res.status(404).json({ status: "error", message: "OrderItemBooking not found" });
             return;
         }
 
         serviceJob.status = "Rejected";
+        serviceJob.reasonIfRejected = reason;
+        serviceJob.updatedBy = updatedBy || 'system';
         await serviceJob.save();
 
         orderItemBooking.status = "Rejected";
         await orderItemBooking.save();
 
-        const rejectedServiceJob = RejectedServiceJob.create({
-            serviceJobId: serviceJob.id,
-            reason: reason,
-            createdBy: userId || 'system',
-            updatedBy: userId || 'system',
-        });
-        await rejectedServiceJob.save();
-
-        res.status(200).json({ status: "success", message: "Service rejected successfully", data: { serviceJob, orderItemBooking, rejectedServiceJob } });
+        res.status(200).json({ status: "success", message: "Service rejected successfully", data: { serviceJob, orderItemBooking } });
     } catch (error) {
         console.log("Cannot reject service :", error);
         res.status(500).json({ status: "error", message: 'Something went wrong' });
