@@ -5,19 +5,22 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, U
 export class Payment extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
-    id !: string;
+    id!: string;
 
-    @Column({ type: "uuid" }) 
-    userId !: string;
+    // @Column({ type: 'uuid' })
+    // paymentId!: string;
 
-    @Column({ type: "uuid" })
-    transactionId !: string;
-
-    @Column({ type: "varchar" })
-    razorpayOrderId !: string;
+    @Column({ type: 'float', precision: 10, scale: 2 })
+    amount!: number;
 
     @Column({ type: "varchar" })
-    paymentMethod !: string;
+    currency!: string;
+
+    @Column({ type: "varchar" })
+    method!: string;
+
+    @Column({ type: "varchar", default: 'Created' })
+    status!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -44,4 +47,10 @@ export class Payment extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
+
+    // @ManyToOne(() => Order, order => order.payments)
+    // order: Order;
+
+    // @ManyToOne(() => User, user => user.payments)
+    // user: User;
 }

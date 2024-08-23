@@ -16,7 +16,7 @@ import CategoriesRouter from './api/routes/category/CategoryRoutes';
 import profileRouter from './api/routes/profile/ProfileRoutes';
 import customerRouter from './api/routes/orderManagement/CustomerRoutes';
 import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
-
+import paymentRouter from "./api/routes/payment/PaymentRoutes";
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -49,6 +49,7 @@ app.use('/api/v1/categories', CategoriesRouter);
 app.use('/api/v1/profile', profileRouter);
 app.use('/api/v1/order-management', customerRouter);
 app.use('/api/v1/order-management', serviceProviderRouter);
+app.use('/api/v1/checkout', paymentRouter);
 // app.use('/health-check', healthCheckRouter);
 
 // Error handlers
