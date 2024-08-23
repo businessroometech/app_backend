@@ -135,3 +135,4 @@ export class OrderItemBooking extends BaseEntity {
     @OneToOne(() => ServiceJob, job => job.orderItemBooking)
     serviceJobs !: ServiceJob;
 }
+

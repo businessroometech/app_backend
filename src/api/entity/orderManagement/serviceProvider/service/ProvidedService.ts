@@ -89,15 +89,12 @@ export class ProvidedService extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-
   @ManyToOne(() => Category, category => category.providedServices)
   category !: Category;
 
   @ManyToOne(() => SubCategory, subCategory => subCategory.providedServices)
   subCategory !: SubCategory;
 
-
   @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
   orderItemBookings !: OrderItemBooking[];
-
 }
