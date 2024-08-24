@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import { Sector } from '@/api/entity/sector/Sector';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
+import { Service } from '@/api/entity/sector/Service';
 
 export const getAllSectors = async (req: Request, res: Response) => {
   try {
@@ -60,3 +61,23 @@ export const getAllSubCategories = async (req: Request, res: Response) => {
     res.status(500).json({ status: 'error', message: 'Failed to fetch subCategories' });
   }
 };
+
+export const getServicesSubCategoryWise = async (req: Request, res: Response) => {
+  try {
+
+    const { subCategoryId } = req.body;
+    const services = await Service.find({ where: { subCategoryId } });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Successfully fetched all services offered',
+      data: {
+        servicesOffered: services,
+      },
+    });
+
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to fetch services' });
+  }
+}
