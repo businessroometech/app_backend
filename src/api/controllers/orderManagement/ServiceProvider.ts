@@ -303,23 +303,22 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
 
 export const getProvidedService = async (req: Request, res: Response) => {
     try {
-
         const { id } = req.body;
+        const { isActive } = req.query;
 
         if (id) {
-            const providedService = await ProvidedService.findOne({ where: { id } });
+            const providedService = await ProvidedService.findOne({ where: { id, ...(isActive && { isActive: isActive === 'true' }) } });
 
             if (!providedService) {
-                return res.status(404).json({ status: "error", message: 'ProvidedService not found' });
+                return res.status(404).json({ status: "error", message: 'Provided Service not found' });
             }
 
             return res.status(200).json({ status: "success", message: "Provided Service successfully fetched", data: { providedService } });
-        }
-        else {
-            const providedServices = await ProvidedService.find();
+        } else {
+            const providedServices = await ProvidedService.find({ where: { ...(isActive && { isActive: isActive === 'true' }) } });
 
-            if (!providedServices) {
-                return res.status(404).json({ status: "error", message: 'ProvidedServices not found' });
+            if (providedServices.length === 0) {
+                return res.status(404).json({ status: "error", message: 'Provided Services not found' });
             }
 
             return res.status(200).json({ status: "success", message: "Provided Services successfully fetched", data: { providedServices } });
