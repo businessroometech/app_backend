@@ -5,6 +5,7 @@ import { format, isValid } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
+import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -234,3 +235,116 @@ export const rejectService = async (req: Request, res: Response) => {
 //         res.status(500).json({ status: "error", message: 'Something went wrong' });
 //     }
 // }
+
+
+//-------------------------------------------------- Service Management-----------------------------------------------------------------------
+
+export const addOrUpdateProvidedService = async (req: Request, res: Response) => {
+    try {
+        const {
+            id,
+            serviceProviderId,
+            sectorId,
+            categoryId,
+            subCategoryId,
+            serviceIds,
+            experience,
+            certificates,
+            typeOfProjects,
+            projectScaleExpertise,
+            typeOfWorkforce,
+            typesOfClients,
+            price,
+            per,
+            bio,
+            uploadedImageIds,
+            isActive,
+            updatedBy,
+        } = req.body;
+
+        let providedService;
+
+        if (id) {
+            providedService = await ProvidedService.findOne({ where: { id } });
+            if (!providedService) {
+                return res.status(404).json({ status: "error", message: 'ProvidedService not found' });
+            }
+        } else {
+            providedService = new ProvidedService();
+            providedService.createdBy = req.body.createdBy || 'system';
+        }
+
+        if (serviceProviderId !== undefined) providedService.serviceProviderId = serviceProviderId;
+        if (sectorId !== undefined) providedService.sectorId = sectorId;
+        if (categoryId !== undefined) providedService.categoryId = categoryId;
+        if (subCategoryId !== undefined) providedService.subCategoryId = subCategoryId;
+        if (serviceIds !== undefined) providedService.serviceIds = serviceIds;
+        if (experience !== undefined) providedService.experience = experience;
+        if (certificates !== undefined) providedService.certificates = certificates;
+        if (typeOfProjects !== undefined) providedService.typeOfProjects = typeOfProjects;
+        if (projectScaleExpertise !== undefined) providedService.projectScaleExpertise = projectScaleExpertise;
+        if (typeOfWorkforce !== undefined) providedService.typeOfWorkforce = typeOfWorkforce;
+        if (typesOfClients !== undefined) providedService.typesOfClients = typesOfClients;
+        if (price !== undefined) providedService.price = price;
+        if (per !== undefined) providedService.per = per;
+        if (bio !== undefined) providedService.bio = bio;
+        if (uploadedImageIds !== undefined) providedService.uploadedImageIds = uploadedImageIds;
+        if (isActive !== undefined) providedService.isActive = isActive;
+        providedService.updatedBy = updatedBy || 'system';
+
+        await providedService.save();
+
+        return res.status(201).json({ status: "success", message: "ProvidedService created or updated", data: { providedService } });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: 'Internal server error' });
+    }
+};
+
+export const getProvidedService = async (req: Request, res: Response) => {
+    try {
+
+        const { id } = req.body;
+
+        if (id) {
+            const providedService = await ProvidedService.findOne({ where: { id } });
+
+            if (!providedService) {
+                return res.status(404).json({ status: "error", message: 'ProvidedService not found' });
+            }
+
+            return res.status(200).json({ status: "success", message: "Provided Service successfully fetched", data: { providedService } });
+        }
+        else {
+            const providedServices = await ProvidedService.find();
+
+            if (!providedServices) {
+                return res.status(404).json({ status: "error", message: 'ProvidedServices not found' });
+            }
+
+            return res.status(200).json({ status: "success", message: "Provided Services successfully fetched", data: { providedServices } });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: 'Internal server error' });
+    }
+};
+
+export const deleteProvidedService = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.body;
+
+        const providedService = await ProvidedService.findOne({ where: { id } });
+
+        if (!providedService) {
+            return res.status(404).json({ status: "error", message: 'ProvidedService not found' });
+        }
+
+        await ProvidedService.delete(id);
+
+        return res.status(204).json({ status: "success", message: "ProvidedService successfully deleted" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: 'Internal server error' });
+    }
+};

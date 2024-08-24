@@ -47,8 +47,8 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/sectors', sectorsRouter);
 app.use('/api/v1/categories', CategoriesRouter);
 app.use('/api/v1/profile', profileRouter);
-app.use('/api/v1/order-management', customerRouter);
-app.use('/api/v1/order-management', serviceProviderRouter);
+app.use('/api/v1/order-management/customer', customerRouter);
+app.use('/api/v1/order-management/service-provider', serviceProviderRouter);
 app.use('/api/v1/checkout', paymentRouter);
 // app.use('/health-check', healthCheckRouter);
 

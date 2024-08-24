@@ -7,7 +7,6 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -39,17 +38,20 @@ export class ProvidedService extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   experience!: string;
 
-  // @Column({ type: 'varchar', length: 255 })
-  // workType!: string;
+  @Column({ type: 'simple-array', })
+  certificates!: string[];
 
-  // @Column({ type: 'varchar', length: 255 })
-  // whenCanStart!: string;
+  @Column({ type: 'simple-array', })
+  typeOfProjects !: string[];
 
-  // @Column({ type: 'varchar', length: 255 })
-  // name!: string;
+  @Column({ type: 'simple-array', })
+  projectScaleExpertise !: string[];
 
-  @Column({ type: 'text' })
-  bio!: string;
+  @Column({ type: 'simple-array', })
+  typeOfWorkforce!: string[];
+
+  @Column({ type: 'simple-array', })
+  typesOfClients !: string[];
 
   @Column({ type: 'float' })
   price !: number;
@@ -57,11 +59,14 @@ export class ProvidedService extends BaseEntity {
   @Column({ type: 'varchar' })
   per !: string;
 
+  @Column({ type: 'text' })
+  bio!: string;
+
   @Column({ type: "simple-array" })
   uploadedImageIds !: string[];
 
-  @Column({ type: "enum", enum: ['Draft', 'Published'] })
-  status !: string;
+  @Column({ type: "boolean", default: true })
+  isActive !: boolean;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

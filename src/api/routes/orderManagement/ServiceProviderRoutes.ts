@@ -4,14 +4,22 @@ import {
     getYourServices,
     // addService,
     acceptService,
-    rejectService
-} from '@/api/controllers/orderManagement/Service';
+    rejectService,
+
+    addOrUpdateProvidedService,
+    getProvidedService,
+    deleteProvidedService
+} from '@/api/controllers/orderManagement/ServiceProvider';
 
 const Router = express.Router();
 
-Router.get('/service-provider', getYourServices);
+Router.get('/', getYourServices);
 // Router.post('/service-provider/add-service', addService);
-Router.post('/service-provider/accept', acceptService);
-Router.post('/service-provider/reject', rejectService);
+Router.post('/accept', acceptService);
+Router.post('/reject', rejectService);
+
+Router.post('/service-management/get', getProvidedService);
+Router.post('/service-management/add-or-update', addOrUpdateProvidedService);
+Router.delete('/service-management', deleteProvidedService);
 
 export default Router;
