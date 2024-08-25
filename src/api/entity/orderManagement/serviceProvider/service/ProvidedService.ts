@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -13,6 +14,7 @@ import {
 import { OrderItemBooking } from '../../customer/OrderItemBooking';
 import { Category } from '@/api/entity/sector/Category';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
+import { Service } from '@/api/entity/sector/Service';
 
 @Entity({ name: 'ProvidedService' })
 export class ProvidedService extends BaseEntity {
@@ -102,4 +104,7 @@ export class ProvidedService extends BaseEntity {
 
   @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
   orderItemBookings !: OrderItemBooking[];
+
+  @ManyToOne(() => Service, service => service.providedService)
+  services !: Service[];
 }

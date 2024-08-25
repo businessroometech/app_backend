@@ -5,9 +5,12 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    ManyToMany,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
 
 @Entity({ name: 'Service' })
@@ -51,4 +54,6 @@ export class Service extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
+    @OneToMany(() => ProvidedService, providedService => providedService.services)
+    providedService !: ProvidedService;
 }

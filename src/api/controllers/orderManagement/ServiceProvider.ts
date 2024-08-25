@@ -6,6 +6,7 @@ import { format, isValid } from 'date-fns';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
+import { Service } from '@/api/entity/sector/Service';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -306,28 +307,52 @@ export const getProvidedService = async (req: Request, res: Response) => {
         const { id } = req.body;
         const { isActive } = req.query;
 
+        let providedService;
         if (id) {
-            const providedService = await ProvidedService.findOne({ where: { id, ...(isActive && { isActive: isActive === 'true' }) } });
+            providedService = await ProvidedService.findOne({
+                where: { id, ...(isActive && { isActive: isActive === 'true' }) },
+                relations: ['category', 'subCategory'],
+            });
 
             if (!providedService) {
                 return res.status(404).json({ status: "error", message: 'Provided Service not found' });
             }
 
-            return res.status(200).json({ status: "success", message: "Provided Service successfully fetched", data: { providedService } });
+            const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
+            providedService['services'] = serviceDetails;
         } else {
-            const providedServices = await ProvidedService.find({ where: { ...(isActive && { isActive: isActive === 'true' }) } });
+            const providedServices = await ProvidedService.find({
+                where: { ...(isActive && { isActive: isActive === 'true' }) },
+                relations: ['category', 'subCategory'],
+            });
 
             if (providedServices.length === 0) {
                 return res.status(404).json({ status: "error", message: 'Provided Services not found' });
             }
 
-            return res.status(200).json({ status: "success", message: "Provided Services successfully fetched", data: { providedServices } });
+            for (let providedService of providedServices) {
+                const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
+                providedService['services'] = serviceDetails;
+            }
+
+            return res.status(200).json({
+                status: "success",
+                message: "Provided Services successfully fetched",
+                data: { providedServices },
+            });
         }
+
+        return res.status(200).json({
+            status: "success",
+            message: "Provided Service successfully fetched",
+            data: { providedService },
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ status: "error", message: 'Internal server error' });
     }
 };
+
 
 export const deleteProvidedService = async (req: Request, res: Response) => {
     try {
