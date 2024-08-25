@@ -15,9 +15,6 @@ export class RefreshToken extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  // @Column({ type: 'varchar', length: 15, unique: true })
-  // mobileNumber!: string;
-
   @Column({ type: "uuid" })
   userId !: string;
 
