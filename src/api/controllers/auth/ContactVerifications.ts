@@ -31,7 +31,16 @@ const generateVerificationCode = (): string => {
 
 export const sendVerificationCode = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { mobileNumber } = req.body;
+    const { userId, userType, useCase} = req.body;
+
+    const user = await UserLogin.findOne({ where: { id: userId}})
+
+    if(!user)
+    {
+      
+    }
+
+    const mobileNumber = user!.mobileNumber;
 
     if (!mobileNumber) {
       return res.status(400).json({ status: 'error', message: 'Please provide a mobile number.' });

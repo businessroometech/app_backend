@@ -34,7 +34,7 @@ export class OtpVerification extends BaseEntity {
     sentTo !: string;
 
     @Column({ type: "enum", enum: ['Signup', 'Forgot Password', 'Started Work', 'Ended Work'] })
-    case !: string;
+    useCase !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
