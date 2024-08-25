@@ -15,8 +15,8 @@ import { authenticate } from '../../middlewares/auth/Authenticate';
 
 const Router = express.Router();
 
-Router.post('/contact-verification/generate', sendVerificationCode);
-Router.post('/contact-verification/verify', verifyCode);
+Router.post('/verification/generate', sendVerificationCode);
+Router.post('/verification/verify', verifyCode);
 
 Router.post('/signup', signup);
 

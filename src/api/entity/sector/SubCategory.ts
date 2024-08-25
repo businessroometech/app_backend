@@ -23,6 +23,9 @@ export class SubCategory extends BaseEntity {
   @Column({ type: 'varchar' })
   subCategoryName!: string;
 
+  @Column({ type: 'text' })
+  subCategoryDescription!: string;
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
