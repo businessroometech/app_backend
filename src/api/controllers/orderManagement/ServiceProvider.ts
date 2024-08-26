@@ -315,7 +315,7 @@ export const getProvidedService = async (req: Request, res: Response) => {
             });
 
             if (!providedService) {
-                return res.status(404).json({ status: "error", message: 'Provided Service not found' });
+                return res.status(200).json({ status: "success", message: 'Provided Service not found' });
             }
 
             const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
@@ -327,7 +327,7 @@ export const getProvidedService = async (req: Request, res: Response) => {
             });
 
             if (providedServices.length === 0) {
-                return res.status(404).json({ status: "error", message: 'Provided Services not found' });
+                return res.status(200).json({ status: "success", message: 'Provided Services not found' });
             }
 
             for (let providedService of providedServices) {

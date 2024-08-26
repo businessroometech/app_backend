@@ -15,8 +15,11 @@ export class OtpVerification extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: "uuid" })
+    @Column({ type: "uuid", nullable: true})
     userId !: string;
+
+    @Column({ type: 'varchar', length: 15 })
+    mobileNumber!: string;
 
     @Column({ type: 'varchar' })
     verificationCode!: string;

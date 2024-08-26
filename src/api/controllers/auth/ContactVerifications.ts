@@ -35,18 +35,33 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
     const { userId, userType, useCase, mobileNumber } = req.body;
 
     let user: UserLogin | null = null;
+    let number: string;
 
-    if (useCase !== 'Signup') {
-      // Skip user existence check for signup
+    if (useCase === 'Signup') {
+      number = mobileNumber;
+      const existingUser: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+      if (existingUser) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Mobile number already registered',
+          data: { user: existingUser },
+        });
+      }
+    } else {
+      // For other use cases, require userId and fetch the user
+      if (!userId) {
+        return res.status(400).json({ status: 'error', message: 'Please provide userId for this use case.' });
+      }
+
       user = await UserLogin.findOne({ where: { id: userId } });
       if (!user) {
         return res.status(404).json({ status: 'error', message: 'User not found.' });
       }
-    }
 
-    let number = useCase === 'Signup' ? req.body.mobileNumber : user!.mobileNumber;
-    if (!number) {
-      return res.status(400).json({ status: 'error', message: 'Please provide a mobile number.' });
+      number = user.mobileNumber;
+      if (!number) {
+        return res.status(400).json({ status: 'error', message: 'User does not have a mobile number registered.' });
+      }
     }
 
     const phoneNumber = parsePhoneNumberFromString(number, 'IN');
@@ -56,21 +71,16 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
     const formattedNumber = phoneNumber.format('E.164');
     console.log('formatted-number :', formattedNumber);
 
-    if (useCase === 'Signup') {
-      const existingUser: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
-      if (existingUser) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Mobile number already registered',
-          data: { user: existingUser },
-        });
-      }
-    }
-
     const code = generateVerificationCode();
     console.log('generated code: ', code);
 
-    let otpObj = await OtpVerification.findOne({ where: { userId, useCase } });
+    let otpObj;
+
+    if (useCase === 'Signup') {
+      otpObj = await OtpVerification.findOne({ where: { mobileNumber, useCase } });
+    } else {
+      otpObj = await OtpVerification.findOne({ where: { userId, useCase } });
+    }
 
     const currentDate = new Date();
     const cooldownPeriod = 1 * 60 * 1000;  // 1 minute cooldown
@@ -88,7 +98,8 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
       await otpObj.save();
     } else {
       otpObj = await OtpVerification.create({
-        userId,
+        userId: useCase === 'Signup' ? null : userId,
+        mobileNumber,
         verificationCode: code,
         isVerified: false,
         expiresAt: new Date(currentDate.getTime() + expirationPeriod),
@@ -127,21 +138,27 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
   }
 };
 
+
 export const verifyCode = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, verificationCode, useCase } = req.body;
+    const { userId, verificationCode, useCase, mobileNumber } = req.body;
 
-    if (!userId || !verificationCode || !useCase) {
+    if ((!userId && useCase !== 'Signup') || !verificationCode || !useCase || (useCase === 'Signup' && !mobileNumber)) {
       return res
         .status(400)
-        .json({ status: 'error', message: 'Please provide userId, verification code, and useCase.' });
+        .json({ status: 'error', message: 'Please provide userId (except for Signup), mobileNumber (for Signup), verification code, and useCase.' });
     }
-    console.log(userId, verificationCode, useCase);
 
-    const isVerify = await OtpVerification.findOne({ where: { userId, verificationCode, useCase } });
+    let isVerify;
+
+    if (useCase === 'Signup') {
+      isVerify = await OtpVerification.findOne({ where: { mobileNumber, verificationCode, useCase } });
+    } else {
+      isVerify = await OtpVerification.findOne({ where: { userId, verificationCode, useCase } });
+    }
 
     if (!isVerify) {
-      return res.status(400).json({ status: 'error', message: 'Invalid Verification code' });
+      return res.status(400).json({ status: 'error', message: 'Invalid verification code' });
     }
 
     const expiryDate = new Date(isVerify.expiresAt);
@@ -159,4 +176,5 @@ export const verifyCode = async (req: Request, res: Response): Promise<Response>
     return res.status(500).json({ status: 'error', message: 'Server error.' });
   }
 };
+
 
