@@ -186,6 +186,36 @@ export const rejectService = async (req: Request, res: Response) => {
     }
 };
 
+export const completeService = async (req: Request, res: Response) => {
+    try {
+        const { orderItemBookingId, updatedBy } = req.body;
+
+        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId } });
+        if (!serviceJob) {
+            res.status(404).json({ status: "error", message: "ServiceJob not found" });
+            return;
+        }
+
+        const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemBookingId } });
+        if (!orderItemBooking) {
+            res.status(404).json({ status: "error", message: "OrderItemBooking not found" });
+            return;
+        }
+
+        serviceJob.status = "Completed";
+        serviceJob.updatedBy = updatedBy || 'system';
+        await serviceJob.save();
+
+        orderItemBooking.status = "Completed";
+        await orderItemBooking.save();
+
+        res.status(200).json({ status: "success", message: "Service completed successfully", data: { serviceJob, orderItemBooking } });
+    } catch (error) {
+        console.log("Cannot mark service as completed :", error);
+        res.status(500).json({ status: "error", message: 'Something went wrong' });
+    }
+};
+
 // export const generateStartOtp = () => {
 
 // }
@@ -315,7 +345,7 @@ export const getProvidedService = async (req: Request, res: Response) => {
             });
 
             if (!providedService) {
-                return res.status(200).json({ status: "success", message: 'Provided Service not found' });
+                return res.status(404).json({ status: "error", message: 'Provided Service not found' });
             }
 
             const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
@@ -327,7 +357,7 @@ export const getProvidedService = async (req: Request, res: Response) => {
             });
 
             if (providedServices.length === 0) {
-                return res.status(200).json({ status: "success", message: 'Provided Services not found' });
+                return res.status(404).json({ status: "error", message: 'Provided Services not found' });
             }
 
             for (let providedService of providedServices) {

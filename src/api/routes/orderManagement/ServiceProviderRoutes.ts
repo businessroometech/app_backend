@@ -5,6 +5,7 @@ import {
     // addService,
     acceptService,
     rejectService,
+    completeService,
 
     addOrUpdateProvidedService,
     getProvidedService,
@@ -17,6 +18,7 @@ Router.get('/', getYourServices);
 // Router.post('/service-provider/add-service', addService);
 Router.post('/accept', acceptService);
 Router.post('/reject', rejectService);
+Router.post('/complete', rejectService);
 
 Router.post('/service-management/get', getProvidedService);
 Router.post('/service-management/add-or-update', addOrUpdateProvidedService);
