@@ -344,22 +344,25 @@ export const getProvidedService = async (req: Request, res: Response) => {
                 relations: ['category', 'subCategory'],
             });
 
-            if (!providedService) {
-                return res.status(404).json({ status: "error", message: 'Provided Service not found' });
+            // if (!providedService) {
+            //     return res.status(404).json({ status: "error", message: 'Provided Service not found' });
+            // }
+            
+            if(providedService)
+            {
+                const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
+                providedService['services'] = serviceDetails;
             }
-
-            const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
-            providedService['services'] = serviceDetails;
         } else {
             const providedServices = await ProvidedService.find({
                 where: { ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
 
-            if (providedServices.length === 0) {
-                return res.status(404).json({ status: "error", message: 'Provided Services not found' });
-            }
-
+            // if (providedServices.length === 0) {
+            //     return res.status(404).json({ status: "error", message: 'Provided Services not found' });
+            // }
+            
             for (let providedService of providedServices) {
                 const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
