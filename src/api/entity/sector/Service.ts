@@ -5,39 +5,28 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    ManyToMany,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
-@Entity({ name: 'FinancialDetails' })
-export class FinancialDetails extends BaseEntity {
+
+@Entity({ name: 'Service' })
+export class Service extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
     @Column({ type: 'uuid' })
-    sectorId!: string;
-
-    @Column({ type: 'uuid' })
-    userId!: string;
+    subCategoryId!: string;
 
     @Column({ type: 'varchar', length: 255 })
-    bankName!: string;
+    name!: string;
 
-    @Column({ type: 'varchar', length: 255 })
-    accountHolder!: string;
-
-    @Column({ type: 'varchar', length: 255 })
-    accountNumber!: string;
-
-    @Column({ type: 'varchar', length: 255 })
-    ifscCode!: string;
-
-    @Column({ type: 'simple-array' })
-    upiIds!: string[];
-
-    @Column({ type: 'simple-array' })
-    cancelledChequeUploadIds!: string[];
+    @Column({ type: 'text' })
+    bio!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -61,7 +50,10 @@ export class FinancialDetails extends BaseEntity {
         this.id = this.generateUUID();
     }
 
-    private generateUUID() {
+    private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
+
+    @OneToMany(() => ProvidedService, providedService => providedService.services)
+    providedService !: ProvidedService;
 }

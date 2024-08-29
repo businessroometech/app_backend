@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, } from 'typeorm';
-import { Product } from '../serviceProvider/product/Product';
-import { Cart } from './Cart';
+// import { Product } from '../serviceProvider/product/ProvidedProduct';
+// import { Cart } from './Cart';
 
 interface Address {
     addressLine1: string,
@@ -11,8 +11,8 @@ interface Address {
     pincode: string,
 }
 
-@Entity({ name: "CartItem" })
-export class CartItem extends BaseEntity {
+@Entity({ name: "CartItemProduct" })
+export class CartItemProduct extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
@@ -76,9 +76,9 @@ export class CartItem extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Product, product => product.cartItems)
-    product!: Product;
+    // @ManyToOne(() => Product, product => product.cartItemProducts)
+    // cartProduct!: Product;
 
-    // @ManyToOne(() => Cart, cart => cart.cartItems)
-    cart !: Cart;
+    // @ManyToOne(() => Cart, cart => cart.cartItemProducts)
+    // cart !: Cart;
 }

@@ -3,6 +3,14 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, U
 import { OrderItemBooking } from '../../customer/OrderItemBooking';
 import { UserLogin } from '@/api/entity/user/UserLogin';
 
+interface Address {
+    addressLine1: string,
+    addressLine2: string,
+    city: string,
+    state: string,
+    pincode: string,
+}
+
 @Entity({ name: "ServiceJob" })
 export class ServiceJob extends BaseEntity {
 
@@ -11,6 +19,9 @@ export class ServiceJob extends BaseEntity {
 
     @Column({ type: 'uuid' })
     orderItemBookingId!: string;
+
+    @Column({ type: 'varchar' })
+    jobId !: string;
 
     @Column({ type: 'uuid' })
     customerId!: string;
@@ -21,8 +32,35 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: "enum", enum: ["Pending", "Accepted", "Rejected", "InProcess", "Completed", "Cancelled"], default: "Pending" })
     status!: string;
 
+    @Column({ type: "text" })
+    description!: string;
+
     @Column({ type: "text", nullable: true })
     note!: string;
+
+    @Column({ type: 'varchar' })
+    serviceCategory !: string;
+
+    @Column({ type: "float" })
+    price !: number;
+
+    @Column({ type: 'date' })
+    deliveryDate!: string;
+
+    @Column({ type: 'time' })
+    deliveryTime!: string;
+
+    @Column({ type: 'json' })
+    deliveryAddress!: Address;
+
+    @Column({ type: 'varchar' })
+    customerName !: string;
+
+    @Column({ type: 'varchar' })
+    customerMobileNumber !: string;
+
+    @Column({ type: 'text'})
+    reasonIfRejected !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -53,9 +91,4 @@ export class ServiceJob extends BaseEntity {
     @OneToOne(() => OrderItemBooking, item => item.serviceJobs)
     @JoinColumn({ name: "orderItemBookingId" })
     orderItemBooking!: OrderItemBooking;
-
-    // @ManyToOne(() => UserLogin, user => user.jobs)
-    // @JoinColumn({ name: "serviceProviderId" })
-    // serviceProvider!: UserLogin;
-
 }

@@ -12,25 +12,17 @@ import {
 } from 'typeorm';
 import { OrderItemBooking } from '../../customer/OrderItemBooking';
 import { CartItemBooking } from '../../customer/CartItemBooking';
+import { OrderItemProduct } from '../../customer/OrderItemProduct';
+import { CartItemProduct } from '../../customer/CartItemProduct';
 
-// import { ServiceReview } from '../service/ServiceReview';
-// import { OrderItem } from '../../customer/OrderItemBooking';
-// import { CartItem } from '../../customer/CartItemBooking';
-
-@Entity({ name: 'Service' })
-export class Service extends BaseEntity {
+@Entity({ name: 'ProvidedProduct' })
+export class ProvidedProduct extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
   serviceProviderId!: string;
-
-  @Column({ type: 'uuid' })
-  sectorId!: string;
-  
-  @Column({ type: 'uuid' })
-  categoryId!: string;
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;
@@ -39,10 +31,10 @@ export class Service extends BaseEntity {
   description!: string;
 
   @Column({ type: 'float' })
-  price !: number;
+  price!: number;
 
-  @Column({ type: 'varchar' })
-  per !: string;
+  @Column({ type: 'int', default: 1 })
+  quantity !: number;
 
   @Column({ type: "enum", enum: ['Draft', 'Published'] })
   status !: string;
@@ -73,15 +65,16 @@ export class Service extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  // @ManyToOne(() => Provider, provider => provider.services)
+  // @ManyToOne(() => Provider, provider => provider.products)
   // provider !: Provider;
 
-  // @OneToMany(() => ServiceReview, review => review.service)
-  // reviews !: ServiceReview[];
+  // @OneToMany(() => ProductReview, review => review.product)
+  // reviews !: ProductReview[];
 
-  @OneToMany(() => OrderItemBooking, orderItem => orderItem.service)
-  orderItems !: OrderItemBooking[];
+  @OneToMany(() => OrderItemProduct, orderItem => orderItem.orderProduct)
+  orderItemProducts !: OrderItemProduct[];
 
-  @OneToMany(() => CartItemBooking, cartItem => cartItem.service)
-  cartItems !: CartItemBooking[];
+  @OneToMany(() => CartItemProduct, cartItem => cartItem.cartProduct)
+  cartItemProducts !: CartItemProduct[];
 }
+

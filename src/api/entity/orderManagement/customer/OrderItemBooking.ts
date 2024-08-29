@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, JoinColumn, OneToOne, } from 'typeorm';
-import { Service } from '../serviceProvider/service/Service';
-import { Product } from '../serviceProvider/product/Product';
+import { ProvidedService } from '../serviceProvider/service/ProvidedService';
+// import { Product } from '../serviceProvider/product/ProvidedProduct';
 import { Order } from './Order';
 import { Sector } from '../../sector/Sector';
 import { UserLogin } from '../../user/UserLogin';
@@ -37,7 +37,7 @@ export class OrderItemBooking extends BaseEntity {
     serviceProviderId !: string;
 
     @Column({ type: "uuid" })
-    serviceId!: string;
+    providedServiceId!: string;
 
     @Column({ type: "enum", enum: ["Pending", "Assigned", "Rejected", "Completed", "Cancelled", "Rescheduled"], default: "Pending" })
     status !: string;
@@ -117,11 +117,11 @@ export class OrderItemBooking extends BaseEntity {
         return `${cityCode}${dateCode}${sectorCode}${typeCode}${orderSeq}`;
     }
 
-    @ManyToOne(() => Service, service => service.orderItems)
-    service!: Service;
+    @ManyToOne(() => ProvidedService, service => service.orderItemBookings)
+    providedService!: ProvidedService;
 
-    @ManyToOne(() => Product, product => product.orderItems)
-    product!: Product;
+    // @ManyToOne(() => Product, product => product.orderItemProducts)
+    // product!: Product;
 
     @ManyToOne(() => Order, order => order.orderItems)
     order !: Order;
@@ -135,3 +135,4 @@ export class OrderItemBooking extends BaseEntity {
     @OneToOne(() => ServiceJob, job => job.orderItemBooking)
     serviceJobs !: ServiceJob;
 }
+

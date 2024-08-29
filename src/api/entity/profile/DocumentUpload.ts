@@ -34,6 +34,9 @@ export class DocumentUpload extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   contentType!: string;
 
+  @Column({ type: 'varchar', length: 255 })
+  documentName!: string;
+
   @Column({
     type: 'enum',
     enum: DocumentType,

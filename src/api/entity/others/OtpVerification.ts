@@ -9,23 +9,35 @@ import {
     UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'SubCategory' })
-export class SubCategory extends BaseEntity {
+@Entity({ name: 'OtpVerification' })
+export class OtpVerification extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
-    sectorId!: string;
+    @Column({ type: "uuid", nullable: true})
+    userId !: string;
 
-    @Column({ type: "uuid" })
-    categoryId !: string;
+    @Column({ type: 'varchar', length: 15 })
+    mobileNumber!: string;
 
     @Column({ type: 'varchar' })
-    subCategoryName!: string;
+    verificationCode!: string;
 
-    @Column({ type: 'text' })
-    SubCategoryDescription!: string;
+    @Column({ type: 'boolean', default: false })
+    isVerified!: boolean;
+
+    @Column({ type: 'timestamp' })
+    expiresAt!: Date;
+
+    @Column({ type: "enum", enum: ['Customer', 'Service Provider'] })
+    userType !: string;
+
+    @Column({ type: "enum", enum: ['Mobile', 'Email'] })
+    sentTo !: string;
+
+    @Column({ type: "enum", enum: ['Signup', 'Forgot Password', 'Started Work', 'Ended Work'] })
+    useCase !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

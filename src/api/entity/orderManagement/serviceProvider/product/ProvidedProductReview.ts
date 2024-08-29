@@ -5,26 +5,30 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+// import { Product } from './Product';
+// import { Provider } from '../Provider';
 
-@Entity({ name: 'ContactVerification' })
-export class ContactVerification extends BaseEntity {
+@Entity({ name: 'ProductReview' })
+export class ProductReview extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
+  @Column({ type: 'uuid' })
+  serviceProviderId!: string;
 
-  @Column({ type: 'varchar' })
-  verificationCode!: string;
+  @Column({ type: 'uuid' })
+  providedProductId!: string;
 
-  @Column({ type: 'boolean', default: false })
-  isVerified!: boolean;
+  @Column({ type: 'int' })
+  rating!: number;
 
-  @Column({ type: 'timestamp' })
-  expiresAt!: Date;
+  @Column({ type: 'text' })
+  comment!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -48,7 +52,13 @@ export class ContactVerification extends BaseEntity {
     this.id = this.generateUUID();
   }
 
-  private generateUUID() {
+  private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
+
+  // @ManyToOne(() => Provider, provider => provider.productReviews)
+  // provider !: Provider;
+
+  // @ManyToOne(() => Product, product => product.reviews)
+  // product !: Product;
 }

@@ -12,12 +12,11 @@ import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import sectorsRouter from '../src/api/routes/sectors/SectorRoutes';
-import rolesRouter from './api/routes/roles/RoleRoutes';
-import usersRouter from './api/routes/users/UserRoutes';
+import CategoriesRouter from './api/routes/category/CategoryRoutes';
 import profileRouter from './api/routes/profile/ProfileRoutes';
 import customerRouter from './api/routes/orderManagement/CustomerRoutes';
 import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
-
+import paymentRouter from "./api/routes/payment/PaymentRoutes";
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -36,7 +35,13 @@ app.set('trust proxy', true);
 // Middlewares
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+// app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(cors({
+  origin: function (origin, callback) {
+    callback(null, true); // Allow all origins
+  },
+  credentials: true,
+}));
 app.use(helmet());
 app.use(rateLimiter);
 
@@ -46,11 +51,11 @@ app.use(requestLogger);
 // Routes mounting
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/sectors', sectorsRouter);
-app.use('/api/v1/roles', rolesRouter);
-app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/categories', CategoriesRouter);
 app.use('/api/v1/profile', profileRouter);
-app.use('/api/v1/order-management', customerRouter);
-app.use('/api/v1/order-management', serviceProviderRouter);
+app.use('/api/v1/order-management/customer', customerRouter);
+app.use('/api/v1/order-management/service-provider', serviceProviderRouter);
+app.use('/api/v1/checkout', paymentRouter);
 // app.use('/health-check', healthCheckRouter);
 
 // Error handlers

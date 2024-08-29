@@ -32,14 +32,14 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
         } = req.body;
 
         // Ensure DocumentUpload entries for profile picture, Aadhar, and PAN numbers
-        // const profilePictureUpload = await DocumentUpload.findOne({ where: { id: profilePictureId } });
-        // const aadharNumberUpload = await DocumentUpload.findOne({ where: { id: aadharNumberId } });
-        // const panNumberUpload = await DocumentUpload.findOne({ where: { id: panNumberId } });
+        const profilePictureUpload = await DocumentUpload.findOne({ where: { id: profilePictureId } });
+        const aadharNumberUpload = await DocumentUpload.findOne({ where: { id: aadharNumberId } });
+        const panNumberUpload = await DocumentUpload.findOne({ where: { id: panNumberId } });
 
-        // if (!profilePictureUpload || !aadharNumberUpload || !panNumberUpload) {
-        //     res.status(400).json({ status: 'error', message: 'Invalid document upload IDs' });
-        //     return;
-        // }
+        if (!profilePictureUpload || !aadharNumberUpload || !panNumberUpload) {
+            res.status(400).json({ status: 'error', message: 'Invalid document upload IDs' });
+            return;
+        }
 
         let details = await PersonalDetails.findOne({ where: { sectorId, userId } });
 
@@ -48,14 +48,14 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
                 sectorId,
                 userId,
                 mobileNumber,
-                profilePictureUploadId: profilePictureId,
+                profilePictureUploadId: profilePictureUpload.id,
                 fullName,
                 dob,
                 emailAddress,
                 bio,
                 permanentAddress,
                 currentAddress,
-                aadharNumberUploadId: aadharNumberId,
+                aadharNumberUploadId: aadharNumberUpload.id,
                 panNumberUploadId: panNumberId,
                 createdBy: createdBy || 'system',
                 updatedBy: updatedBy || 'system',
@@ -66,15 +66,15 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
                 { sectorId, userId },
                 {
                     mobileNumber,
-                    profilePictureUploadId: profilePictureId,
+                    profilePictureUploadId: profilePictureUpload.id,
                     fullName,
                     dob,
                     emailAddress,
                     bio,
                     permanentAddress,
                     currentAddress,
-                    aadharNumberUploadId: aadharNumberId,
-                    panNumberUploadId: panNumberId,
+                    aadharNumberUploadId: aadharNumberUpload.id,
+                    panNumberUploadId: panNumberUpload.id,
                     updatedBy: updatedBy || 'system',
                 }
             );
@@ -112,14 +112,14 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             updatedBy,
         } = req.body;
 
-        // const portfolioUploads = await DocumentUpload.find({
-        //     where: { id: In(portfolioDocumentIds) }
-        // });
+        const portfolioUploads = await DocumentUpload.find({
+            where: { id: In(portfolioDocumentIds) }
+        });
 
-        // if (portfolioUploads.length !== portfolioDocumentIds.length) {
-        //     res.status(400).json({ status: 'error', message: 'Invalid portfolio document IDs' });
-        //     return;
-        // }
+        if (portfolioUploads.length !== portfolioDocumentIds.length) {
+            res.status(400).json({ status: 'error', message: 'Invalid portfolio document IDs' });
+            return;
+        }
 
         let details: ProfessionalDetails | null = await ProfessionalDetails.findOne({
             where: { sectorId, userId },
@@ -447,6 +447,8 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
             sectorId,
             userId,
             bankName,
+            accountHolder,
+            accountNumber,
             ifscCode,
             upiIds,
             cancelledChequesIds,
@@ -463,6 +465,8 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 sectorId,
                 userId,
                 bankName,
+                accountHolder,
+                accountNumber,
                 ifscCode,
                 upiIds,
                 cancelledChequeUploadIds: cancelledChequesIds,
@@ -474,6 +478,8 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 { sectorId, userId },
                 {
                     bankName,
+                    accountHolder,
+                    accountNumber,
                     ifscCode,
                     upiIds,
                     cancelledChequeUploadIds: cancelledChequesIds,
@@ -500,5 +506,82 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
         }
         console.error('Error during filling financial details:', error);
         res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
+    }
+};
+
+export const getPersonalDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await PersonalDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Personal details fetched for user with id: ${userId}`,
+            data: {
+                personalDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching personal details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch personal details' });
+    }
+};
+
+export const getProfessionalDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await ProfessionalDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Professional details fetched for user with id: ${userId}`,
+            data: {
+                professionalDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching professional details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch professional details' });
+    }
+};
+
+export const getEducationalDetails = async (req: Request, res: Response) => {
+    try {
+        const { sectortype } = req.params;
+        const { userId, sectorId } = req.body;
+        if (sectortype === 'healthcare') {
+
+        }
+        else if (sectortype === 'petcare') {
+
+        }
+        else {
+            const details = await EducationalDetails.findOne({ where: { userId, sectorId } });
+            res.status(200).json({
+                status: 'success',
+                message: `Educational details fetched for user with id: ${userId}`,
+                data: {
+                    educationalDetails: details,
+                },
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching educational details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch educational details' });
+    }
+};
+
+export const getFinancialDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await FinancialDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Financial details fetched for user with id: ${userId}`,
+            data: {
+                financialDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching financial details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch financial details' });
     }
 };

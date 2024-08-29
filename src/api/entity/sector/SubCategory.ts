@@ -5,30 +5,26 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-// import { Service } from './Service';
-// import { Provider } from '../Provider';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
-@Entity({ name: 'ServiceReview' })
-export class ServiceReview extends BaseEntity {
+@Entity({ name: 'SubCategory' })
+export class SubCategory extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
-  serviceProviderId!: string;
+  categoryId!: string;
 
-  @Column({ type: 'uuid' })
-  serviceId!: string;
-
-  @Column({ type: 'int' })
-  rating!: number;
+  @Column({ type: 'varchar' })
+  subCategoryName!: string;
 
   @Column({ type: 'text' })
-  comment!: string;
+  subCategoryDescription!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -52,13 +48,10 @@ export class ServiceReview extends BaseEntity {
     this.id = this.generateUUID();
   }
 
-  private generateUUID(): string {
+  private generateUUID() {
     return randomBytes(16).toString('hex');
   }
 
-  // @ManyToOne(() => Provider, provider => provider.serviceReviews)
-  // provider !: Provider;
-
-  // @ManyToOne(() => Service, service => service.reviews)
-  // service !: Service[];
+  @OneToMany(() => ProvidedService, providedService => providedService.subCategory)
+  providedServices !: ProvidedService[];
 }
