@@ -35,7 +35,13 @@ app.set('trust proxy', true);
 // Middlewares
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+// app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(cors({
+  origin: function (origin, callback) {
+    callback(null, true); // Allow all origins
+  },
+  credentials: true,
+}));
 app.use(helmet());
 app.use(rateLimiter);
 

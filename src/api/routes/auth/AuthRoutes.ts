@@ -1,7 +1,7 @@
 import express from 'express';
 
 import { sendVerificationCode, verifyCode } from '../../controllers/auth/ContactVerifications';
-import { login, protectedRoute, refresh } from '../../controllers/auth/Login';
+import { login, generateUuidToken, verifyUuidToken, protectedRoute, refresh } from '../../controllers/auth/Login';
 import { logout } from '../../controllers/auth/Logout';
 import {
   changePassword,
@@ -21,6 +21,8 @@ Router.post('/verification/verify', verifyCode);
 Router.post('/signup', signup);
 
 Router.post('/login', login);
+Router.post('/generate-login-token', generateUuidToken);
+Router.post('/verify-login-token', verifyUuidToken);
 Router.post('/logout', logout);
 
 Router.post('/refresh', refresh);

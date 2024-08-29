@@ -18,7 +18,7 @@ Router.get('/', getYourServices);
 // Router.post('/service-provider/add-service', addService);
 Router.post('/accept', acceptService);
 Router.post('/reject', rejectService);
-Router.post('/complete', rejectService);
+Router.post('/complete', completeService);
 
 Router.post('/service-management/get', getProvidedService);
 Router.post('/service-management/add-or-update', addOrUpdateProvidedService);
