@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, JoinColumn, } from 'typeorm';
-import { Service } from '../serviceProvider/service/Service';
-import { Product } from '../serviceProvider/product/Product';
+// import { Service } from '../serviceProvider/service/ProvidedService';
+// import { Product } from '../serviceProvider/product/ProvidedProduct';
 import { Order } from './Order';
 import { Sector } from '../../sector/Sector';
 import { UserLogin } from '../../user/UserLogin';
@@ -119,11 +119,8 @@ export class OrderItemProduct extends BaseEntity {
         return `${cityCode}${dateCode}${sectorCode}${typeCode}${orderSeq}`;
     }
 
-    @ManyToOne(() => Service, service => service.orderItems)
-    service!: Service;
-
-    @ManyToOne(() => Product, product => product.orderItems)
-    product!: Product;
+    // @ManyToOne(() => Product, product => product.orderItemProducts)
+    // orderProduct!: Product;
 
     @ManyToOne(() => Order, order => order.orderItems)
     order !: Order;

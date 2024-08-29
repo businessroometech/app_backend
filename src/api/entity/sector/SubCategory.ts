@@ -5,26 +5,26 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
-@Entity({ name: 'ContactVerification' })
-export class ContactVerification extends BaseEntity {
+@Entity({ name: 'SubCategory' })
+export class SubCategory extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
+  @Column({ type: 'uuid' })
+  categoryId!: string;
 
   @Column({ type: 'varchar' })
-  verificationCode!: string;
+  subCategoryName!: string;
 
-  @Column({ type: 'boolean', default: false })
-  isVerified!: boolean;
-
-  @Column({ type: 'timestamp' })
-  expiresAt!: Date;
+  @Column({ type: 'text' })
+  subCategoryDescription!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -51,4 +51,7 @@ export class ContactVerification extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
+
+  @OneToMany(() => ProvidedService, providedService => providedService.subCategory)
+  providedServices !: ProvidedService[];
 }

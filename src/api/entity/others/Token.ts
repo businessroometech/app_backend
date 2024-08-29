@@ -1,43 +1,33 @@
-import { randomBytes } from 'crypto';
 import {
-    BaseEntity,
-    BeforeInsert,
-    Column,
-    CreateDateColumn,
     Entity,
     PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
+    BaseEntity,
 } from 'typeorm';
+import { UserLogin } from '../user/UserLogin';
+import { randomBytes } from 'crypto';
 
-@Entity({ name: 'FinancialDetails' })
-export class FinancialDetails extends BaseEntity {
+@Entity({ name: 'Token' })
+export class Token extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
     @Column({ type: 'uuid' })
-    sectorId!: string;
-
-    @Column({ type: 'uuid' })
     userId!: string;
 
-    @Column({ type: 'varchar', length: 255 })
-    bankName!: string;
+    @Column({ type: 'text' })
+    encryptedData!: string;
 
     @Column({ type: 'varchar', length: 255 })
-    accountHolder!: string;
+    hmac!: string;
 
-    @Column({ type: 'varchar', length: 255 })
-    accountNumber!: string;
-
-    @Column({ type: 'varchar', length: 255 })
-    ifscCode!: string;
-
-    @Column({ type: 'simple-array' })
-    upiIds!: string[];
-
-    @Column({ type: 'simple-array' })
-    cancelledChequeUploadIds!: string[];
+    @Column({ type: 'timestamp' })
+    expiresAt!: Date;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -61,7 +51,10 @@ export class FinancialDetails extends BaseEntity {
         this.id = this.generateUUID();
     }
 
-    private generateUUID() {
+    private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
+
+    // @ManyToOne(() => UserLogin, userLogin => userLogin.token)
+    // user !: UserLogin;
 }

@@ -18,23 +18,23 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
             sectorId,
             userId,
             mobileNumber,
-            profilePicture,
+            profilePictureId,
             fullName,
             dob,
             emailAddress,
             bio,
             permanentAddress,
             currentAddress,
-            aadharNumber,
-            panNumber,
+            aadharNumberId,
+            panNumberId,
             createdBy,
             updatedBy,
         } = req.body;
 
         // Ensure DocumentUpload entries for profile picture, Aadhar, and PAN numbers
-        const profilePictureUpload = await DocumentUpload.findOne({ where: { id: profilePicture } });
-        const aadharNumberUpload = await DocumentUpload.findOne({ where: { id: aadharNumber } });
-        const panNumberUpload = await DocumentUpload.findOne({ where: { id: panNumber } });
+        const profilePictureUpload = await DocumentUpload.findOne({ where: { id: profilePictureId } });
+        const aadharNumberUpload = await DocumentUpload.findOne({ where: { id: aadharNumberId } });
+        const panNumberUpload = await DocumentUpload.findOne({ where: { id: panNumberId } });
 
         if (!profilePictureUpload || !aadharNumberUpload || !panNumberUpload) {
             res.status(400).json({ status: 'error', message: 'Invalid document upload IDs' });
@@ -56,7 +56,7 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
                 permanentAddress,
                 currentAddress,
                 aadharNumberUploadId: aadharNumberUpload.id,
-                panNumberUploadId: panNumberUpload.id,
+                panNumberUploadId: panNumberId,
                 createdBy: createdBy || 'system',
                 updatedBy: updatedBy || 'system',
             });
@@ -103,7 +103,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
         const {
             sectorId,
             userId,
-            portfolioDocument,
+            portfolioDocumentIds,
             exp,
             comments,
             preferredWorkType,
@@ -113,10 +113,10 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
         } = req.body;
 
         const portfolioUploads = await DocumentUpload.find({
-            where: { id: In(portfolioDocument) }
+            where: { id: In(portfolioDocumentIds) }
         });
 
-        if (portfolioUploads.length !== portfolioDocument.length) {
+        if (portfolioUploads.length !== portfolioDocumentIds.length) {
             res.status(400).json({ status: 'error', message: 'Invalid portfolio document IDs' });
             return;
         }
@@ -129,7 +129,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             details = ProfessionalDetails.create({
                 sectorId,
                 userId,
-                portfolioDocument,
+                portfolioDocumentUploadIds: portfolioDocumentIds,
                 totalYearsExperience: exp,
                 comments,
                 preferredWorkType,
@@ -142,7 +142,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             await ProfessionalDetails.update(
                 { sectorId, userId },
                 {
-                    portfolioDocument,
+                    portfolioDocumentUploadIds: portfolioDocumentIds,
                     totalYearsExperience: exp,
                     comments,
                     preferredWorkType,
@@ -447,9 +447,11 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
             sectorId,
             userId,
             bankName,
+            accountHolder,
+            accountNumber,
             ifscCode,
             upiIds,
-            cancelledCheques,
+            cancelledChequesIds,
             createdBy,
             updatedBy,
         } = req.body;
@@ -463,9 +465,11 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 sectorId,
                 userId,
                 bankName,
+                accountHolder,
+                accountNumber,
                 ifscCode,
                 upiIds,
-                cancelledCheques,
+                cancelledChequeUploadIds: cancelledChequesIds,
                 createdBy: createdBy || 'system',
                 updatedBy: updatedBy || 'system',
             }).save();
@@ -474,9 +478,11 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 { sectorId, userId },
                 {
                     bankName,
+                    accountHolder,
+                    accountNumber,
                     ifscCode,
                     upiIds,
-                    cancelledCheques,
+                    cancelledChequeUploadIds: cancelledChequesIds,
                     updatedBy: updatedBy || 'system',
                 }
             );
@@ -500,5 +506,82 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
         }
         console.error('Error during filling financial details:', error);
         res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
+    }
+};
+
+export const getPersonalDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await PersonalDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Personal details fetched for user with id: ${userId}`,
+            data: {
+                personalDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching personal details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch personal details' });
+    }
+};
+
+export const getProfessionalDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await ProfessionalDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Professional details fetched for user with id: ${userId}`,
+            data: {
+                professionalDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching professional details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch professional details' });
+    }
+};
+
+export const getEducationalDetails = async (req: Request, res: Response) => {
+    try {
+        const { sectortype } = req.params;
+        const { userId, sectorId } = req.body;
+        if (sectortype === 'healthcare') {
+
+        }
+        else if (sectortype === 'petcare') {
+
+        }
+        else {
+            const details = await EducationalDetails.findOne({ where: { userId, sectorId } });
+            res.status(200).json({
+                status: 'success',
+                message: `Educational details fetched for user with id: ${userId}`,
+                data: {
+                    educationalDetails: details,
+                },
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching educational details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch educational details' });
+    }
+};
+
+export const getFinancialDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await FinancialDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Financial details fetched for user with id: ${userId}`,
+            data: {
+                financialDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching financial details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch financial details' });
     }
 };

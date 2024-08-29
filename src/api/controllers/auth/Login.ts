@@ -2,10 +2,12 @@ import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import { CookieOptions } from 'express';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 import { RefreshToken } from '@/api/entity/others/RefreshToken';
-
 import { UserLogin } from '../../entity/user/UserLogin';
+import { Token } from '@/api/entity/others/Token';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
@@ -21,7 +23,7 @@ const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false)
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { mobileNumber, password, rememberMe } = req.body;
+    const { mobileNumber, password, rememberMe, isThisMobile = false } = req.body;
 
     if (!mobileNumber && !password) {
       res.status(400).json({ status: 'fail', message: 'Need to provide mobileNumber and password' });
@@ -36,40 +38,42 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const accessToken = generateAccessToken(user, rememberMe);
-    const refreshToken = generateRefreshToken(user, rememberMe);
 
-    let cookieOptions: CookieOptions = {
-      httpOnly: true,
-    };
+    if (isThisMobile) {
+      const refreshToken = generateRefreshToken(user, rememberMe);
 
-    if (process.env.NODE_ENV === 'production') {
-      cookieOptions = { ...cookieOptions, secure: true };
-    }
+      let cookieOptions: CookieOptions = {
+        httpOnly: true,
+      };
 
-    res.cookie('accessToken', accessToken, cookieOptions);
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+      if (process.env.NODE_ENV === 'production') {
+        cookieOptions = { ...cookieOptions, secure: true };
+      }
 
-    // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { mobileNumber } });
+      res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
-    const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
-    const expiresIn = rememberMe ? rememberMeExpiresIn : defaultExpiresIn;
+      // store referesh token to the DB
+      const rt = await RefreshToken.findOne({ where: { userId: user.id } });
 
-    if (isNaN(expiresIn)) {
-      throw new Error('Invalid expiration time');
-    }
+      const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
+      const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
+      const expiresIn = rememberMe ? rememberMeExpiresIn : defaultExpiresIn;
 
-    if (rt) {
-      rt.token = refreshToken;
-      rt.expiresAt = new Date(Date.now() + expiresIn);
-      await rt.save();
-    } else {
-      await RefreshToken.create({
-        mobileNumber,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + expiresIn),
-      }).save();
+      if (isNaN(expiresIn)) {
+        throw new Error('Invalid expiration time');
+      }
+
+      if (rt) {
+        rt.token = refreshToken;
+        rt.expiresAt = new Date(Date.now() + expiresIn);
+        await rt.save();
+      } else {
+        await RefreshToken.create({
+          userId: user.id,
+          token: refreshToken,
+          expiresAt: new Date(Date.now() + expiresIn),
+        }).save();
+      }
     }
 
     res.status(200).json({
@@ -86,17 +90,116 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const refresh = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { mobileNumber } = req.body;
-    const refreshToken = req.cookies.refreshToken;
+const createHmac = (data: string): string => {
+  return crypto.createHmac('sha256', process.env.HMAC_SECRET_KEY!).update(data).digest('hex');
+};
 
-    if (!mobileNumber || !refreshToken) {
-      res.status(401).json({ status: 'error', message: 'Mobile number and refresh token required' });
+export const generateUuidToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    let accessToken;
+    if (authHeader) {
+      accessToken = authHeader.split(' ')[1];
+    } else {
+      res.status(401).json({ message: 'Authorization header missing' });
       return;
     }
 
-    const refresh = await RefreshToken.findOne({ where: { mobileNumber } });
+    if (!accessToken) {
+      res.status(401).json({ status: 'error', message: 'Access token is missing' });
+      return;
+    }
+
+    const decoded = jwt.verify(accessToken, process.env.ACCESS_SECRET_KEY!) as { id: string };
+
+    const uuidToken = uuidv4(); // Generating a UUID
+    const hmac = createHmac(uuidToken);
+
+    const token = await Token.create({
+      userId: decoded.id,
+      hmac,
+      expiresAt: new Date(Date.now() + parseInt(process.env.UUID_TOKEN_EXPIRES_IN!)),
+    }).save();
+
+    res.cookie('uuidToken', uuidToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: parseInt(process.env.UUID_TOKEN_EXPIRES_IN!),
+    });
+
+    res.status(200).json({ status: 'success', message: 'UUID token created', data: { token } });
+  } catch (error: any) {
+    console.error(error);
+    if (error.name === 'TokenExpiredError') {
+      res.status(403).json({ status: 'error', message: 'Token expired. Please log in again.' });
+    }
+    else {
+      res.status(500).json({ status: 'error', message: 'Server error.' });
+    }
+  }
+};
+
+export const verifyUuidToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const uuidToken = req.cookies.uuidToken;
+
+    if (!uuidToken) {
+      res.status(401).json({ status: 'error', message: 'UUID token is missing' });
+      return;
+    }
+
+    // Finding the token in the database using the HMAC
+    const hmac = createHmac(uuidToken);
+    const token = await Token.findOne({ where: { hmac } });
+
+    if (!token) {
+      res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
+      return;
+    }
+
+    if (new Date() > token.expiresAt) {
+      await Token.remove(token);
+      res.status(403).json({ status: 'error', message: 'UUID token expired' });
+      return;
+    }
+
+    const newAccessToken = generateAccessToken({ id: token.userId });
+    const newRefreshToken = generateRefreshToken({ id: token.userId });
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    // Destroying the UUID token after use
+    await Token.delete(token.id);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'UUID token verified',
+      data: {
+        accessToken: newAccessToken,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: 'error', message: 'Server error.' });
+  }
+};
+
+export const refresh = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // const { mobileNumber } = req.body;
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      res.status(401).json({ status: 'error', message: 'Refresh token is not present in cookies' });
+      return;
+    }
+
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
+
+    const refresh = await RefreshToken.findOne({ where: { userId: payload.id } });
 
     if (!refresh) {
       res.status(401).json({ status: 'error', message: 'Refresh token not found' });
@@ -115,8 +218,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
-
     const newAccessToken = generateAccessToken({ id: payload.id });
     const newRefreshToken = generateRefreshToken({ id: payload.id });
 
@@ -134,7 +235,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       cookieOptions.secure = true;
     }
 
-    res.cookie('accessToken', newAccessToken, cookieOptions);
+    // res.cookie('accessToken', newAccessToken, cookieOptions);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
     res.status(200).json({

@@ -6,17 +6,14 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+// import { Product } from './Product';
+// import { Provider } from '../Provider';
 
-// import { ServiceReview } from '../service/ServiceReview';
-// import { OrderItem } from '../../customer/OrderItemBooking';
-// import { CartItem } from '../../customer/CartItemBooking';
-
-@Entity({ name: 'Service' })
-export class Service extends BaseEntity {
+@Entity({ name: 'ProductReview' })
+export class ProductReview extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -25,25 +22,13 @@ export class Service extends BaseEntity {
   serviceProviderId!: string;
 
   @Column({ type: 'uuid' })
-  sectorId!: string;
-  
-  @Column({ type: 'uuid' })
-  categoryId!: string;
+  providedProductId!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  name!: string;
+  @Column({ type: 'int' })
+  rating!: number;
 
   @Column({ type: 'text' })
-  description!: string;
-
-  @Column({ type: 'float' })
-  price !: number;
-
-  @Column({ type: 'varchar' })
-  per !: string;
-
-  @Column({ type: "enum", enum: ['Draft', 'Published'] })
-  status !: string;
+  comment!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -71,15 +56,9 @@ export class Service extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  // @ManyToOne(() => Provider, provider => provider.services)
+  // @ManyToOne(() => Provider, provider => provider.productReviews)
   // provider !: Provider;
 
-  // @OneToMany(() => ServiceReview, review => review.service)
-  // reviews !: ServiceReview[];
-
-  // @OneToMany(() => OrderItem, orderItem => orderItem.service)
-  // orderItems !: OrderItem[];
-
-  // @OneToMany(() => CartItem, cartItem => cartItem.service)
-  // cartItems !: OrderItem[];
+  // @ManyToOne(() => Product, product => product.reviews)
+  // product !: Product;
 }

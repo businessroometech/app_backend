@@ -22,7 +22,7 @@ export class ServiceReview extends BaseEntity {
   serviceProviderId!: string;
 
   @Column({ type: 'uuid' })
-  serviceId!: string;
+  providedServiceId!: string;
 
   @Column({ type: 'int' })
   rating!: number;

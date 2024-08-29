@@ -10,13 +10,13 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-// import { Provider } from '../Provider';
-// import { ProductReview } from '../product/ProductReview';
-// import { OrderItem } from '../../customer/OrderItem';
-// import { CartItem } from '../../customer/CartItem';
+import { OrderItemBooking } from '../../customer/OrderItemBooking';
+import { CartItemBooking } from '../../customer/CartItemBooking';
+import { OrderItemProduct } from '../../customer/OrderItemProduct';
+import { CartItemProduct } from '../../customer/CartItemProduct';
 
-@Entity({ name: 'Product' })
-export class Product extends BaseEntity {
+@Entity({ name: 'ProvidedProduct' })
+export class ProvidedProduct extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -71,10 +71,10 @@ export class Product extends BaseEntity {
   // @OneToMany(() => ProductReview, review => review.product)
   // reviews !: ProductReview[];
 
-  // @OneToMany(() => OrderItem, orderItem => orderItem.product)
-  // orderItems !: OrderItem[];
+  @OneToMany(() => OrderItemProduct, orderItem => orderItem.orderProduct)
+  orderItemProducts !: OrderItemProduct[];
 
-  // @OneToMany(() => CartItem, cartItem => cartItem.product)
-  // cartItems !: OrderItem[];
+  @OneToMany(() => CartItemProduct, cartItem => cartItem.cartProduct)
+  cartItemProducts !: CartItemProduct[];
 }
 
