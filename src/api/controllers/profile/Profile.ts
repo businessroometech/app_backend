@@ -11,6 +11,7 @@ import { ProfessionalDetails } from '../../entity/profile/professional/Professio
 import { FinancialDetails } from '@/api/entity/profile/financial/FinancialDetails';
 import { DocumentUpload } from '@/api/entity/profile/DocumentUpload';
 import { In } from 'typeorm';
+import { PersonalDetailsCustomer } from '@/api/entity/profile/personal/PersonalDetailsCustomer';
 
 export const setPersonalDetails = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -585,3 +586,57 @@ export const getFinancialDetails = async (req: Request, res: Response) => {
         res.status(500).json({ status: 'error', message: 'Failed to fetch financial details' });
     }
 };
+
+
+// ------------------------------------FOR MOBILE APP----------------------------------------------------
+
+export const setPersonalDetailsCustomer = async (req: Request, res: Response) => {
+    try {
+        const { userId, fullName, emailAddress, mobileNumber, createdBy, updatedBy } = req.body;
+
+        let details = await PersonalDetailsCustomer.findOne({ where: { userId } });
+        let statusCode = 201;
+        if (!details) {
+            details = await PersonalDetailsCustomer.create({
+                userId,
+                fullName,
+                emailAddress,
+                mobileNumber,
+                createdBy: createdBy || 'sytem',
+                updatedBy: updatedBy || 'system',
+            }).save();
+        }
+        else {
+            if (fullName) details.fullName = fullName;
+            if (emailAddress) details.emailAddress = emailAddress;
+            details.updatedBy = updatedBy || 'system';
+            await details.save();
+            statusCode = 200;
+        }
+        res.status(statusCode).json({ status: "success", message: "Personal details created/updated successfully", data: { details } });
+    } catch (error) {
+        console.log("Server Error :", error);
+        res.status(500).json({ status: "error", message: "Error creating/updating Personal details" });
+    }
+}
+
+export const getPersonalDetailsCustomer = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            res.status(400).json({ status: "error", message: "UserId is required" });
+        }
+
+        let details = await PersonalDetailsCustomer.findOne({ where: { userId } });
+
+        if (!details) {
+            res.status(400).json({ status: "error", message: "User personal details not found" })
+        }
+
+        res.status(200).json({ status: "success", message: "Personal details created/updated successfully", data: { details } });
+    } catch (error) {
+        console.log("Server Error :", error);
+        res.status(500).json({ status: "error", message: "Error creating/updating Personal details" });
+    }
+}

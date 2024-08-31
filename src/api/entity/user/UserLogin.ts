@@ -30,7 +30,7 @@ export class UserLogin extends BaseEntity {
   primaryRole !: 'Customer' | 'ServiceProvider';
 
   @Column({ type: 'enum', enum: ['Individual', 'Business'] })
-  userType !: string;
+  userType !: 'Individual' | 'Business';
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

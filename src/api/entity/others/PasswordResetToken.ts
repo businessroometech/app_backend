@@ -11,6 +11,7 @@ import {
 
 @Entity({ name: 'PasswordResetToken' })
 export class PasswordResetToken extends BaseEntity {
+  
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
