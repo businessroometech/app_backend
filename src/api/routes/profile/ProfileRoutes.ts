@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { getPersonalDetails, getEducationalDetails, getFinancialDetails, getProfessionalDetails, setPersonalDetails, setProfessionalDetails, setEducationalDetails, setFinancialDetails } from '../../controllers/profile/Profile';
+import { getPersonalDetails, getEducationalDetails, getFinancialDetails, getProfessionalDetails, setPersonalDetails, setProfessionalDetails, setEducationalDetails, setFinancialDetails, getPersonalDetailsCustomer, setPersonalDetailsCustomer } from '../../controllers/profile/Profile';
 
 const Router = express.Router();
 
@@ -13,5 +13,8 @@ Router.post('/personal', setPersonalDetails);
 Router.post('/professional', setProfessionalDetails);
 Router.post('/educational/:sectortype', setEducationalDetails);
 Router.post('/financial', setFinancialDetails);
+
+Router.post('/your-personal-details-customer', getPersonalDetailsCustomer);
+Router.post('/personal-customer', setPersonalDetailsCustomer);
 
 export default Router;

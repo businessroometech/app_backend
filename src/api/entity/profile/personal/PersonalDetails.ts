@@ -45,7 +45,7 @@ export class PersonalDetails extends BaseEntity {
 
   @Column({ type: 'text' })
   bio!: string;
-
+ 
   @Column({ type: 'json' })
   permanentAddress!: Address;
 

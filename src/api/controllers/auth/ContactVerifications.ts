@@ -47,7 +47,18 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
           data: { user: existingUser },
         });
       }
-    } else {
+    }
+    else if (useCase === 'Forgot Password') {
+      number = mobileNumber;
+      const existingUser: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+      if (!existingUser) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'This mobile number is not registered',
+        });
+      }
+    }
+    else {
       // For other use cases, require userId and fetch the user
       if (!userId) {
         return res.status(400).json({ status: 'error', message: 'Please provide userId for this use case.' });
@@ -76,7 +87,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
 
     let otpObj;
 
-    if (useCase === 'Signup') {
+    if (useCase === 'Signup' || useCase === 'Forgot password') {
       otpObj = await OtpVerification.findOne({ where: { mobileNumber, useCase } });
     } else {
       otpObj = await OtpVerification.findOne({ where: { userId, useCase } });
@@ -98,7 +109,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
       await otpObj.save();
     } else {
       otpObj = await OtpVerification.create({
-        userId: useCase === 'Signup' ? null : userId,
+        userId: (useCase === 'Signup' || useCase === 'Forgot Password') ? null : userId,
         mobileNumber,
         verificationCode: code,
         isVerified: false,
@@ -131,7 +142,11 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
       return res.status(500).json({ status: 'error', message: 'Failed to send verification code.' });
     }
 
-    return res.status(200).json({ status: 'success', message: 'Verification code sent successfully.' });
+    return res.status(200).json({
+      status: 'success', message: 'Verification code sent successfully.', data: {
+        code
+      }
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ status: 'error', message: 'Server error.' });
@@ -143,15 +158,15 @@ export const verifyCode = async (req: Request, res: Response): Promise<Response>
   try {
     const { userId, verificationCode, useCase, mobileNumber } = req.body;
 
-    if ((!userId && useCase !== 'Signup') || !verificationCode || !useCase || (useCase === 'Signup' && !mobileNumber)) {
+    if ((!userId && (useCase !== 'Signup' || useCase === 'Forgot Password')) || !verificationCode || !useCase || ((useCase !== 'Signup' || useCase === 'Forgot Password') && !mobileNumber)) {
       return res
         .status(400)
-        .json({ status: 'error', message: 'Please provide userId (except for Signup), mobileNumber (for Signup), verification code, and useCase.' });
+        .json({ status: 'error', message: 'Please provide userId (for start-work and finish-work), mobileNumber (for Signup and forgot-password), verification code, and useCase.' });
     }
 
     let isVerify;
 
-    if (useCase === 'Signup') {
+    if (useCase !== 'Signup' || useCase === 'Forgot Password') {
       isVerify = await OtpVerification.findOne({ where: { mobileNumber, verificationCode, useCase } });
     } else {
       isVerify = await OtpVerification.findOne({ where: { userId, verificationCode, useCase } });
@@ -178,3 +193,103 @@ export const verifyCode = async (req: Request, res: Response): Promise<Response>
 };
 
 
+// ---------------------FOR MOBILE APP-------------------------------
+
+export const sendVerificationCode_mobile_app = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { mobileNumber, createdBy, updatedBy } = req.body;
+
+    if (!mobileNumber) {
+      res.status(400).json({ status: "error", message: "Please provide Mobile number" });
+      return;
+    }
+
+    // check for registration
+    let user = await UserLogin.findOne({ where: { mobileNumber } });
+
+    if (!user) {
+      user = await UserLogin.create({
+        mobileNumber,
+        password: "",
+        primaryRole: 'Customer',
+        userType: 'Individual',
+        createdBy: createdBy || 'system',
+        updatedBy: updatedBy || 'system',
+      }).save();
+    }
+    else {
+      if (user?.primaryRole === 'ServiceProvider') {
+        res.status(400).json({ status: "error", message: "This mobile number is already registered as Service Provider" });
+        return;
+      }
+    }
+
+    const phoneNumber = parsePhoneNumberFromString(mobileNumber, 'IN');
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      res.status(400).json({ status: 'error', message: 'Invalid phone number format.' });
+      return;
+    }
+    const formattedNumber = phoneNumber.format('E.164');
+    console.log('formatted-number :', formattedNumber);
+
+    const code = generateVerificationCode();
+    console.log('generated code: ', code);
+
+    let otpObj = await OtpVerification.findOne({ where: { mobileNumber, useCase: "Signup" } });
+
+    const currentDate = new Date();
+    const cooldownPeriod = 1 * 60 * 1000;  // 1 minute cooldown
+    const expirationPeriod = 5 * 60 * 1000;  // 5 minutes expiration
+
+    if (otpObj) {
+      const lastSentAt = new Date(otpObj.updatedAt);
+      if (currentDate.getTime() - lastSentAt.getTime() < cooldownPeriod) {
+        res.status(429).json({ status: 'error', message: 'Please wait before requesting a new verification code.' });
+        return;
+      }
+
+      otpObj.verificationCode = code;
+      otpObj.isVerified = false;
+      otpObj.expiresAt = new Date(currentDate.getTime() + expirationPeriod);
+      await otpObj.save();
+    } else {
+      otpObj = await OtpVerification.create({
+        mobileNumber,
+        verificationCode: code,
+        isVerified: false,
+        expiresAt: new Date(currentDate.getTime() + expirationPeriod),
+        userType: 'Customer',
+        sentTo: 'Mobile',
+        useCase: 'Signup'
+      }).save();
+    }
+
+    //-------SMS sending logic---------------
+    const params = {
+      Message: `Your verification code is: ${code}`,
+      PhoneNumber: formattedNumber,
+      MessageAttributes: {
+        'AWS.SNS.SMS.SenderID': {
+          DataType: 'String',
+          StringValue: 'MySenderID',
+        },
+      },
+    };
+
+    try {
+      const command = new PublishCommand(params);
+      const data = await sns.send(command);
+      console.log('aws publish :', data);
+      console.log(`Verification code sent to ${formattedNumber}: ${code}`);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to send verification code.' });
+      return;
+    }
+    res.status(200).json({ status: 'success', message: 'Verification code sent successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: 'error', message: 'Server error.' });
+    return;
+  }
+}

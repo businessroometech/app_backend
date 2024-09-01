@@ -1,13 +1,11 @@
 import express from 'express';
 
-import { sendVerificationCode, verifyCode } from '../../controllers/auth/ContactVerifications';
-import { login, generateUuidToken, verifyUuidToken, protectedRoute, refresh } from '../../controllers/auth/Login';
+import { sendVerificationCode, verifyCode, sendVerificationCode_mobile_app } from '../../controllers/auth/ContactVerifications';
+import { login, generateUuidToken, verifyUuidToken, protectedRoute, refresh, verifyCode_mobile_app } from '../../controllers/auth/Login';
 import { logout } from '../../controllers/auth/Logout';
 import {
   changePassword,
-  resetPassword,
-  sendNumberVerificationToken,
-  verifyCodeForPasswordReset,
+  resetPassword
 } from '../../controllers/auth/ResetPassword';
 import { signup } from '../../controllers/auth/Signup';
 import { generateUploadUrl, addDocumentUpload, getDocumentFromBucket } from '../../controllers/awsFuctions/AwsFunctions';
@@ -25,6 +23,9 @@ Router.post('/generate-login-token', generateUuidToken);
 Router.post('/verify-login-token', verifyUuidToken);
 Router.post('/logout', logout);
 
+Router.post('/generate-otp-customer-app', sendVerificationCode_mobile_app);
+Router.post('/verify-otp-customer-app', verifyCode_mobile_app);
+
 Router.post('/refresh', refresh);
 Router.get('/protected', authenticate, protectedRoute);
 
@@ -32,8 +33,8 @@ Router.post('/generate-upload-url', generateUploadUrl);
 Router.post('/document-retrival', getDocumentFromBucket);
 Router.post('/list-uploaded-document', addDocumentUpload);
 
-Router.post('/forgot-password/generate', sendNumberVerificationToken);
-Router.post('/forgot-password/verify', verifyCodeForPasswordReset);
+// Router.post('/forgot-password/generate', sendNumberVerificationToken);
+// Router.post('/forgot-password/verify', verifyCodeForPasswordReset);
 Router.post('/forgot-password/reset', resetPassword);
 
 Router.post('/change-password', changePassword);

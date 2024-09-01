@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { RefreshToken } from '@/api/entity/others/RefreshToken';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { Token } from '@/api/entity/others/Token';
+import { OtpVerification } from '@/api/entity/others/OtpVerification';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
@@ -172,13 +173,14 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
     });
 
     // Destroying the UUID token after use
-    await Token.delete(token.id);
+    // await Token.delete(token.id);
 
     res.status(200).json({
       status: 'success',
       message: 'UUID token verified',
       data: {
         accessToken: newAccessToken,
+        userId: token.userId
       },
     });
   } catch (error) {
@@ -264,4 +266,95 @@ declare module 'express' {
 
 export const protectedRoute = (req: Request, res: Response): void => {
   res.status(200).json({ message: 'This is a protected route', user: req.user });
+};
+
+
+//--------------------------------------------- FOR MOBILE APP ---------------------------------------------------------------
+
+export const verifyCode_mobile_app = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { verificationCode, mobileNumber } = req.body;
+
+    if (!verificationCode || !mobileNumber) {
+      res
+        .status(400)
+        .json({ status: 'error', message: 'Please provide mobileNumber and verification code' });
+      return;
+    }
+
+    let isVerify = await OtpVerification.findOne({ where: { mobileNumber, verificationCode, useCase: "Signup" } });
+
+    if (!isVerify) {
+      res.status(400).json({ status: 'error', message: 'Invalid verification code or mobileNumber' });
+      return;
+
+    }
+
+    const expiryDate = new Date(isVerify.expiresAt);
+
+    if (new Date() > expiryDate) {
+      res.status(400).json({ status: 'error', message: 'Verification code is expired.' });
+      return;
+
+    }
+
+    isVerify.isVerified = true;
+    await isVerify.save();
+
+    //checking is the profile completed or not
+    const user: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+
+    if (!user) {
+      res.status(400).json({ status: "error", message: "User with mobile number does not exist" });
+      return;
+
+    }
+
+    const accessToken = generateAccessToken(user!);
+
+    const refreshToken = generateRefreshToken(user!);
+
+    let cookieOptions: CookieOptions = {
+      httpOnly: true,
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+      cookieOptions = { ...cookieOptions, secure: true };
+    }
+
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
+    // store referesh token to the DB
+    const rt = await RefreshToken.findOne({ where: { userId: user!.id } });
+
+    // const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
+    const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
+    const expiresIn = defaultExpiresIn;
+
+    if (isNaN(expiresIn)) {
+      throw new Error('Invalid expiration time');
+    }
+
+    if (rt) {
+      rt.token = refreshToken;
+      rt.expiresAt = new Date(Date.now() + expiresIn);
+      await rt.save();
+    } else {
+      await RefreshToken.create({
+        userId: user!.id,
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + expiresIn),
+      }).save();
+    }
+
+    res.status(200).json({
+      status: 'success', message: 'Mobile number verified successfully', data: {
+        user,
+        accessToken
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 'error', message: 'Server error.' });
+  }
 };
