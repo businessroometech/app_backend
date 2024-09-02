@@ -16,6 +16,7 @@ export enum DocumentType {
   BILL = 'Bill',
   AADHAR = 'Aadhar',
   PAN = 'Pan',
+  REGISTRATIONCERTIFICATE = 'RegistrationCertificate',
   OTHER = 'Other',
 }
 
