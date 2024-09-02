@@ -12,6 +12,27 @@ import { FinancialDetails } from '@/api/entity/profile/financial/FinancialDetail
 import { DocumentUpload } from '@/api/entity/profile/DocumentUpload';
 import { In } from 'typeorm';
 import { PersonalDetailsCustomer } from '@/api/entity/profile/personal/PersonalDetailsCustomer';
+import { UserLogin } from '@/api/entity/user/UserLogin';
+import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
+
+export const getUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            res.status(400).json({ status: "error", message: "Please provide userId" });
+            return;
+        }
+
+        const user = await UserLogin.findOne({ where: { id: userId } });
+
+        res.status(200).json({ status: "success", message: "Successfully found user", data: { user } });
+
+    } catch (error) {
+        console.error('Error finding user using userId :', error);
+        res.status(500).json({ status: 'error', message: 'Something went wrong! please try again later.' });
+    }
+}
 
 export const setPersonalDetails = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -510,6 +531,80 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
     }
 };
 
+export const createOrUpdateBusinessDetails = async (req: Request, res: Response) => {
+    const {
+        userId,
+        sectorId,
+        profilePictureUploadId,
+        companyName,
+        companyType,
+        emailAddress,
+        gstInNumber,
+        mobileNumber,
+        companyPancard,
+        bio,
+        permanentAddress,
+        currentAddress,
+        registrationCertificateUploadId,
+        panNumberUploadId,
+        createdBy,
+        updatedBy,
+    } = req.body;
+
+    try {
+        // Check if a record with the provided userId and sectorId exists
+        let businessDetails = await BusinessDetails.findOne({
+            where: { userId, sectorId },
+        });
+
+        if (businessDetails) {
+            // Update existing record
+            businessDetails.profilePictureUploadId = profilePictureUploadId ?? businessDetails.profilePictureUploadId;
+            businessDetails.companyName = companyName ?? businessDetails.companyName;
+            businessDetails.companyType = companyType ?? businessDetails.companyType;
+            businessDetails.emailAddress = emailAddress ?? businessDetails.emailAddress;
+            businessDetails.gstInNumber = gstInNumber ?? businessDetails.gstInNumber;
+            businessDetails.mobileNumber = mobileNumber ?? businessDetails.mobileNumber;
+            businessDetails.companyPancard = companyPancard ?? businessDetails.companyPancard;
+            businessDetails.bio = bio ?? businessDetails.bio;
+            businessDetails.permanentAddress = permanentAddress ?? businessDetails.permanentAddress;
+            businessDetails.currentAddress = currentAddress ?? businessDetails.currentAddress;
+            businessDetails.registrationCertificateUploadId = registrationCertificateUploadId ?? businessDetails.registrationCertificateUploadId;
+            businessDetails.panNumberUploadId = panNumberUploadId ?? businessDetails.panNumberUploadId;
+            businessDetails.updatedBy = updatedBy ?? businessDetails.updatedBy;
+
+            await businessDetails.save();
+
+        } else {
+            // Create new record
+            businessDetails = BusinessDetails.create({
+                userId,
+                sectorId,
+                profilePictureUploadId,
+                companyName,
+                companyType,
+                emailAddress,
+                gstInNumber,
+                mobileNumber,
+                companyPancard,
+                bio,
+                permanentAddress,
+                currentAddress,
+                registrationCertificateUploadId,
+                panNumberUploadId,
+                createdBy: createdBy ?? 'system',
+            });
+
+            await businessDetails.save();
+        }
+
+        res.status(200).json(businessDetails);
+    } catch (error) {
+        console.error('Error creating/updating BusinessDetails:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
 export const getPersonalDetails = async (req: Request, res: Response) => {
     try {
         const { userId, sectorId } = req.body;
@@ -587,6 +682,22 @@ export const getFinancialDetails = async (req: Request, res: Response) => {
     }
 };
 
+export const getBusinessDetails = async (req: Request, res: Response) => {
+    try {
+        const { userId, sectorId } = req.body;
+        const details = await BusinessDetails.findOne({ where: { userId, sectorId } });
+        res.status(200).json({
+            status: 'success',
+            message: `Business details fetched for user with id: ${userId}`,
+            data: {
+                businessDetails: details,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching Business details :', error);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch Business details' });
+    }
+};
 
 // ------------------------------------FOR MOBILE APP----------------------------------------------------
 
@@ -602,7 +713,7 @@ export const setPersonalDetailsCustomer = async (req: Request, res: Response) =>
                 fullName,
                 emailAddress,
                 mobileNumber,
-                createdBy: createdBy || 'sytem',
+                createdBy: createdBy || 'system',
                 updatedBy: updatedBy || 'system',
             }).save();
         }
@@ -630,13 +741,9 @@ export const getPersonalDetailsCustomer = async (req: Request, res: Response) =>
 
         let details = await PersonalDetailsCustomer.findOne({ where: { userId } });
 
-        if (!details) {
-            res.status(400).json({ status: "error", message: "User personal details not found" })
-        }
-
-        res.status(200).json({ status: "success", message: "Personal details created/updated successfully", data: { details } });
+        res.status(200).json({ status: "success", message: "User Personal details found successfully", data: { details } });
     } catch (error) {
         console.log("Server Error :", error);
-        res.status(500).json({ status: "error", message: "Error creating/updating Personal details" });
+        res.status(500).json({ status: "error", message: "Error finding user Personal details" });
     }
 }

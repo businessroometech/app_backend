@@ -40,8 +40,14 @@ export const getYourServices = async (req: Request, res: Response) => {
             page = '1',    // Default to first page
             limit = '10'   // Default limit
         } = req.query;
+        
+        const { userId } = req.body;
 
-        console.log(subCategory);
+        if(!userId)
+        {
+            res.status(400).json({ status: "error", message: "UserId is required" });
+            return;
+        }
 
         const parsedPriceStart = parseFloat(priceStart as string);
         const parsedPriceEnd = parseFloat(priceEnd as string);
@@ -50,6 +56,7 @@ export const getYourServices = async (req: Request, res: Response) => {
 
         let whereClause: any = {
             status: status as string,
+            serviceProviderId: userId,
             orderItemBooking: {
                 deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
                 price: Between(parsedPriceStart, parsedPriceEnd),

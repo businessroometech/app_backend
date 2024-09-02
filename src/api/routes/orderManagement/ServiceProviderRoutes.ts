@@ -14,7 +14,7 @@ import {
 
 const Router = express.Router();
 
-Router.get('/', getYourServices);
+Router.post('/', getYourServices);
 // Router.post('/service-provider/add-service', addService);
 Router.post('/accept', acceptService);
 Router.post('/reject', rejectService);
