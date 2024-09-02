@@ -22,14 +22,22 @@ export const getAllSectors = async (req: Request, res: Response) => {
 
 export const getSector = async (req: Request, res: Response) => {
   try {
-    const { sectorId } = req.body;
+    const { sectorId, sectorName } = req.body;
 
-    if (!sectorId) {
-      res.status(400).json({ status: 'error', message: 'Provide sectorId!' });
+    if (!sectorId && !sectorName) {
+      res.status(400).json({ status: 'error', message: 'Provide sectorId or sectorName' });
       return;
     }
 
-    const yourSector = await Sector.findOne({ where: { id: sectorId } });
+    let yourSector 
+    if(sectorId)
+    {
+      yourSector = await Sector.findOne({ where: { id: sectorId } });
+    }
+    else
+    {
+      yourSector = await Sector.findOne({ where: { sectorName } });
+    }
 
     res.status(200).json({
       status: 'success',
