@@ -40,11 +40,10 @@ export const getYourServices = async (req: Request, res: Response) => {
             page = '1',    // Default to first page
             limit = '10'   // Default limit
         } = req.query;
-        
+
         const { userId } = req.body;
 
-        if(!userId)
-        {
+        if (!userId) {
             res.status(400).json({ status: "error", message: "UserId is required" });
             return;
         }
@@ -281,7 +280,7 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
     try {
         const {
             id,
-            serviceProviderId,
+            userId,
             sectorId,
             categoryId,
             subCategoryId,
@@ -300,6 +299,10 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
             updatedBy,
         } = req.body;
 
+        if (!userId) {
+            res.status(400).json({ status: "error", message: "UserId not found" });
+        }
+
         let providedService;
 
         if (id) {
@@ -312,7 +315,7 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
             providedService.createdBy = req.body.createdBy || 'system';
         }
 
-        if (serviceProviderId !== undefined) providedService.serviceProviderId = serviceProviderId;
+        providedService.serviceProviderId = userId;
         if (sectorId !== undefined) providedService.sectorId = sectorId;
         if (categoryId !== undefined) providedService.categoryId = categoryId;
         if (subCategoryId !== undefined) providedService.subCategoryId = subCategoryId;
@@ -341,35 +344,38 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
 
 export const getProvidedService = async (req: Request, res: Response) => {
     try {
-        const { id } = req.body;
+        const { id, userId } = req.body;
         const { isActive } = req.query;
+
+        if (!userId) {
+            res.status(400).json({ status: "error", message: "UserId not found" });
+        }
 
         let providedService;
         if (id) {
             providedService = await ProvidedService.findOne({
-                where: { id, ...(isActive && { isActive: isActive === 'true' }) },
+                where: { id, serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
 
             // if (!providedService) {
             //     return res.status(404).json({ status: "error", message: 'Provided Service not found' });
             // }
-            
-            if(providedService)
-            {
+
+            if (providedService) {
                 const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
             }
         } else {
             const providedServices = await ProvidedService.find({
-                where: { ...(isActive && { isActive: isActive === 'true' }) },
+                where: { serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
 
             // if (providedServices.length === 0) {
             //     return res.status(404).json({ status: "error", message: 'Provided Services not found' });
             // }
-            
+
             for (let providedService of providedServices) {
                 const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;

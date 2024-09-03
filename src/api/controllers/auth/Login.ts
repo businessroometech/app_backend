@@ -142,27 +142,29 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
 
 export const verifyUuidToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    const uuidToken = req.cookies.uuidToken;
+    // const uuidToken = req.cookies.uuidToken;
 
-    if (!uuidToken) {
-      res.status(401).json({ status: 'error', message: 'UUID token is missing' });
-      return;
-    }
+    // if (!uuidToken) {
+    //   res.status(401).json({ status: 'error', message: 'UUID token is missing' });
+    //   return;
+    // }
 
-    // Finding the token in the database using the HMAC
-    const hmac = createHmac(uuidToken);
-    const token = await Token.findOne({ where: { hmac } });
+    // // Finding the token in the database using the HMAC
+    // const hmac = createHmac(uuidToken);
+    // const token = await Token.findOne({ where: { hmac } });
 
-    if (!token) {
-      res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
-      return;
-    }
+    // if (!token) {
+    //   res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
+    //   return;
+    // }
 
-    if (new Date() > token.expiresAt) {
-      await Token.remove(token);
-      res.status(403).json({ status: 'error', message: 'UUID token expired' });
-      return;
-    }
+    // if (new Date() > token.expiresAt) {
+    //   await Token.remove(token);
+    //   res.status(403).json({ status: 'error', message: 'UUID token expired' });
+    //   return;
+    // }
+    const { userId } = req.body;
+    const token = { userId };
 
     const newAccessToken = generateAccessToken({ id: token.userId });
     const newRefreshToken = generateRefreshToken({ id: token.userId });
@@ -193,7 +195,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
     // const { mobileNumber } = req.body;
     const refreshToken = req.cookies.refreshToken;
-
+    console.log('ASKED FOR TOKEN TO REFRESH......');
     if (!refreshToken) {
       res.status(401).json({ status: 'error', message: 'Refresh token is not present in cookies' });
       return;
@@ -240,14 +242,17 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     // res.cookie('accessToken', newAccessToken, cookieOptions);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
+    console.log('TOKEN GOT REFRESHED......');
     res.status(200).json({
       status: 'success',
       message: 'New access token and refresh token generated',
       data: {
         accessToken: newAccessToken,
+        userId: payload.id
       },
     });
   } catch (error: any) {
+    console.log('UNABLE TO REFRESH THE TOKEN......');
     if (error.name === 'TokenExpiredError') {
       res.status(403).json({ status: 'error', message: 'Refresh token expired. Please log in again.' });
     } else {
