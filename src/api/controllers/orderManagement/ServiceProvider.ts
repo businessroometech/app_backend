@@ -4,7 +4,6 @@ import { Between, In } from 'typeorm';
 import { format, isValid } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
-import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { Service } from '@/api/entity/sector/Service';
 
@@ -222,58 +221,6 @@ export const completeService = async (req: Request, res: Response) => {
     }
 };
 
-// export const generateStartOtp = () => {
-
-// }
-
-// // start the service
-// export const startService = async (req: Request, res: Response) => {
-//     try {
-//         const { orderId, orderItemId } = req.body;
-
-//         // --------------------------verify otp
-
-//         const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
-//         if (!orderItem) {
-//             res.status(500).json({ status: "error", message: "OrderItem not found" });
-//             return;
-//         }
-
-//         orderItem!.serviceStatus = "InProcess";
-//         orderItem.save();
-
-//         res.status(201).json({ status: "success", message: "Service InProcess", data: { orderItem } });
-//     } catch (error) {
-//         console.log("Service started :", error);
-//         res.status(500).json({ status: "error", message: 'Something went wrong' });
-//     }
-// }
-
-// // end the service
-// export const endService = async (req: Request, res: Response) => {
-//     try {
-//         const { orderId, orderItemId } = req.body;
-
-//         //---------------------- verify otp
-
-//         // if otp verified add to InProcess
-//         const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
-//         if (!orderItem) {
-//             res.status(500).json({ status: "error", message: "OrderItem not found" });
-//             return;
-//         }
-
-//         orderItem!.serviceStatus = "Completed";
-//         orderItem.save();
-
-//         res.status(201).json({ status: "success", message: "Service completed", data: { orderItem } });
-//     } catch (error) {
-//         console.log("Service ended :", error);
-//         res.status(500).json({ status: "error", message: 'Something went wrong' });
-//     }
-// }
-
-
 //-------------------------------------------------- Service Management-----------------------------------------------------------------------
 
 export const addOrUpdateProvidedService = async (req: Request, res: Response) => {
@@ -300,7 +247,7 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
         } = req.body;
 
         if (!userId) {
-            res.status(400).json({ status: "error", message: "UserId not found" });
+            return res.status(400).json({ status: "error", message: "UserId not found" });
         }
 
         let providedService;
@@ -348,7 +295,7 @@ export const getProvidedService = async (req: Request, res: Response) => {
         const { isActive } = req.query;
 
         if (!userId) {
-            res.status(400).json({ status: "error", message: "UserId not found" });
+            return res.status(400).json({ status: "error", message: "UserId not found" });
         }
 
         let providedService;
@@ -418,3 +365,23 @@ export const deleteProvidedService = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: 'Internal server error' });
     }
 };
+
+
+// ---------------------------------------------HOME PAGE----------------------------------------------
+
+export const getServiceJobsBy_Year_Month_Week = async(req: Request, res: Response) => {
+    try {
+
+        const { year, period } = req.query;
+
+        if(!year)
+        {
+            res.status(400).json({ status: "error", message: "Year is required" });
+        }
+
+        
+
+    } catch(error) {
+
+    }
+}
