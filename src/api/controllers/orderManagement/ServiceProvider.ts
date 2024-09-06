@@ -4,7 +4,6 @@ import { Between, In } from 'typeorm';
 import { format, isValid } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
-import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { Service } from '@/api/entity/sector/Service';
 
@@ -40,11 +39,10 @@ export const getYourServices = async (req: Request, res: Response) => {
             page = '1',    // Default to first page
             limit = '10'   // Default limit
         } = req.query;
-        
+
         const { userId } = req.body;
 
-        if(!userId)
-        {
+        if (!userId) {
             res.status(400).json({ status: "error", message: "UserId is required" });
             return;
         }
@@ -223,65 +221,13 @@ export const completeService = async (req: Request, res: Response) => {
     }
 };
 
-// export const generateStartOtp = () => {
-
-// }
-
-// // start the service
-// export const startService = async (req: Request, res: Response) => {
-//     try {
-//         const { orderId, orderItemId } = req.body;
-
-//         // --------------------------verify otp
-
-//         const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
-//         if (!orderItem) {
-//             res.status(500).json({ status: "error", message: "OrderItem not found" });
-//             return;
-//         }
-
-//         orderItem!.serviceStatus = "InProcess";
-//         orderItem.save();
-
-//         res.status(201).json({ status: "success", message: "Service InProcess", data: { orderItem } });
-//     } catch (error) {
-//         console.log("Service started :", error);
-//         res.status(500).json({ status: "error", message: 'Something went wrong' });
-//     }
-// }
-
-// // end the service
-// export const endService = async (req: Request, res: Response) => {
-//     try {
-//         const { orderId, orderItemId } = req.body;
-
-//         //---------------------- verify otp
-
-//         // if otp verified add to InProcess
-//         const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
-//         if (!orderItem) {
-//             res.status(500).json({ status: "error", message: "OrderItem not found" });
-//             return;
-//         }
-
-//         orderItem!.serviceStatus = "Completed";
-//         orderItem.save();
-
-//         res.status(201).json({ status: "success", message: "Service completed", data: { orderItem } });
-//     } catch (error) {
-//         console.log("Service ended :", error);
-//         res.status(500).json({ status: "error", message: 'Something went wrong' });
-//     }
-// }
-
-
 //-------------------------------------------------- Service Management-----------------------------------------------------------------------
 
 export const addOrUpdateProvidedService = async (req: Request, res: Response) => {
     try {
         const {
             id,
-            serviceProviderId,
+            userId,
             sectorId,
             categoryId,
             subCategoryId,
@@ -300,6 +246,10 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
             updatedBy,
         } = req.body;
 
+        if (!userId) {
+            return res.status(400).json({ status: "error", message: "UserId not found" });
+        }
+
         let providedService;
 
         if (id) {
@@ -312,7 +262,7 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
             providedService.createdBy = req.body.createdBy || 'system';
         }
 
-        if (serviceProviderId !== undefined) providedService.serviceProviderId = serviceProviderId;
+        providedService.serviceProviderId = userId;
         if (sectorId !== undefined) providedService.sectorId = sectorId;
         if (categoryId !== undefined) providedService.categoryId = categoryId;
         if (subCategoryId !== undefined) providedService.subCategoryId = subCategoryId;
@@ -341,35 +291,38 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
 
 export const getProvidedService = async (req: Request, res: Response) => {
     try {
-        const { id } = req.body;
+        const { id, userId } = req.body;
         const { isActive } = req.query;
+
+        if (!userId) {
+            return res.status(400).json({ status: "error", message: "UserId not found" });
+        }
 
         let providedService;
         if (id) {
             providedService = await ProvidedService.findOne({
-                where: { id, ...(isActive && { isActive: isActive === 'true' }) },
+                where: { id, serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
 
             // if (!providedService) {
             //     return res.status(404).json({ status: "error", message: 'Provided Service not found' });
             // }
-            
-            if(providedService)
-            {
+
+            if (providedService) {
                 const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
             }
         } else {
             const providedServices = await ProvidedService.find({
-                where: { ...(isActive && { isActive: isActive === 'true' }) },
+                where: { serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
 
             // if (providedServices.length === 0) {
             //     return res.status(404).json({ status: "error", message: 'Provided Services not found' });
             // }
-            
+
             for (let providedService of providedServices) {
                 const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
@@ -412,3 +365,23 @@ export const deleteProvidedService = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: 'Internal server error' });
     }
 };
+
+
+// ---------------------------------------------HOME PAGE----------------------------------------------
+
+export const getServiceJobsBy_Year_Month_Week = async(req: Request, res: Response) => {
+    try {
+
+        const { year, period } = req.query;
+
+        if(!year)
+        {
+            res.status(400).json({ status: "error", message: "Year is required" });
+        }
+
+        
+
+    } catch(error) {
+
+    }
+}

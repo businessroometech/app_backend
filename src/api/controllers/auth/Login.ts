@@ -142,27 +142,29 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
 
 export const verifyUuidToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    const uuidToken = req.cookies.uuidToken;
+    // const uuidToken = req.cookies.uuidToken;
 
-    if (!uuidToken) {
-      res.status(401).json({ status: 'error', message: 'UUID token is missing' });
-      return;
-    }
+    // if (!uuidToken) {
+    //   res.status(401).json({ status: 'error', message: 'UUID token is missing' });
+    //   return;
+    // }
 
-    // Finding the token in the database using the HMAC
-    const hmac = createHmac(uuidToken);
-    const token = await Token.findOne({ where: { hmac } });
+    // // Finding the token in the database using the HMAC
+    // const hmac = createHmac(uuidToken);
+    // const token = await Token.findOne({ where: { hmac } });
 
-    if (!token) {
-      res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
-      return;
-    }
+    // if (!token) {
+    //   res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
+    //   return;
+    // }
 
-    if (new Date() > token.expiresAt) {
-      await Token.remove(token);
-      res.status(403).json({ status: 'error', message: 'UUID token expired' });
-      return;
-    }
+    // if (new Date() > token.expiresAt) {
+    //   await Token.remove(token);
+    //   res.status(403).json({ status: 'error', message: 'UUID token expired' });
+    //   return;
+    // }
+    const { userId, rememberMe = false } = req.body;
+    const token = { userId };
 
     const newAccessToken = generateAccessToken({ id: token.userId });
     const newRefreshToken = generateRefreshToken({ id: token.userId });
@@ -171,6 +173,29 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
     });
+
+    // store referesh token to the DB
+    const rt = await RefreshToken.findOne({ where: { userId } });
+
+    const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
+    const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
+    const expiresIn = rememberMe ? rememberMeExpiresIn : defaultExpiresIn;
+
+    if (isNaN(expiresIn)) {
+      throw new Error('Invalid expiration time');
+    }
+
+    if (rt) {
+      rt.token = newRefreshToken;
+      rt.expiresAt = new Date(Date.now() + expiresIn);
+      await rt.save();
+    } else {
+      await RefreshToken.create({
+        userId,
+        token: newRefreshToken,
+        expiresAt: new Date(Date.now() + expiresIn),
+      }).save();
+    }
 
     // Destroying the UUID token after use
     // await Token.delete(token.id);
@@ -193,7 +218,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
     // const { mobileNumber } = req.body;
     const refreshToken = req.cookies.refreshToken;
-
+    console.log('ASKED FOR TOKEN TO REFRESH......');
     if (!refreshToken) {
       res.status(401).json({ status: 'error', message: 'Refresh token is not present in cookies' });
       return;
@@ -216,7 +241,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (new Date() > refresh.expiresAt) {
-      res.status(403).json({ status: 'error', message: 'Refresh token expired. Please log in again.' });
+      res.status(401).json({ status: 'error', message: 'Refresh token expired. Please log in again.' });
       return;
     }
 
@@ -240,18 +265,21 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     // res.cookie('accessToken', newAccessToken, cookieOptions);
     res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
+    console.log('TOKEN GOT REFRESHED......');
     res.status(200).json({
       status: 'success',
       message: 'New access token and refresh token generated',
       data: {
         accessToken: newAccessToken,
+        userId: payload.id
       },
     });
   } catch (error: any) {
+    console.log('UNABLE TO REFRESH THE TOKEN......');
     if (error.name === 'TokenExpiredError') {
-      res.status(403).json({ status: 'error', message: 'Refresh token expired. Please log in again.' });
+      res.status(401).json({ status: 'error', message: 'Refresh token expired. Please log in again.' });
     } else {
-      res.status(403).json({ status: 'error', message: 'Invalid refresh token' });
+      res.status(401).json({ status: 'error', message: 'Invalid refresh token' });
     }
   }
 };

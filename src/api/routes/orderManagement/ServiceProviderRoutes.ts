@@ -11,6 +11,7 @@ import {
     getProvidedService,
     deleteProvidedService
 } from '@/api/controllers/orderManagement/ServiceProvider';
+import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
 const Router = express.Router();
 
@@ -20,8 +21,8 @@ Router.post('/accept', acceptService);
 Router.post('/reject', rejectService);
 Router.post('/complete', completeService);
 
-Router.post('/service-management/get', getProvidedService);
-Router.post('/service-management/add-or-update', addOrUpdateProvidedService);
-Router.delete('/service-management', deleteProvidedService);
+Router.post('/service-management/get', authenticate, getProvidedService);
+Router.post('/service-management/add-or-update', authenticate, addOrUpdateProvidedService);
+Router.delete('/service-management', authenticate, deleteProvidedService);
 
 export default Router;

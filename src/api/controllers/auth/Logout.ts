@@ -4,17 +4,17 @@ import { RefreshToken } from '@/api/entity/others/RefreshToken';
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { mobileNumber } = req.body;
+    const { userId } = req.body;
 
-    if (!mobileNumber) {
-      res.status(400).json({ status: 'fail', message: 'Mobile number is required' });
+    if (!userId) {
+      res.status(400).json({ status: 'error', message: 'UserId is required' });
       return;
     }
 
-    await RefreshToken.delete({ mobileNumber });
+    await RefreshToken.delete({ userId });
 
     // Clear cookies
-    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
 
     res.status(200).json({ status: 'success', message: 'Logged out successfully' });
   } catch (error) {
