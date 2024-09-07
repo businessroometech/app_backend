@@ -61,7 +61,7 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
-  @Column({ type: 'varchar', default: 'system', nullable: true })
+  @Column({ type: 'varchar', default: 'system' })
   updatedBy!: string;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })

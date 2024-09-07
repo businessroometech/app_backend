@@ -27,7 +27,7 @@ export class ProfessionalDetails extends BaseEntity {
   @Column({ type: 'int', nullable: true, default: 0 })
   totalYearsExperience!: number;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', default: "" })
   comments!: string;
 
   @Column({ type: 'varchar', length: 255 })
@@ -39,7 +39,7 @@ export class ProfessionalDetails extends BaseEntity {
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
-  @Column({ type: 'varchar', default: 'system', nullable: true })
+  @Column({ type: 'varchar', default: 'system'})
   updatedBy!: string;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
