@@ -10,7 +10,10 @@ import {
     addOrUpdateProvidedService,
     getProvidedService,
     deleteProvidedService,
-    getServiceJobsBy_Year_Month_Week
+
+    getServiceJobsBy_Year_Month_Week,
+    totalAmountBy_Year_Month_Week,
+    totalSalesBy_Year_Month_Week
 } from '@/api/controllers/orderManagement/ServiceProvider';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
@@ -28,5 +31,7 @@ Router.delete('/service-management', authenticate, deleteProvidedService);
 
 // home
 Router.post('/by_year_month_week', getServiceJobsBy_Year_Month_Week);
+Router.post('/sales/overview/by_year_month_week', totalAmountBy_Year_Month_Week);
+Router.post('/sales/by_subCategories/by_year_month_week', totalSalesBy_Year_Month_Week);
 
 export default Router;

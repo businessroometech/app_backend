@@ -370,63 +370,10 @@ export const deleteProvidedService = async (req: Request, res: Response) => {
 // ---------------------------------------------HOME PAGE----------------------------------------------
 
 export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Response) => {
+    const { year, period, userId, sectorId } = req.body;
 
-    const { year, period } = req.body;
-
-    if (!year) {
-        return res.status(400).json({ message: 'Year is required.' });
-    }
-
-    const yearAsNumber = parseInt(year as string);
-    if (isNaN(yearAsNumber)) {
-        return res.status(400).json({ message: 'Invalid year format.' });
-    }
-
-    let startDate: Date;
-    let endDate: Date;
-
-    switch (period) {
-        case 'year':
-            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
-            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
-            break;
-        case 'month':
-            startDate = startOfMonth(new Date());
-            endDate = endOfMonth(new Date());
-            break;
-        case 'week':
-            startDate = startOfWeek(new Date());
-            endDate = endOfWeek(new Date());
-            break;
-        default:
-            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
-            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
-    }
-
-    console.log(startDate, endDate);
-
-    try {
-        const statusCounts = await ServiceJob
-            .createQueryBuilder("serviceJob")
-            .select("serviceJob.status")
-            .addSelect("COUNT(*)", "count")
-            .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
-            .groupBy("serviceJob.status")
-            .getRawMany();
-
-        return res.status(200).json({ status: "success", message: "Fetched service jobs by year, month and week", data: { statusCounts } });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Server error.' });
-    }
-}
-
-export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response) => {
-
-    const { year, period } = req.body;
-
-    if (!year) {
-        return res.status(400).json({ message: 'Year is required.' });
+    if (!year || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year, userId, and sectorId are required.' });
     }
 
     const yearAsNumber = parseInt(year as string);
@@ -458,19 +405,18 @@ export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response)
     try {
         const statusCounts = await ServiceJob
             .createQueryBuilder("serviceJob")
-            .select("serviceJob.status")
+            .select("serviceJob.status", "status")
             .addSelect("COUNT(*)", "count")
-            .addSelect(
-                "SUM(CASE WHEN serviceJob.status = 'Completed' THEN serviceJob.price ELSE 0 END)", 
-                "totalCompletedPrice"
-            )
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
             .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
             .groupBy("serviceJob.status")
             .getRawMany();
 
         return res.status(200).json({
             status: "success",
-            message: "Fetched service jobs by year, month and week",
+            message: "Fetched service jobs by year, month, and week",
             data: { statusCounts }
         });
     } catch (error) {
@@ -478,3 +424,122 @@ export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response)
         return res.status(500).json({ message: 'Server error.' });
     }
 };
+
+
+export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response) => {
+
+    const { year, period, userId, sectorId } = req.body;
+
+    if (!year || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year or userId or sectorId is required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    if (isNaN(yearAsNumber)) {
+        return res.status(400).json({ message: 'Invalid year format.' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (period) {
+        case 'year':
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            break;
+        case 'month':
+            startDate = startOfMonth(new Date());
+            endDate = endOfMonth(new Date());
+            break;
+        case 'week':
+            startDate = startOfWeek(new Date());
+            endDate = endOfWeek(new Date());
+            break;
+        default:
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+    }
+
+    try {
+        const statusCounts = await ServiceJob
+            .createQueryBuilder("serviceJob")
+            .select("serviceJob.status")
+            .addSelect(
+                "SUM(CASE WHEN serviceJob.status = 'Completed' THEN serviceJob.price ELSE 0 END)",
+                "totalCompletedPrice"
+            )
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .getRawMany();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Fetched total amount service jobs by year, month and week",
+            data: { statusCounts }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error.' });
+    }
+};
+
+export const totalSalesBy_Year_Month_Week = async (req: Request, res: Response) => {
+
+    const { year, period, sectorId, userId } = req.body;
+
+    if (!year || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year or userId or sectorId is required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    if (isNaN(yearAsNumber)) {
+        return res.status(400).json({ message: 'Invalid year format.' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (period) {
+        case 'year':
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            break;
+        case 'month':
+            startDate = startOfMonth(new Date());
+            endDate = endOfMonth(new Date());
+            break;
+        case 'week':
+            startDate = startOfWeek(new Date());
+            endDate = endOfWeek(new Date());
+            break;
+        default:
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+    }
+
+    try {
+        const subCategoryTotals = await ServiceJob
+            .createQueryBuilder("serviceJob")
+            .select("serviceJob.subCategory")
+            .addSelect("SUM(serviceJob.price)", "totalPrice")
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where("serviceJob.status = :status", { status: 'Completed' })
+            .andWhere("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy("serviceJob.subCategory")
+            .getRawMany();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Fetched total sales amount for service jobs by subcategory",
+            data: { subCategoryTotals }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error.' });
+    }
+};
+

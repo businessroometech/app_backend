@@ -46,8 +46,8 @@ export class ProvidedService extends BaseEntity {
   @Column({ type: 'simple-array', })
   typeOfProjects !: string[];
 
-  @Column({ type: 'text', })
-  projectScaleExpertise !: string;
+  @Column({ type: 'simple-array', })
+  projectScaleExpertise !: string[];
 
   @Column({ type: 'simple-array', })
   typeOfWorkforce!: string[];
