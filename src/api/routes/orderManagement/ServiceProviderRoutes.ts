@@ -25,9 +25,9 @@ Router.post('/accept', acceptService);
 Router.post('/reject', rejectService);
 Router.post('/complete', completeService);
 
-Router.post('/service-management/get', authenticate, getProvidedService);
-Router.post('/service-management/add-or-update', authenticate, addOrUpdateProvidedService);
-Router.delete('/service-management', authenticate, deleteProvidedService);
+Router.post('/service-management/get', getProvidedService);
+Router.post('/service-management/add-or-update', addOrUpdateProvidedService);
+Router.delete('/service-management', deleteProvidedService);
 
 // home
 Router.post('/by_year_month_week', getServiceJobsBy_Year_Month_Week);
