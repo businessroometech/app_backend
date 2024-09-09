@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
 import { Between, In } from 'typeorm';
-import { format, isValid } from 'date-fns';
+import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
-import { RejectedServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/RejectedServiceJob';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { Service } from '@/api/entity/sector/Service';
 
@@ -41,7 +40,12 @@ export const getYourServices = async (req: Request, res: Response) => {
             limit = '10'   // Default limit
         } = req.query;
 
-        console.log(subCategory);
+        const { userId } = req.body;
+
+        if (!userId) {
+            res.status(400).json({ status: "error", message: "UserId is required" });
+            return;
+        }
 
         const parsedPriceStart = parseFloat(priceStart as string);
         const parsedPriceEnd = parseFloat(priceEnd as string);
@@ -50,6 +54,7 @@ export const getYourServices = async (req: Request, res: Response) => {
 
         let whereClause: any = {
             status: status as string,
+            serviceProviderId: userId,
             orderItemBooking: {
                 deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
                 price: Between(parsedPriceStart, parsedPriceEnd),
@@ -216,65 +221,13 @@ export const completeService = async (req: Request, res: Response) => {
     }
 };
 
-// export const generateStartOtp = () => {
-
-// }
-
-// // start the service
-// export const startService = async (req: Request, res: Response) => {
-//     try {
-//         const { orderId, orderItemId } = req.body;
-
-//         // --------------------------verify otp
-
-//         const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
-//         if (!orderItem) {
-//             res.status(500).json({ status: "error", message: "OrderItem not found" });
-//             return;
-//         }
-
-//         orderItem!.serviceStatus = "InProcess";
-//         orderItem.save();
-
-//         res.status(201).json({ status: "success", message: "Service InProcess", data: { orderItem } });
-//     } catch (error) {
-//         console.log("Service started :", error);
-//         res.status(500).json({ status: "error", message: 'Something went wrong' });
-//     }
-// }
-
-// // end the service
-// export const endService = async (req: Request, res: Response) => {
-//     try {
-//         const { orderId, orderItemId } = req.body;
-
-//         //---------------------- verify otp
-
-//         // if otp verified add to InProcess
-//         const orderItem = await OrderItem.findOne({ where: { orderId, id: orderItemId } });
-//         if (!orderItem) {
-//             res.status(500).json({ status: "error", message: "OrderItem not found" });
-//             return;
-//         }
-
-//         orderItem!.serviceStatus = "Completed";
-//         orderItem.save();
-
-//         res.status(201).json({ status: "success", message: "Service completed", data: { orderItem } });
-//     } catch (error) {
-//         console.log("Service ended :", error);
-//         res.status(500).json({ status: "error", message: 'Something went wrong' });
-//     }
-// }
-
-
 //-------------------------------------------------- Service Management-----------------------------------------------------------------------
 
 export const addOrUpdateProvidedService = async (req: Request, res: Response) => {
     try {
         const {
             id,
-            serviceProviderId,
+            userId,
             sectorId,
             categoryId,
             subCategoryId,
@@ -293,6 +246,10 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
             updatedBy,
         } = req.body;
 
+        if (!userId) {
+            return res.status(400).json({ status: "error", message: "UserId not found" });
+        }
+
         let providedService;
 
         if (id) {
@@ -305,7 +262,7 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
             providedService.createdBy = req.body.createdBy || 'system';
         }
 
-        if (serviceProviderId !== undefined) providedService.serviceProviderId = serviceProviderId;
+        providedService.serviceProviderId = userId;
         if (sectorId !== undefined) providedService.sectorId = sectorId;
         if (categoryId !== undefined) providedService.categoryId = categoryId;
         if (subCategoryId !== undefined) providedService.subCategoryId = subCategoryId;
@@ -334,35 +291,38 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
 
 export const getProvidedService = async (req: Request, res: Response) => {
     try {
-        const { id } = req.body;
+        const { id, userId } = req.body;
         const { isActive } = req.query;
+
+        if (!userId) {
+            return res.status(400).json({ status: "error", message: "UserId not found" });
+        }
 
         let providedService;
         if (id) {
             providedService = await ProvidedService.findOne({
-                where: { id, ...(isActive && { isActive: isActive === 'true' }) },
+                where: { id, serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
 
             // if (!providedService) {
             //     return res.status(404).json({ status: "error", message: 'Provided Service not found' });
             // }
-            
-            if(providedService)
-            {
+
+            if (providedService) {
                 const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
             }
         } else {
             const providedServices = await ProvidedService.find({
-                where: { ...(isActive && { isActive: isActive === 'true' }) },
+                where: { serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
 
             // if (providedServices.length === 0) {
             //     return res.status(404).json({ status: "error", message: 'Provided Services not found' });
             // }
-            
+
             for (let providedService of providedServices) {
                 const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
@@ -405,3 +365,181 @@ export const deleteProvidedService = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: 'Internal server error' });
     }
 };
+
+
+// ---------------------------------------------HOME PAGE----------------------------------------------
+
+export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Response) => {
+    const { year, period, userId, sectorId } = req.body;
+
+    if (!year || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year, userId, and sectorId are required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    if (isNaN(yearAsNumber)) {
+        return res.status(400).json({ message: 'Invalid year format.' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (period) {
+        case 'year':
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            break;
+        case 'month':
+            startDate = startOfMonth(new Date());
+            endDate = endOfMonth(new Date());
+            break;
+        case 'week':
+            startDate = startOfWeek(new Date());
+            endDate = endOfWeek(new Date());
+            break;
+        default:
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+    }
+
+    try {
+        const statusCounts = await ServiceJob
+            .createQueryBuilder("serviceJob")
+            .select("serviceJob.status", "status")
+            .addSelect("COUNT(*)", "count")
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy("serviceJob.status")
+            .getRawMany();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Fetched service jobs by year, month, and week",
+            data: { statusCounts }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error.' });
+    }
+};
+
+
+export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response) => {
+
+    const { year, period, userId, sectorId } = req.body;
+
+    if (!year || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year or userId or sectorId is required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    if (isNaN(yearAsNumber)) {
+        return res.status(400).json({ message: 'Invalid year format.' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (period) {
+        case 'year':
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            break;
+        case 'month':
+            startDate = startOfMonth(new Date());
+            endDate = endOfMonth(new Date());
+            break;
+        case 'week':
+            startDate = startOfWeek(new Date());
+            endDate = endOfWeek(new Date());
+            break;
+        default:
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+    }
+
+    try {
+        const statusCounts = await ServiceJob
+            .createQueryBuilder("serviceJob")
+            .select("serviceJob.status")
+            .addSelect(
+                "SUM(CASE WHEN serviceJob.status = 'Completed' THEN serviceJob.price ELSE 0 END)",
+                "totalCompletedPrice"
+            )
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .getRawMany();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Fetched total amount service jobs by year, month and week",
+            data: { statusCounts }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error.' });
+    }
+};
+
+export const totalSalesBy_Year_Month_Week = async (req: Request, res: Response) => {
+
+    const { year, period, sectorId, userId } = req.body;
+
+    if (!year || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year or userId or sectorId is required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    if (isNaN(yearAsNumber)) {
+        return res.status(400).json({ message: 'Invalid year format.' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (period) {
+        case 'year':
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            break;
+        case 'month':
+            startDate = startOfMonth(new Date());
+            endDate = endOfMonth(new Date());
+            break;
+        case 'week':
+            startDate = startOfWeek(new Date());
+            endDate = endOfWeek(new Date());
+            break;
+        default:
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+    }
+
+    try {
+        const subCategoryTotals = await ServiceJob
+            .createQueryBuilder("serviceJob")
+            .select("serviceJob.subCategory")
+            .addSelect("SUM(serviceJob.price)", "totalPrice")
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where("serviceJob.status = :status", { status: 'Completed' })
+            .andWhere("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy("serviceJob.subCategory")
+            .getRawMany();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Fetched total sales amount for service jobs by subcategory",
+            data: { subCategoryTotals }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error.' });
+    }
+};
+

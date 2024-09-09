@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { Sector } from '@/api/entity/sector/Sector';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
 import { Service } from '@/api/entity/sector/Service';
+import { Category } from '@/api/entity/sector/Category';
 
 export const getAllSectors = async (req: Request, res: Response) => {
   try {
@@ -22,14 +23,22 @@ export const getAllSectors = async (req: Request, res: Response) => {
 
 export const getSector = async (req: Request, res: Response) => {
   try {
-    const { sectorId } = req.body;
+    const { sectorId, sectorName } = req.body;
 
-    if (!sectorId) {
-      res.status(400).json({ status: 'error', message: 'Provide sectorId!' });
+    if (!sectorId && !sectorName) {
+      res.status(400).json({ status: 'error', message: 'Provide sectorId or sectorName' });
       return;
     }
 
-    const yourSector = await Sector.findOne({ where: { id: sectorId } });
+    let yourSector 
+    if(sectorId)
+    {
+      yourSector = await Sector.findOne({ where: { id: sectorId } });
+    }
+    else
+    {
+      yourSector = await Sector.findOne({ where: { sectorName } });
+    }
 
     res.status(200).json({
       status: 'success',
@@ -43,7 +52,6 @@ export const getSector = async (req: Request, res: Response) => {
     res.status(500).json({ status: 'error', message: 'Failed to fetch sector' });
   }
 };
-
 
 export const getAllSubCategories = async (req: Request, res: Response) => {
   try {
@@ -59,6 +67,23 @@ export const getAllSubCategories = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching subCategories:', error);
     res.status(500).json({ status: 'error', message: 'Failed to fetch subCategories' });
+  }
+};
+
+export const getAllCategories = async (req: Request, res: Response) => {
+  try {
+    const { sectorId } = req.body;
+    const categories = await Category.find({ where: { sectorId } });
+    res.status(200).json({
+      status: 'success',
+      message: 'Successfully fetched all categories',
+      data: {
+        categories,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to fetch categories' });
   }
 };
 

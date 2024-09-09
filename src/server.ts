@@ -17,6 +17,7 @@ import profileRouter from './api/routes/profile/ProfileRoutes';
 import customerRouter from './api/routes/orderManagement/CustomerRoutes';
 import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
 import paymentRouter from "./api/routes/payment/PaymentRoutes";
+import { authenticate } from './api/middlewares/auth/Authenticate';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();

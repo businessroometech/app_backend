@@ -17,8 +17,9 @@ interface Address {
   pincode: string,
 }
 
-@Entity({ name: 'PersonalDetails' })
-export class PersonalDetails extends BaseEntity {
+@Entity({ name: 'BusinessDetails' })
+export class BusinessDetails extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -32,16 +33,22 @@ export class PersonalDetails extends BaseEntity {
   profilePictureUploadId!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  fullName!: string;
+  companyName!: string;
 
-  @Column({ type: 'date' })
-  dob!: Date;
+  @Column({ type: 'varchar', length: 255 })
+  companyType!: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true, default: "" })
+  emailAddress!: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  gstInNumber!: string;
 
   @Column({ type: 'varchar', length: 15, unique: true })
   mobileNumber!: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
-  emailAddress!: string;
+  @Column({ type: 'varchar', length: 255 })
+  companyPancard!: string;
 
   @Column({ type: 'text' })
   bio!: string;
@@ -53,7 +60,7 @@ export class PersonalDetails extends BaseEntity {
   currentAddress!: Address;
 
   @Column({ type: 'uuid' })
-  aadharNumberUploadId!: string;
+  registrationCertificateUploadId!: string;
 
   @Column({ type: 'uuid' })
   panNumberUploadId!: string;
