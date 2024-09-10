@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
 import { Between, In } from 'typeorm';
-import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
@@ -594,5 +594,74 @@ export const getAvgPricePerMonthForCurrentYear = async (req: Request, res: Respo
     } catch (error) {
         console.log("Error fetching avg order prices:", error);
         return res.status(500).json({ status: "error", message: 'Internal Server Error' });
+    }
+};
+
+
+export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Response) => {
+    const { year, month, userId, sectorId } = req.body;
+
+    if (!year || !month || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year or month or userId or sectorId are required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    const monthAsNumber = parseInt(month as string);
+
+    if (isNaN(yearAsNumber) || isNaN(monthAsNumber) || monthAsNumber < 1 || monthAsNumber > 12) {
+        return res.status(400).json({ message: 'Invalid year or month format.' });
+    }
+
+    // Determine the start and end dates for the current month
+    const startDateCurrentMonth = startOfMonth(new Date(yearAsNumber, monthAsNumber - 1, 1));
+    const endDateCurrentMonth = endOfMonth(startDateCurrentMonth);
+
+    // Determine the start and end dates for the previous month
+    const startDatePreviousMonth = startOfMonth(subMonths(startDateCurrentMonth, 1));
+    const endDatePreviousMonth = endOfMonth(startDatePreviousMonth);
+
+    console.log(startDateCurrentMonth,endDateCurrentMonth);
+    console.log("**************");
+    console.log(startDatePreviousMonth,endDatePreviousMonth);
+
+    try {
+        // Calculate average price for the given month
+        const avgPriceCurrentMonthResult = await ServiceJob
+            .createQueryBuilder('serviceJob')
+            .select('AVG(serviceJob.price)', 'averagePrice')
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere('serviceJob.deliveryDate BETWEEN :startDate AND :endDate', { startDate: startDateCurrentMonth.toISOString().split('T')[0], endDate: endDateCurrentMonth.toISOString().split('T')[0] })
+            .andWhere('serviceJob.serviceProviderId = :userId', { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .getRawOne();
+
+        // Calculate average price for the previous month
+        const avgPricePreviousMonthResult = await ServiceJob
+            .createQueryBuilder('serviceJob')
+            .select('AVG(serviceJob.price)', 'averagePrice')
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere('serviceJob.deliveryDate BETWEEN :startDate AND :endDate', { startDate: startDatePreviousMonth.toISOString().split('T')[0], endDate: endDatePreviousMonth.toISOString().split('T')[0] })
+            .andWhere('serviceJob.serviceProviderId = :userId', { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .getRawOne();
+
+        // Extract average prices or default to 0 if null
+        const avgPriceCurrentMonth = avgPriceCurrentMonthResult?.averagePrice ? parseFloat(avgPriceCurrentMonthResult.averagePrice) : 0;
+        const avgPricePreviousMonth = avgPricePreviousMonthResult?.averagePrice ? parseFloat(avgPricePreviousMonthResult.averagePrice) : 0;
+
+        return res.status(200).json({
+            status: "success",
+            message: "Comparison of average prices between current and previous month",
+            data: {
+                currentMonthAveragePrice: avgPriceCurrentMonth,
+                previousMonthAveragePrice: avgPricePreviousMonth,
+                difference: avgPriceCurrentMonth - avgPricePreviousMonth
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error.' });
     }
 };
