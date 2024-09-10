@@ -403,6 +403,8 @@ export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Respon
     }
 
     try {
+        const predefinedStatuses = ['Pending', 'Completed', 'Rejected', 'Accepted']; // List all possible statuses
+
         const statusCounts = await ServiceJob
             .createQueryBuilder("serviceJob")
             .select("serviceJob.status", "status")
@@ -414,10 +416,23 @@ export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Respon
             .groupBy("serviceJob.status")
             .getRawMany();
 
+        // Convert query results to a map for easier processing
+        const statusCountMap = new Map<string, number>();
+        statusCounts.forEach(({ status, count }) => {
+            statusCountMap.set(status, parseInt(count));
+        });
+
+        // Ensure all predefined statuses are included in the result
+        const result = predefinedStatuses.map(status => ({
+            status,
+            count: statusCountMap.get(status) || 0
+        }));
+
+
         return res.status(200).json({
             status: "success",
             message: "Fetched service jobs by year, month, and week",
-            data: { statusCounts }
+            data: { statusCounts: result }
         });
     } catch (error) {
         console.error(error);
@@ -461,7 +476,7 @@ export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response)
     }
 
     try {
-        const statusCounts = await ServiceJob
+        const result = await ServiceJob
             .createQueryBuilder("serviceJob")
             .select("serviceJob.status")
             .addSelect(
@@ -477,7 +492,7 @@ export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response)
         return res.status(200).json({
             status: "success",
             message: "Fetched total amount service jobs by year, month and week",
-            data: { statusCounts }
+            data: { totalAmount: result, commissionCharges: 0 }
         });
     } catch (error) {
         console.error(error);
@@ -543,3 +558,41 @@ export const totalSalesBy_Year_Month_Week = async (req: Request, res: Response) 
     }
 };
 
+export const getAvgPricePerMonthForCurrentYear = async (req: Request, res: Response) => {
+    try {
+        const { year, sectorId, userId } = req.body;
+
+        if (!year || !userId || !sectorId) {
+            return res.status(400).json({ message: 'Year, UserId, and SectorId are required.' });
+        }
+
+        const query = ServiceJob
+            .createQueryBuilder('serviceJob')
+            .select('DATE_FORMAT(serviceJob.deliveryDate, \'%m\')', 'month')
+            .addSelect('AVG(serviceJob.price)', 'averagePrice')
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere('DATE_FORMAT(serviceJob.deliveryDate, \'%Y\') = :year', { year })
+            .andWhere('serviceJob.serviceProviderId = :userId', { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy('DATE_FORMAT(serviceJob.deliveryDate, \'%m\')')
+        // .orderBy('month', 'ASC');
+
+        const result = await query.getRawMany();
+        console.log(result);
+
+        // Fill missing months with 0 average price
+        const monthlyAverages = Array(12).fill(0).map((_, index) => {
+            const found = result.find(row => parseInt(row.month) === index + 1);
+            return {
+                month: index + 1,
+                averagePrice: found ? parseFloat(found.averagePrice) : 0
+            };
+        });
+
+        return res.json({ status: "success", message: "Fetched avg. sales for all months for current year", data: { monthlyAverages } });
+    } catch (error) {
+        console.log("Error fetching avg order prices:", error);
+        return res.status(500).json({ status: "error", message: 'Internal Server Error' });
+    }
+};
