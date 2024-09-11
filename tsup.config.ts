@@ -5,5 +5,6 @@ export default defineConfig({
  "format": ["cjs", "esm"],
     "dts": true,
     "sourcemap": true,
-    "minify": true
+    "minify": true,
+    "noExternal": ['typeorm', './ormconfig.ts'], // Include TypeORM and ormconfig.ts
 });
