@@ -47,9 +47,9 @@ export class Cart extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @OneToMany(() => CartItemBooking, item => item.cart)
+    // @OneToMany(() => CartItemBooking, item => item.cart)
     cartItemBookings !: CartItemBooking[];
 
-    @OneToMany(() => CartItemProduct, item => item.cart)
+    // @OneToMany(() => CartItemProduct, item => item.cart)
     cartItemProducts !: CartItemProduct[];
 }
