@@ -19,16 +19,33 @@ import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderR
 import paymentRouter from "./api/routes/payment/PaymentRoutes";
 import { authenticate } from './api/middlewares/auth/Authenticate';
 
+
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
-createConnection()
-  .then(() => {
-    console.log('DB connnected');
-  })
-  .catch((error) => {
-    console.log(error);
-  });
+import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+
+// Create a DataSource instance
+const AppDataSource = new DataSource({
+  type: 'mysql',
+  host: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_HOST : process.env.DEV_AWS_HOST,
+  port: 3306,
+  username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
+  password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
+  database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
+  synchronize: true,
+    // ... other TypeORM configuration options (entities, synchronize, etc.)
+});
+
+// Initialize the DataSource
+AppDataSource.initialize()
+    .then(() => {
+        console.log('DB connected');
+        // ... your application logic here
+    })
+    .catch((error) => {
+        console.error('Error during Data Source initialization:', error);
+    });
 
 // Set the application to trust the reverse proxy
 app.set('trust proxy', true);

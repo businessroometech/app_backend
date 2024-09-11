@@ -1,12 +1,13 @@
 import { env } from './common/utils/envConfig';
 
+
 export default {
   type: 'mysql',
-  host: env.NODE_ENV === 'production' ? env.DEV_AWS_HOST : env.DEV_AWS_HOST,
+  host: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_HOST : process.env.DEV_AWS_HOST,
   port: 3306,
-  username: env.NODE_ENV === 'production' ? env.DEV_AWS_USERNAME : env.DEV_AWS_USERNAME,
-  password: env.NODE_ENV === 'production' ? env.DEV_AWS_PASSWORD : env.DEV_AWS_PASSWORD,
-  database: env.NODE_ENV === 'production' ? env.DEV_AWS_DB_NAME : env.DEV_AWS_DB_NAME,
+  username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
+  password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
+  database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   synchronize: true,
   logging: false,
   entities: ['src/api/entity/**/*.ts'],
