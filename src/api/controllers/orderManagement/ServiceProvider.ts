@@ -6,6 +6,7 @@ import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, star
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { Service } from '@/api/entity/sector/Service';
+import { SubCategory } from '@/api/entity/sector/SubCategory';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -620,10 +621,6 @@ export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Respon
     const startDatePreviousMonth = startOfMonth(subMonths(startDateCurrentMonth, 1));
     const endDatePreviousMonth = endOfMonth(startDatePreviousMonth);
 
-    console.log(startDateCurrentMonth,endDateCurrentMonth);
-    console.log("**************");
-    console.log(startDatePreviousMonth,endDatePreviousMonth);
-
     try {
         // Calculate average price for the given month
         const avgPriceCurrentMonthResult = await ServiceJob
@@ -663,5 +660,61 @@ export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Respon
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Server error.' });
+    }
+};
+
+export const totalSalesSubCategoryWise = async (req: Request, res: Response) => {
+
+    const { year, period, sectorId, userId } = req.body;
+
+    if (!year || !period || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year or userId or sectorId is required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    if (isNaN(yearAsNumber)) {
+        return res.status(400).json({ message: 'Invalid year format.' });
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (period) {
+        case 'year':
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            break;
+        case 'month':
+            startDate = startOfMonth(new Date());
+            endDate = endOfMonth(new Date());
+            break;
+        case 'week':
+            startDate = startOfWeek(new Date());
+            endDate = endOfWeek(new Date());
+            break;
+        default:
+            startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+    }
+
+    try {
+        const subCategorySales = await SubCategory
+            .createQueryBuilder('subCategory')
+            .leftJoin('subCategory.providedServices', 'providedService')
+            .leftJoin('providedService.orderItemBookings', 'orderItemBooking')
+            .leftJoin('orderItemBooking.serviceJobs', 'serviceJob')
+            .select('subCategory.subCategoryName', 'subCategory')
+            .addSelect('SUM(serviceJob.price)', 'totalSales')
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy('subCategory.subCategoryName')
+            .getRawMany();
+
+        return res.status(200).json(subCategorySales);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Something went wrong' });
     }
 };
