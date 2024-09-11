@@ -7,10 +7,9 @@ build({
   entryPoints: ["src/**/*"],  // Main entry point, imports will be followed
   bundle: true,
   platform: 'node', 
-  external: externalDependencies,  // Avoid bundling external dependencies
+  external: ['typeorm', 'reflect-metadata'], // Mark TypeORM as external// Avoid bundling external dependencies
   outdir: 'dist',                  // Output directory
-  sourcemap: true,
-  minify: false,                    // Set to true for production
+  sourcemap: true,                // Set to true for production
   target: ['es2020'],               // JavaScript target
   tsconfig: './tsconfig.json',      // TypeScript config
   format: 'cjs',                    // CommonJS format
