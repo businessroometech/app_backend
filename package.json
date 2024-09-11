@@ -6,7 +6,7 @@
   "private": false,
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
-    "build": "pm i && rimraf dist && node esbuild.config.js",
+    "build": "npm i && rimraf dist && node esbuild.config.js",
     "build1": "npm i && rimraf dist && tsup",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
