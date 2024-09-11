@@ -13,7 +13,9 @@ import {
 
     getServiceJobsBy_Year_Month_Week,
     totalAmountBy_Year_Month_Week,
-    totalSalesBy_Year_Month_Week
+    totalSalesBy_Year_Month_Week,
+    getAvgPricePerMonthForCurrentYear,
+    compareAvgPriceWithPreviousMonth
 } from '@/api/controllers/orderManagement/ServiceProvider';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
@@ -33,5 +35,7 @@ Router.delete('/service-management', deleteProvidedService);
 Router.post('/by_year_month_week', getServiceJobsBy_Year_Month_Week);
 Router.post('/sales/overview/by_year_month_week', totalAmountBy_Year_Month_Week);
 Router.post('/sales/by_subCategories/by_year_month_week', totalSalesBy_Year_Month_Week);
+Router.post('/avg_order_price_yearly', getAvgPricePerMonthForCurrentYear);
+Router.post('/compare_avg_order_price_monthly', compareAvgPriceWithPreviousMonth);
 
 export default Router;

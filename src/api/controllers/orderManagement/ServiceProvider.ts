@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
 import { Between, In } from 'typeorm';
-import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
@@ -403,6 +403,8 @@ export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Respon
     }
 
     try {
+        const predefinedStatuses = ['Pending', 'Completed', 'Rejected', 'Accepted']; // List all possible statuses
+
         const statusCounts = await ServiceJob
             .createQueryBuilder("serviceJob")
             .select("serviceJob.status", "status")
@@ -414,10 +416,23 @@ export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Respon
             .groupBy("serviceJob.status")
             .getRawMany();
 
+        // Convert query results to a map for easier processing
+        const statusCountMap = new Map<string, number>();
+        statusCounts.forEach(({ status, count }) => {
+            statusCountMap.set(status, parseInt(count));
+        });
+
+        // Ensure all predefined statuses are included in the result
+        const result = predefinedStatuses.map(status => ({
+            status,
+            count: statusCountMap.get(status) || 0
+        }));
+
+
         return res.status(200).json({
             status: "success",
             message: "Fetched service jobs by year, month, and week",
-            data: { statusCounts }
+            data: { statusCounts: result }
         });
     } catch (error) {
         console.error(error);
@@ -461,7 +476,7 @@ export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response)
     }
 
     try {
-        const statusCounts = await ServiceJob
+        const result = await ServiceJob
             .createQueryBuilder("serviceJob")
             .select("serviceJob.status")
             .addSelect(
@@ -477,7 +492,7 @@ export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response)
         return res.status(200).json({
             status: "success",
             message: "Fetched total amount service jobs by year, month and week",
-            data: { statusCounts }
+            data: { totalAmount: result, commissionCharges: 0 }
         });
     } catch (error) {
         console.error(error);
@@ -543,3 +558,110 @@ export const totalSalesBy_Year_Month_Week = async (req: Request, res: Response) 
     }
 };
 
+export const getAvgPricePerMonthForCurrentYear = async (req: Request, res: Response) => {
+    try {
+        const { year, sectorId, userId } = req.body;
+
+        if (!year || !userId || !sectorId) {
+            return res.status(400).json({ message: 'Year, UserId, and SectorId are required.' });
+        }
+
+        const query = ServiceJob
+            .createQueryBuilder('serviceJob')
+            .select('DATE_FORMAT(serviceJob.deliveryDate, \'%m\')', 'month')
+            .addSelect('AVG(serviceJob.price)', 'averagePrice')
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere('DATE_FORMAT(serviceJob.deliveryDate, \'%Y\') = :year', { year })
+            .andWhere('serviceJob.serviceProviderId = :userId', { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy('DATE_FORMAT(serviceJob.deliveryDate, \'%m\')')
+        // .orderBy('month', 'ASC');
+
+        const result = await query.getRawMany();
+        console.log(result);
+
+        // Fill missing months with 0 average price
+        const monthlyAverages = Array(12).fill(0).map((_, index) => {
+            const found = result.find(row => parseInt(row.month) === index + 1);
+            return {
+                month: index + 1,
+                averagePrice: found ? parseFloat(found.averagePrice) : 0
+            };
+        });
+
+        return res.json({ status: "success", message: "Fetched avg. sales for all months for current year", data: { monthlyAverages } });
+    } catch (error) {
+        console.log("Error fetching avg order prices:", error);
+        return res.status(500).json({ status: "error", message: 'Internal Server Error' });
+    }
+};
+
+
+export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Response) => {
+    const { year, month, userId, sectorId } = req.body;
+
+    if (!year || !month || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year or month or userId or sectorId are required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    const monthAsNumber = parseInt(month as string);
+
+    if (isNaN(yearAsNumber) || isNaN(monthAsNumber) || monthAsNumber < 1 || monthAsNumber > 12) {
+        return res.status(400).json({ message: 'Invalid year or month format.' });
+    }
+
+    // Determine the start and end dates for the current month
+    const startDateCurrentMonth = startOfMonth(new Date(yearAsNumber, monthAsNumber - 1, 1));
+    const endDateCurrentMonth = endOfMonth(startDateCurrentMonth);
+
+    // Determine the start and end dates for the previous month
+    const startDatePreviousMonth = startOfMonth(subMonths(startDateCurrentMonth, 1));
+    const endDatePreviousMonth = endOfMonth(startDatePreviousMonth);
+
+    console.log(startDateCurrentMonth,endDateCurrentMonth);
+    console.log("**************");
+    console.log(startDatePreviousMonth,endDatePreviousMonth);
+
+    try {
+        // Calculate average price for the given month
+        const avgPriceCurrentMonthResult = await ServiceJob
+            .createQueryBuilder('serviceJob')
+            .select('AVG(serviceJob.price)', 'averagePrice')
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere('serviceJob.deliveryDate BETWEEN :startDate AND :endDate', { startDate: startDateCurrentMonth.toISOString().split('T')[0], endDate: endDateCurrentMonth.toISOString().split('T')[0] })
+            .andWhere('serviceJob.serviceProviderId = :userId', { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .getRawOne();
+
+        // Calculate average price for the previous month
+        const avgPricePreviousMonthResult = await ServiceJob
+            .createQueryBuilder('serviceJob')
+            .select('AVG(serviceJob.price)', 'averagePrice')
+            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere('serviceJob.deliveryDate BETWEEN :startDate AND :endDate', { startDate: startDatePreviousMonth.toISOString().split('T')[0], endDate: endDatePreviousMonth.toISOString().split('T')[0] })
+            .andWhere('serviceJob.serviceProviderId = :userId', { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .getRawOne();
+
+        // Extract average prices or default to 0 if null
+        const avgPriceCurrentMonth = avgPriceCurrentMonthResult?.averagePrice ? parseFloat(avgPriceCurrentMonthResult.averagePrice) : 0;
+        const avgPricePreviousMonth = avgPricePreviousMonthResult?.averagePrice ? parseFloat(avgPricePreviousMonthResult.averagePrice) : 0;
+
+        return res.status(200).json({
+            status: "success",
+            message: "Comparison of average prices between current and previous month",
+            data: {
+                currentMonthAveragePrice: avgPriceCurrentMonth,
+                previousMonthAveragePrice: avgPricePreviousMonth,
+                difference: avgPriceCurrentMonth - avgPricePreviousMonth
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error.' });
+    }
+};
