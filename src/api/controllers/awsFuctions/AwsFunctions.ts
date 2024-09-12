@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { Readable } from 'stream';
 
 import { DocumentUpload } from '@/api/entity/profile/DocumentUpload';
+import { AppDataSource } from '@/server';
 
 const s3 = new S3Client({
   credentials: {
@@ -49,7 +50,9 @@ export const addDocumentUpload = async (req: Request, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'Please provide complete data to upload in DB' });
     }
 
-    const doc = await DocumentUpload.create({
+    const documentUploadRepository = AppDataSource.getRepository(DocumentUpload);
+
+    const doc = await documentUploadRepository.create({
       bucketName,
       key,
       documentName,
@@ -112,7 +115,9 @@ export const getDocumentFromBucket = async (req: Request, res: Response) => {
   try {
     const { documentId } = req.body;
 
-    const document = await DocumentUpload.findOne({ where: { id: documentId } });
+    const documentUploadRepository = AppDataSource.getRepository(DocumentUpload);
+
+    const document = await documentUploadRepository.findOne({ where: { id: documentId } });
 
     if (!document) {
       res.status(404).json({ status: "error", message: "Invalid document Id" });

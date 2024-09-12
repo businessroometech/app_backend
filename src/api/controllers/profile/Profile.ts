@@ -14,17 +14,20 @@ import { In } from 'typeorm';
 import { PersonalDetailsCustomer } from '@/api/entity/profile/personal/PersonalDetailsCustomer';
 import { UserLogin } from '@/api/entity/user/UserLogin';
 import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
+import { AppDataSource } from '@/server';
 
 export const getUser = async (req: Request, res: Response): Promise<void> => {
     try {
         const { userId } = req.body;
+
+        const userLoginRepository = AppDataSource.getRepository(UserLogin);
 
         if (!userId) {
             res.status(400).json({ status: "error", message: "Please provide userId" });
             return;
         }
 
-        const user = await UserLogin.findOne({ where: { id: userId } });
+        const user = await userLoginRepository.findOne({ where: { id: userId } });
 
         res.status(200).json({ status: "success", message: "Successfully found user", data: { user } });
 
@@ -53,20 +56,24 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
             updatedBy,
         } = req.body;
 
+        const userLoginRepository = AppDataSource.getRepository(UserLogin);
+        const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+        const documentUploadRepository = AppDataSource.getRepository(DocumentUpload);
+
         // Ensure DocumentUpload entries for profile picture, Aadhar, and PAN numbers
-        const profilePictureUpload = await DocumentUpload.findOne({ where: { id: profilePictureId } });
-        const aadharNumberUpload = await DocumentUpload.findOne({ where: { id: aadharNumberId } });
-        const panNumberUpload = await DocumentUpload.findOne({ where: { id: panNumberId } });
+        const profilePictureUpload = await documentUploadRepository.findOne({ where: { id: profilePictureId } });
+        const aadharNumberUpload = await documentUploadRepository.findOne({ where: { id: aadharNumberId } });
+        const panNumberUpload = await documentUploadRepository.findOne({ where: { id: panNumberId } });
 
         if (!profilePictureUpload || !aadharNumberUpload || !panNumberUpload) {
             res.status(400).json({ status: 'error', message: 'Invalid document upload IDs' });
             return;
         }
 
-        let details = await PersonalDetails.findOne({ where: { sectorId, userId } });
+        let details = await personalDetailsRepository.findOne({ where: { sectorId, userId } });
 
         if (!details) {
-            details = PersonalDetails.create({
+            details = personalDetailsRepository.create({
                 sectorId,
                 userId,
                 mobileNumber,
@@ -84,7 +91,7 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
             });
             await details.save();
         } else {
-            await PersonalDetails.update(
+            await personalDetailsRepository.update(
                 { sectorId, userId },
                 {
                     mobileNumber,
@@ -100,7 +107,7 @@ export const setPersonalDetails = async (req: Request, res: Response): Promise<v
                     updatedBy: updatedBy || 'system',
                 }
             );
-            details = await PersonalDetails.findOne({ where: { sectorId, userId } });
+            details = await personalDetailsRepository.findOne({ where: { sectorId, userId } });
         }
 
         res.status(200).json({
@@ -134,7 +141,11 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             updatedBy,
         } = req.body;
 
-        const portfolioUploads = await DocumentUpload.find({
+        const professionalDetailsRepository = AppDataSource.getRepository(ProfessionalDetails);
+        const documentUploadRepository = AppDataSource.getRepository(DocumentUpload);
+
+
+        const portfolioUploads = await documentUploadRepository.find({
             where: { id: In(portfolioDocumentIds) }
         });
 
@@ -143,12 +154,12 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             return;
         }
 
-        let details: ProfessionalDetails | null = await ProfessionalDetails.findOne({
+        let details: ProfessionalDetails | null = await professionalDetailsRepository.findOne({
             where: { sectorId, userId },
         });
 
         if (!details) {
-            details = ProfessionalDetails.create({
+            details = professionalDetailsRepository.create({
                 sectorId,
                 userId,
                 portfolioDocumentUploadIds: portfolioDocumentIds,
@@ -161,7 +172,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
             });
             await details.save();
         } else {
-            await ProfessionalDetails.update(
+            await professionalDetailsRepository.update(
                 { sectorId, userId },
                 {
                     portfolioDocumentUploadIds: portfolioDocumentIds,
@@ -172,7 +183,7 @@ export const setProfessionalDetails = async (req: Request, res: Response): Promi
                     updatedBy: updatedBy || 'system',
                 }
             );
-            details = await ProfessionalDetails.findOne({ where: { sectorId, userId } });
+            details = await professionalDetailsRepository.findOne({ where: { sectorId, userId } });
         }
 
         res.status(200).json({
@@ -415,12 +426,15 @@ export const setEducationalDetails = async (req: Request, res: Response): Promis
                 updatedBy,
             } = req.body;
 
+            const educationalDetailsRepository = AppDataSource.getRepository(EducationalDetails);
+
+
             let details: EducationalDetails | null = await EducationalDetails.findOne({
                 where: { sectorId, userId },
             });
 
             if (details) {
-                await EducationalDetails.update(
+                await educationalDetailsRepository.update(
                     { sectorId, userId },
                     {
                         collegeName,
@@ -432,11 +446,11 @@ export const setEducationalDetails = async (req: Request, res: Response): Promis
                     }
                 );
 
-                details = await EducationalDetails.findOne({
+                details = await educationalDetailsRepository.findOne({
                     where: { sectorId, userId },
                 });
             } else {
-                details = await EducationalDetails.create({
+                details = await educationalDetailsRepository.create({
                     sectorId,
                     userId,
                     collegeName,
@@ -478,12 +492,15 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
             updatedBy,
         } = req.body;
 
-        let details: FinancialDetails | null = await FinancialDetails.findOne({
+        const financialDetailsRepository = AppDataSource.getRepository(FinancialDetails);
+
+
+        let details: FinancialDetails | null = await financialDetailsRepository.findOne({
             where: { sectorId, userId },
         });
 
         if (!details) {
-            details = await FinancialDetails.create({
+            details = await financialDetailsRepository.create({
                 sectorId,
                 userId,
                 bankName,
@@ -496,7 +513,7 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                 updatedBy: updatedBy || 'system',
             }).save();
         } else {
-            await FinancialDetails.update(
+            await financialDetailsRepository.update(
                 { sectorId, userId },
                 {
                     bankName,
@@ -508,7 +525,7 @@ export const setFinancialDetails = async (req: Request, res: Response): Promise<
                     updatedBy: updatedBy || 'system',
                 }
             );
-            details = await FinancialDetails.findOne({
+            details = await financialDetailsRepository.findOne({
                 where: { sectorId, userId },
             });
         }
@@ -551,9 +568,12 @@ export const createOrUpdateBusinessDetails = async (req: Request, res: Response)
         updatedBy,
     } = req.body;
 
+    const businessDetailsRepository = AppDataSource.getRepository(BusinessDetails);
+
+
     try {
         // Check if a record with the provided userId and sectorId exists
-        let businessDetails = await BusinessDetails.findOne({
+        let businessDetails = await businessDetailsRepository.findOne({
             where: { userId, sectorId },
         });
 
@@ -577,7 +597,7 @@ export const createOrUpdateBusinessDetails = async (req: Request, res: Response)
 
         } else {
             // Create new record
-            businessDetails = BusinessDetails.create({
+            businessDetails = businessDetailsRepository.create({
                 userId,
                 sectorId,
                 profilePictureUploadId,
@@ -606,9 +626,12 @@ export const createOrUpdateBusinessDetails = async (req: Request, res: Response)
 };
 
 export const getPersonalDetails = async (req: Request, res: Response) => {
+
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+
     try {
         const { userId, sectorId } = req.body;
-        const details = await PersonalDetails.findOne({ where: { userId, sectorId } });
+        const details = await personalDetailsRepository.findOne({ where: { userId, sectorId } });
         res.status(200).json({
             status: 'success',
             message: `Personal details fetched for user with id: ${userId}`,
@@ -623,9 +646,12 @@ export const getPersonalDetails = async (req: Request, res: Response) => {
 };
 
 export const getProfessionalDetails = async (req: Request, res: Response) => {
+
+    const professionalDetailsRepository = AppDataSource.getRepository(ProfessionalDetails);
+
     try {
         const { userId, sectorId } = req.body;
-        const details = await ProfessionalDetails.findOne({ where: { userId, sectorId } });
+        const details = await professionalDetailsRepository.findOne({ where: { userId, sectorId } });
         res.status(200).json({
             status: 'success',
             message: `Professional details fetched for user with id: ${userId}`,
@@ -650,7 +676,10 @@ export const getEducationalDetails = async (req: Request, res: Response) => {
 
         }
         else {
-            const details = await EducationalDetails.findOne({ where: { userId, sectorId } });
+
+            const educationalDetailsRepository = AppDataSource.getRepository(EducationalDetails);
+
+            const details = await educationalDetailsRepository.findOne({ where: { userId, sectorId } });
             res.status(200).json({
                 status: 'success',
                 message: `Educational details fetched for user with id: ${userId}`,
@@ -667,8 +696,11 @@ export const getEducationalDetails = async (req: Request, res: Response) => {
 
 export const getFinancialDetails = async (req: Request, res: Response) => {
     try {
+
+        const financialDetailsRepository = AppDataSource.getRepository(FinancialDetails);
+
         const { userId, sectorId } = req.body;
-        const details = await FinancialDetails.findOne({ where: { userId, sectorId } });
+        const details = await financialDetailsRepository.findOne({ where: { userId, sectorId } });
         res.status(200).json({
             status: 'success',
             message: `Financial details fetched for user with id: ${userId}`,
@@ -684,8 +716,11 @@ export const getFinancialDetails = async (req: Request, res: Response) => {
 
 export const getBusinessDetails = async (req: Request, res: Response) => {
     try {
+
+        const businessDetailsRepository = AppDataSource.getRepository(BusinessDetails);
+
         const { userId, sectorId } = req.body;
-        const details = await BusinessDetails.findOne({ where: { userId, sectorId } });
+        const details = await businessDetailsRepository.findOne({ where: { userId, sectorId } });
         res.status(200).json({
             status: 'success',
             message: `Business details fetched for user with id: ${userId}`,
@@ -705,10 +740,12 @@ export const setPersonalDetailsCustomer = async (req: Request, res: Response) =>
     try {
         const { userId, fullName, emailAddress, mobileNumber, createdBy, updatedBy } = req.body;
 
-        let details = await PersonalDetailsCustomer.findOne({ where: { userId } });
+        const personalDetailsCustomerRepository = AppDataSource.getRepository(PersonalDetailsCustomer);
+
+        let details = await personalDetailsCustomerRepository.findOne({ where: { userId } });
         let statusCode = 201;
         if (!details) {
-            details = await PersonalDetailsCustomer.create({
+            details = await personalDetailsCustomerRepository.create({
                 userId,
                 fullName,
                 emailAddress,
@@ -735,11 +772,13 @@ export const getPersonalDetailsCustomer = async (req: Request, res: Response) =>
     try {
         const { userId } = req.body;
 
+        const personalDetailsCustomerRepository = AppDataSource.getRepository(PersonalDetailsCustomer);
+
         if (!userId) {
             res.status(400).json({ status: "error", message: "UserId is required" });
         }
 
-        let details = await PersonalDetailsCustomer.findOne({ where: { userId } });
+        let details = await personalDetailsCustomerRepository.findOne({ where: { userId } });
 
         res.status(200).json({ status: "success", message: "User Personal details found successfully", data: { details } });
     } catch (error) {

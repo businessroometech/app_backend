@@ -24,6 +24,19 @@ const logger = pino({ name: 'server start' });
 const app: Express = express();
 
 import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+import { ServiceJob } from './api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
+import { OrderItemBooking } from './api/entity/orderManagement/customer/OrderItemBooking';
+import { ProvidedService } from './api/entity/orderManagement/serviceProvider/service/ProvidedService';
+import { SubCategory } from './api/entity/sector/SubCategory';
+import { Category } from './api/entity/sector/Category';
+import { Sector } from './api/entity/sector/Sector';
+import { UserLogin } from './api/entity/user/UserLogin';
+import { Service } from './api/entity/sector/Service';
+import { Order } from './api/entity/orderManagement/customer/Order';
+import { OrderItemProduct } from './api/entity/orderManagement/customer/OrderItemProduct';
+import { Cart } from './api/entity/orderManagement/customer/Cart';
+import { CartItemBooking } from './api/entity/orderManagement/customer/CartItemBooking';
+import { CartItemProduct } from './api/entity/orderManagement/customer/CartItemProduct';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -33,6 +46,7 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, SubCategory, Category, Sector, Service, UserLogin],
   synchronize: true,
     // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
@@ -79,4 +93,4 @@ app.use('/api/v1/checkout', paymentRouter);
 // Error handlers
 app.use(errorHandler());
 
-export { app, logger };
+export { app, logger, AppDataSource };

@@ -9,6 +9,7 @@ import { RefreshToken } from '@/api/entity/others/RefreshToken';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { Token } from '@/api/entity/others/Token';
 import { OtpVerification } from '@/api/entity/others/OtpVerification';
+import { AppDataSource } from '@/server';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
@@ -31,7 +32,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
+    const user: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
 
     if (!user || !(await UserLogin.validatePassword(password, user.password))) {
       res.status(401).json({ status: 'error', message: 'Invalid credentials' });
@@ -54,7 +58,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.cookie('refreshToken', refreshToken, cookieOptions);
 
       // store referesh token to the DB
-      const rt = await RefreshToken.findOne({ where: { userId: user.id } });
+      const rt = await refreshRepository.findOne({ where: { userId: user.id } });
 
       const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
       const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -69,7 +73,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         rt.expiresAt = new Date(Date.now() + expiresIn);
         await rt.save();
       } else {
-        await RefreshToken.create({
+        await refreshRepository.create({
           userId: user.id,
           token: refreshToken,
           expiresAt: new Date(Date.now() + expiresIn),
@@ -116,7 +120,9 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
     const uuidToken = uuidv4(); // Generating a UUID
     const hmac = createHmac(uuidToken);
 
-    const token = await Token.create({
+    const tokenRepository = AppDataSource.getRepository(Token);
+
+    const token = await tokenRepository.create({
       userId: decoded.id,
       hmac,
       expiresAt: new Date(Date.now() + parseInt(process.env.UUID_TOKEN_EXPIRES_IN!)),
@@ -174,8 +180,10 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       secure: process.env.NODE_ENV === 'production',
     });
 
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
     // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { userId } });
+    const rt = await refreshRepository.findOne({ where: { userId } });
 
     const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
     const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -190,7 +198,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       rt.expiresAt = new Date(Date.now() + expiresIn);
       await rt.save();
     } else {
-      await RefreshToken.create({
+      await refreshRepository.create({
         userId,
         token: newRefreshToken,
         expiresAt: new Date(Date.now() + expiresIn),
@@ -224,9 +232,11 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
     const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
 
-    const refresh = await RefreshToken.findOne({ where: { userId: payload.id } });
+    const refresh = await refreshRepository.findOne({ where: { userId: payload.id } });
 
     if (!refresh) {
       res.status(401).json({ status: 'error', message: 'Refresh token not found' });
@@ -310,7 +320,11 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
       return;
     }
 
-    let isVerify = await OtpVerification.findOne({ where: { mobileNumber, verificationCode, useCase: "Signup" } });
+    const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
+    let isVerify = await otpVerificationRepository.findOne({ where: { mobileNumber, verificationCode, useCase: "Signup" } });
 
     if (!isVerify) {
       res.status(400).json({ status: 'error', message: 'Invalid verification code or mobileNumber' });
@@ -330,7 +344,7 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     await isVerify.save();
 
     //checking is the profile completed or not
-    const user: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+    const user: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
 
     if (!user) {
       res.status(400).json({ status: "error", message: "User with mobile number does not exist" });
@@ -353,7 +367,7 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { userId: user!.id } });
+    const rt = await refreshRepository.findOne({ where: { userId: user!.id } });
 
     // const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
     const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -368,7 +382,7 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
       rt.expiresAt = new Date(Date.now() + expiresIn);
       await rt.save();
     } else {
-      await RefreshToken.create({
+      await refreshRepository.create({
         userId: user!.id,
         token: refreshToken,
         expiresAt: new Date(Date.now() + expiresIn),
