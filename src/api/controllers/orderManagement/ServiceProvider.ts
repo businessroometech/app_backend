@@ -486,7 +486,7 @@ export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Respon
     }
 
     console.log(startDate, endDate);
-    console.log(prevStartDate , prevEndDate);
+    console.log(prevStartDate, prevEndDate);
 
     try {
         // Define the list of possible statuses
@@ -859,9 +859,9 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
             previousPeriodSales: salesMap[subCategory].previousPeriodSales
         }));
 
-        return res.status(200).json(result);
+        return res.status(200).json({ status: "success", message: "Successfully fetched total sales sub category wise", data: { result } });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: 'Something went wrong' });
+        return res.status(500).json({ status: "error", message: 'Something went wrong' });
     }
 };
