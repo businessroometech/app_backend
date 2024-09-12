@@ -72,9 +72,9 @@ export class ProvidedProduct extends BaseEntity {
   // reviews !: ProductReview[];
 
   // @OneToMany(() => OrderItemProduct, orderItem => orderItem.orderProduct)
-  orderItemProducts !: OrderItemProduct[];
+  // orderItemProducts !: OrderItemProduct[];
 
   // @OneToMany(() => CartItemProduct, cartItem => cartItem.cartProduct)
-  cartItemProducts !: CartItemProduct[];
+  // cartItemProducts !: CartItemProduct[];
 }
 
