@@ -32,10 +32,10 @@ Router.post('/service-management/add-or-update', authenticate, addOrUpdateProvid
 Router.delete('/service-management', authenticate, deleteProvidedService);
 
 // home
-Router.post('/by_year_month_week', getServiceJobsBy_Year_Month_Week);
-Router.post('/sales/overview/by_year_month_week', totalAmountBy_Year_Month_Week);
-Router.post('/sales/by_subCategories/by_year_month_week', totalSalesSubCategoryWise);
-Router.post('/avg_order_price_yearly', getAvgPricePerMonthForCurrentYear);
-Router.post('/compare_avg_order_price_monthly', compareAvgPriceWithPreviousMonth);
+Router.post('/by_year_month_week', authenticate, getServiceJobsBy_Year_Month_Week);
+Router.post('/sales/overview/by_year_month_week', authenticate, totalAmountBy_Year_Month_Week);
+Router.post('/sales/by_subCategories/by_year_month_week', authenticate, totalSalesSubCategoryWise);
+Router.post('/avg_order_price_yearly', authenticate, getAvgPricePerMonthForCurrentYear);
+Router.post('/compare_avg_order_price_monthly', authenticate, compareAvgPriceWithPreviousMonth);
 
 export default Router;
