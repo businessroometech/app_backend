@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Request, Response } from 'express';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { OtpVerification } from "@/api/entity/others/OtpVerification";
+import { AppDataSource } from "@/server";
 
 export const resetPassword = async (req: Request, res: Response) => {
   try {
@@ -11,13 +12,16 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'Please provide a new password.' });
     }
 
-    const token: OtpVerification | null = await OtpVerification.findOne({ where: { mobileNumber, verificationCode, useCase: 'Forgot Password' } });
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
+
+    const token: OtpVerification | null = await otpVerificationRepository.findOne({ where: { mobileNumber, verificationCode, useCase: 'Forgot Password' } });
 
     if (!token || !token.isVerified) {
       return res.status(400).json({ status: 'error', message: 'Invalid or expired Otp token.' });
     }
 
-    const user: UserLogin | null = await UserLogin.findOne({ where: { id: token.userId } });
+    const user: UserLogin | null = await userLoginRepository.findOne({ where: { id: token.userId } });
 
     if (!user) {
       return res.status(404).json({ status: 'error', message: 'User not found' });
@@ -40,7 +44,9 @@ export const changePassword = async (req: Request, res: Response) => {
   try {
     const { userId, password, newPassword } = req.body;
 
-    const user: UserLogin | null = await UserLogin.findOne({ where: { id: userId } })
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+
+    const user: UserLogin | null = await userLoginRepository.findOne({ where: { id: userId } })
 
     if (!user) {
       return res.status(404).json({ status: 'error', message: 'User not found' });

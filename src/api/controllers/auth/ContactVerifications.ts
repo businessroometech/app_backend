@@ -5,6 +5,7 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
 // import { ContactVerification } from '../../entity/others/ContactVerification';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { OtpVerification } from '@/api/entity/others/OtpVerification';
+import { AppDataSource } from '@/server';
 
 // import AWS from 'aws-sdk';
 
@@ -37,9 +38,12 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
     let user: UserLogin | null = null;
     let number: string;
 
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
+
     if (useCase === 'Signup') {
       number = mobileNumber;
-      const existingUser: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+      const existingUser: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
       if (existingUser) {
         return res.status(400).json({
           status: 'error',
@@ -50,7 +54,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
     }
     else if (useCase === 'Forgot Password') {
       number = mobileNumber;
-      const existingUser: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+      const existingUser: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
       if (!existingUser) {
         return res.status(400).json({
           status: 'error',
@@ -64,7 +68,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         return res.status(400).json({ status: 'error', message: 'Please provide userId for this use case.' });
       }
 
-      user = await UserLogin.findOne({ where: { id: userId } });
+      user = await userLoginRepository.findOne({ where: { id: userId } });
       if (!user) {
         return res.status(404).json({ status: 'error', message: 'User not found.' });
       }
@@ -88,9 +92,9 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
     let otpObj;
 
     if (useCase === 'Signup' || useCase === 'Forgot password') {
-      otpObj = await OtpVerification.findOne({ where: { mobileNumber, useCase } });
+      otpObj = await otpVerificationRepository.findOne({ where: { mobileNumber, useCase } });
     } else {
-      otpObj = await OtpVerification.findOne({ where: { userId, useCase } });
+      otpObj = await otpVerificationRepository.findOne({ where: { userId, useCase } });
     }
 
     const currentDate = new Date();
@@ -108,7 +112,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
       otpObj.expiresAt = new Date(currentDate.getTime() + expirationPeriod);
       await otpObj.save();
     } else {
-      otpObj = await OtpVerification.create({
+      otpObj = await otpVerificationRepository.create({
         userId: (useCase === 'Signup' || useCase === 'Forgot Password') ? null : userId,
         mobileNumber,
         verificationCode: code,
@@ -164,12 +168,14 @@ export const verifyCode = async (req: Request, res: Response): Promise<Response>
         .json({ status: 'error', message: 'Please provide userId (for start-work and finish-work), mobileNumber (for Signup and forgot-password), verification code, and useCase.' });
     }
 
+    const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
+
     let isVerify;
 
     if (useCase !== 'Signup' || useCase === 'Forgot Password') {
-      isVerify = await OtpVerification.findOne({ where: { mobileNumber, verificationCode, useCase } });
+      isVerify = await otpVerificationRepository.findOne({ where: { mobileNumber, verificationCode, useCase } });
     } else {
-      isVerify = await OtpVerification.findOne({ where: { userId, verificationCode, useCase } });
+      isVerify = await otpVerificationRepository.findOne({ where: { userId, verificationCode, useCase } });
     }
 
     if (!isVerify) {
@@ -204,11 +210,14 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
       return;
     }
 
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
+
     // check for registration
-    let user = await UserLogin.findOne({ where: { mobileNumber } });
+    let user = await userLoginRepository.findOne({ where: { mobileNumber } });
 
     if (!user) {
-      user = await UserLogin.create({
+      user = await userLoginRepository.create({
         mobileNumber,
         password: "",
         primaryRole: 'Customer',
@@ -235,7 +244,7 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
     const code = generateVerificationCode();
     console.log('generated code: ', code);
 
-    let otpObj = await OtpVerification.findOne({ where: { mobileNumber, useCase: "Signup" } });
+    let otpObj = await otpVerificationRepository.findOne({ where: { mobileNumber, useCase: "Signup" } });
 
     const currentDate = new Date();
     const cooldownPeriod = 1 * 60 * 1000;  // 1 minute cooldown
@@ -253,7 +262,7 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
       otpObj.expiresAt = new Date(currentDate.getTime() + expirationPeriod);
       await otpObj.save();
     } else {
-      otpObj = await OtpVerification.create({
+      otpObj = await otpVerificationRepository.create({
         mobileNumber,
         verificationCode: code,
         isVerified: false,

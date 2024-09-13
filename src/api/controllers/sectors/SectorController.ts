@@ -4,10 +4,14 @@ import { Sector } from '@/api/entity/sector/Sector';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
 import { Service } from '@/api/entity/sector/Service';
 import { Category } from '@/api/entity/sector/Category';
+import { AppDataSource } from '@/server';
 
 export const getAllSectors = async (req: Request, res: Response) => {
   try {
-    const sectors = await Sector.find();
+
+    const sectorRepository = AppDataSource.getRepository(Sector);
+
+    const sectors = await sectorRepository.find();
     res.status(200).json({
       status: 'success',
       message: 'Successfully fetched the sector',
@@ -25,19 +29,19 @@ export const getSector = async (req: Request, res: Response) => {
   try {
     const { sectorId, sectorName } = req.body;
 
+    const sectorRepository = AppDataSource.getRepository(Sector);
+
     if (!sectorId && !sectorName) {
       res.status(400).json({ status: 'error', message: 'Provide sectorId or sectorName' });
       return;
     }
 
-    let yourSector 
-    if(sectorId)
-    {
-      yourSector = await Sector.findOne({ where: { id: sectorId } });
+    let yourSector
+    if (sectorId) {
+      yourSector = await sectorRepository.findOne({ where: { id: sectorId } });
     }
-    else
-    {
-      yourSector = await Sector.findOne({ where: { sectorName } });
+    else {
+      yourSector = await sectorRepository.findOne({ where: { sectorName } });
     }
 
     res.status(200).json({
@@ -55,8 +59,11 @@ export const getSector = async (req: Request, res: Response) => {
 
 export const getAllSubCategories = async (req: Request, res: Response) => {
   try {
+
+    const subCategoryRepository = AppDataSource.getRepository(SubCategory);
+
     const { categoryId } = req.body;
-    const subCategories = await SubCategory.find({ where: { categoryId } });
+    const subCategories = await subCategoryRepository.find({ where: { categoryId } });
     res.status(200).json({
       status: 'success',
       message: 'Successfully fetched all subCategories',
@@ -72,8 +79,10 @@ export const getAllSubCategories = async (req: Request, res: Response) => {
 
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
+    const categoryRepository = AppDataSource.getRepository(Category);
+
     const { sectorId } = req.body;
-    const categories = await Category.find({ where: { sectorId } });
+    const categories = await categoryRepository.find({ where: { sectorId } });
     res.status(200).json({
       status: 'success',
       message: 'Successfully fetched all categories',
@@ -89,9 +98,10 @@ export const getAllCategories = async (req: Request, res: Response) => {
 
 export const getServicesSubCategoryWise = async (req: Request, res: Response) => {
   try {
+    const serviceRepository = AppDataSource.getRepository(Service);
 
     const { subCategoryId } = req.body;
-    const services = await Service.find({ where: { subCategoryId } });
+    const services = await serviceRepository.find({ where: { subCategoryId } });
 
     res.status(200).json({
       status: 'success',

@@ -37,6 +37,16 @@ import { OrderItemProduct } from './api/entity/orderManagement/customer/OrderIte
 import { Cart } from './api/entity/orderManagement/customer/Cart';
 import { CartItemBooking } from './api/entity/orderManagement/customer/CartItemBooking';
 import { CartItemProduct } from './api/entity/orderManagement/customer/CartItemProduct';
+import { Token } from './api/entity/others/Token';
+import { PersonalDetails } from './api/entity/profile/personal/PersonalDetails';
+import { PersonalDetailsCustomer } from './api/entity/profile/personal/PersonalDetailsCustomer';
+import { FinancialDetails } from './api/entity/profile/financial/FinancialDetails';
+import { EducationalDetails } from './api/entity/profile/educational/other/EducationalDetails';
+import { BusinessDetails } from './api/entity/profile/business/BusinessDetails';
+import { OtpVerification } from './api/entity/others/OtpVerification';
+import { PasswordResetToken } from './api/entity/others/PasswordResetToken';
+import { RefreshToken } from './api/entity/others/RefreshToken';
+import { ProvidedProduct } from './api/entity/orderManagement/serviceProvider/product/ProvidedProduct';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -46,7 +56,7 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, SubCategory, Category, Sector, Service, UserLogin],
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken ],
   synchronize: true,
     // ... other TypeORM configuration options (entities, synchronize, etc.)
 });

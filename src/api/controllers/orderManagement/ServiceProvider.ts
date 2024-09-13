@@ -6,6 +6,7 @@ import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, star
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { Service } from '@/api/entity/sector/Service';
+import { AppDataSource } from '@/server';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
@@ -72,7 +73,10 @@ export const getYourServices = async (req: Request, res: Response) => {
             };
         }
 
-        const [jobs, total] = await ServiceJob.findAndCount({
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+        // const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+
+        const [jobs, total] = await serviceJobRepository.findAndCount({
             where: whereClause,
             skip: (parsedPage - 1) * parsedLimit,
             take: parsedLimit,
@@ -135,13 +139,16 @@ export const acceptService = async (req: Request, res: Response) => {
     try {
         const { orderItemBookingId } = req.body;
 
-        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId } });
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+
+        const serviceJob = await serviceJobRepository.findOne({ where: { orderItemBookingId } });
         if (!serviceJob) {
             res.status(404).json({ status: "error", message: "ServiceJob not found" });
             return;
         }
 
-        const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemBookingId } });
+        const orderItemBooking = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId } });
         if (!orderItemBooking) {
             res.status(404).json({ status: "error", message: "OrderItemBooking not found" });
             return;
@@ -165,13 +172,16 @@ export const rejectService = async (req: Request, res: Response) => {
     try {
         const { orderItemBookingId, reason, updatedBy } = req.body;
 
-        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId } });
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+
+        const serviceJob = await serviceJobRepository.findOne({ where: { orderItemBookingId } });
         if (!serviceJob) {
             res.status(404).json({ status: "error", message: "ServiceJob not found" });
             return;
         }
 
-        const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemBookingId } });
+        const orderItemBooking = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId } });
         if (!orderItemBooking) {
             res.status(404).json({ status: "error", message: "OrderItemBooking not found" });
             return;
@@ -196,13 +206,16 @@ export const completeService = async (req: Request, res: Response) => {
     try {
         const { orderItemBookingId, updatedBy } = req.body;
 
-        const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId } });
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+
+        const serviceJob = await serviceJobRepository.findOne({ where: { orderItemBookingId } });
         if (!serviceJob) {
             res.status(404).json({ status: "error", message: "ServiceJob not found" });
             return;
         }
 
-        const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemBookingId } });
+        const orderItemBooking = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId } });
         if (!orderItemBooking) {
             res.status(404).json({ status: "error", message: "OrderItemBooking not found" });
             return;
@@ -251,10 +264,12 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
             return res.status(400).json({ status: "error", message: "UserId not found" });
         }
 
-        let providedService;
+        const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
 
+        let providedService;
+        
         if (id) {
-            providedService = await ProvidedService.findOne({ where: { id } });
+            providedService = await providedServiceRepository.findOne({ where: { id } });
             if (!providedService) {
                 return res.status(404).json({ status: "error", message: 'ProvidedService not found' });
             }
@@ -299,9 +314,12 @@ export const getProvidedService = async (req: Request, res: Response) => {
             return res.status(400).json({ status: "error", message: "UserId not found" });
         }
 
+        const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
+        const serviceRepository = AppDataSource.getRepository(Service);
+
         let providedService;
         if (id) {
-            providedService = await ProvidedService.findOne({
+            providedService = await providedServiceRepository.findOne({
                 where: { id, serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
@@ -311,11 +329,11 @@ export const getProvidedService = async (req: Request, res: Response) => {
             // }
 
             if (providedService) {
-                const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
+                const serviceDetails = await serviceRepository.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
             }
         } else {
-            const providedServices = await ProvidedService.find({
+            const providedServices = await providedServiceRepository.find({
                 where: { serviceProviderId: userId, ...(isActive && { isActive: isActive === 'true' }) },
                 relations: ['category', 'subCategory'],
             });
@@ -325,7 +343,7 @@ export const getProvidedService = async (req: Request, res: Response) => {
             // }
 
             for (let providedService of providedServices) {
-                const serviceDetails = await Service.find({ where: { id: In(providedService.serviceIds) } });
+                const serviceDetails = await serviceRepository.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
             }
 
@@ -352,13 +370,14 @@ export const deleteProvidedService = async (req: Request, res: Response) => {
     try {
         const { id } = req.body;
 
-        const providedService = await ProvidedService.findOne({ where: { id } });
+        const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
+        const providedService = await providedServiceRepository.findOne({ where: { id } });
 
         if (!providedService) {
             return res.status(404).json({ status: "error", message: 'ProvidedService not found' });
         }
 
-        await ProvidedService.delete(id);
+        await providedServiceRepository.delete(id);
 
         return res.status(204).json({ status: "success", message: "ProvidedService successfully deleted" });
     } catch (error) {
@@ -489,12 +508,14 @@ export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Respon
     console.log(prevStartDate, prevEndDate);
 
     try {
-        // Define the list of possible statuses
-        const predefinedStatuses = ['Pending', 'Completed', 'Rejected', 'Accepted'];
+
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+
+        const predefinedStatuses = ['Pending', 'Completed', 'Rejected', 'Accepted']; // List all possible statuses
 
         // Helper function to get service job counts for a given date range
         const getServiceJobCounts = async (startDate: Date, endDate: Date) => {
-            const statusCounts = await ServiceJob
+            const statusCounts = await serviceJobRepository
                 .createQueryBuilder("serviceJob")
                 .select("serviceJob.status", "status")
                 .addSelect("COUNT(*)", "count")
@@ -571,7 +592,10 @@ export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response)
     }
 
     try {
-        const result = await ServiceJob
+
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+
+        const result = await serviceJobRepository
             .createQueryBuilder("serviceJob")
             .select("serviceJob.status")
             .addSelect(
@@ -630,7 +654,10 @@ export const totalSalesBy_Year_Month_Week = async (req: Request, res: Response) 
     }
 
     try {
-        const subCategoryTotals = await ServiceJob
+
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+
+        const subCategoryTotals = await serviceJobRepository
             .createQueryBuilder("serviceJob")
             .select("serviceJob.subCategory")
             .addSelect("SUM(serviceJob.price)", "totalPrice")
@@ -661,7 +688,9 @@ export const getAvgPricePerMonthForCurrentYear = async (req: Request, res: Respo
             return res.status(400).json({ message: 'Year, UserId, and SectorId are required.' });
         }
 
-        const query = ServiceJob
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+
+        const query = serviceJobRepository
             .createQueryBuilder('serviceJob')
             .select('DATE_FORMAT(serviceJob.deliveryDate, \'%m\')', 'month')
             .addSelect('AVG(serviceJob.price)', 'averagePrice')
@@ -717,7 +746,10 @@ export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Respon
 
     try {
         // Calculate average price for the given month
-        const avgPriceCurrentMonthResult = await ServiceJob
+
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+
+        const avgPriceCurrentMonthResult = await serviceJobRepository
             .createQueryBuilder('serviceJob')
             .select('AVG(serviceJob.price)', 'averagePrice')
             .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
@@ -728,7 +760,7 @@ export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Respon
             .getRawOne();
 
         // Calculate average price for the previous month
-        const avgPricePreviousMonthResult = await ServiceJob
+        const avgPricePreviousMonthResult = await serviceJobRepository
             .createQueryBuilder('serviceJob')
             .select('AVG(serviceJob.price)', 'averagePrice')
             .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
 import { UserSectorCategory } from '@/api/entity/user/UserSectorCategory';
+import { AppDataSource } from '@/server';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
 
@@ -13,7 +14,10 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const existingUser = await UserLogin.findOne({ where: { mobileNumber } });
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+
+    const existingUser = await userLoginRepository.findOne({ where: { mobileNumber } });
 
     if (existingUser) {
       res.status(400).json({
@@ -24,7 +28,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const newUser = await UserLogin.create({
+    const newUser = await userLoginRepository.create({
       mobileNumber,
       password,
       primaryRole: primaryRole || 'ServiceProvider',
@@ -33,14 +37,14 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       updatedBy: updatedBy || 'system',
     }).save();
 
-    const usc = await UserSectorCategory.create({
-      userId: newUser.id,
-      sectorCategoryAssociation: [{ sectorId, categoryIds: [categoryId] }],
-      createdBy: createdBy || 'system',
-      updatedBy: updatedBy || 'system',
-    }).save();
+    // const usc = await UserSectorCategory.create({
+    //   userId: newUser.id,
+    //   sectorCategoryAssociation: [{ sectorId, categoryIds: [categoryId] }],
+    //   createdBy: createdBy || 'system',
+    //   updatedBy: updatedBy || 'system',
+    // }).save();
 
-    const personalDetails = await PersonalDetails.create({
+    const personalDetails = await personalDetailsRepository.create({
       fullName,
       mobileNumber,
       sectorId,
@@ -54,7 +58,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       message: 'Signup completed',
       data: {
         user: newUser,
-        userSectorCategory: usc,
+        // userSectorCategory: usc,
         personalDetails,
       },
     });
