@@ -830,9 +830,11 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
             return res.status(400).json({ message: 'Invalid period type. Should be "year", "month", or "week".' });
     }
 
+    const subCategoryRepository = AppDataSource.getRepository(SubCategory);
+
     try {
         // Fetch sales for the current period
-        const currentPeriodSales = await SubCategory
+        const currentPeriodSales = await subCategoryRepository
             .createQueryBuilder('subCategory')
             .leftJoin('subCategory.providedServices', 'providedService')
             .leftJoin('providedService.orderItemBookings', 'orderItemBooking')
@@ -847,7 +849,7 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
             .getRawMany();
 
         // Fetch sales for the previous period
-        const previousPeriodSales = await SubCategory
+        const previousPeriodSales = await subCategoryRepository
             .createQueryBuilder('subCategory')
             .leftJoin('subCategory.providedServices', 'providedService')
             .leftJoin('providedService.orderItemBookings', 'orderItemBooking')
