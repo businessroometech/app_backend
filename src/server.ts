@@ -3,11 +3,12 @@ import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import { pino } from 'pino';
+import { createConnection } from 'typeorm';
+
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
-import 'reflect-metadata';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import sectorsRouter from '../src/api/routes/sectors/SectorRoutes';
@@ -17,64 +18,48 @@ import customerRouter from './api/routes/orderManagement/CustomerRoutes';
 import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
 import paymentRouter from "./api/routes/payment/PaymentRoutes";
 import { authenticate } from './api/middlewares/auth/Authenticate';
-import path from 'path';
+
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
 import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+import { ServiceJob } from './api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
+import { OrderItemBooking } from './api/entity/orderManagement/customer/OrderItemBooking';
+import { ProvidedService } from './api/entity/orderManagement/serviceProvider/service/ProvidedService';
+import { SubCategory } from './api/entity/sector/SubCategory';
+import { Category } from './api/entity/sector/Category';
+import { Sector } from './api/entity/sector/Sector';
 import { UserLogin } from './api/entity/user/UserLogin';
-// import { AppDataSource } from './ormconfig';
-console.log(path.join(__dirname, process.env.NODE_ENV === 'production' ? '/api/entity/*.js' : '/entity/*.ts'));
-console.log('env',  process.env.NODE_ENV);
+import { Service } from './api/entity/sector/Service';
+import { Order } from './api/entity/orderManagement/customer/Order';
+import { OrderItemProduct } from './api/entity/orderManagement/customer/OrderItemProduct';
+import { Cart } from './api/entity/orderManagement/customer/Cart';
+import { CartItemBooking } from './api/entity/orderManagement/customer/CartItemBooking';
+import { CartItemProduct } from './api/entity/orderManagement/customer/CartItemProduct';
+
 // Create a DataSource instance
- const AppDataSource = new DataSource({
+const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_HOST : process.env.DEV_AWS_HOST,
   port: 3306,
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, SubCategory, Category, Sector, Service, UserLogin],
   synchronize: true,
-  logging: false,
-  entities: [
-    path.join(__dirname, process.env.NODE_ENV === 'production' ? '/api/entity/*.js' : '/api/entity/**/*.ts'),
-  ],
-  migrations: [
-    path.join(__dirname, process.env.NODE_ENV === 'production' ? '/migration/*.js' : '/migration/**/*.js')
-  ],
-  subscribers: [
-    path.join(__dirname, process.env.NODE_ENV === 'production' ? '/subscriber/*.js' : '/subscriber/**/*.js')
-  ],
-  // entities: ['src/api/entity/*.ts'], // Path to your entities
-  // migrations: ['src/migration/*.ts'], // Path to your migrations
-  // subscribers: ['src/subscriber/*.ts'], // Path to your subscribers
+    // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 
-console.log('AppDataSource',AppDataSource)
-
-const myArray = AppDataSource.options.entities;
-const myArray2 = AppDataSource.options.migrations;
-
-// Iterate and print
-console.log('test,',myArray)
-console.log('test,',myArray2)
 // Initialize the DataSource
 AppDataSource.initialize()
-  .then(async () => {
-    console.log("Data Source has been initialized!");
-    // Start your Express server or other initialization code
-
-      // Using QueryBuilder to fetch users
-    // Using raw SQL to select all users
-    // const users = await AppDataSource.query('SELECT * FROM UserLogin'); // Adjust the table name as needed
-
-    // console.log('All Users:', users);
-    // console.log('Users:', users);
-  })
-  .catch((err) => {
-    console.error("Error during Data Source initialization:", err);
-  });
+    .then(() => {
+        console.log('DB connected');
+        // ... your application logic here
+    })
+    .catch((error) => {
+        console.error('Error during Data Source initialization:', error);
+    });
 
 // Set the application to trust the reverse proxy
 app.set('trust proxy', true);
@@ -108,4 +93,4 @@ app.use('/api/v1/checkout', paymentRouter);
 // Error handlers
 app.use(errorHandler());
 
-export { app, logger };
+export { app, logger, AppDataSource };
