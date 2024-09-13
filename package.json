@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
     "dev1": "ts-node src/index.ts",
-    "build": "node esbuild.config.js",
+    "build-local": "node esbuild.config.js",
     "build-prod": "npm i && rimraf dist && node esbuild.config.js",
+    "build": "npm i && rimraf dist && node esbuild.config.js",
     "build1": "npm i && rimraf dist && tsup",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
