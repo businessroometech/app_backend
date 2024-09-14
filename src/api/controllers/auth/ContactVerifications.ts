@@ -162,7 +162,7 @@ export const verifyCode = async (req: Request, res: Response): Promise<Response>
   try {
     const { userId, verificationCode, useCase, mobileNumber } = req.body;
 
-    if ((!userId && (useCase !== 'Signup' || useCase === 'Forgot Password')) || !verificationCode || !useCase || ((useCase !== 'Signup' || useCase === 'Forgot Password') && !mobileNumber)) {
+    if ((!userId && (useCase !== 'Signup' || useCase !== 'Forgot Password')) || !verificationCode || !useCase || ((useCase === 'Signup' || useCase === 'Forgot Password') && !mobileNumber)) {
       return res
         .status(400)
         .json({ status: 'error', message: 'Please provide userId (for start-work and finish-work), mobileNumber (for Signup and forgot-password), verification code, and useCase.' });
