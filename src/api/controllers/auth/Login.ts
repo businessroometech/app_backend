@@ -132,6 +132,7 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: parseInt(process.env.UUID_TOKEN_EXPIRES_IN!),
+      sameSite: 'none'
     });
 
     res.status(200).json({ status: 'success', message: 'UUID token created', data: { token } });
