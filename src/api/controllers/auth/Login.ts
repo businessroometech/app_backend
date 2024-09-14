@@ -155,9 +155,11 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    const tokenRepository = AppDataSource.getRepository(Token);
+
     // Finding the token in the database using the HMAC
     const hmac = createHmac(uuidToken);
-    const token = await Token.findOne({ where: { hmac } });
+    const token = await tokenRepository.findOne({ where: { hmac } });
 
     if (!token) {
       res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
@@ -165,7 +167,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
     }
 
     if (new Date() > token.expiresAt) {
-      await Token.remove(token);
+      await tokenRepository.remove(token);
       res.status(403).json({ status: 'error', message: 'UUID token expired' });
       return;
     }
@@ -183,7 +185,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
     const refreshRepository = AppDataSource.getRepository(RefreshToken);
 
     // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { userId: token.userId } });
+    const rt = await refreshRepository.findOne({ where: { userId: token.userId } });
 
     const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
     const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -198,7 +200,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       rt.expiresAt = new Date(Date.now() + expiresIn);
       await rt.save();
     } else {
-      await RefreshToken.create({
+      await refreshRepository.create({
         userId: token.userId,
         token: newRefreshToken,
         expiresAt: new Date(Date.now() + expiresIn),
