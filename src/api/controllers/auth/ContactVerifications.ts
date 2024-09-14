@@ -42,6 +42,11 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
     const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
 
     if (useCase === 'Signup') {
+
+      if (!mobileNumber) {
+        return res.status(400).json({ status: 'error', message: 'Please provide mobile number for this use case.' });
+      }
+
       number = mobileNumber;
       const existingUser: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
       if (existingUser) {
@@ -53,6 +58,11 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
       }
     }
     else if (useCase === 'Forgot Password') {
+
+      if (!mobileNumber) {
+        return res.status(400).json({ status: 'error', message: 'Please provide mobile number for this use case.' });
+      }
+
       number = mobileNumber;
       const existingUser: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
       if (!existingUser) {
@@ -162,7 +172,7 @@ export const verifyCode = async (req: Request, res: Response): Promise<Response>
   try {
     const { userId, verificationCode, useCase, mobileNumber } = req.body;
 
-    if ((!userId && (useCase !== 'Signup' || useCase !== 'Forgot Password')) || !verificationCode || !useCase || ((useCase === 'Signup' || useCase === 'Forgot Password') && !mobileNumber)) {
+    if ((!userId && (useCase !== 'Signup' && useCase !== 'Forgot Password')) || !verificationCode || !useCase || ((useCase === 'Signup' || useCase === 'Forgot Password') && !mobileNumber)) {
       return res
         .status(400)
         .json({ status: 'error', message: 'Please provide userId (for start-work and finish-work), mobileNumber (for Signup and forgot-password), verification code, and useCase.' });
