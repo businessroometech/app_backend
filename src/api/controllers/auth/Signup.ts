@@ -3,6 +3,7 @@ import { UserLogin } from '../../entity/user/UserLogin';
 import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
 import { UserSectorCategory } from '@/api/entity/user/UserSectorCategory';
 import { AppDataSource } from '@/server';
+import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
 
@@ -16,6 +17,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const userLoginRepository = AppDataSource.getRepository(UserLogin);
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const businessDetailsRepository = AppDataSource.getRepository(BusinessDetails);
 
     const existingUser = await userLoginRepository.findOne({ where: { mobileNumber } });
 
@@ -44,13 +46,25 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     //   updatedBy: updatedBy || 'system',
     // }).save();
 
-    const personalDetails = await personalDetailsRepository.create({
-      fullName,
-      mobileNumber,
-      sectorId,
-      userId: newUser.id,
-      emailAddress: emailAddress || null,
-    }).save();
+    let details;
+    if (userType === 'Individual') {
+      details = await personalDetailsRepository.create({
+        fullName,
+        mobileNumber,
+        sectorId,
+        userId: newUser.id,
+        emailAddress: emailAddress || null,
+      }).save();
+    }
+    else {
+      details = await businessDetailsRepository.create({
+        companyName: fullName,
+        mobileNumber,
+        sectorId,
+        userId: newUser.id,
+        emailAddress: emailAddress || null,
+      }).save();
+    }
 
 
     res.status(201).json({
@@ -58,8 +72,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       message: 'Signup completed',
       data: {
         user: newUser,
-        // userSectorCategory: usc,
-        personalDetails,
+        details,
       },
     });
   } catch (error) {
