@@ -422,6 +422,7 @@ export const setEducationalDetails = async (req: Request, res: Response): Promis
                 yearOfCompletion,
                 otherCertifications,
                 achievements,
+                licAndCertUploadIds,
                 createdBy,
                 updatedBy,
             } = req.body;
@@ -442,6 +443,7 @@ export const setEducationalDetails = async (req: Request, res: Response): Promis
                         yearOfCompletion,
                         otherCertifications,
                         achievements,
+                        licAndCertUploadIds,
                         updatedBy: updatedBy || 'system',
                     }
                 );
@@ -458,6 +460,7 @@ export const setEducationalDetails = async (req: Request, res: Response): Promis
                     yearOfCompletion,
                     otherCertifications,
                     achievements,
+                    licAndCertUploadIds,
                     createdBy: createdBy || 'system',
                     updatedBy: updatedBy || 'system',
                 }).save();
