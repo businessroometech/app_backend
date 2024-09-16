@@ -11,6 +11,9 @@ import { UserLogin } from '@/api/entity/user/UserLogin';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { Category } from '@/api/entity/sector/Category';
 import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
+import { AppDataSource } from '@/server';
+import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
+import { EducationalDetails } from '@/api/entity/profile/educational/other/EducationalDetails';
 
 
 
@@ -88,6 +91,53 @@ export const addBooking = async (req: Request, res: Response) => {
     }
 
 }
+
+export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
+    try {
+        const { categoryId, subCategoryId } = req.params;
+
+        // Fetching all provided services based on categoryId and subCategoryId
+        const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
+        const providedServices = await providedServiceRepository
+            .createQueryBuilder('providedService')
+            .leftJoinAndSelect('providedService.services', 'service')
+            .leftJoinAndSelect('providedService.category', 'category')
+            .leftJoinAndSelect('providedService.subCategory', 'subCategory')
+            .leftJoin(UserLogin, 'userLogin', 'userLogin.id = providedService.serviceProviderId')
+            
+            // Conditionally joining and mapping personalDetails for Individual userType only
+            .leftJoinAndMapOne(
+                'providedService.personalDetails', // Alias for personal details
+                PersonalDetails,
+                'personalDetails',
+                'personalDetails.userId = userLogin.id AND userLogin.userType = :individual', // Fetch personal details if user is 'Individual'
+                { individual: 'Individual' }
+            )
+
+            // Conditionally joining and mapping businessDetails for Business userType only
+            .leftJoinAndMapOne(
+                'providedService.businessDetails', // Alias for business details
+                BusinessDetails,
+                'businessDetails',
+                'businessDetails.userId = userLogin.id AND userLogin.userType = :business', // Fetch business details if user is 'Business'
+                { business: 'Business' }
+            )
+            // .where('providedService.categoryId = :categoryId', { categoryId })
+            // .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
+            .getMany();
+
+        res.status(200).json({
+            status: "success",
+            message: "Successfully fetched service providers",
+            data: { providedServices }
+        });
+    } catch (error) {
+        console.error('Error fetching provided services:', error);
+        res.status(500).json({ message: 'Server error. Please try again later.' });
+    }
+};
+
+
 
 
 // Add to Cart

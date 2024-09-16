@@ -1,17 +1,19 @@
 import express from 'express';
 
 import {
-    addBooking
+    addBooking,
     // addToCart,
     // removeFromCart,
     // checkout,
     // rescheduleOrderItemBooking,
     // cancelOrderItemBooking,
+    getProvidedServicesByCategoryAndSubCategory
 } from '@/api/controllers/orderManagement/Customer';
 
 const Router = express.Router();
 
 Router.post('/add-bookings', addBooking);
+Router.post('/providers', getProvidedServicesByCategoryAndSubCategory);
 // Router.post('/add-to-cart', addToCart);
 // Router.post('/remove-from-cart', removeFromCart);
 // Router.post('/checkout', checkout);
