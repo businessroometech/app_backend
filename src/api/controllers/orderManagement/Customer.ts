@@ -14,6 +14,7 @@ import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
 import { AppDataSource } from '@/server';
 import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
 import { EducationalDetails } from '@/api/entity/profile/educational/other/EducationalDetails';
+import { Service } from '@/api/entity/sector/Service';
 
 
 
@@ -95,49 +96,84 @@ export const addBooking = async (req: Request, res: Response) => {
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
     try {
         const { categoryId, subCategoryId } = req.params;
+        const { serviceName, minPrice, maxPrice, city } = req.query; // Get query parameters
 
-        // Fetching all provided services based on categoryId and subCategoryId
         const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
-        const providedServices = await providedServiceRepository
+        const serviceRepository = AppDataSource.getRepository(Service);
+
+        let providedServicesQuery = providedServiceRepository
             .createQueryBuilder('providedService')
-            .leftJoinAndSelect('providedService.services', 'service')
             .leftJoinAndSelect('providedService.category', 'category')
             .leftJoinAndSelect('providedService.subCategory', 'subCategory')
             .leftJoin(UserLogin, 'userLogin', 'userLogin.id = providedService.serviceProviderId')
-            
-            // Conditionally joining and mapping personalDetails for Individual userType only
+
+            // Conditionally join and map personalDetails for Individual userType
             .leftJoinAndMapOne(
-                'providedService.personalDetails', // Alias for personal details
+                'providedService.personalDetails',
                 PersonalDetails,
                 'personalDetails',
-                'personalDetails.userId = userLogin.id AND userLogin.userType = :individual', // Fetch personal details if user is 'Individual'
+                'personalDetails.userId = userLogin.id AND userLogin.userType = :individual',
                 { individual: 'Individual' }
             )
 
-            // Conditionally joining and mapping businessDetails for Business userType only
+            // Conditionally join and map businessDetails for Business userType
             .leftJoinAndMapOne(
-                'providedService.businessDetails', // Alias for business details
+                'providedService.businessDetails',
                 BusinessDetails,
                 'businessDetails',
-                'businessDetails.userId = userLogin.id AND userLogin.userType = :business', // Fetch business details if user is 'Business'
+                'businessDetails.userId = userLogin.id AND userLogin.userType = :business',
                 { business: 'Business' }
             )
             // .where('providedService.categoryId = :categoryId', { categoryId })
             // .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
-            .getMany();
+
+        if (minPrice && maxPrice) {
+            providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
+        }
+        if (city) {
+            providedServicesQuery.andWhere(
+                `(userLogin.userType = :individual AND personalDetails.currentAddress->>'city' = :city) 
+                 OR (userLogin.userType = :business AND businessDetails.currentAddress->>'city' = :city)`,
+                { individual: 'Individual', business: 'Business', city }
+            );
+        }
+
+        const providedServices = await providedServicesQuery.getMany();
+
+        const allServiceIds = providedServices.flatMap(service => service.serviceIds);
+
+        let services: any[] = [];
+        if (allServiceIds.length > 0) {
+            const servicesQuery = serviceRepository
+                .createQueryBuilder('service')
+                .where('service.id IN (:...ids)', { ids: allServiceIds });
+
+            if (serviceName) {
+                servicesQuery.andWhere('service.name LIKE :serviceName', { serviceName: `%${serviceName}%` });
+            }
+
+            services = await servicesQuery.getMany();
+        }
+
+        const servicesMap = new Map(services.map(service => [service.id, service]));
+
+        const enrichedProvidedServices = providedServices.map(providedService => ({
+            ...providedService,
+            services: providedService.serviceIds
+                .map(id => servicesMap.get(id))
+                .filter(Boolean)
+        })).filter(providedService => providedService.services.length > 0);
 
         res.status(200).json({
             status: "success",
             message: "Successfully fetched service providers",
-            data: { providedServices }
+            data: { providedServices: enrichedProvidedServices }
         });
     } catch (error) {
         console.error('Error fetching provided services:', error);
         res.status(500).json({ message: 'Server error. Please try again later.' });
     }
 };
-
-
 
 
 // Add to Cart
