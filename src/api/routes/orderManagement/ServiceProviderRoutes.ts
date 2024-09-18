@@ -21,7 +21,7 @@ import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
 const Router = express.Router();
 
-Router.post('/', authenticate, getYourServices);
+Router.post('/', getYourServices);
 // Router.post('/service-provider/add-service', addService);
 Router.post('/accept', authenticate, acceptService);
 Router.post('/reject', authenticate, rejectService);

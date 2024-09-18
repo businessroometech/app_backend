@@ -15,6 +15,7 @@ import { AppDataSource } from '@/server';
 import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
 import { EducationalDetails } from '@/api/entity/profile/educational/other/EducationalDetails';
 import { Service } from '@/api/entity/sector/Service';
+import { UserAddress } from '@/api/entity/user/UserAddress';
 
 
 
@@ -124,8 +125,8 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
                 'businessDetails.userId = userLogin.id AND userLogin.userType = :business',
                 { business: 'Business' }
             )
-            // .where('providedService.categoryId = :categoryId', { categoryId })
-            // .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
+        // .where('providedService.categoryId = :categoryId', { categoryId })
+        // .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
 
         if (minPrice && maxPrice) {
             providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
@@ -175,6 +176,141 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     }
 };
 
+// Fetch time slots
+
+// Define the available 1-hour time slots for a day (in 24-hour format)
+const timeSlots = [
+    "08:00:00", "09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00",
+    "14:00:00", "15:00:00", "16:00:00", "17:00:00", "18:00:00", "19:00:00"
+];
+
+// Utility function to convert 24-hour format "HH:MM:SS" to 12-hour AM/PM format
+const formatTimeTo12Hour = (time: string): string => {
+    const [hour, minute] = time.split(':');
+    let hourNumber = parseInt(hour, 10);
+    const isPM = hourNumber >= 12;
+    hourNumber = hourNumber % 12 || 12;  // Convert to 12-hour format
+    return `${hourNumber}:${minute} ${isPM ? 'PM' : 'AM'}`;
+};
+
+const incrementTimeByOneHour = (time: string): string => {
+    let [hour, minute, second] = time.split(':').map(Number);
+
+    hour = hour + 1; // Increment the hour by 1
+
+    // Handle the case when hour exceeds 23 (for a 24-hour clock)
+    if (hour === 24) {
+        hour = 0;
+    }
+
+    // Format hour to always have 2 digits
+    const hourStr = hour < 10 ? `0${hour}` : `${hour}`;
+
+    return `${hourStr}:${minute < 10 ? `0${minute}` : minute}:${second < 10 ? `0${second}` : second}`;
+};
+
+// Utility function to create time slot pairs like "9:00 AM - 10:00 AM" with 1-hour increment
+const createTimeSlotPairs = (slots: string[]): string[] => {
+    const pairs: string[] = [];
+    for (let i = 0; i < slots.length; i++) {
+        const start = formatTimeTo12Hour(slots[i]);
+        const end = formatTimeTo12Hour(incrementTimeByOneHour(slots[i])); // Increment the current time by 1 hour
+        pairs.push(`${start} - ${end}`);
+    }
+    return pairs;
+};
+
+// Controller function to get available time slots for a given date
+export const getAvailableTimeSlots = async (req: Request, res: Response) => {
+    try {
+        const { date } = req.params;
+
+        if (!date) {
+            return res.status(400).json({ message: 'Please provide a valid delivery date' });
+        }
+
+        // Fetch all service jobs for the given delivery date
+        const bookedJobs = await ServiceJob.find({
+            where: {
+                deliveryDate: date as string,  // Convert date to string
+                status: 'Accepted',  // Only consider accepted jobs as booked
+            },
+            select: ['deliveryTime'],  // Only select the deliveryTime field
+        });
+
+        // Extract the already booked times from the fetched jobs
+        const bookedTimes = bookedJobs.map(job => job.deliveryTime);
+        console.log("Booked Times :", bookedTimes);
+
+        // Filter out the booked time slots from the available ones
+        const availableSlots = timeSlots.filter(slot => !bookedTimes.includes(slot));
+        console.log("Available Times :", availableSlots);
+
+        // Create time slot pairs like "9:00 AM - 10:00 AM"
+        const availableSlotPairs = createTimeSlotPairs(availableSlots);
+
+        // Return the available time slot pairs
+        return res.status(200).json({ availableSlotPairs });
+    } catch (error) {
+        console.error('Error fetching available time slots:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// -------------------------Address--------------------------------------
+
+export const addOrUpdateAddress = async (req: Request, res: Response) => {
+    try {
+        const { addressId, userId, title, addressLine1, addressLine2 = "", city, state, pincode, createdBy, updatedBy } = req.body;
+
+        if (!userId || !title || !addressLine1 || !city || !state || !pincode) {
+            return res.status(400).json({ message: 'Required fields are missing' });
+        }
+
+        let userAddressRepository = AppDataSource.getRepository(UserAddress);
+
+        let userAddress;
+        if (addressId) {
+            // Edit existing address
+            userAddress = await userAddressRepository.findOne({ where: { id: addressId, userId } });
+
+            if (!userAddress) {
+                return res.status(404).json({ message: 'Address not found' });
+            }
+
+            userAddress.title = title;
+            userAddress.addressLine1 = addressLine1;
+            userAddress.addressLine2 = addressLine2;
+            userAddress.city = city;
+            userAddress.state = state;
+            userAddress.pincode = pincode;
+            userAddress.updatedBy = userId;
+            userAddress.updatedBy = 'system' || updatedBy;
+        } else {
+            userAddress = userAddressRepository.create({
+                userId,
+                title,
+                addressLine1,
+                addressLine2,
+                city,
+                state,
+                pincode,
+                createdBy: "system" || createdBy,
+            });
+        }
+
+        await userAddress.save();
+
+        return res.status(200).json({
+            status: "success",
+            message: addressId ? 'Address updated successfully' : 'Address added successfully',
+            data: { address: userAddress }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 // Add to Cart
 // export const addToCart = async (req: Request, res: Response) => {
@@ -420,3 +556,5 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
 //         res.status(500).json({ status: "error", message: 'Error rescheduling order item booking' });
 //     }
 // };
+
+

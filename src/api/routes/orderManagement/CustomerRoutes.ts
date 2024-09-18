@@ -7,13 +7,18 @@ import {
     // checkout,
     // rescheduleOrderItemBooking,
     // cancelOrderItemBooking,
-    getProvidedServicesByCategoryAndSubCategory
+    getProvidedServicesByCategoryAndSubCategory,
+    getAvailableTimeSlots,
+    addOrUpdateAddress
 } from '@/api/controllers/orderManagement/Customer';
 
 const Router = express.Router();
 
 Router.post('/add-bookings', addBooking);
 Router.post('/providers', getProvidedServicesByCategoryAndSubCategory);
+Router.post('/timeSlots/:date', getAvailableTimeSlots);
+
+Router.post('/add-or-update-address', addOrUpdateAddress);
 // Router.post('/add-to-cart', addToCart);
 // Router.post('/remove-from-cart', removeFromCart);
 // Router.post('/checkout', checkout);
