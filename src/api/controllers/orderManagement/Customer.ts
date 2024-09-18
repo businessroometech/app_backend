@@ -209,14 +209,20 @@ const incrementTimeByOneHour = (time: string): string => {
     return `${hourStr}:${minute < 10 ? `0${minute}` : minute}:${second < 10 ? `0${second}` : second}`;
 };
 
-// Utility function to create time slot pairs like "9:00 AM - 10:00 AM" with 1-hour increment
-const createTimeSlotPairs = (slots: string[]): string[] => {
-    const pairs: string[] = [];
+const createTimeSlotPairs = (slots: string[]): { availableSlot: string, startDate: string }[] => {
+    const pairs: { availableSlot: string, startDate: string }[] = [];
+
     for (let i = 0; i < slots.length; i++) {
         const start = formatTimeTo12Hour(slots[i]);
         const end = formatTimeTo12Hour(incrementTimeByOneHour(slots[i])); // Increment the current time by 1 hour
-        pairs.push(`${start} - ${end}`);
+
+        // Push the object with availableData and startDate
+        pairs.push({
+            availableSlot: `${start} - ${end}`,
+            startDate: slots[i] // Store the raw start time in HH:MM:SS format
+        });
     }
+
     return pairs;
 };
 
