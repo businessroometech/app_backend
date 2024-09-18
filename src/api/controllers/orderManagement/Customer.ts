@@ -312,6 +312,33 @@ export const addOrUpdateAddress = async (req: Request, res: Response) => {
     }
 };
 
+export const getAllAddresses = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ message: 'UserId is required' });
+        }
+
+        let userAddressRepository = AppDataSource.getRepository(UserAddress);
+
+        const addresses = await userAddressRepository.find({ where: { userId } });
+
+        if (addresses.length === 0) {
+            return res.status(400).json({ status: "error", message: 'No addresses found for this user or maybe user is Invalid' });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: 'Addresses retrieved successfully',
+            data: { addresses }
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 // Add to Cart
 // export const addToCart = async (req: Request, res: Response) => {
 //     const { cartId, sectorId, customerId, serviceProviderId, serviceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
