@@ -125,8 +125,8 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
                 'businessDetails.userId = userLogin.id AND userLogin.userType = :business',
                 { business: 'Business' }
             )
-            .where('providedService.categoryId = :categoryId', { categoryId })
-            .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
+        // .where('providedService.categoryId = :categoryId', { categoryId })
+        // .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
 
         if (minPrice && maxPrice) {
             providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
@@ -404,6 +404,31 @@ export const addToCart = async (req: Request, res: Response) => {
         return res.status(500).json({ message: 'Error adding item to cart', error });
     }
 };
+
+export const fetchCartItem = async (req: Request, res: Response) => {
+    try {
+
+        const { cartItemBookingId, cartId } = req.body;
+
+        if (!cartItemBookingId || !cartId) {
+            res.status(401).json({ status: "error", message: "cartItemBookingId or cartId is required" });
+        }
+
+        const cartItemBookingRepository = AppDataSource.getRepository(CartItemBooking);
+
+        const cartItem = await cartItemBookingRepository.find({ where: { id: cartItemBookingId, cartId } })
+
+        if (!cartItem) {
+            res.status(401).json({ status: "error", message: "No item is present in the Cart" });
+        }
+
+        res.status(200).json({ status: "success", message: "Successfully fetched the cart item", data: { cartItem } })
+    }
+    catch (error) {
+        console.error('Error fetching item from cart :', error);
+        return res.status(500).json({ message: 'Error fetching item from cart', error });
+    }
+}
 
 // Remove from Cart
 // export const removeFromCart = async (req: Request, res: Response) => {
