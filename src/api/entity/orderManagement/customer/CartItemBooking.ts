@@ -3,13 +3,13 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, U
 // import { Service } from '../serviceProvider/service/ProvidedService';
 // import { Cart } from './Cart';
 
-interface Address {
-    addressLine1: string,
-    addressLine2: string,
-    city: string,
-    state: string,
-    pincode: string,
-}
+// interface Address {
+//     addressLine1: string,
+//     addressLine2: string,
+//     city: string,
+//     state: string,
+//     pincode: string,
+// }
 
 @Entity({ name: "CartItemBooking" })
 export class CartItemBooking extends BaseEntity {
@@ -30,7 +30,10 @@ export class CartItemBooking extends BaseEntity {
     serviceProviderId !: string;
 
     @Column({ type: "uuid" })
-    serviceId !: string;
+    providedServiceId !: string;
+
+    @Column({ type: "text" })
+    workDetails !: string;
 
     @Column({ type: "float" })
     price !: number;
@@ -41,11 +44,14 @@ export class CartItemBooking extends BaseEntity {
     @Column({ type: 'time' })
     deliveryTime!: string;
 
-    @Column({ type: 'json' })
-    deliveryAddress!: Address;
+    @Column({ type: 'uuid' })
+    deliveryAddressId!: string;
 
     @Column({ type: 'text', nullable: true })
     additionalNote!: string;
+
+    @Column({ type: "simple-array" })  // this will store documnet ids
+    attachments !: string[];
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

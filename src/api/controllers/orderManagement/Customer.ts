@@ -24,75 +24,75 @@ import { UserAddress } from '@/api/entity/user/UserAddress';
 
 //--------------------- FOR FIRST CUT-------------------
 
-export const addBooking = async (req: Request, res: Response) => {
-    try {
+// export const addBooking = async (req: Request, res: Response) => {
+//     try {
 
-        const { sectorId, customerId, serviceProviderId, providedServiceId, price, description, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
+//         const { sectorId, customerId, serviceProviderId, providedServiceId, price, description, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
 
-        const order = await Order.create({
-            customerId: customerId,
-            totalAmount: price,
-            totalItems: 1,
-            createdBy: 'system' || createdBy,
-            updatedBy: 'system' || updatedBy
-        }).save();
+//         const order = await Order.create({
+//             customerId: customerId,
+//             totalAmount: price,
+//             totalItems: 1,
+//             createdBy: 'system' || createdBy,
+//             updatedBy: 'system' || updatedBy
+//         }).save();
 
-        const sector = await Sector.findOne({ where: { id: sectorId } });
-        const user = await UserLogin.findOne({ where: { id: customerId } });
+//         const sector = await Sector.findOne({ where: { id: sectorId } });
+//         const user = await UserLogin.findOne({ where: { id: customerId } });
 
-        const orderItemBooking = OrderItemBooking.create({
-            orderId: order.id,
-            sectorId: sectorId,
-            customerId: customerId,
-            serviceProviderId: serviceProviderId,
-            providedServiceId: providedServiceId,
-            status: 'Pending',
-            note: additionalNote,
-            price: price,
-            deliveryDate: deliveryDate,
-            deliveryTime: deliveryTime,
-            deliveryAddress: deliveryAddress,
-            additionalNote: additionalNote,
-            createdBy: 'system' || createdBy,
-            updatedBy: 'system' || updatedBy,
-        });
+//         const orderItemBooking = OrderItemBooking.create({
+//             orderId: order.id,
+//             sectorId: sectorId,
+//             customerId: customerId,
+//             serviceProviderId: serviceProviderId,
+//             providedServiceId: providedServiceId,
+//             status: 'Pending',
+//             note: additionalNote,
+//             price: price,
+//             deliveryDate: deliveryDate,
+//             deliveryTime: deliveryTime,
+//             deliveryAddress: deliveryAddress,
+//             additionalNote: additionalNote,
+//             createdBy: 'system' || createdBy,
+//             updatedBy: 'system' || updatedBy,
+//         });
 
-        // Assign relations after creation
-        orderItemBooking.sector = sector!;
-        orderItemBooking.user = user!;
+//         // Assign relations after creation
+//         orderItemBooking.sector = sector!;
+//         orderItemBooking.user = user!;
 
-        await orderItemBooking.save();
+//         await orderItemBooking.save();
 
-        const providedService = await ProvidedService.findOne({ where: { id: providedServiceId } })
-        const category = await Category.findOne({ where: { id: providedService?.categoryId } });
-        const customerPersonalDetails = await PersonalDetails.findOne({ where: { sectorId: sectorId, userId: customerId } });
+//         const providedService = await ProvidedService.findOne({ where: { id: providedServiceId } })
+//         const category = await Category.findOne({ where: { id: providedService?.categoryId } });
+//         const customerPersonalDetails = await PersonalDetails.findOne({ where: { sectorId: sectorId, userId: customerId } });
 
-        const serviceJob = await ServiceJob.create({
-            orderItemBookingId: orderItemBooking.id,
-            jobId: orderItemBooking.OrderItemId,
-            customerId: customerId,
-            serviceProviderId: serviceProviderId,
-            status: 'Pending',
-            description: description || providedService?.bio,
-            note: additionalNote,
-            serviceCategory: category?.categoryName,
-            price: price,
-            deliveryDate: deliveryDate,
-            deliveryTime: deliveryTime,
-            deliveryAddress: deliveryAddress,
-            customerName: customerPersonalDetails?.fullName,
-            customerMobileNumber: customerPersonalDetails?.mobileNumber,
-            createdBy: 'system' || createdBy,
-            updatedBy: 'system' || updatedBy
-        }).save();
+//         const serviceJob = await ServiceJob.create({
+//             orderItemBookingId: orderItemBooking.id,
+//             jobId: orderItemBooking.OrderItemId,
+//             customerId: customerId,
+//             serviceProviderId: serviceProviderId,
+//             status: 'Pending',
+//             description: description || providedService?.bio,
+//             note: additionalNote,
+//             serviceCategory: category?.categoryName,
+//             price: price,
+//             deliveryDate: deliveryDate,
+//             deliveryTime: deliveryTime,
+//             deliveryAddress: deliveryAddress,
+//             customerName: customerPersonalDetails?.fullName,
+//             customerMobileNumber: customerPersonalDetails?.mobileNumber,
+//             createdBy: 'system' || createdBy,
+//             updatedBy: 'system' || updatedBy
+//         }).save();
 
-        res.status(201).json({ status: "status", message: "Booking created", data: { order, orderItemBooking, serviceJob } });
+//         res.status(201).json({ status: "status", message: "Booking created", data: { order, orderItemBooking, serviceJob } });
 
-    } catch (error) {
-        res.status(500).json({ status: "error", message: 'Error adding orderBooking ', error });
-    }
+//     } catch (error) {
+//         res.status(500).json({ status: "error", message: 'Error adding orderBooking ', error });
+//     }
 
-}
+// }
 
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
     try {
@@ -125,8 +125,8 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
                 'businessDetails.userId = userLogin.id AND userLogin.userType = :business',
                 { business: 'Business' }
             )
-        // .where('providedService.categoryId = :categoryId', { categoryId })
-        // .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
+            .where('providedService.categoryId = :categoryId', { categoryId })
+            .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
 
         if (minPrice && maxPrice) {
             providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
@@ -345,48 +345,65 @@ export const getAllAddresses = async (req: Request, res: Response) => {
     }
 };
 
+//-----------------------------------------------------------------------------------------
+
 // Add to Cart
-// export const addToCart = async (req: Request, res: Response) => {
-//     const { cartId, sectorId, customerId, serviceProviderId, serviceId, price, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
 
-//     try {
-//         let cart = await Cart.findOne({ where: { id: cartId } });
+export const addToCart = async (req: Request, res: Response) => {
+    try {
+        const { customerId, sectorId, serviceProviderId, providedServiceId, workDetails, price, deliveryDate, deliveryTime, deliveryAddressId, additionalNote, attachments } = req.body;
 
-//         if (!cart) {
-//             cart = await Cart.create({
-//                 customerId,
-//                 totalAmount: 0,
-//                 totalItems: 0,
-//                 createdBy: createdBy || 'system',
-//                 updatedBy: updatedBy || 'system'
-//             }).save();
-//         }
+        const cartRepository = AppDataSource.getRepository(Cart);
+        // Step 1: Check if a Cart already exists for the given customerId
+        let cart = await cartRepository.findOne({ where: { customerId } });
 
-//         const cartItem = await CartItemBooking.create({
-//             cartId: cart.id,
-//             sectorId,
-//             customerId,
-//             serviceProviderId,
-//             serviceId,
-//             price,
-//             deliveryDate,
-//             deliveryTime,
-//             deliveryAddress,
-//             additionalNote,
-//             createdBy: createdBy || 'system',
-//             updatedBy: updatedBy || 'system'
-//         }).save();
+        // Step 2: If the Cart does not exist, create a new one
+        if (!cart) {
+            cart = new Cart();
+            cart.customerId = customerId;
+            cart.totalAmount = 0; // initialize to 0
+            cart.totalItems = 0;   // initialize to 0
+            cart.createdBy = 'system'; // or use req.user if you have a user system
+            await cart.save();
+        }
 
-//         cart.totalAmount += price;
-//         cart.totalItems += 1;
-//         cart.updatedBy = updatedBy || 'system';
-//         await cart.save();
+        // Step 3: Create a new CartItemBooking
+        const cartItemBooking = new CartItemBooking();
+        cartItemBooking.cartId = cart.id;
+        cartItemBooking.sectorId = sectorId;
+        cartItemBooking.customerId = customerId;
+        cartItemBooking.serviceProviderId = serviceProviderId;
+        cartItemBooking.providedServiceId = providedServiceId;
+        cartItemBooking.workDetails = workDetails;
+        cartItemBooking.price = price;
+        cartItemBooking.deliveryDate = deliveryDate;
+        cartItemBooking.deliveryTime = deliveryTime;
+        cartItemBooking.deliveryAddressId = deliveryAddressId;
+        cartItemBooking.additionalNote = additionalNote || '';
+        cartItemBooking.attachments = attachments || [];
+        cartItemBooking.createdBy = 'system'; // or use req.user if applicable
+        await cartItemBooking.save();
 
-//         res.status(201).json({ status: "status", message: "Added to cart", data: { cart, cartItem } });
-//     } catch (error) {
-//         res.status(500).json({ status: "error", message: 'Error adding to cart', error });
-//     }
-// };
+        // Step 4: Update the Cart's totalItems and totalAmount
+        cart.totalItems += 1;
+        cart.totalAmount += price;
+        cart.updatedBy = 'system'; // or use req.user if applicable
+        await cart.save();
+
+        // Step 5: Return the updated cart
+        return res.status(201).json({
+            status: "success",
+            message: 'Item added to cart successfully',
+            data: {
+                cart,
+                cartItemBooking
+            }
+        });
+    } catch (error) {
+        console.error('Error adding item to cart:', error);
+        return res.status(500).json({ message: 'Error adding item to cart', error });
+    }
+};
 
 // Remove from Cart
 // export const removeFromCart = async (req: Request, res: Response) => {

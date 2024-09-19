@@ -1,8 +1,8 @@
 import express from 'express';
 
 import {
-    addBooking,
-    // addToCart,
+    // addBooking,
+    addToCart,
     // removeFromCart,
     // checkout,
     // rescheduleOrderItemBooking,
@@ -15,13 +15,15 @@ import {
 
 const Router = express.Router();
 
-Router.post('/add-bookings', addBooking);
+// Router.post('/add-bookings', addBooking);
 Router.post('/providers', getProvidedServicesByCategoryAndSubCategory);
 Router.post('/timeSlots/:date', getAvailableTimeSlots);
 
 Router.post('/get-address', getAllAddresses)
 Router.post('/add-or-update-address', addOrUpdateAddress);
-// Router.post('/add-to-cart', addToCart);
+
+
+Router.post('/add-to-cart', addToCart);
 // Router.post('/remove-from-cart', removeFromCart);
 // Router.post('/checkout', checkout);
 // Router.post('/reschedule-order-item-booking', rescheduleOrderItemBooking);
