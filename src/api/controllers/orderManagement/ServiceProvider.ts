@@ -35,7 +35,7 @@ export const getYourServices = async (req: Request, res: Response) => {
             status,
             priceStart = '0',   // Default value
             priceEnd = '100000', // Default value
-            dateStart = '1970-01-01T00:00:00.000Z', // Epoch start date as ISO string
+            dateStart = '1870-01-01T00:00:00.000Z', // Epoch start date as ISO string
             dateEnd = new Date().toISOString(),    // Current date as ISO string
             subCategory,
             page = '1',    // Default to first page
@@ -57,10 +57,8 @@ export const getYourServices = async (req: Request, res: Response) => {
         let whereClause: any = {
             status: status as string,
             serviceProviderId: userId,
-            orderItemBooking: {
-                deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
-                price: Between(parsedPriceStart, parsedPriceEnd),
-            },
+            price: Between(parsedPriceStart, parsedPriceEnd),
+            deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
         };
 
         if (subCategory) {
@@ -267,7 +265,7 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
         const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
 
         let providedService;
-        
+
         if (id) {
             providedService = await providedServiceRepository.findOne({ where: { id } });
             if (!providedService) {

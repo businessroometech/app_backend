@@ -96,7 +96,7 @@ import { UserAddress } from '@/api/entity/user/UserAddress';
 
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
     try {
-        const { categoryId, subCategoryId } = req.params;
+        const { categoryId, subCategoryId } = req.body;
         const { serviceName, minPrice, maxPrice, city } = req.query; // Get query parameters
 
         const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
@@ -125,8 +125,8 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
                 'businessDetails.userId = userLogin.id AND userLogin.userType = :business',
                 { business: 'Business' }
             )
-        // .where('providedService.categoryId = :categoryId', { categoryId })
-        // .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
+            .where('providedService.categoryId = :categoryId', { categoryId })
+            .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId })
 
         if (minPrice && maxPrice) {
             providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });

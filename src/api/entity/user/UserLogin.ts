@@ -7,12 +7,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
 import { OrderItemProduct } from '../orderManagement/customer/OrderItemProduct';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -73,6 +75,9 @@ export class UserLogin extends BaseEntity {
   static async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
     return await bcrypt.compare(password, hashedPassword);
   }
+
+  @OneToMany(() => ProvidedService, providedService => providedService.users)
+  providedServices !: ProvidedService[];
 
   @OneToMany(() => OrderItemBooking, item => item.user)
   orderItemBookings !: OrderItemBooking[];
