@@ -21,79 +21,6 @@ import { UserAddress } from '@/api/entity/user/UserAddress';
 
 // ----------------------------------------------** IMP ** NEED TO ADD ACID PROPERTIES------------------------------------------
 
-
-//--------------------- FOR FIRST CUT-------------------
-
-// export const addBooking = async (req: Request, res: Response) => {
-//     try {
-
-//         const { sectorId, customerId, serviceProviderId, providedServiceId, price, description, deliveryDate, deliveryTime, deliveryAddress, additionalNote, createdBy, updatedBy } = req.body;
-
-//         const order = await Order.create({
-//             customerId: customerId,
-//             totalAmount: price,
-//             totalItems: 1,
-//             createdBy: 'system' || createdBy,
-//             updatedBy: 'system' || updatedBy
-//         }).save();
-
-//         const sector = await Sector.findOne({ where: { id: sectorId } });
-//         const user = await UserLogin.findOne({ where: { id: customerId } });
-
-//         const orderItemBooking = OrderItemBooking.create({
-//             orderId: order.id,
-//             sectorId: sectorId,
-//             customerId: customerId,
-//             serviceProviderId: serviceProviderId,
-//             providedServiceId: providedServiceId,
-//             status: 'Pending',
-//             note: additionalNote,
-//             price: price,
-//             deliveryDate: deliveryDate,
-//             deliveryTime: deliveryTime,
-//             deliveryAddress: deliveryAddress,
-//             additionalNote: additionalNote,
-//             createdBy: 'system' || createdBy,
-//             updatedBy: 'system' || updatedBy,
-//         });
-
-//         // Assign relations after creation
-//         orderItemBooking.sector = sector!;
-//         orderItemBooking.user = user!;
-
-//         await orderItemBooking.save();
-
-//         const providedService = await ProvidedService.findOne({ where: { id: providedServiceId } })
-//         const category = await Category.findOne({ where: { id: providedService?.categoryId } });
-//         const customerPersonalDetails = await PersonalDetails.findOne({ where: { sectorId: sectorId, userId: customerId } });
-
-//         const serviceJob = await ServiceJob.create({
-//             orderItemBookingId: orderItemBooking.id,
-//             jobId: orderItemBooking.OrderItemId,
-//             customerId: customerId,
-//             serviceProviderId: serviceProviderId,
-//             status: 'Pending',
-//             description: description || providedService?.bio,
-//             note: additionalNote,
-//             serviceCategory: category?.categoryName,
-//             price: price,
-//             deliveryDate: deliveryDate,
-//             deliveryTime: deliveryTime,
-//             deliveryAddress: deliveryAddress,
-//             customerName: customerPersonalDetails?.fullName,
-//             customerMobileNumber: customerPersonalDetails?.mobileNumber,
-//             createdBy: 'system' || createdBy,
-//             updatedBy: 'system' || updatedBy
-//         }).save();
-
-//         res.status(201).json({ status: "status", message: "Booking created", data: { order, orderItemBooking, serviceJob } });
-
-//     } catch (error) {
-//         res.status(500).json({ status: "error", message: 'Error adding orderBooking ', error });
-//     }
-
-// }
-
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
     try {
         const { categoryId, subCategoryId } = req.body;
@@ -176,55 +103,20 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     }
 };
 
-// Fetch time slots
-
-// Define the available 1-hour time slots for a day (in 24-hour format)
 const timeSlots = [
-    "08:00:00", "09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00",
-    "14:00:00", "15:00:00", "16:00:00", "17:00:00", "18:00:00", "19:00:00"
+    "8:00 AM - 9:00 AM",
+    "9:00 AM - 10:00 AM",
+    "10:00 AM - 11:00 AM",
+    "11:00 AM - 12:00 PM",
+    "12:00 PM - 1:00 PM",
+    "1:00 PM - 2:00 PM",
+    "2:00 PM - 3:00 PM",
+    "3:00 PM - 4:00 PM",
+    "4:00 PM - 5:00 PM",
+    "5:00 PM - 6:00 PM",
+    "6:00 PM - 7:00 PM",
+    "7:00 PM - 8:00 PM"
 ];
-
-// Utility function to convert 24-hour format "HH:MM:SS" to 12-hour AM/PM format
-const formatTimeTo12Hour = (time: string): string => {
-    const [hour, minute] = time.split(':');
-    let hourNumber = parseInt(hour, 10);
-    const isPM = hourNumber >= 12;
-    hourNumber = hourNumber % 12 || 12;  // Convert to 12-hour format
-    return `${hourNumber}:${minute} ${isPM ? 'PM' : 'AM'}`;
-};
-
-const incrementTimeByOneHour = (time: string): string => {
-    let [hour, minute, second] = time.split(':').map(Number);
-
-    hour = hour + 1; // Increment the hour by 1
-
-    // Handle the case when hour exceeds 23 (for a 24-hour clock)
-    if (hour === 24) {
-        hour = 0;
-    }
-
-    // Format hour to always have 2 digits
-    const hourStr = hour < 10 ? `0${hour}` : `${hour}`;
-
-    return `${hourStr}:${minute < 10 ? `0${minute}` : minute}:${second < 10 ? `0${second}` : second}`;
-};
-
-const createTimeSlotPairs = (slots: string[]): { availableSlot: string, startDate: string }[] => {
-    const pairs: { availableSlot: string, startDate: string }[] = [];
-
-    for (let i = 0; i < slots.length; i++) {
-        const start = formatTimeTo12Hour(slots[i]);
-        const end = formatTimeTo12Hour(incrementTimeByOneHour(slots[i])); // Increment the current time by 1 hour
-
-        // Push the object with availableData and startDate
-        pairs.push({
-            availableSlot: `${start} - ${end}`,
-            startDate: slots[i] // Store the raw start time in HH:MM:SS format
-        });
-    }
-
-    return pairs;
-};
 
 // Controller function to get available time slots for a given date
 export const getAvailableTimeSlots = async (req: Request, res: Response) => {
@@ -241,27 +133,25 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
                 deliveryDate: date as string,  // Convert date to string
                 status: 'Accepted',  // Only consider accepted jobs as booked
             },
-            select: ['deliveryTime'],  // Only select the deliveryTime field
+            select: ['deliveryTime'],  // Only select the deliveryTime field in the same format "8:00 AM - 9:00 AM"
         });
 
         // Extract the already booked times from the fetched jobs
         const bookedTimes = bookedJobs.map(job => job.deliveryTime);
-        console.log("Booked Times :", bookedTimes);
+        console.log("Booked Times:", bookedTimes);
 
         // Filter out the booked time slots from the available ones
         const availableSlots = timeSlots.filter(slot => !bookedTimes.includes(slot));
-        console.log("Available Times :", availableSlots);
+        console.log("Available Times:", availableSlots);
 
-        // Create time slot pairs like "9:00 AM - 10:00 AM"
-        const availableSlotPairs = createTimeSlotPairs(availableSlots);
-
-        // Return the available time slot pairs
-        return res.status(200).json({ availableSlotPairs });
+        // Return the available time slots
+        return res.status(200).json({ status: "success", message: "Available time slots fetched successfully", data: { availableSlots } });
     } catch (error) {
         console.error('Error fetching available time slots:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 // -------------------------Address--------------------------------------
 
