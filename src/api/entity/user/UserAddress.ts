@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne } from 'typeorm';
+import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
 
 @Entity({ name: 'UserAddress' })
 export class UserAddress extends BaseEntity {
@@ -53,4 +54,7 @@ export class UserAddress extends BaseEntity {
     private generateUUID() {
         return randomBytes(16).toString('hex');
     }
+
+    @ManyToOne(() => OrderItemBooking, orderItem => orderItem.address)
+    orderItemBooking !: OrderItemBooking;
 };

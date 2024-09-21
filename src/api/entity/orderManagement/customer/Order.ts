@@ -14,11 +14,14 @@ export class Order extends BaseEntity {
     // @Column({ type: "uuid" })
     // sectorId !: string;
 
-    @Column({ type: "float" })
+    @Column({ type: "decimal", precision: 10, scale: 2 })
     totalAmount !: number;
 
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    totalTax !: number;
+
     @Column({ type: 'int' })
-    totalItems !: number; 
+    totalItems !: number;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

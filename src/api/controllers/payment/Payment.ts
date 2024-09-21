@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import axios from 'axios';
 
 // initializing razorpay
 const razorpay = new Razorpay({
@@ -14,11 +15,16 @@ export const createOrder = async (req: Request, res: Response) => {
         const { amount, currency } = req.body;
         const uniqueId = crypto.randomBytes(16).toString('hex');
 
+        let receipt = `receipt_order_${uniqueId}`;
+        if (receipt.length > 40) {
+            receipt = receipt.substring(0, 40); // Truncate if exceeds 40 characters
+        }
+
         // setting options for order
         const options = {
             amount: amount * 100,
             currency,
-            receipt: `receipt_order_${uniqueId}`,
+            receipt: receipt,
             // payment_capture: 1,
         }
 
@@ -33,6 +39,7 @@ export const createOrder = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
+        console.log(error);
         res.status(400).json({ status: 'error', message: 'Not able to create order. Please try again!' });
     }
 }
@@ -40,7 +47,7 @@ export const createOrder = async (req: Request, res: Response) => {
 export const verifyPayment = async (req: Request, res: Response) => {
     try {
 
-        const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+        const { razorpay_payment_id, razorpay_order_id, razorpay_signature, cartId, userId } = req.body;
 
         const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
 
@@ -51,17 +58,39 @@ export const verifyPayment = async (req: Request, res: Response) => {
         if (generated_signature === razorpay_signature) {
             // valid signature
 
-            // save to DB
+            // save to DB   
 
-            // rend resoponse
-            res.status(200).json({ status: "success", message: "signature verification successful" })
+            // convert cart to order
+            try {
+                const response = await axios.post(
+                    `${process.env.BASE_URL}/cart-to-order`,  // Replace with actual endpoint or dynamic URL
+                    { cartId, customerId: userId }, // Passing necessary data
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                return res.status(200).json({
+                    status: "success",
+                    message: "Payment verification and order creation successful",
+                });
+            } catch (err) {
+                console.error('Error converting cart to order:', err);
+                return res.status(500).json({
+                    status: "error",
+                    message: "Payment verified but failed to convert cart to order",
+                });
+            }
         }
         else {
             res.status(400).json({ status: "error", message: "signature verification failed" });
         }
 
     } catch (error) {
-
+        console.error('Error verifying payment:', error);
+        return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 }
 

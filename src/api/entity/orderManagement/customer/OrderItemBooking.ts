@@ -1,19 +1,12 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, JoinColumn, OneToOne, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, JoinColumn, OneToOne, OneToMany, } from 'typeorm';
 import { ProvidedService } from '../serviceProvider/service/ProvidedService';
 // import { Product } from '../serviceProvider/product/ProvidedProduct';
 import { Order } from './Order';
 import { Sector } from '../../sector/Sector';
 import { UserLogin } from '../../user/UserLogin';
 import { ServiceJob } from '../serviceProvider/serviceJob/ServiceJob';
-
-interface Address {
-    addressLine1: string,
-    addressLine2: string,
-    city: string,
-    state: string,
-    pincode: string,
-}
+import { UserAddress } from '../../user/UserAddress';
 
 @Entity({ name: "OrderItemBooking" })
 export class OrderItemBooking extends BaseEntity {
@@ -45,8 +38,29 @@ export class OrderItemBooking extends BaseEntity {
     @Column({ type: "text", nullable: true })
     note !: string;
 
-    @Column({ type: "float" })
-    price !: number;
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    price!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    mrp!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    discountPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    discountAmount!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // CGST set to 9%
+    cgstPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
+    sgstPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalTax!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalPrice!: number;
 
     @Column({ type: 'date' })
     deliveryDate!: string;
@@ -54,8 +68,8 @@ export class OrderItemBooking extends BaseEntity {
     @Column({ type: 'varchar' })
     deliveryTime!: string;
 
-    @Column({ type: 'json' })
-    deliveryAddress!: Address;
+    @Column({ type: 'uuid' })
+    deliveryAddressId !: string;
 
     @Column({ type: 'text', nullable: true })
     additionalNote!: string;
@@ -79,8 +93,8 @@ export class OrderItemBooking extends BaseEntity {
 
     @BeforeInsert()
     async beforeInsert() {
-        this.id = this.generateUUID();
-        this.OrderItemId = await this.generateOrderId();
+        if (!this.id) this.id = this.generateUUID();
+        if (this.OrderItemId) this.OrderItemId = await this.generateOrderId();
     }
 
     private generateUUID(): string {
@@ -88,7 +102,7 @@ export class OrderItemBooking extends BaseEntity {
     }
 
     private async generateOrderId(): Promise<string> {
-        const cityCode = this.deliveryAddress.city.slice(0, 2).toLowerCase();
+        const cityCode = this.address.city.slice(0, 2).toLowerCase();
         const date = new Date();
         const dateCode = `${(date.getFullYear() % 100).toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
 
@@ -134,5 +148,8 @@ export class OrderItemBooking extends BaseEntity {
 
     @OneToOne(() => ServiceJob, job => job.orderItemBooking)
     serviceJobs !: ServiceJob;
+
+    @OneToMany(() => UserAddress, userAddress => userAddress.orderItemBooking)
+    address !: UserAddress;
 }
 

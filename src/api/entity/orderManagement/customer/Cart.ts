@@ -15,11 +15,14 @@ export class Cart extends BaseEntity {
     // @Column({ type: "uuid" })
     // sectorId !: string;
 
-    @Column({ type: "float" })
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
     totalAmount !: number;
 
-    @Column({ type: 'int' })
-    totalItems !: number; 
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalTax !: number;
+
+    @Column({ type: 'int', default: 0 })
+    totalItems !: number;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

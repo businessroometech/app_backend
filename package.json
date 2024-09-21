@@ -31,6 +31,7 @@
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@swc/core": "^1.7.26",
     "aws-sdk": "^2.1652.0",
+    "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.6",

@@ -118,6 +118,12 @@ const timeSlots = [
     "7:00 PM - 8:00 PM"
 ];
 
+interface SlotAccumulator {
+    morning: string[],
+    afternoon: string[],
+    evening: string[]
+}
+
 // Controller function to get available time slots for a given date
 export const getAvailableTimeSlots = async (req: Request, res: Response) => {
     try {
@@ -144,8 +150,25 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
         const availableSlots = timeSlots.filter(slot => !bookedTimes.includes(slot));
         console.log("Available Times:", availableSlots);
 
+        let final = availableSlots.reduce<SlotAccumulator>((acc, curr) => {
+            let num = curr.split(' ')[0];
+            let type = curr.split(' ')[1];
+
+            if (type === 'AM') {
+                acc.morning.push(curr);
+            }
+            else if (parseInt(num) % 12 <= 4) {
+                acc.afternoon.push(curr);
+            }
+            else {
+                acc.evening.push(curr);
+            }
+
+            return acc;
+        }, { morning: [], afternoon: [], evening: [] });
+
         // Return the available time slots
-        return res.status(200).json({ status: "success", message: "Available time slots fetched successfully", data: { availableSlots } });
+        return res.status(200).json({ status: "success", message: "Available time slots fetched successfully", data: { availableSlots: final } });
     } catch (error) {
         console.error('Error fetching available time slots:', error);
         return res.status(500).json({ message: 'Internal server error' });
@@ -196,7 +219,6 @@ export const addOrUpdateAddress = async (req: Request, res: Response) => {
         }
 
         await userAddress.save();
-
         return res.status(200).json({
             status: "success",
             message: addressId ? 'Address updated successfully' : 'Address added successfully',
@@ -241,7 +263,19 @@ export const getAllAddresses = async (req: Request, res: Response) => {
 
 export const addToCart = async (req: Request, res: Response) => {
     try {
-        const { customerId, sectorId, serviceProviderId, providedServiceId, workDetails, price, deliveryDate, deliveryTime, deliveryAddressId, additionalNote, attachments } = req.body;
+        const {
+            customerId,
+            sectorId,
+            serviceProviderId,
+            providedServiceId,
+            workDetails,
+            mrp, // Ensure this is passed as a number
+            deliveryDate,
+            deliveryTime,
+            deliveryAddressId,
+            additionalNote,
+            attachments
+        } = req.body;
 
         const cartRepository = AppDataSource.getRepository(Cart);
         // Step 1: Check if a Cart already exists for the given customerId
@@ -251,9 +285,10 @@ export const addToCart = async (req: Request, res: Response) => {
         if (!cart) {
             cart = new Cart();
             cart.customerId = customerId;
-            cart.totalAmount = 0; // initialize to 0
-            cart.totalItems = 0;   // initialize to 0
-            cart.createdBy = 'system'; // or use req.user if you have a user system
+            cart.totalAmount = 0; // Initialize to 0
+            cart.totalTax = 0;
+            cart.totalItems = 0; // Initialize to 0
+            cart.createdBy = 'system'; // Or use req.user if you have a user system
             await cart.save();
         }
 
@@ -265,19 +300,25 @@ export const addToCart = async (req: Request, res: Response) => {
         cartItemBooking.serviceProviderId = serviceProviderId;
         cartItemBooking.providedServiceId = providedServiceId;
         cartItemBooking.workDetails = workDetails;
-        cartItemBooking.price = price;
+        cartItemBooking.mrp = parseFloat(mrp); // Ensure `mrp` is stored as a number
         cartItemBooking.deliveryDate = deliveryDate;
         cartItemBooking.deliveryTime = deliveryTime;
         cartItemBooking.deliveryAddressId = deliveryAddressId;
         cartItemBooking.additionalNote = additionalNote || '';
         cartItemBooking.attachments = attachments || [];
-        cartItemBooking.createdBy = 'system'; // or use req.user if applicable
+        cartItemBooking.createdBy = 'system'; // Or use req.user if applicable
+
+        // Save the CartItemBooking
         await cartItemBooking.save();
 
         // Step 4: Update the Cart's totalItems and totalAmount
         cart.totalItems += 1;
-        cart.totalAmount += price;
-        cart.updatedBy = 'system'; // or use req.user if applicable
+
+        // Ensure correct numerical addition
+        cart.totalAmount = parseFloat(cart.totalAmount as any) + parseFloat(cartItemBooking.totalPrice as any);
+        cart.totalTax = parseFloat(cart.totalTax as any) + parseFloat(cartItemBooking.totalTax as any);
+
+        cart.updatedBy = 'system'; // Or use req.user if applicable
         await cart.save();
 
         // Step 5: Return the updated cart
@@ -294,6 +335,7 @@ export const addToCart = async (req: Request, res: Response) => {
         return res.status(500).json({ message: 'Error adding item to cart', error });
     }
 };
+
 
 export const fetchCartItem = async (req: Request, res: Response) => {
     try {
@@ -319,6 +361,79 @@ export const fetchCartItem = async (req: Request, res: Response) => {
         return res.status(500).json({ message: 'Error fetching item from cart', error });
     }
 }
+
+export const convertCartToOrder = async (req: Request, res: Response) => {
+    const { cartId, customerId } = req.body;
+
+    try {
+        const cartRepository = AppDataSource.getRepository(Cart);
+        const orderRepository = AppDataSource.getRepository(Order);
+        const cartItemBookingRepository = AppDataSource.getRepository(CartItemBooking);
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+
+        const cart = await cartRepository.findOne({
+            where: { id: cartId, customerId },
+            relations: ['cartItemBookings']  // Ensure that cart items are fetched
+        });
+
+        if (!cart) {
+            return res.status(404).json({ message: 'Cart not found' });
+        }
+
+        const order = new Order();
+        order.customerId = cart.customerId;
+        order.totalAmount = cart.totalAmount;
+        order.totalTax = cart.totalTax;
+        order.totalItems = cart.totalItems;
+        order.createdBy = 'system';
+        order.updatedBy = 'system';
+        await order.save();
+
+        const orderItems: OrderItemBooking[] = [];
+
+        for (const cartItem of cart.cartItemBookings) {
+            const orderItem = new OrderItemBooking();
+            orderItem.sectorId = cartItem.sectorId;
+            orderItem.customerId = cartItem.customerId;
+            orderItem.serviceProviderId = cartItem.serviceProviderId;
+            orderItem.providedServiceId = cartItem.providedServiceId;
+            orderItem.price = cartItem.price;
+            orderItem.mrp = cartItem.mrp;
+            orderItem.discountPercentage = cartItem.discountPercentage;
+            orderItem.discountAmount = cartItem.discountAmount;
+            orderItem.cgstPercentage = cartItem.cgstPercentage;
+            orderItem.sgstPercentage = cartItem.sgstPercentage;
+            orderItem.totalTax = cartItem.totalTax;
+            orderItem.totalPrice = cartItem.totalPrice;
+            orderItem.deliveryDate = cartItem.deliveryDate;
+            orderItem.deliveryTime = cartItem.deliveryTime;
+            orderItem.deliveryAddressId = cartItem.deliveryAddressId;
+            orderItem.additionalNote = cartItem.additionalNote || '';
+            orderItem.status = 'Pending';
+            orderItem.createdBy = 'system';
+            orderItem.updatedBy = 'system';
+
+            orderItems.push(orderItem);
+        }
+
+        await orderItemBookingRepository.save(orderItems);
+
+        await cartRepository.remove(cart);
+        await cartItemBookingRepository.remove(cart.cartItemBookings);
+
+        return res.status(200).json({
+            status: "success",
+            message: 'Cart converted to order successfully',
+            data: {
+                order,
+                orderItems
+            }
+        });
+    } catch (error) {
+        console.error('Error converting cart to order:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 // Remove from Cart
 // export const removeFromCart = async (req: Request, res: Response) => {
