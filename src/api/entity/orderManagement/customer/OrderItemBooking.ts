@@ -35,8 +35,8 @@ export class OrderItemBooking extends BaseEntity {
     @Column({ type: "enum", enum: ["Pending", "Assigned", "Rejected", "Completed", "Cancelled", "Rescheduled"], default: "Pending" })
     status !: string;
 
-    @Column({ type: "text", nullable: true })
-    note !: string;
+    @Column({ type: "text", default: "" })
+    workDetails !: string;
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
     price!: number;
@@ -94,7 +94,36 @@ export class OrderItemBooking extends BaseEntity {
     @BeforeInsert()
     async beforeInsert() {
         if (!this.id) this.id = this.generateUUID();
-        if (this.OrderItemId) this.OrderItemId = await this.generateOrderId();
+        // Ensure address is loaded if necessary
+        if (!this.address) {
+            const foundAddress = await UserAddress.findOne({ where: { id: this.deliveryAddressId } });
+
+            if (!foundAddress) {
+                throw new Error('Address not found for the given deliveryAddressId');
+            }
+
+            this.address = foundAddress;
+        }
+        if (!this.sector) {
+            const foundSector = await Sector.findOne({ where: { id: this.sectorId } });
+
+            if (!foundSector) {
+                throw new Error('Sector not found for the given sectorId');
+            }
+
+            this.sector = foundSector;
+        }
+        if (!this.user) {
+            const foundUser = await UserLogin.findOne({ where: { id: this.serviceProviderId } });
+
+            if (!foundUser) {
+                throw new Error('User not found for the given serviceProviderId');
+            }
+
+            this.user = foundUser;
+        }
+
+        if (!this.OrderItemId) this.OrderItemId = await this.generateOrderId();
     }
 
     private generateUUID(): string {
@@ -116,8 +145,8 @@ export class OrderItemBooking extends BaseEntity {
         };
 
         const typeCodes: { [key: string]: string } = {
-            Business: 'BA',
-            Individual: 'IA'
+            Business: 'BU',
+            Individual: 'IN'
         };
 
         const sectorName: string = this.sector.sectorName.toLowerCase();

@@ -12,9 +12,6 @@ export class Cart extends BaseEntity {
     @Column({ type: "uuid" })
     customerId !: string;
 
-    // @Column({ type: "uuid" })
-    // sectorId !: string;
-
     @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
     totalAmount !: number;
 
@@ -50,9 +47,9 @@ export class Cart extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    // @OneToMany(() => CartItemBooking, item => item.cart)
+    @OneToMany(() => CartItemBooking, item => item.cart)
     cartItemBookings !: CartItemBooking[];
 
     // @OneToMany(() => CartItemProduct, item => item.cart)
-    cartItemProducts !: CartItemProduct[];
+    // cartItemProducts !: CartItemProduct[];
 }

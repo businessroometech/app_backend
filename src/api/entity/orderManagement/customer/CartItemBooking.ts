@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne } from 'typeorm';
+import { Cart } from './Cart';
 
 @Entity({ name: "CartItemBooking" })
 export class CartItemBooking extends BaseEntity {
@@ -138,6 +139,6 @@ export class CartItemBooking extends BaseEntity {
     // @ManyToOne(() => Service, service => service.cartItemBookings)
     // service!: Service;
 
-    // @ManyToOne(() => Cart, cart => cart.cartItemBookings)
-    // cart !: Cart;
+    @ManyToOne(() => Cart, cart => cart.cartItemBookings)
+    cart !: Cart;
 }

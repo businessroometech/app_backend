@@ -219,6 +219,7 @@ export const addOrUpdateAddress = async (req: Request, res: Response) => {
         }
 
         await userAddress.save();
+
         return res.status(200).json({
             status: "success",
             message: addressId ? 'Address updated successfully' : 'Address added successfully',
@@ -336,7 +337,6 @@ export const addToCart = async (req: Request, res: Response) => {
     }
 };
 
-
 export const fetchCartItem = async (req: Request, res: Response) => {
     try {
 
@@ -393,10 +393,12 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
 
         for (const cartItem of cart.cartItemBookings) {
             const orderItem = new OrderItemBooking();
+            orderItem.orderId = order.id;
             orderItem.sectorId = cartItem.sectorId;
             orderItem.customerId = cartItem.customerId;
             orderItem.serviceProviderId = cartItem.serviceProviderId;
             orderItem.providedServiceId = cartItem.providedServiceId;
+            orderItem.workDetails = cartItem.workDetails;
             orderItem.price = cartItem.price;
             orderItem.mrp = cartItem.mrp;
             orderItem.discountPercentage = cartItem.discountPercentage;
@@ -418,8 +420,10 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
 
         await orderItemBookingRepository.save(orderItems);
 
-        await cartRepository.remove(cart);
+        // Remove cart item bookings first
         await cartItemBookingRepository.remove(cart.cartItemBookings);
+        // Then remove the cart
+        await cartRepository.remove(cart);
 
         return res.status(200).json({
             status: "success",

@@ -63,8 +63,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
             // convert cart to order
             try {
                 const response = await axios.post(
-                    `${process.env.BASE_URL}/cart-to-order`,  // Replace with actual endpoint or dynamic URL
-                    { cartId, customerId: userId }, // Passing necessary data
+                    `http://localhost:5000/api/v1/order-management/customer/cart-to-order`,
+                    { cartId, customerId: userId },
                     {
                         headers: {
                             'Content-Type': 'application/json'
