@@ -74,6 +74,12 @@ export class OrderItemBooking extends BaseEntity {
     @Column({ type: 'text', nullable: true })
     additionalNote!: string;
 
+    @Column({ type: 'text', default: "" })
+    reasonIfCancelled !: string;
+
+    @Column({ type: 'text', default: "" })
+    reasonIfRejectedByProvider !: string;
+
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
 
@@ -178,7 +184,7 @@ export class OrderItemBooking extends BaseEntity {
     @OneToOne(() => ServiceJob, job => job.orderItemBooking)
     serviceJobs !: ServiceJob;
 
-    @OneToMany(() => UserAddress, userAddress => userAddress.orderItemBooking)
+    @ManyToOne(() => UserAddress, userAddress => userAddress.orderItemBookings)
     address !: UserAddress;
 }
 

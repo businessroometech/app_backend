@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, OneToMany } from 'typeorm';
 import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
+import { ServiceJob } from '../orderManagement/serviceProvider/serviceJob/ServiceJob';
 
 @Entity({ name: 'UserAddress' })
 export class UserAddress extends BaseEntity {
@@ -55,6 +56,9 @@ export class UserAddress extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => OrderItemBooking, orderItem => orderItem.address)
-    orderItemBooking !: OrderItemBooking;
+    @OneToMany(() => OrderItemBooking, orderItem => orderItem.address)
+    orderItemBookings !: OrderItemBooking[];
+
+    @OneToMany(() => ServiceJob, job => job.address)
+    serviceJobs !: ServiceJob[];
 };

@@ -1,6 +1,8 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne } from 'typeorm';
 import { Cart } from './Cart';
+import { Service } from '../../sector/Service';
+import { ProvidedService } from '../serviceProvider/service/ProvidedService';
 
 @Entity({ name: "CartItemBooking" })
 export class CartItemBooking extends BaseEntity {
@@ -135,6 +137,9 @@ export class CartItemBooking extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
+
+    @ManyToOne(() => ProvidedService, service => service.cartItemBookings)
+    providedService!: ProvidedService;
 
     // @ManyToOne(() => Service, service => service.cartItemBookings)
     // service!: Service;

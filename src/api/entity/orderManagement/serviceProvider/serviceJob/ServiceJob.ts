@@ -2,14 +2,8 @@ import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, ManyToOne, JoinColumn, OneToOne, } from 'typeorm';
 import { OrderItemBooking } from '../../customer/OrderItemBooking';
 import { UserLogin } from '@/api/entity/user/UserLogin';
-
-interface Address {
-    addressLine1: string,
-    addressLine2: string,
-    city: string,
-    state: string,
-    pincode: string,
-}
+import { UserAddress } from '@/api/entity/user/UserAddress';
+import { PersonalDetailsCustomer } from '@/api/entity/profile/personal/PersonalDetailsCustomer';
 
 @Entity({ name: "ServiceJob" })
 export class ServiceJob extends BaseEntity {
@@ -33,16 +27,37 @@ export class ServiceJob extends BaseEntity {
     status!: string;
 
     @Column({ type: "text" })
-    description!: string;
+    workDetails!: string;
 
-    @Column({ type: "text", nullable: true })
-    note!: string;
+    @Column({ type: "text", default: "" })
+    additionalNote!: string;
 
     @Column({ type: 'varchar' })
     serviceCategory !: string;
 
-    @Column({ type: "float" })
-    price !: number;
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    price!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    mrp!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    discountPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    discountAmount!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // CGST set to 9%
+    cgstPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
+    sgstPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalTax!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalPrice!: number;
 
     @Column({ type: 'date' })
     deliveryDate!: string;
@@ -50,8 +65,8 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: 'varchar' })
     deliveryTime!: string;
 
-    @Column({ type: 'json' })
-    deliveryAddress!: Address;
+    @Column({ type: 'uuid' })
+    deliveryAddressId!: string;
 
     @Column({ type: 'varchar' })
     customerName !: string;
@@ -59,8 +74,14 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: 'varchar' })
     customerMobileNumber !: string;
 
-    @Column({ type: 'text'})
+    @Column({ type: 'text', default: ""})
     reasonIfRejected !: string;
+
+    @Column({ type: 'text' , default: ""})
+    reasonIfCancelledByCustomer !: string;
+
+    @Column({ type: 'text' , default: ""})
+    reasonIfReschedueledByCustomer !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -82,6 +103,18 @@ export class ServiceJob extends BaseEntity {
     @BeforeInsert()
     async beforeInsert() {
         this.id = this.generateUUID();
+
+        const personalDetails = await PersonalDetailsCustomer.findOne({ where: { userId: this.customerId } });
+        if (personalDetails) {
+            this.customerName = personalDetails.fullName;
+            this.customerMobileNumber = personalDetails.mobileNumber;
+        };
+
+        const orderItem = await OrderItemBooking.findOne({ where: { id: this.orderItemBookingId }, relations: ['providedService'] });
+        if (orderItem && orderItem.providedService) {
+            // const subCategory = await SubCategory.findOne({ where: { id: orderItem.providedService.sub }});
+            this.serviceCategory = orderItem.providedService.subCategory.subCategoryName;
+        }
     }
 
     private generateUUID(): string {
@@ -91,4 +124,7 @@ export class ServiceJob extends BaseEntity {
     @OneToOne(() => OrderItemBooking, item => item.serviceJobs)
     @JoinColumn({ name: "orderItemBookingId" })
     orderItemBooking!: OrderItemBooking;
+
+    @ManyToOne(() => UserAddress, userAddress => userAddress.serviceJobs)
+    address !: UserAddress
 }

@@ -3,7 +3,6 @@ import { Cart } from '../../entity/orderManagement/customer/Cart';
 import { CartItemBooking } from '../../entity/orderManagement/customer/CartItemBooking';
 import { Order } from '../../entity/orderManagement/customer/Order';
 import { OrderItemBooking } from '../../entity/orderManagement/customer/OrderItemBooking';
-import { CancelledBooking } from '@/api/entity/orderManagement/customer/CancelledBooking';
 import { RescheduledBooking } from '@/api/entity/orderManagement/customer/RescheduledBooking';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
 import { Sector } from '@/api/entity/sector/Sector';
@@ -348,7 +347,7 @@ export const fetchCartItem = async (req: Request, res: Response) => {
 
         const cartItemBookingRepository = AppDataSource.getRepository(CartItemBooking);
 
-        const cartItem = await cartItemBookingRepository.find({ where: { id: cartItemBookingId, cartId } })
+        const cartItem = await cartItemBookingRepository.find({ where: { id: cartItemBookingId, cartId }, relations: ['providedService', 'providedService.subCategory'] })
 
         if (!cartItem) {
             res.status(401).json({ status: "error", message: "No item is present in the Cart" });
@@ -363,16 +362,17 @@ export const fetchCartItem = async (req: Request, res: Response) => {
 }
 
 export const convertCartToOrder = async (req: Request, res: Response) => {
-    const { cartId, customerId } = req.body;
+    const { cartId, userId } = req.body;
 
     try {
         const cartRepository = AppDataSource.getRepository(Cart);
         const orderRepository = AppDataSource.getRepository(Order);
         const cartItemBookingRepository = AppDataSource.getRepository(CartItemBooking);
         const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
 
         const cart = await cartRepository.findOne({
-            where: { id: cartId, customerId },
+            where: { id: cartId, customerId: userId },
             relations: ['cartItemBookings']  // Ensure that cart items are fetched
         });
 
@@ -390,8 +390,10 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
         await order.save();
 
         const orderItems: OrderItemBooking[] = [];
+        const serviceJobs: ServiceJob[] = [];
 
         for (const cartItem of cart.cartItemBookings) {
+            // Create OrderItemBooking
             const orderItem = new OrderItemBooking();
             orderItem.orderId = order.id;
             orderItem.sectorId = cartItem.sectorId;
@@ -416,9 +418,38 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
             orderItem.updatedBy = 'system';
 
             orderItems.push(orderItem);
+
+            // Create ServiceJob for the OrderItemBooking
+            const serviceJob = new ServiceJob();
+            serviceJob.orderItemBookingId = orderItem.id;
+            serviceJob.customerId = orderItem.customerId;
+            serviceJob.serviceProviderId = orderItem.serviceProviderId;
+            serviceJob.jobId = orderItem.OrderItemId;
+            serviceJob.status = 'Pending';
+            serviceJob.workDetails = orderItem.workDetails;
+            serviceJob.additionalNote = orderItem.additionalNote || '';
+            serviceJob.price = orderItem.price;
+            serviceJob.mrp = orderItem.mrp;
+            serviceJob.discountPercentage = orderItem.discountPercentage;
+            serviceJob.discountAmount = orderItem.discountAmount;
+            serviceJob.cgstPercentage = orderItem.cgstPercentage;
+            serviceJob.sgstPercentage = orderItem.sgstPercentage;
+            serviceJob.totalTax = orderItem.totalTax;
+            serviceJob.totalPrice = orderItem.totalPrice;
+            serviceJob.deliveryDate = orderItem.deliveryDate;
+            serviceJob.deliveryTime = orderItem.deliveryTime;
+            serviceJob.deliveryAddressId = orderItem.deliveryAddressId;
+            serviceJob.reasonIfRejected = '';
+            serviceJob.createdBy = 'system';
+            serviceJob.updatedBy = 'system';
+
+            serviceJobs.push(serviceJob);
         }
 
+        // Save all OrderItemBookings
         await orderItemBookingRepository.save(orderItems);
+
+        await serviceJobRepository.save(serviceJobs);
 
         // Remove cart item bookings first
         await cartItemBookingRepository.remove(cart.cartItemBookings);
@@ -427,218 +458,190 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
 
         return res.status(200).json({
             status: "success",
-            message: 'Cart converted to order successfully',
+            message: 'Cart converted to order and service jobs created successfully',
             data: {
                 order,
-                orderItems
+                orderItems,
+                serviceJobs
             }
         });
     } catch (error) {
-        console.error('Error converting cart to order:', error);
+        console.error('Error converting cart to order and creating service jobs:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
-// Remove from Cart
-// export const removeFromCart = async (req: Request, res: Response) => {
-//     const { customerId, cartItemId, cartId, updatedBy } = req.body;
-
-//     try {
-//         const cartItem = await CartItemBooking.findOne({ where: { id: cartItemId, cartId, customerId } });
-
-//         if (!cartItem) {
-//             return res.status(404).json({ message: 'Cart item not found' });
-//         }
-
-//         const cart = await Cart.findOne({ where: { id: cartItem.cartId } });
-
-//         if (cart) {
-//             cart.totalAmount -= cartItem.price;
-//             cart.totalItems -= 1;
-//             cart.updatedBy = updatedBy || 'system';
-//             await cart.save();
-//         }
-
-//         await cartItem.remove();
-
-//         res.status(200).json({
-//             status: "success", message: 'Cart item removed from cart', data: {
-//                 cart,
-//                 cartItem
-//             }
-//         });
-//     } catch (error) {
-//         res.status(500).json({ status: "error", message: 'Error removing from cart' });
-//     }
-// };
-
-// Checkout
-// export const checkout = async (req: Request, res: Response) => {
-//     const { cartId } = req.body;
-
-//     try {
-//         const cart = await Cart.findOne({ where: { id: cartId } });
-
-//         if (!cart || cart.totalItems === 0) {
-//             return res.status(400).json({ message: 'Cart is empty' });
-//         }
-
-//         const order = await Order.create({
-//             customerId: cart.customerId,
-//             totalAmount: cart.totalAmount,
-//             totalItems: cart.totalItems,
-//             createdBy: 'system',
-//             updatedBy: 'system'
-//         }).save();
-
-//         const orderItems = [];
-//         for (const cartItem of cart.cartItemBookings) {
-//             const orderItemBooking = await OrderItemBooking.create({
-//                 orderId: order.id,
-//                 sectorId: cartItem.sectorId,
-//                 customerId: cartItem.customerId,
-//                 serviceProviderId: cartItem.serviceProviderId,
-//                 serviceId: cartItem.serviceId,
-//                 status: 'Pending',
-//                 note: cartItem.additionalNote,
-//                 price: cartItem.price,
-//                 deliveryDate: cartItem.deliveryDate,
-//                 deliveryTime: cartItem.deliveryTime,
-//                 deliveryAddress: cartItem.deliveryAddress,
-//                 additionalNote: cartItem.additionalNote,
-//                 createdBy: 'system',
-//                 updatedBy: 'system'
-//             }).save();
-//             orderItems.push(orderItemBooking);
-
-//             await ServiceJob.create({
-//                 orderItemBookingId: orderItemBooking.id,
-//                 customerId: cartItem.customerId,
-//                 serviceProviderId: cartItem.serviceProviderId,
-//                 status: 'Pending',
-//                 note: cartItem.additionalNote,
-//                 createdBy: 'system',
-//                 updatedBy: 'system'
-//             }).save();
-//         }
-
-//         await CartItemBooking.delete({ cartId: cart.id });
-//         await Cart.delete({ id: cart.id });
-
-//         res.status(200).json({ status: "success", message: 'Checkout successful', data: { order, orderItems } });
-//     } catch (error) {
-//         res.status(500).json({ status: "error", message: 'Error during checkout' });
-//     }
-// };
 
 // Cancel OrderItemBooking
-// export const cancelOrderItemBooking = async (req: Request, res: Response) => {
-//     const { orderItemId, reason, createdBy, updatedBy } = req.body;
+export const cancelOrderItemBooking = async (req: Request, res: Response) => {
 
-//     try {
+    const { orderItemBookingId, reason, updatedBy } = req.body;
 
-//         const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemId } });
+    const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+    const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
 
-//         if (!orderItemBooking) {
-//             return res.status(404).json({ message: 'Order item booking not found' });
-//         }
+    try {
+        // Find the order item booking by its ID
+        const orderItemBooking = await orderItemBookingRepository.findOne({
+            where: { id: orderItemBookingId },
+            relations: ['serviceJobs'] // Load related service jobs, if any
+        });
 
-//         const cancelledBooking = CancelledBooking.create({
-//             orderId: orderItemBooking.orderId,
-//             bookingId: orderItemBooking.id,
-//             customerId: orderItemBooking.customerId,
-//             serviceProviderId: orderItemBooking.serviceProviderId,
-//             reason,
-//             createdBy: createdBy || 'system',
-//             updatedBy: updatedBy || 'system'
-//         });
+        if (!orderItemBooking) {
+            return res.status(404).json({ message: 'Order item booking not found' });
+        }
 
-//         await cancelledBooking.save();
+        // Check if the order has already been cancelled or completed
+        if (orderItemBooking.status === 'Cancelled' || orderItemBooking.status === 'Completed') {
+            return res.status(400).json({
+                message: `Order is already ${orderItemBooking.status} and cannot be cancelled`
+            });
+        }
 
-//         orderItemBooking.status = 'Cancelled';
-//         orderItemBooking.updatedBy = updatedBy || 'system';
-//         await orderItemBooking.save();
+        // Update the status to "Cancelled" and record the reason and cancellation details
+        orderItemBooking.status = 'Cancelled';
+        orderItemBooking.reasonIfCancelled = reason;
+        orderItemBooking.updatedBy = updatedBy || 'system';
 
-//         const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemBooking.id } });
+        // Cancel the associated service job if exists
+        let serviceJob;
+        if (orderItemBooking.serviceJobs) {
+            serviceJob = await serviceJobRepository.findOne({
+                where: { orderItemBookingId: orderItemBooking.id }
+            });
 
-//         if (serviceJob) {
-//             serviceJob.status = 'Cancelled';
-//             serviceJob.updatedBy = updatedBy || 'system';
-//             await serviceJob.save();
-//         }
+            if (serviceJob) {
+                serviceJob.status = 'Cancelled';
+                serviceJob.reasonIfCancelledByCustomer = reason;
+                serviceJob.updatedBy = updatedBy || 'system';
+                await serviceJob.save();
+            }
+        }
 
-//         res.status(200).json({ status: "success", message: 'Order item booking cancelled successfully', data: { orderItemBooking, cancelledBooking } });
-//     } catch (error) {
-//         res.status(500).json({ message: 'Error cancelling order item booking', error });
-//     }
-// };
+        // Save the changes to the order item booking
+        await orderItemBooking.save();
+
+        return res.status(200).json({ status: "success", message: 'Order item booking successfully cancelled', data: { orderItemBooking, serviceJob } });
+
+    } catch (error) {
+        console.error('Error cancelling order item booking:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 // Reschedule OrderItemBooking
-// export const rescheduleOrderItemBooking = async (req: Request, res: Response) => {
-//     const { orderItemId, newDeliveryDate, newDeliveryTime, reason, createdBy, updatedBy } = req.body;
 
-//     try {
+export const rescheduleOrder = async (req: Request, res: Response) => {
+    const { orderId, newDeliveryDate, newDeliveryTime, reason = 'No reason available !', createdBy, updatedBy } = req.body;
 
-//         const orderItemBooking = await OrderItemBooking.findOne({ where: { id: orderItemId } });
+    try {
 
-//         if (!orderItemBooking) {
-//             return res.status(404).json({ message: 'Order item booking not found' });
-//         }
+        const orderRepository = AppDataSource.getRepository(Order);
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+        const rescheduledBookingRepository = AppDataSource.getRepository(RescheduledBooking);
 
-//         const newOrderItemBooking = await OrderItemBooking.create({
-//             orderId: orderItemBooking.orderId,
-//             sectorId: orderItemBooking.sectorId,
-//             customerId: orderItemBooking.customerId,
-//             serviceProviderId: orderItemBooking.serviceProviderId,
-//             serviceId: orderItemBooking.serviceId,
-//             status: 'Pending',
-//             note: orderItemBooking.note,
-//             price: orderItemBooking.price,
-//             deliveryDate: newDeliveryDate,
-//             deliveryTime: newDeliveryTime,
-//             deliveryAddress: orderItemBooking.deliveryAddress,
-//             additionalNote: orderItemBooking.additionalNote,
-//             createdBy: createdBy || 'system',
-//             updatedBy: updatedBy || 'system'
-//         }).save();
+        // Fetch all order item bookings related to the order
 
-//         const rescheduledBooking = await RescheduledBooking.create({
-//             orderId: orderItemBooking.orderId,
-//             prevBookingId: orderItemBooking.id,
-//             newBookingId: newOrderItemBooking.id,
-//             customerId: orderItemBooking.customerId,
-//             serviceProviderId: orderItemBooking.serviceProviderId,
-//             reason,
-//             createdBy: createdBy || 'system',
-//             updatedBy: updatedBy || 'system'
-//         }).save();
+        const order = await orderRepository.findOne({ where: { id: orderId } });
+        if (!order) {
+            res.status(400).json({ status: "error", message: "No order present with this id" });
+            return;
+        }
 
-//         orderItemBooking.status = 'Rescheduled';
-//         orderItemBooking.updatedBy = updatedBy || 'system';
-//         await orderItemBooking.save();
+        const orderItemBooking = await orderItemBookingRepository.findOne({ where: { orderId } });
+        if (!orderItemBooking) {
+            res.status(400).json({ status: "error", message: "No orderItemBooking present with this id" });
+            return;
+        }
 
-//         const oldServiceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemBooking.id } });
+        const newOrder = await orderRepository.create({
+            customerId: order.customerId,
+            totalAmount: order.totalAmount,
+            totalItems: order.totalItems,
+            totalTax: order.totalTax,
+        }).save();
 
-//         if (oldServiceJob) {
-//             oldServiceJob.status = 'Rescheduled';
-//             oldServiceJob.updatedBy = updatedBy || 'system';
-//             await oldServiceJob.save();
-//         }
-
-//         await ServiceJob.create({
-//             orderItemBookingId: newOrderItemBooking.id,
-//             customerId: newOrderItemBooking.customerId,
-//             serviceProviderId: newOrderItemBooking.serviceProviderId,
-//             status: 'Pending',
-//             note: newOrderItemBooking.note,
-//             createdBy: createdBy || 'system',
-//             updatedBy: updatedBy || 'system'
-//         }).save();
-
-//         res.status(200).json({ status: "success", message: 'Order item booking rescheduled successfully', data: { rescheduledBooking, newOrderItemBooking } });
-//     } catch (error) {
-//         res.status(500).json({ status: "error", message: 'Error rescheduling order item booking' });
-//     }
-// };
+        // Create a new order item booking for each rescheduled one
+        const newOrderItemBooking = await orderItemBookingRepository.create({
+            orderId: newOrder.id,
+            sectorId: orderItemBooking.sectorId,
+            customerId: orderItemBooking.customerId,
+            serviceProviderId: orderItemBooking.serviceProviderId,
+            providedServiceId: orderItemBooking.providedServiceId,
+            status: 'Pending',
+            workDetails: orderItemBooking.workDetails,
+            price: orderItemBooking.price,
+            mrp: orderItemBooking.mrp,
+            discountAmount: orderItemBooking.discountAmount,
+            discountPercentage: orderItemBooking.discountPercentage,
+            cgstPercentage: orderItemBooking.cgstPercentage,
+            sgstPercentage: orderItemBooking.sgstPercentage,
+            totalTax: orderItemBooking.totalTax,
+            totalPrice: orderItemBooking.totalPrice,
+            deliveryDate: newDeliveryDate,
+            deliveryTime: newDeliveryTime,
+            deliveryAddressId: orderItemBooking.deliveryAddressId,
+            additionalNote: orderItemBooking.additionalNote,
+            createdBy: createdBy || 'system',
+            updatedBy: updatedBy || 'system'
+        }).save();
 
 
+        // Create a rescheduled booking record
+        const rescheduledBooking = await rescheduledBookingRepository.create({
+            prevOrderId: orderItemBooking.orderId,
+            newOrderId: newOrderItemBooking.orderId,
+            prevBookingId: orderItemBooking.id,
+            newBookingId: newOrderItemBooking.id,
+            customerId: orderItemBooking.customerId,
+            serviceProviderId: orderItemBooking.serviceProviderId,
+            reason,
+            createdBy: createdBy || 'system',
+            updatedBy: updatedBy || 'system'
+        }).save();
+
+        // Update the status of the old order item booking
+        orderItemBooking.status = 'Rescheduled';
+        orderItemBooking.updatedBy = updatedBy || 'system';
+        await orderItemBooking.save();
+
+        // Update the service job associated with the old order item booking
+        const oldServiceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemBooking.id } });
+
+        if (oldServiceJob) {
+            oldServiceJob.status = 'Rescheduled';
+            oldServiceJob.reasonIfReschedueledByCustomer = reason;
+            oldServiceJob.updatedBy = updatedBy || 'system';
+            await oldServiceJob.save();
+        }
+
+        // Create a new service job for the new booking
+        const newServiceJob = await ServiceJob.create({
+            orderItemBookingId: newOrderItemBooking.id,
+            jobId: newOrderItemBooking.OrderItemId,
+            customerId: newOrderItemBooking.customerId,
+            serviceProviderId: newOrderItemBooking.serviceProviderId,
+            status: 'Pending',
+            workDetails: newOrderItemBooking.workDetails,
+            additionalNote: newOrderItemBooking.additionalNote || '',
+            price: newOrderItemBooking.price,
+            mrp: newOrderItemBooking.mrp,
+            discountPercentage: newOrderItemBooking.discountPercentage,
+            discountAmount: newOrderItemBooking.discountAmount,
+            cgstPercentage: newOrderItemBooking.cgstPercentage,
+            sgstPercentage: newOrderItemBooking.sgstPercentage,
+            totalTax: newOrderItemBooking.totalTax,
+            totalPrice: newOrderItemBooking.totalPrice,
+            deliveryDate: newOrderItemBooking.deliveryDate,
+            deliveryTime: newOrderItemBooking.deliveryTime,
+            deliveryAddressId: newOrderItemBooking.deliveryAddressId,
+            createdBy: createdBy || 'system',
+            updatedBy: updatedBy || 'system'
+        }).save();
+
+        res.status(200).json({ status: 'success', message: 'Order rescheduled successfully', data: { rescheduledBooking, newOrderItemBooking, newServiceJob } });
+    }
+    catch (error) {
+        res.status(500).json({ status: 'error', message: 'Error rescheduling order' });
+    }
+} 
