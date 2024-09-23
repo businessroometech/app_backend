@@ -269,7 +269,7 @@ export const addToCart = async (req: Request, res: Response) => {
             serviceProviderId,
             providedServiceId,
             workDetails,
-            mrp, // Ensure this is passed as a number
+            mrp, 
             deliveryDate,
             deliveryTime,
             deliveryAddressId,
@@ -360,116 +360,6 @@ export const fetchCartItem = async (req: Request, res: Response) => {
         return res.status(500).json({ message: 'Error fetching item from cart', error });
     }
 }
-
-// export const convertCartToOrder = async (req: Request, res: Response) => {
-//     const { cartId, userId } = req.body;
-
-//     try {
-//         const cartRepository = AppDataSource.getRepository(Cart);
-//         const orderRepository = AppDataSource.getRepository(Order);
-//         const cartItemBookingRepository = AppDataSource.getRepository(CartItemBooking);
-//         const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
-//         const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
-
-//         const cart = await cartRepository.findOne({
-//             where: { id: cartId, customerId: userId },
-//             relations: ['cartItemBookings']  // Ensure that cart items are fetched
-//         });
-
-//         if (!cart) {
-//             return res.status(404).json({ message: 'Cart not found' });
-//         }
-
-//         const order = new Order();
-//         order.customerId = cart.customerId;
-//         order.totalAmount = cart.totalAmount;
-//         order.totalTax = cart.totalTax;
-//         order.totalItems = cart.totalItems;
-//         order.createdBy = 'system';
-//         order.updatedBy = 'system';
-//         await order.save();
-
-//         const orderItems: OrderItemBooking[] = [];
-//         const serviceJobs: ServiceJob[] = [];
-
-//         for (const cartItem of cart.cartItemBookings) {
-//             // Create OrderItemBooking
-//             const orderItem = new OrderItemBooking();
-//             orderItem.orderId = order.id;
-//             orderItem.sectorId = cartItem.sectorId;
-//             orderItem.customerId = cartItem.customerId;
-//             orderItem.serviceProviderId = cartItem.serviceProviderId;
-//             orderItem.providedServiceId = cartItem.providedServiceId;
-//             orderItem.workDetails = cartItem.workDetails;
-//             orderItem.price = cartItem.price;
-//             orderItem.mrp = cartItem.mrp;
-//             orderItem.discountPercentage = cartItem.discountPercentage;
-//             orderItem.discountAmount = cartItem.discountAmount;
-//             orderItem.cgstPercentage = cartItem.cgstPercentage;
-//             orderItem.sgstPercentage = cartItem.sgstPercentage;
-//             orderItem.totalTax = cartItem.totalTax;
-//             orderItem.totalPrice = cartItem.totalPrice;
-//             orderItem.deliveryDate = cartItem.deliveryDate;
-//             orderItem.deliveryTime = cartItem.deliveryTime;
-//             orderItem.deliveryAddressId = cartItem.deliveryAddressId;
-//             orderItem.additionalNote = cartItem.additionalNote || '';
-//             orderItem.status = 'Pending';
-//             orderItem.createdBy = 'system';
-//             orderItem.updatedBy = 'system';
-
-//             orderItems.push(orderItem);
-
-//             // Create ServiceJob for the OrderItemBooking
-//             const serviceJob = new ServiceJob();
-//             serviceJob.orderItemBookingId = orderItem.id;
-//             serviceJob.customerId = orderItem.customerId;
-//             serviceJob.serviceProviderId = orderItem.serviceProviderId;
-//             serviceJob.jobId = orderItem.OrderItemId;
-//             serviceJob.status = 'Pending';
-//             serviceJob.workDetails = orderItem.workDetails;
-//             serviceJob.additionalNote = orderItem.additionalNote || '';
-//             serviceJob.price = orderItem.price;
-//             serviceJob.mrp = orderItem.mrp;
-//             serviceJob.discountPercentage = orderItem.discountPercentage;
-//             serviceJob.discountAmount = orderItem.discountAmount;
-//             serviceJob.cgstPercentage = orderItem.cgstPercentage;
-//             serviceJob.sgstPercentage = orderItem.sgstPercentage;
-//             serviceJob.totalTax = orderItem.totalTax;
-//             serviceJob.totalPrice = orderItem.totalPrice;
-//             serviceJob.deliveryDate = orderItem.deliveryDate;
-//             serviceJob.deliveryTime = orderItem.deliveryTime;
-//             serviceJob.deliveryAddressId = orderItem.deliveryAddressId;
-//             serviceJob.reasonIfRejected = '';
-//             serviceJob.createdBy = 'system';
-//             serviceJob.updatedBy = 'system';
-
-//             serviceJobs.push(serviceJob);
-//         }
-
-//         // Save all OrderItemBookings
-//         await orderItemBookingRepository.save(orderItems);
-
-//         await serviceJobRepository.save(serviceJobs);
-
-//         // Remove cart item bookings first
-//         await cartItemBookingRepository.remove(cart.cartItemBookings);
-//         // Then remove the cart
-//         await cartRepository.remove(cart);
-
-//         return res.status(200).json({
-//             status: "success",
-//             message: 'Cart converted to order and service jobs created successfully',
-//             data: {
-//                 order,
-//                 orderItems,
-//                 serviceJobs
-//             }
-//         });
-//     } catch (error) {
-//         console.error('Error converting cart to order and creating service jobs:', error);
-//         return res.status(500).json({ message: 'Internal server error' });
-//     }
-// };
 
 export const convertCartToOrder = async (req: Request, res: Response) => {
     const { cartId, userId } = req.body;
@@ -758,6 +648,7 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
         res.status(200).json({ status: 'success', message: 'Order rescheduled successfully', data: { rescheduledBooking, newOrderItemBooking, newServiceJob } });
     }
     catch (error) {
+        console.log(error);
         res.status(500).json({ status: 'error', message: 'Error rescheduling order' });
     }
 } 

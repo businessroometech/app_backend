@@ -35,8 +35,8 @@ export const getYourServices = async (req: Request, res: Response) => {
             status,
             priceStart = '0',   // Default value
             priceEnd = '100000', // Default value
-            dateStart = '1870-01-01T00:00:00.000Z', // Epoch start date as ISO string
-            dateEnd = new Date().toISOString(),    // Current date as ISO string
+            dateStart = '2000-01-01T00:00:00.000Z', // Epoch start date as ISO string
+            dateEnd = '9000-11-01T00:00:00.000Z',    // Current date as ISO string
             subCategory,
             page = '1',    // Default to first page
             limit = '10'   // Default limit
@@ -57,7 +57,7 @@ export const getYourServices = async (req: Request, res: Response) => {
         let whereClause: any = {
             status: status as string,
             serviceProviderId: userId,
-            price: Between(parsedPriceStart, parsedPriceEnd),
+            mrp: Between(parsedPriceStart, parsedPriceEnd),
             deliveryDate: BetweenDates(dateStart as string, dateEnd as string),
         };
 

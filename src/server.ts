@@ -49,6 +49,7 @@ import { RefreshToken } from './api/entity/others/RefreshToken';
 import { ProvidedProduct } from './api/entity/orderManagement/serviceProvider/product/ProvidedProduct';
 import { DocumentUpload } from './api/entity/profile/DocumentUpload';
 import { UserAddress } from './api/entity/user/UserAddress';
+import { RescheduledBooking } from './api/entity/orderManagement/customer/RescheduledBooking';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -58,7 +59,7 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken,  UserAddress],
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken,  UserAddress, RescheduledBooking],
   synchronize: true,
     // ... other TypeORM configuration options (entities, synchronize, etc.)
 });

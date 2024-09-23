@@ -23,7 +23,7 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: 'uuid' })
     serviceProviderId!: string;
 
-    @Column({ type: "enum", enum: ["Pending", "Accepted", "Rejected", "InProcess", "Completed", "Cancelled"], default: "Pending" })
+    @Column({ type: "enum", enum: ["Pending", "Accepted", "Rejected", "InProcess", "Completed", "Cancelled", "Rescheduled"], default: "Pending" })
     status!: string;
 
     @Column({ type: "text" })
