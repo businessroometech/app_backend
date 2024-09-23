@@ -314,6 +314,7 @@ export const getProvidedService = async (req: Request, res: Response) => {
 
         const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
         const serviceRepository = AppDataSource.getRepository(Service);
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
 
         let providedService;
         if (id) {
@@ -329,6 +330,11 @@ export const getProvidedService = async (req: Request, res: Response) => {
             if (providedService) {
                 const serviceDetails = await serviceRepository.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
+
+                const totalOrderCount = await orderItemBookingRepository.count({
+                    where: { providedServiceId: providedService.id, status: 'Completed' }
+                });
+                (providedService as any)['totalOrderCount'] = totalOrderCount;
             }
         } else {
             const providedServices = await providedServiceRepository.find({
@@ -343,6 +349,14 @@ export const getProvidedService = async (req: Request, res: Response) => {
             for (let providedService of providedServices) {
                 const serviceDetails = await serviceRepository.find({ where: { id: In(providedService.serviceIds) } });
                 providedService['services'] = serviceDetails;
+
+                const totalOrderCount = await orderItemBookingRepository.count({
+                    where: {
+                        providedServiceId: providedService.id,
+                        status: 'Completed',
+                    }
+                });
+                (providedService as any)['totalOrderCount'] = totalOrderCount;
             }
 
             return res.status(200).json({

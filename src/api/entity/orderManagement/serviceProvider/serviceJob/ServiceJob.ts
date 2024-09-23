@@ -110,7 +110,7 @@ export class ServiceJob extends BaseEntity {
             this.customerMobileNumber = personalDetails.mobileNumber;
         };
 
-        const orderItem = await OrderItemBooking.findOne({ where: { id: this.orderItemBookingId }, relations: ['providedService'] });
+        const orderItem = await OrderItemBooking.findOne({ where: { id: this.orderItemBookingId }, relations: ['providedService', 'providedService.subCategory'] });
         if (orderItem && orderItem.providedService) {
             // const subCategory = await SubCategory.findOne({ where: { id: orderItem.providedService.sub }});
             this.serviceCategory = orderItem.providedService.subCategory.subCategoryName;
