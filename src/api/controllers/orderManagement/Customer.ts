@@ -347,7 +347,7 @@ export const fetchCartItem = async (req: Request, res: Response) => {
 
         const cartItemBookingRepository = AppDataSource.getRepository(CartItemBooking);
 
-        const cartItem = await cartItemBookingRepository.find({ where: { id: cartItemBookingId, cartId }, relations: ['providedService', 'providedService.subCategory'] })
+        const cartItem = await cartItemBookingRepository.findOne({ where: { id: cartItemBookingId, cartId }, relations: ['providedService', 'providedService.subCategory'] })
 
         if (!cartItem) {
             res.status(401).json({ status: "error", message: "No item is present in the Cart" });
