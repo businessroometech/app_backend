@@ -15,6 +15,8 @@ import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
 import { EducationalDetails } from '@/api/entity/profile/educational/other/EducationalDetails';
 import { Service } from '@/api/entity/sector/Service';
 import { UserAddress } from '@/api/entity/user/UserAddress';
+import { FindOptionsWhere, In } from 'typeorm';
+import { format } from 'date-fns';
 
 
 
@@ -269,7 +271,7 @@ export const addToCart = async (req: Request, res: Response) => {
             serviceProviderId,
             providedServiceId,
             workDetails,
-            mrp, 
+            mrp,
             deliveryDate,
             deliveryTime,
             deliveryAddressId,
@@ -473,6 +475,52 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error converting cart to order and creating service jobs:', error);
         return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
+// fetch order history
+
+export const fetchOrderHistory = async (req: Request, res: Response) => {
+    try {
+        const { type = 'scheduled', onDate } = req.query;
+        const { customerId } = req.body;
+
+        if (!customerId) {
+            return res.status(400).json({ status: "error", message: "Customer ID is required." });
+        }
+
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+
+        let query: FindOptionsWhere<OrderItemBooking> = { customerId };
+
+        // If onDate is provided, validate and apply the filter
+        if (onDate) {
+            const parsedDate = new Date(onDate as string);
+            const formattedDate = format(parsedDate, 'yyyy-MM-dd'); // Since it's a date column, no need for time part
+            query = { ...query, deliveryDate: formattedDate };
+          }
+
+        // Handle the 'type' query filter
+        if (type === 'scheduled') {
+            query = { ...query, status: In(['Pending', 'Assigned']) as any }; // Cast In() as any or FindOperator<string>
+          } else {
+            query = { ...query, status: In(['Rejected', 'Completed', 'Cancelled', 'Rescheduled']) as any }; // Adjust statuses accordingly
+          }
+        // Fetch and count the results
+        const [orderItems, count] = await orderItemBookingRepository.findAndCount({ where: query });
+
+        res.status(200).json({
+            status: "success",
+            message: "",
+            data: {
+                orderItems,
+                count,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching order history:', error);
+        res.status(500).json({ status: "error", message: "Internal Server Error" });
     }
 };
 
