@@ -75,6 +75,10 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 return res.status(200).json({
                     status: "success",
                     message: "Payment verification and order creation successful",
+                    data: {
+                        order: response.data.data.order,
+                        orderItemBookings: response.data.data.orderItems
+                    }
                 });
             } catch (err) {
                 console.error('Error converting cart to order:', err);

@@ -478,6 +478,31 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     }
 };
 
+// fetch booking item
+export const fetchBookingItem = async (req: Request, res: Response) => {
+    try {
+
+        const { orderItemBookingId, orderId } = req.body;
+
+        if (!orderItemBookingId || !orderId) {
+            res.status(401).json({ status: "error", message: "orderItemBookingId or orderId is required" });
+        }
+
+        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+
+        const orderItem = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId, orderId }, relations: ['providedService', 'providedService.subCategory'] })
+
+        if (!orderItem) {
+            res.status(401).json({ status: "error", message: "No booked item is present" });
+        }
+
+        res.status(200).json({ status: "success", message: "Successfully fetched the booked item", data: { orderItem } })
+    }
+    catch (error) {
+        console.error('Error fetching booked item :', error);
+        return res.status(500).json({ message: 'Error fetching booked item ', error });
+    }
+}
 
 // fetch order history
 
@@ -499,14 +524,14 @@ export const fetchOrderHistory = async (req: Request, res: Response) => {
             const parsedDate = new Date(onDate as string);
             const formattedDate = format(parsedDate, 'yyyy-MM-dd'); // Since it's a date column, no need for time part
             query = { ...query, deliveryDate: formattedDate };
-          }
+        }
 
         // Handle the 'type' query filter
         if (type === 'scheduled') {
             query = { ...query, status: In(['Pending', 'Assigned']) as any }; // Cast In() as any or FindOperator<string>
-          } else {
+        } else {
             query = { ...query, status: In(['Rejected', 'Completed', 'Cancelled', 'Rescheduled']) as any }; // Adjust statuses accordingly
-          }
+        }
         // Fetch and count the results
         const [orderItems, count] = await orderItemBookingRepository.findAndCount({ where: query });
 

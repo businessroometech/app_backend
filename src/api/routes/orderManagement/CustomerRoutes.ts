@@ -15,7 +15,8 @@ import {
     convertCartToOrder,
     cancelOrderItemBooking,
     rescheduleOrder,
-    fetchOrderHistory
+    fetchOrderHistory,
+    fetchBookingItem
 } from '@/api/controllers/orderManagement/Customer';
 
 const Router = express.Router();
@@ -31,6 +32,7 @@ Router.post('/add-or-update-address', addOrUpdateAddress);
 
 Router.post('/add-to-cart', addToCart);
 Router.post('/get-cart-item', fetchCartItem);
+Router.post('/get-booked-item', fetchBookingItem);
 Router.post('/cart-to-order', convertCartToOrder);
 Router.post('/reschedule', rescheduleOrder);
 Router.post('/cancel', cancelOrderItemBooking);
