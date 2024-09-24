@@ -49,13 +49,13 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
         const { razorpay_payment_id, razorpay_order_id, razorpay_signature, cartId, userId } = req.body;
 
-        // const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
+        const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
 
-        // let hmac = crypto.createHmac('sha256', key_secret);
-        // hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
-        // let generated_signature = hmac.digest('hex');
+        let hmac = crypto.createHmac('sha256', key_secret);
+        hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
+        let generated_signature = hmac.digest('hex');
 
-        // if (generated_signature === razorpay_signature) {
+        if (generated_signature === razorpay_signature) {
             // valid signature
 
             // save to DB   
@@ -83,10 +83,10 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     message: "Payment verified but failed to convert cart to order",
                 });
             }
-        // }
-        // else {
-        //     res.status(400).json({ status: "error", message: "signature verification failed" });
-        // }
+        }
+        else {
+            res.status(400).json({ status: "error", message: "signature verification failed" });
+        }
 
     } catch (error) {
         console.error('Error verifying payment:', error);
