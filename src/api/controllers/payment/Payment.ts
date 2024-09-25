@@ -3,7 +3,6 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import axios from 'axios';
 import { Transaction } from '@/api/entity/payment/Transaction';
-import { TransactionLog } from '@/api/entity/payment/TransactionLog';
 import { AppDataSource } from '@/server';
 
 // initializing razorpay
@@ -48,35 +47,37 @@ export const createOrder = async (req: Request, res: Response) => {
 }
 
 
-// export const addTransactionAndLog = async (
-//     transactionData: Partial<Transaction>,
-//     logData: Partial<TransactionLog>
-// ) => {
-//     try {
+export const addTransactionAndLog = async (
+    transactionData: Partial<Transaction>
+) => {
+    try {
 
-//         const transactionRepository = AppDataSource.getRepository(Transaction);
-//         const transactionLogRepository = AppDataSource.getRepository(TransactionLog);
+        const transactionRepository = AppDataSource.getRepository(Transaction);
 
-//         const transaction = transactionRepository.create(transactionData);
-//         await transaction.save();
+        const transaction = transactionRepository.create(transactionData);
+        await transaction.save();
 
-//         // Set the transaction ID in the log data
-//         logData.transactionId = (transaction as Transaction).id;
+        return transaction;
 
-//         // Create and save the transaction log
-//         const transactionLog = transactionLogRepository.create(logData);
-//         await transactionLog.save();
-
-//         return transaction; // Optionally return the transaction if needed
-//     } catch (error) {
-//         console.error('Error processing transaction and log:', error);
-//         throw new Error('Transaction and log processing failed');
-//     }
-// };
+    } catch (error) {
+        console.error('Error processing transaction :', error);
+        throw new Error('Transaction processing failed');
+    }
+};
 
 export const verifyPayment = async (req: Request, res: Response) => {
     try {
-        const { razorpay_payment_id, razorpay_order_id, razorpay_signature, cartId, userId, amount, currency } = req.body;
+        const {
+            razorpay_payment_id,
+            razorpay_order_id,
+            razorpay_signature,
+            cartId,
+            userId,
+            amount,
+            currency,
+            paymentMethod // New field for payment method 
+        } = req.body;
+
         const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
 
         let hmac = crypto.createHmac('sha256', key_secret);
@@ -97,28 +98,20 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     }
                 );
 
-                // Prepare transaction data for successful payment
-                // const transactionData = {
-                //     userId,
-                //     orderId: response.data.data.order.id,
-                //     currency,
-                //     method: 'Razorpay',
-                //     razorpayOrderId: razorpay_order_id,
-                //     razorpayPaymentId: razorpay_payment_id,
-                //     amount,
-                //     transactionType: 'Payment' as 'Payment',
-                //     status: 'Success',
-                //     createdBy: 'system'
-                // };
+                const transactionData = {
+                    userId,
+                    orderId: response.data.data.order.id,
+                    currency,
+                    method: paymentMethod,
+                    razorpayOrderId: razorpay_order_id,
+                    razorpayPaymentId: razorpay_payment_id,
+                    amount,
+                    transactionType: 'Payment' as 'Payment',
+                    status: 'Success',
+                    createdBy: 'system'
+                };
 
-                // const logData = {
-                //     event: 'PaymentSuccess' as 'PaymentSuccess',
-                //     details: { razorpay_payment_id, razorpay_order_id },
-                //     createdBy: 'system'
-                // };
-
-                // // Add transaction and log for successful payment
-                // await addTransactionAndLog(transactionData, logData);
+                await addTransactionAndLog(transactionData);
 
                 return res.status(200).json({
                     status: "success",
@@ -131,26 +124,19 @@ export const verifyPayment = async (req: Request, res: Response) => {
             } catch (err: any) {
                 console.error('Error converting cart to order:', err);
 
-                // Prepare transaction data for failed cart conversion
-                // const transactionData = {
-                //     userId,
-                //     razorpayOrderId: razorpay_order_id,
-                //     razorpayPaymentId: razorpay_payment_id,
-                //     amount,
-                //     currency,
-                //     transactionType: 'Payment' as 'Payment',
-                //     status: 'Failed',
-                //     createdBy: 'system'
-                // };
+                const transactionData = {
+                    userId,
+                    razorpayOrderId: razorpay_order_id,
+                    razorpayPaymentId: razorpay_payment_id,
+                    amount,
+                    currency,
+                    method: paymentMethod,
+                    transactionType: 'Payment' as 'Payment',
+                    status: 'Failed',
+                    createdBy: 'system'
+                };
 
-                // const logData = {
-                //     event: 'PaymentFailure' as 'PaymentFailure',
-                //     details: { razorpay_payment_id, razorpay_order_id, error: err.message },
-                //     createdBy: 'system'
-                // };
-
-                // // Add transaction and log for failed cart conversion
-                // await addTransactionAndLog(transactionData, logData);
+                await addTransactionAndLog(transactionData);
 
                 return res.status(400).json({
                     status: "error",
@@ -159,24 +145,18 @@ export const verifyPayment = async (req: Request, res: Response) => {
             }
         } else {
             // Invalid signature
-            // const transactionData = {
-            //     razorpayOrderId: razorpay_order_id,
-            //     razorpayPaymentId: razorpay_payment_id,
-            //     amount,
-            //     currency,
-            //     transactionType: 'Payment' as 'Payment',
-            //     status: 'Failed',
-            //     createdBy: 'system'
-            // };
+            const transactionData = {
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+                amount,
+                currency,
+                method: paymentMethod,
+                transactionType: 'Payment' as 'Payment',
+                status: 'Failed',
+                createdBy: 'system'
+            };
 
-            // const logData = {
-            //     event: 'PaymentFailure' as 'PaymentFailure',
-            //     details: { razorpay_payment_id, razorpay_order_id, error: 'Signature verification failed' },
-            //     createdBy: 'system'
-            // };
-
-            // // Add transaction and log for signature verification failure
-            // await addTransactionAndLog(transactionData, logData);
+            await addTransactionAndLog(transactionData);
 
             return res.status(400).json({ status: "error", message: "Signature verification failed" });
         }
@@ -186,6 +166,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
 };
+
 
 // export const verifyPayment = async (req: Request, res: Response) => {
 //     try {

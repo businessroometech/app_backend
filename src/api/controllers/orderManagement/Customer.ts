@@ -125,7 +125,6 @@ interface SlotAccumulator {
     evening: string[]
 }
 
-// Controller function to get available time slots for a given date
 export const getAvailableTimeSlots = async (req: Request, res: Response) => {
     try {
         const { date } = req.params;
@@ -134,20 +133,17 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Please provide a valid delivery date' });
         }
 
-        // Fetch all service jobs for the given delivery date
         const bookedJobs = await ServiceJob.find({
             where: {
-                deliveryDate: date as string,  // Convert date to string
-                status: 'Accepted',  // Only consider accepted jobs as booked
+                deliveryDate: date as string,
+                status: 'Accepted',
             },
-            select: ['deliveryTime'],  // Only select the deliveryTime field in the same format "8:00 AM - 9:00 AM"
+            select: ['deliveryTime'],
         });
 
-        // Extract the already booked times from the fetched jobs
         const bookedTimes = bookedJobs.map(job => job.deliveryTime);
         console.log("Booked Times:", bookedTimes);
 
-        // Filter out the booked time slots from the available ones
         const availableSlots = timeSlots.filter(slot => !bookedTimes.includes(slot));
         console.log("Available Times:", availableSlots);
 
@@ -168,7 +164,6 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
             return acc;
         }, { morning: [], afternoon: [], evening: [] });
 
-        // Return the available time slots
         return res.status(200).json({ status: "success", message: "Available time slots fetched successfully", data: { availableSlots: final } });
     } catch (error) {
         console.error('Error fetching available time slots:', error);
@@ -279,20 +274,24 @@ export const addToCart = async (req: Request, res: Response) => {
             attachments
         } = req.body;
 
-        const cartRepository = AppDataSource.getRepository(Cart);
-        // Step 1: Check if a Cart already exists for the given customerId
-        let cart = await cartRepository.findOne({ where: { customerId } });
+        if (!customerId) return res.status(400).json({ message: 'Customer ID is required' });
+        if (!sectorId) return res.status(400).json({ message: 'Sector ID is required' });
+        if (!serviceProviderId) return res.status(400).json({ message: 'Service Provider ID is required' });
+        if (!providedServiceId) return res.status(400).json({ message: 'Provided Service ID is required' });
+        if (!workDetails) return res.status(400).json({ message: 'Work details are required' });
+        if (!mrp) return res.status(400).json({ message: 'MRP is required' });
+        if (!deliveryDate) return res.status(400).json({ message: 'Delivery date is required' });
+        if (!deliveryTime) return res.status(400).json({ message: 'Delivery time is required' });
+        if (!deliveryAddressId) return res.status(400).json({ message: 'Delivery Address ID is required' });
 
-        // Step 2: If the Cart does not exist, create a new one
-        if (!cart) {
-            cart = new Cart();
-            cart.customerId = customerId;
-            cart.totalAmount = 0; // Initialize to 0
-            cart.totalTax = 0;
-            cart.totalItems = 0; // Initialize to 0
-            cart.createdBy = 'system'; // Or use req.user if you have a user system
-            await cart.save();
-        }
+
+        const cart = new Cart();
+        cart.customerId = customerId;
+        cart.totalAmount = 0;
+        cart.totalTax = 0;
+        cart.totalItems = 0;
+        cart.createdBy = 'system';
+        await cart.save();
 
         // Step 3: Create a new CartItemBooking
         const cartItemBooking = new CartItemBooking();
@@ -302,28 +301,22 @@ export const addToCart = async (req: Request, res: Response) => {
         cartItemBooking.serviceProviderId = serviceProviderId;
         cartItemBooking.providedServiceId = providedServiceId;
         cartItemBooking.workDetails = workDetails;
-        cartItemBooking.mrp = parseFloat(mrp); // Ensure `mrp` is stored as a number
+        cartItemBooking.mrp = parseFloat(mrp);
         cartItemBooking.deliveryDate = deliveryDate;
         cartItemBooking.deliveryTime = deliveryTime;
         cartItemBooking.deliveryAddressId = deliveryAddressId;
         cartItemBooking.additionalNote = additionalNote || '';
         cartItemBooking.attachments = attachments || [];
-        cartItemBooking.createdBy = 'system'; // Or use req.user if applicable
-
-        // Save the CartItemBooking
+        cartItemBooking.createdBy = 'system';
         await cartItemBooking.save();
 
-        // Step 4: Update the Cart's totalItems and totalAmount
         cart.totalItems += 1;
-
-        // Ensure correct numerical addition
         cart.totalAmount = parseFloat(cart.totalAmount as any) + parseFloat(cartItemBooking.totalPrice as any);
         cart.totalTax = parseFloat(cart.totalTax as any) + parseFloat(cartItemBooking.totalTax as any);
 
-        cart.updatedBy = 'system'; // Or use req.user if applicable
+        cart.updatedBy = 'system';
         await cart.save();
 
-        // Step 5: Return the updated cart
         return res.status(201).json({
             status: "success",
             message: 'Item added to cart successfully',
@@ -367,22 +360,29 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     const { cartId, userId } = req.body;
 
     try {
+        if (!cartId || !userId) {
+            return res.status(401).json({ status: "error", message: "cartId or userId is required." });
+        }
+
         const cartRepository = AppDataSource.getRepository(Cart);
         const orderRepository = AppDataSource.getRepository(Order);
         const cartItemBookingRepository = AppDataSource.getRepository(CartItemBooking);
-        const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
-        const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
 
         const cart = await cartRepository.findOne({
             where: { id: cartId, customerId: userId },
-            relations: ['cartItemBookings']  // Ensure that cart items are fetched
+            relations: ['cartItemBookings']
         });
 
         if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
+            return res.status(401).json({ status: "error", message: 'Cart not found' });
         }
 
-        // Create a new Order
+        const cartItem = await cartItemBookingRepository.findOne({ where: { cartId, customerId: userId } });
+
+        if (!cartItem) {
+            return res.status(401).json({ status: "error", message: 'Cart Item not found' });
+        }
+
         const order = new Order();
         order.customerId = cart.customerId;
         order.totalAmount = cart.totalAmount;
@@ -392,84 +392,67 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
         order.updatedBy = 'system';
         await orderRepository.save(order);
 
-        const orderItems: OrderItemBooking[] = [];
+        const orderItem = new OrderItemBooking();
+        orderItem.orderId = order.id;
+        orderItem.sectorId = cartItem.sectorId;
+        orderItem.customerId = cartItem.customerId;
+        orderItem.serviceProviderId = cartItem.serviceProviderId;
+        orderItem.providedServiceId = cartItem.providedServiceId;
+        orderItem.workDetails = cartItem.workDetails;
+        orderItem.price = cartItem.price;
+        orderItem.mrp = cartItem.mrp;
+        orderItem.discountPercentage = cartItem.discountPercentage;
+        orderItem.discountAmount = cartItem.discountAmount;
+        orderItem.cgstPercentage = cartItem.cgstPercentage;
+        orderItem.sgstPercentage = cartItem.sgstPercentage;
+        orderItem.totalTax = cartItem.totalTax;
+        orderItem.totalPrice = cartItem.totalPrice;
+        orderItem.deliveryDate = cartItem.deliveryDate;
+        orderItem.deliveryTime = cartItem.deliveryTime;
+        orderItem.deliveryAddressId = cartItem.deliveryAddressId;
+        orderItem.additionalNote = cartItem.additionalNote || '';
+        orderItem.attachments = cartItem.attachments;
+        orderItem.status = 'Pending';
+        orderItem.createdBy = 'system';
+        orderItem.updatedBy = 'system';
+        await orderItem.save();
 
-        // First, create and save all OrderItemBooking entries
-        for (const cartItem of cart.cartItemBookings) {
-            const orderItem = new OrderItemBooking();
-            orderItem.orderId = order.id;
-            orderItem.sectorId = cartItem.sectorId;
-            orderItem.customerId = cartItem.customerId;
-            orderItem.serviceProviderId = cartItem.serviceProviderId;
-            orderItem.providedServiceId = cartItem.providedServiceId;
-            orderItem.workDetails = cartItem.workDetails;
-            orderItem.price = cartItem.price;
-            orderItem.mrp = cartItem.mrp;
-            orderItem.discountPercentage = cartItem.discountPercentage;
-            orderItem.discountAmount = cartItem.discountAmount;
-            orderItem.cgstPercentage = cartItem.cgstPercentage;
-            orderItem.sgstPercentage = cartItem.sgstPercentage;
-            orderItem.totalTax = cartItem.totalTax;
-            orderItem.totalPrice = cartItem.totalPrice;
-            orderItem.deliveryDate = cartItem.deliveryDate;
-            orderItem.deliveryTime = cartItem.deliveryTime;
-            orderItem.deliveryAddressId = cartItem.deliveryAddressId;
-            orderItem.additionalNote = cartItem.additionalNote || '';
-            orderItem.status = 'Pending';
-            orderItem.createdBy = 'system';
-            orderItem.updatedBy = 'system';
+        const serviceJob = new ServiceJob();
+        serviceJob.orderItemBookingId = orderItem.id;
+        serviceJob.customerId = orderItem.customerId;
+        serviceJob.serviceProviderId = orderItem.serviceProviderId;
+        serviceJob.jobId = orderItem.OrderItemId;
+        serviceJob.status = 'Pending';
+        serviceJob.workDetails = orderItem.workDetails;
+        serviceJob.additionalNote = orderItem.additionalNote || '';
+        serviceJob.price = orderItem.price;
+        serviceJob.mrp = orderItem.mrp;
+        serviceJob.discountPercentage = orderItem.discountPercentage;
+        serviceJob.discountAmount = orderItem.discountAmount;
+        serviceJob.cgstPercentage = orderItem.cgstPercentage;
+        serviceJob.sgstPercentage = orderItem.sgstPercentage;
+        serviceJob.totalTax = orderItem.totalTax;
+        serviceJob.totalPrice = orderItem.totalPrice;
+        serviceJob.deliveryDate = orderItem.deliveryDate;
+        serviceJob.deliveryTime = orderItem.deliveryTime;
+        serviceJob.deliveryAddressId = orderItem.deliveryAddressId;
+        serviceJob.attachments = orderItem.attachments;
+        serviceJob.reasonIfRejected = '';
+        serviceJob.createdBy = 'system';
+        serviceJob.updatedBy = 'system';
+        await serviceJob.save();
 
-            orderItems.push(orderItem);
-        }
-
-        // Save OrderItemBookings first
-        await orderItemBookingRepository.save(orderItems);
-
-        // Now that OrderItemBookings are saved, create ServiceJob entries
-        const serviceJobs: ServiceJob[] = [];
-
-        for (const orderItem of orderItems) {
-            const serviceJob = new ServiceJob();
-            serviceJob.orderItemBookingId = orderItem.id;  // Now we have the orderItem.id available
-            serviceJob.customerId = orderItem.customerId;
-            serviceJob.serviceProviderId = orderItem.serviceProviderId;
-            serviceJob.jobId = orderItem.OrderItemId;
-            serviceJob.status = 'Pending';
-            serviceJob.workDetails = orderItem.workDetails;
-            serviceJob.additionalNote = orderItem.additionalNote || '';
-            serviceJob.price = orderItem.price;
-            serviceJob.mrp = orderItem.mrp;
-            serviceJob.discountPercentage = orderItem.discountPercentage;
-            serviceJob.discountAmount = orderItem.discountAmount;
-            serviceJob.cgstPercentage = orderItem.cgstPercentage;
-            serviceJob.sgstPercentage = orderItem.sgstPercentage;
-            serviceJob.totalTax = orderItem.totalTax;
-            serviceJob.totalPrice = orderItem.totalPrice;
-            serviceJob.deliveryDate = orderItem.deliveryDate;
-            serviceJob.deliveryTime = orderItem.deliveryTime;
-            serviceJob.deliveryAddressId = orderItem.deliveryAddressId;
-            serviceJob.reasonIfRejected = '';
-            serviceJob.createdBy = 'system';
-            serviceJob.updatedBy = 'system';
-
-            serviceJobs.push(serviceJob);
-        }
-
-        // Save ServiceJobs after OrderItemBookings
-        await serviceJobRepository.save(serviceJobs);
-
-        // Remove cart item bookings first
-        await cartItemBookingRepository.remove(cart.cartItemBookings);
-        // Then remove the cart
-        await cartRepository.remove(cart);
+        // cart is no longer active now ( Active = false )
+        cart.isActive = false;
+        cart.save();
 
         return res.status(200).json({
             status: "success",
             message: 'Cart converted to order and service jobs created successfully',
             data: {
                 order,
-                orderItems,
-                serviceJobs
+                orderItem,
+                serviceJob
             }
         });
     } catch (error) {
@@ -490,7 +473,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
 
         const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
 
-        const orderItem = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId, orderId }, relations: ['providedService', 'providedService.subCategory' ,'address'] })
+        const orderItem = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId, orderId }, relations: ['providedService', 'providedService.subCategory', 'address'] })
 
         if (!orderItem) {
             res.status(401).json({ status: "error", message: "No booked item is present" });
@@ -519,20 +502,18 @@ export const fetchOrderHistory = async (req: Request, res: Response) => {
 
         let query: FindOptionsWhere<OrderItemBooking> = { customerId };
 
-        // If onDate is provided, validate and apply the filter
         if (onDate) {
             const parsedDate = new Date(onDate as string);
-            const formattedDate = format(parsedDate, 'yyyy-MM-dd'); // Since it's a date column, no need for time part
+            const formattedDate = format(parsedDate, 'yyyy-MM-dd');
             query = { ...query, deliveryDate: formattedDate };
         }
 
-        // Handle the 'type' query filter
         if (type === 'scheduled') {
-            query = { ...query, status: In(['Pending', 'Assigned']) as any }; // Cast In() as any or FindOperator<string>
+            query = { ...query, status: In(['Pending', 'Assigned']) as any };
         } else {
-            query = { ...query, status: In(['Rejected', 'Completed', 'Cancelled', 'Rescheduled']) as any }; // Adjust statuses accordingly
+            query = { ...query, status: In(['Rejected', 'Completed', 'Cancelled', 'Rescheduled']) as any };
         }
-        // Fetch and count the results
+
         const [orderItems, count] = await orderItemBookingRepository.findAndCount({ where: query });
 
         res.status(200).json({

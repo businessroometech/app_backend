@@ -74,13 +74,16 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: 'varchar' })
     customerMobileNumber !: string;
 
-    @Column({ type: 'text', default: ""})
+    @Column({ type: "simple-array" })  // store document IDs
+    attachments!: string[];
+
+    @Column({ type: 'text', default: "" })
     reasonIfRejected !: string;
 
-    @Column({ type: 'text' , default: ""})
+    @Column({ type: 'text', default: "" })
     reasonIfCancelledByCustomer !: string;
 
-    @Column({ type: 'text' , default: ""})
+    @Column({ type: 'text', default: "" })
     reasonIfReschedueledByCustomer !: string;
 
     @Column({ type: 'varchar', default: 'system' })

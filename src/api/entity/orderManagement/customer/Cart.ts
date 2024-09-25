@@ -21,6 +21,9 @@ export class Cart extends BaseEntity {
     @Column({ type: 'int', default: 0 })
     totalItems !: number;
 
+    @Column({ type: 'boolean', default: true })
+    isActive !: boolean;
+
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
 

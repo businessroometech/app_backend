@@ -74,6 +74,9 @@ export class OrderItemBooking extends BaseEntity {
     @Column({ type: 'text', nullable: true })
     additionalNote!: string;
 
+    @Column({ type: "simple-array" })  // store document IDs
+    attachments!: string[];
+
     @Column({ type: 'text', default: "" })
     reasonIfCancelled !: string;
 
