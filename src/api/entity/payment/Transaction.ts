@@ -6,18 +6,27 @@ export class Transaction extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
-   
-    @Column({ type: "uuid" })
-    orderId !: string;
 
     @Column({ type: "uuid" })
     userId !: string;
 
     @Column({ type: "uuid" })
-    paymentId !: string;
+    orderId !: string;
 
-    @Column({ type: "float" })
-    amount !: number;
+    @Column({ type: "varchar" })
+    currency!: string;
+
+    @Column({ type: "varchar" })
+    method!: string;
+
+    @Column({ type: "uuid" })
+    razorpayOrderId !: string;
+
+    @Column({ type: "uuid" })
+    razorpayPaymentId !: string;
+
+    @Column({ type: 'float', precision: 10, scale: 4 })
+    amount!: number;
 
     @Column({
         type: 'enum',

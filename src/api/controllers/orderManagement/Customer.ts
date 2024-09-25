@@ -490,7 +490,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
 
         const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
 
-        const orderItem = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId, orderId }, relations: ['providedService', 'providedService.subCategory'] })
+        const orderItem = await orderItemBookingRepository.findOne({ where: { id: orderItemBookingId, orderId }, relations: ['providedService', 'providedService.subCategory' ,'address'] })
 
         if (!orderItem) {
             res.status(401).json({ status: "error", message: "No booked item is present" });

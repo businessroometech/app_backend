@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import axios from 'axios';
+import { Transaction } from '@/api/entity/payment/Transaction';
+import { TransactionLog } from '@/api/entity/payment/TransactionLog';
+import { AppDataSource } from '@/server';
 
 // initializing razorpay
 const razorpay = new Razorpay({
@@ -44,11 +47,36 @@ export const createOrder = async (req: Request, res: Response) => {
     }
 }
 
+
+// export const addTransactionAndLog = async (
+//     transactionData: Partial<Transaction>,
+//     logData: Partial<TransactionLog>
+// ) => {
+//     try {
+
+//         const transactionRepository = AppDataSource.getRepository(Transaction);
+//         const transactionLogRepository = AppDataSource.getRepository(TransactionLog);
+
+//         const transaction = transactionRepository.create(transactionData);
+//         await transaction.save();
+
+//         // Set the transaction ID in the log data
+//         logData.transactionId = (transaction as Transaction).id;
+
+//         // Create and save the transaction log
+//         const transactionLog = transactionLogRepository.create(logData);
+//         await transactionLog.save();
+
+//         return transaction; // Optionally return the transaction if needed
+//     } catch (error) {
+//         console.error('Error processing transaction and log:', error);
+//         throw new Error('Transaction and log processing failed');
+//     }
+// };
+
 export const verifyPayment = async (req: Request, res: Response) => {
     try {
-
-        const { razorpay_payment_id, razorpay_order_id, razorpay_signature, cartId, userId } = req.body;
-
+        const { razorpay_payment_id, razorpay_order_id, razorpay_signature, cartId, userId, amount, currency } = req.body;
         const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
 
         let hmac = crypto.createHmac('sha256', key_secret);
@@ -57,11 +85,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
         if (generated_signature === razorpay_signature) {
             // valid signature
-
-            // save to DB   
-
-            // convert cart to order
             try {
+                // Convert cart to order
                 const response = await axios.post(
                     `http://localhost:5000/api/v1/order-management/customer/cart-to-order`,
                     { cartId, customerId: userId },
@@ -72,6 +97,29 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     }
                 );
 
+                // Prepare transaction data for successful payment
+                // const transactionData = {
+                //     userId,
+                //     orderId: response.data.data.order.id,
+                //     currency,
+                //     method: 'Razorpay',
+                //     razorpayOrderId: razorpay_order_id,
+                //     razorpayPaymentId: razorpay_payment_id,
+                //     amount,
+                //     transactionType: 'Payment' as 'Payment',
+                //     status: 'Success',
+                //     createdBy: 'system'
+                // };
+
+                // const logData = {
+                //     event: 'PaymentSuccess' as 'PaymentSuccess',
+                //     details: { razorpay_payment_id, razorpay_order_id },
+                //     createdBy: 'system'
+                // };
+
+                // // Add transaction and log for successful payment
+                // await addTransactionAndLog(transactionData, logData);
+
                 return res.status(200).json({
                     status: "success",
                     message: "Payment verification and order creation successful",
@@ -80,23 +128,118 @@ export const verifyPayment = async (req: Request, res: Response) => {
                         orderItemBookings: response.data.data.orderItems
                     }
                 });
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Error converting cart to order:', err);
+
+                // Prepare transaction data for failed cart conversion
+                // const transactionData = {
+                //     userId,
+                //     razorpayOrderId: razorpay_order_id,
+                //     razorpayPaymentId: razorpay_payment_id,
+                //     amount,
+                //     currency,
+                //     transactionType: 'Payment' as 'Payment',
+                //     status: 'Failed',
+                //     createdBy: 'system'
+                // };
+
+                // const logData = {
+                //     event: 'PaymentFailure' as 'PaymentFailure',
+                //     details: { razorpay_payment_id, razorpay_order_id, error: err.message },
+                //     createdBy: 'system'
+                // };
+
+                // // Add transaction and log for failed cart conversion
+                // await addTransactionAndLog(transactionData, logData);
+
                 return res.status(400).json({
                     status: "error",
                     message: "Payment verified but failed to convert cart to order",
                 });
             }
-        }
-        else {
-            res.status(400).json({ status: "error", message: "signature verification failed" });
+        } else {
+            // Invalid signature
+            // const transactionData = {
+            //     razorpayOrderId: razorpay_order_id,
+            //     razorpayPaymentId: razorpay_payment_id,
+            //     amount,
+            //     currency,
+            //     transactionType: 'Payment' as 'Payment',
+            //     status: 'Failed',
+            //     createdBy: 'system'
+            // };
+
+            // const logData = {
+            //     event: 'PaymentFailure' as 'PaymentFailure',
+            //     details: { razorpay_payment_id, razorpay_order_id, error: 'Signature verification failed' },
+            //     createdBy: 'system'
+            // };
+
+            // // Add transaction and log for signature verification failure
+            // await addTransactionAndLog(transactionData, logData);
+
+            return res.status(400).json({ status: "error", message: "Signature verification failed" });
         }
 
     } catch (error) {
         console.error('Error verifying payment:', error);
         return res.status(500).json({ status: "error", message: "Internal server error" });
     }
-}
+};
+
+// export const verifyPayment = async (req: Request, res: Response) => {
+//     try {
+
+//         const { razorpay_payment_id, razorpay_order_id, razorpay_signature, cartId, userId } = req.body;
+
+//         const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
+
+//         let hmac = crypto.createHmac('sha256', key_secret);
+//         hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
+//         let generated_signature = hmac.digest('hex');
+
+//         if (generated_signature === razorpay_signature) {
+//             // valid signature
+
+//             // save to DB   
+
+//             // convert cart to order
+//             try {
+//                 const response = await axios.post(
+//                     `http://localhost:5000/api/v1/order-management/customer/cart-to-order`,
+//                     { cartId, customerId: userId },
+//                     {
+//                         headers: {
+//                             'Content-Type': 'application/json'
+//                         }
+//                     }
+//                 );
+
+//                 return res.status(200).json({
+//                     status: "success",
+//                     message: "Payment verification and order creation successful",
+//                     data: {
+//                         order: response.data.data.order,
+//                         orderItemBookings: response.data.data.orderItems
+//                     }
+//                 });
+//             } catch (err) {
+//                 console.error('Error converting cart to order:', err);
+//                 return res.status(400).json({
+//                     status: "error",
+//                     message: "Payment verified but failed to convert cart to order",
+//                 });
+//             }
+//         }
+//         else {
+//             res.status(400).json({ status: "error", message: "signature verification failed" });
+//         }
+
+//     } catch (error) {
+//         console.error('Error verifying payment:', error);
+//         return res.status(500).json({ status: "error", message: "Internal server error" });
+//     }
+// }
 
 // export const refund = async (req: Request, res: Response) => {
 //     try {

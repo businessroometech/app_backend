@@ -764,10 +764,10 @@ export const setPersonalDetailsCustomer = async (req: Request, res: Response) =>
             await details.save();
             statusCode = 200;
         }
-        res.status(statusCode).json({ status: "success", message: "Personal details created/updated successfully", data: { details } });
+        return res.status(statusCode).json({ status: "success", message: "Personal details created/updated successfully", data: { details } });
     } catch (error) {
         console.log("Server Error :", error);
-        res.status(500).json({ status: "error", message: "Error creating/updating Personal details" });
+        return res.status(500).json({ status: "error", message: "Error creating/updating Personal details" });
     }
 }
 
@@ -778,14 +778,14 @@ export const getPersonalDetailsCustomer = async (req: Request, res: Response) =>
         const personalDetailsCustomerRepository = AppDataSource.getRepository(PersonalDetailsCustomer);
 
         if (!userId) {
-            res.status(400).json({ status: "error", message: "UserId is required" });
+            return res.status(400).json({ status: "error", message: "UserId is required" });
         }
 
         let details = await personalDetailsCustomerRepository.findOne({ where: { userId } });
 
-        res.status(200).json({ status: "success", message: "User Personal details found successfully", data: { details } });
+        return res.status(200).json({ status: "success", message: "User Personal details found successfully", data: { details } });
     } catch (error) {
         console.log("Server Error :", error);
-        res.status(500).json({ status: "error", message: "Error finding user Personal details" });
+        return res.status(500).json({ status: "error", message: "Error finding user Personal details" });
     }
 }

@@ -1,26 +1,20 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
 
-@Entity({ name: "Payment" })
-export class Payment extends BaseEntity {
+@Entity({ name: "TransactionLog" })
+export class TransactionLog extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    // @Column({ type: 'uuid' })
-    // paymentId!: string;
+    @Column({ type: "uuid" })
+    transactionId!: string;
 
-    @Column({ type: 'float', precision: 10, scale: 2 })
-    amount!: number;
+    @Column({ type: "enum", enum: ['PaymentSuccess', 'PaymentFailure'] })
+    event!: 'PaymentSuccess' | 'PaymentFailure';
 
-    @Column({ type: "varchar" })
-    currency!: string;
-
-    @Column({ type: "varchar" })
-    method!: string;
-
-    @Column({ type: "varchar", default: 'Created' })
-    status!: string;
+    @Column({ type: 'jsonb', nullable: true })
+    details?: object;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -47,10 +41,4 @@ export class Payment extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
-
-    // @ManyToOne(() => Order, order => order.payments)
-    // order: Order;
-
-    // @ManyToOne(() => User, user => user.payments)
-    // user: User;
 }
