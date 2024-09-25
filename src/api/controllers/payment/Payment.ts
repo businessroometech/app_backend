@@ -53,7 +53,6 @@ export const addTransactionAndLog = async (
     try {
 
         const transactionRepository = AppDataSource.getRepository(Transaction);
-
         const transaction = transactionRepository.create(transactionData);
         await transaction.save();
 
@@ -105,6 +104,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     orderId: response.data.data.order.id,
                     currency,
                     method: paymentMethod,
+                    metadata: payment,
                     razorpayOrderId: razorpay_order_id,
                     razorpayPaymentId: razorpay_payment_id,
                     amount,
@@ -133,6 +133,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     amount,
                     currency,
                     method: paymentMethod,
+                    metadata: payment,
                     transactionType: 'Payment' as 'Payment',
                     status: 'Failed',
                     createdBy: 'system'
@@ -153,6 +154,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 amount,
                 currency,
                 method: paymentMethod,
+                metadata: payment,
                 transactionType: 'Payment' as 'Payment',
                 status: 'Failed',
                 createdBy: 'system'

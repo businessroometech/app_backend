@@ -25,7 +25,7 @@ export class Transaction extends BaseEntity {
     @Column({ type: "uuid" })
     razorpayPaymentId !: string;
 
-    @Column({ type: 'float', precision: 10, scale: 4 })
+    @Column({ type: 'decimal', precision: 10, scale: 4 })
     amount!: number;
 
     @Column({
@@ -34,8 +34,15 @@ export class Transaction extends BaseEntity {
     })
     transactionType !: 'Payment' | 'Refund';
 
-    @Column({ type: "varchar" })
+    @Column({
+        type: 'enum',
+        enum: ['Pending', 'Success', 'Failed'],
+        default: 'Pending'
+    })
     status !: string;
+
+    @Column({ type: 'json', nullable: true })
+    metadata !: object;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
