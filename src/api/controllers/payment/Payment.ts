@@ -74,9 +74,11 @@ export const verifyPayment = async (req: Request, res: Response) => {
             cartId,
             userId,
             amount,
-            currency,
-            paymentMethod // New field for payment method 
+            currency
         } = req.body;
+
+        const payment = await razorpay.payments.fetch(razorpay_payment_id);
+        const paymentMethod = payment.method;
 
         const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
 
