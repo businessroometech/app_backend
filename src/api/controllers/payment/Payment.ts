@@ -91,7 +91,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 // Convert cart to order
                 const response = await axios.post(
                     `http://localhost:5000/api/v1/order-management/customer/cart-to-order`,
-                    { cartId, customerId: userId },
+                    { cartId, userId },
                     {
                         headers: {
                             'Content-Type': 'application/json'
@@ -120,7 +120,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     message: "Payment verification and order creation successful",
                     data: {
                         order: response.data.data.order,
-                        orderItemBookings: response.data.data.orderItems
+                        orderItemBooking: response.data.data.orderItem
                     }
                 });
             } catch (err: any) {
