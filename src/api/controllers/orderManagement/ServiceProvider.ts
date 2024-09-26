@@ -82,6 +82,7 @@ export const getYourServices = async (req: Request, res: Response) => {
                 'orderItemBooking',
                 'orderItemBooking.providedService',
                 'orderItemBooking.providedService.subCategory',
+                'orderItemBooking.address',
             ],
         });
 
