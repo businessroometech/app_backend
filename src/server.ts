@@ -16,6 +16,7 @@ import profileRouter from './api/routes/profile/ProfileRoutes';
 import customerRouter from './api/routes/orderManagement/CustomerRoutes';
 import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
 import paymentRouter from "./api/routes/payment/PaymentRoutes";
+import notificationRouter from "./api/routes/notifications/NotificationRoutes";
 
 
 const logger = pino({ name: 'server start' });
@@ -49,6 +50,9 @@ import { DocumentUpload } from './api/entity/profile/DocumentUpload';
 import { UserAddress } from './api/entity/user/UserAddress';
 import { RescheduledBooking } from './api/entity/orderManagement/customer/RescheduledBooking';
 import { Transaction } from './api/entity/payment/Transaction';
+import { Notification } from './api/entity/notifications/Notification';
+import { Template } from './api/entity/notifications/Template';
+import { DeliveryLog } from './api/entity/notifications/DeliveryLog';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -58,7 +62,7 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction],
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog],
   synchronize: true,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
@@ -100,6 +104,7 @@ app.use('/api/v1/profile', profileRouter);
 app.use('/api/v1/order-management/customer', customerRouter);
 app.use('/api/v1/order-management/service-provider', serviceProviderRouter);
 app.use('/api/v1/checkout', paymentRouter);
+app.use('/api/v1/notifications', notificationRouter);
 // app.use('/health-check', healthCheckRouter);
 
 // Error handlers

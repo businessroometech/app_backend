@@ -1,4 +1,3 @@
-import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 import { Request, Response } from 'express';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
@@ -6,26 +5,6 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { OtpVerification } from '@/api/entity/others/OtpVerification';
 import { AppDataSource } from '@/server';
-
-// import AWS from 'aws-sdk';
-
-// AWS.config.update({
-//   region: process.env.AWS_REGION || 'ap-south-1',
-//   credentials: {
-//     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-//   },
-// })
-
-// const sns = new AWS.SNS({ apiVersion: "latest" });
-
-const sns = new SNSClient({
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-  region: process.env.AWS_REGION || 'ap-south-1',
-});
 
 const generateVerificationCode = (): string => {
   return Math.floor(1000 + Math.random() * 9000).toString();
@@ -132,28 +111,6 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         sentTo: 'Mobile',
         useCase,
       }).save();
-    }
-
-    //-------SMS sending logic---------------
-    const params = {
-      Message: `Your verification code is: ${code}`,
-      PhoneNumber: formattedNumber,
-      MessageAttributes: {
-        'AWS.SNS.SMS.SenderID': {
-          DataType: 'String',
-          StringValue: 'MySenderID',
-        },
-      },
-    };
-
-    try {
-      const command = new PublishCommand(params);
-      const data = await sns.send(command);
-      console.log('aws publish :', data);
-      console.log(`Verification code sent to ${formattedNumber}: ${code}`);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      return res.status(500).json({ status: 'error', message: 'Failed to send verification code.' });
     }
 
     return res.status(200).json({
@@ -284,27 +241,6 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
     }
 
     //-------SMS sending logic---------------
-    const params = {
-      Message: `Your verification code is: ${code}`,
-      PhoneNumber: formattedNumber,
-      MessageAttributes: {
-        'AWS.SNS.SMS.SenderID': {
-          DataType: 'String',
-          StringValue: 'MySenderID',
-        },
-      },
-    };
-
-    try {
-      const command = new PublishCommand(params);
-      const data = await sns.send(command);
-      console.log('aws publish :', data);
-      console.log(`Verification code sent to ${formattedNumber}: ${code}`);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      res.status(500).json({ status: 'error', message: 'Failed to send verification code.' });
-      return;
-    }
     res.status(200).json({ status: 'success', message: 'Verification code sent successfully.' });
   } catch (error) {
     console.error(error);
