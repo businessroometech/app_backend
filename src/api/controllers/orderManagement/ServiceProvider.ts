@@ -8,6 +8,7 @@ import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/se
 import { Service } from '@/api/entity/sector/Service';
 import { AppDataSource } from '@/server';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
+import NotificationController from '../notifications/Notification';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -158,6 +159,23 @@ export const acceptService = async (req: Request, res: Response) => {
 
         orderItemBooking.status = "Assigned";
         await orderItemBooking.save();
+
+        await NotificationController.sendNotification(
+            {
+              body: {
+                notificationType: 'sms',
+                templateName: 'order_accepted_sp', // The template name in the database
+                recipientId: serviceJob?.id,
+                recipientType: 'Service Provider',
+                data: {
+                  'Order ID':orderItemBookingId,
+                //   X days is missing
+                },
+              },
+            } as Request,
+            res
+          );
+      
 
         res.status(200).json({ status: "success", message: "Service accepted successfully", data: { serviceJob, orderItemBooking } });
     } catch (error) {

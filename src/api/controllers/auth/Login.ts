@@ -10,6 +10,7 @@ import { UserLogin } from '../../entity/user/UserLogin';
 import { Token } from '@/api/entity/others/Token';
 import { OtpVerification } from '@/api/entity/others/OtpVerification';
 import { AppDataSource } from '@/server';
+import NotificationController from '../notifications/Notification';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
@@ -67,19 +68,36 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       if (isNaN(expiresIn)) {
         throw new Error('Invalid expiration time');
       }
-
       if (rt) {
         rt.token = refreshToken;
         rt.expiresAt = new Date(Date.now() + expiresIn);
         await rt.save();
       } else {
-        await refreshRepository.create({
-          userId: user.id,
-          token: refreshToken,
-          expiresAt: new Date(Date.now() + expiresIn),
-        }).save();
+        await refreshRepository
+          .create({
+            userId: user.id,
+            token: refreshToken,
+            expiresAt: new Date(Date.now() + expiresIn),
+          })
+          .save();
       }
     }
+
+    await NotificationController.sendNotification(
+      {
+        body: {
+          notificationType: 'sms',
+          templateName: 'login_otp',
+          recipientId: user?.id,
+          recipientType: 'User',
+          data: {
+            OTP: '',
+            'Company Name': 'Connect',
+          },
+        },
+      } as Request,
+      res
+    );
 
     res.status(200).json({
       status: 'success',
@@ -122,17 +140,19 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
 
     const tokenRepository = AppDataSource.getRepository(Token);
 
-    const token = await tokenRepository.create({
-      userId: decoded.id,
-      hmac,
-      expiresAt: new Date(Date.now() + parseInt(process.env.UUID_TOKEN_EXPIRES_IN!)),
-    }).save();
+    const token = await tokenRepository
+      .create({
+        userId: decoded.id,
+        hmac,
+        expiresAt: new Date(Date.now() + parseInt(process.env.UUID_TOKEN_EXPIRES_IN!)),
+      })
+      .save();
 
     res.cookie('uuidToken', uuidToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: parseInt(process.env.UUID_TOKEN_EXPIRES_IN!),
-      sameSite: 'none'
+      sameSite: 'none',
     });
 
     res.status(200).json({ status: 'success', message: 'UUID token created', data: { token } });
@@ -140,8 +160,7 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
     console.error(error);
     if (error.name === 'TokenExpiredError') {
       res.status(403).json({ status: 'error', message: 'Token expired. Please log in again.' });
-    }
-    else {
+    } else {
       res.status(500).json({ status: 'error', message: 'Server error.' });
     }
   }
@@ -201,11 +220,13 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       rt.expiresAt = new Date(Date.now() + expiresIn);
       await rt.save();
     } else {
-      await refreshRepository.create({
-        userId: token.userId,
-        token: newRefreshToken,
-        expiresAt: new Date(Date.now() + expiresIn),
-      }).save();
+      await refreshRepository
+        .create({
+          userId: token.userId,
+          token: newRefreshToken,
+          expiresAt: new Date(Date.now() + expiresIn),
+        })
+        .save();
     }
 
     // Destroying the UUID token after use
@@ -216,7 +237,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       message: 'UUID token verified',
       data: {
         accessToken: newAccessToken,
-        userId: token.userId
+        userId: token.userId,
       },
     });
   } catch (error) {
@@ -284,7 +305,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       message: 'New access token and refresh token generated',
       data: {
         accessToken: newAccessToken,
-        userId: payload.id
+        userId: payload.id,
       },
     });
   } catch (error: any) {
@@ -309,7 +330,6 @@ export const protectedRoute = (req: Request, res: Response): void => {
   res.status(200).json({ message: 'This is a protected route', user: req.user });
 };
 
-
 //--------------------------------------------- FOR MOBILE APP ---------------------------------------------------------------
 
 export const verifyCode_mobile_app = async (req: Request, res: Response): Promise<void> => {
@@ -317,9 +337,7 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     const { verificationCode, mobileNumber } = req.body;
 
     if (!verificationCode || !mobileNumber) {
-      res
-        .status(400)
-        .json({ status: 'error', message: 'Please provide mobileNumber and verification code' });
+      res.status(400).json({ status: 'error', message: 'Please provide mobileNumber and verification code' });
       return;
     }
 
@@ -327,12 +345,13 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     const userLoginRepository = AppDataSource.getRepository(UserLogin);
     const refreshRepository = AppDataSource.getRepository(RefreshToken);
 
-    let isVerify = await otpVerificationRepository.findOne({ where: { mobileNumber, verificationCode, useCase: "Signup" } });
+    let isVerify = await otpVerificationRepository.findOne({
+      where: { mobileNumber, verificationCode, useCase: 'Signup' },
+    });
 
     if (!isVerify) {
       res.status(400).json({ status: 'error', message: 'Invalid verification code or mobileNumber' });
       return;
-
     }
 
     const expiryDate = new Date(isVerify.expiresAt);
@@ -340,7 +359,6 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     if (new Date() > expiryDate) {
       res.status(400).json({ status: 'error', message: 'Verification code is expired.' });
       return;
-
     }
 
     isVerify.isVerified = true;
@@ -350,9 +368,8 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     const user: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
 
     if (!user) {
-      res.status(400).json({ status: "error", message: "User with mobile number does not exist" });
+      res.status(400).json({ status: 'error', message: 'User with mobile number does not exist' });
       return;
-
     }
 
     const accessToken = generateAccessToken(user!);
@@ -385,18 +402,22 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
       rt.expiresAt = new Date(Date.now() + expiresIn);
       await rt.save();
     } else {
-      await refreshRepository.create({
-        userId: user!.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + expiresIn),
-      }).save();
+      await refreshRepository
+        .create({
+          userId: user!.id,
+          token: refreshToken,
+          expiresAt: new Date(Date.now() + expiresIn),
+        })
+        .save();
     }
 
     res.status(200).json({
-      status: 'success', message: 'Mobile number verified successfully', data: {
+      status: 'success',
+      message: 'Mobile number verified successfully',
+      data: {
         user,
-        accessToken
-      }
+        accessToken,
+      },
     });
   } catch (err) {
     console.error(err);
