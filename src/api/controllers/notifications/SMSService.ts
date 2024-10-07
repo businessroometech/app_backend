@@ -4,7 +4,7 @@ import parsePhoneNumberFromString from "libphonenumber-js";
 import axios, { AxiosRequestConfig } from 'axios';
 
 class SMSService {
-    static async sendSMS(providerTemplateId: string, recipientId: string): Promise<any> {
+    static async sendSMS(providerTemplateId: string, recipientId: string, data: { [key: string]: any }): Promise<any> {
         const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
 
         // Ensure recipientId is valid
@@ -38,8 +38,8 @@ class SMSService {
                 template_id: providerTemplateId, // Your template ID
                 recipients: [
                     {
-                        mobiles: formattedMobileNumber, // Mobile number with country code
-                        var: personalDetails?.fullName // customer name
+                        mobiles: formattedMobileNumber, 
+                        ...data
                     }
                 ]
             })
