@@ -6,11 +6,9 @@ import SMSService from "./SMSService";
 
 class NotificationController {
 
-    // Adjusted 'data' parameter to be an object instead of string
     static replaceTemplateVariables(templateContent: string, data: Record<string, any>) {
         let content = templateContent;
 
-        // Replace all placeholders in the form of {{variable}} with actual values from 'data'
         for (const key in data) {
             const regex = new RegExp(`{{${key}}}`, 'g');
             content = content.replace(regex, data[key]);
@@ -24,7 +22,6 @@ class NotificationController {
         let notification: Notification | null = null;
 
         try {
-            // Step 1: Fetch the template from the database using templateName
             const templateRepository = AppDataSource.getRepository(Template);
             const template = await templateRepository.findOne({ where: { templateName } });
 
@@ -33,7 +30,6 @@ class NotificationController {
                 return res.status(400).json({ message: `Template with name ${templateName} not found` });
             }
 
-            // Step 2: Initialize notification log data
             notification = new Notification();
             notification.templateId = template.id;
             notification.recipientId = recipientId;
@@ -44,15 +40,13 @@ class NotificationController {
 
             let result;
             try {
-                // Step 3: Send the notification based on the type
                 switch (notificationType) {
                     case 'email':
-                        // result = await EmailService.sendEmail(template.template_name, recipient, processedTemplate);
                         notification.notificationType = 'email';
                         notification.status = 'Sent';
                         break;
                     case 'sms':
-                        result = await SMSService.sendSMS(template.providerTemplateId, recipientId, data);
+                        result = await SMSService.sendSMS(template.providerTemplateId, recipientId, recipientType, data);
                         notification.content = this.replaceTemplateVariables(template.templatePhoneContent, data);
                         notification.notificationType = 'sms';
                         notification.status = 'Sent';
@@ -68,23 +62,19 @@ class NotificationController {
                         return res.status(400).json({ status: "error", message: 'Invalid notification type' });
                 }
             } catch (notificationError) {
-                // Handle external notification sending error
                 console.error(`Failed to send ${notificationType} notification :`, notificationError);
                 notification.status = 'Failed';
                 return res.status(400).json({ status: "error", message: `Failed to send ${notificationType} notification` });
             }
 
-            // Step 4: Save notification log to the database
             const notificationRepository = AppDataSource.getRepository(Notification);
             await notificationRepository.save(notification);
 
-            // Step 5: Return success response
             return res.status(200).json({ status: "success", message: 'Notification sent successfully', data: { result } });
 
         } catch (error: any) {
             console.error('Error in sendNotification:', error);
 
-            // In case of an error, log failure and return an error response
             if (notification) {
                 notification.status = 'Failed';
                 try {
@@ -102,12 +92,10 @@ class NotificationController {
         try {
             const { userId } = req.body;
 
-            // Validate if the userId is provided
             if (!userId) {
                 return res.status(400).json({ status: "error", message: 'Recipient ID (userId) is required.' });
             }
 
-            // Fetch notifications with status 'Sent' for the provided recipientId
             const notificationRepository = AppDataSource.getRepository(Notification);
             const notifications = await notificationRepository.find({
                 where: {
@@ -128,21 +116,18 @@ class NotificationController {
         try {
             const { notificationId } = req.body;
 
-            // Validate if notificationId is provided
             if (!notificationId) {
                 return res.status(400).json({ status: "error", message: 'Notification ID is required.' });
             }
 
             const notificationRepository = AppDataSource.getRepository(Notification);
 
-            // Find the notification by ID
             const notification = await notificationRepository.findOne({ where: { id: notificationId } });
 
             if (!notification) {
                 return res.status(400).json({ status: "error", message: 'Notification not found.' });
             }
 
-            // Update the notification's isRead status to true
             notification.isRead = true;
             await notificationRepository.save(notification);
 
