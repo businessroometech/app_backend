@@ -114,12 +114,35 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         .save();
     }
 
+    // sms
     try {
       // Make sure this function doesn't send its own response
       await NotificationController.sendNotification(
         {
           body: {
             notificationType: 'sms',
+            templateName: 'login_otp',
+            recipientId: user?.id,
+            recipientType: user?.primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
+            data: {
+              OTP: code,
+              'Company Name': 'Connect',
+            },
+          },
+        } as Request,
+        res
+      );
+    } catch (err: any) {
+      console.error('Signup successful but error sending SMS:', err.message || err);
+    }
+
+    // inApp
+    try {
+      // Make sure this function doesn't send its own response
+      await NotificationController.sendNotification(
+        {
+          body: {
+            notificationType: 'inApp',
             templateName: 'login_otp',
             recipientId: user?.id,
             recipientType: user?.primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
@@ -275,13 +298,35 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
         .save();
     }
 
-
+    // sms
     try {
       // Make sure this function doesn't send its own response
       await NotificationController.sendNotification(
         {
           body: {
             notificationType: 'sms',
+            templateName: 'login_otp',
+            recipientId: user?.id,
+            recipientType: user?.primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
+            data: {
+              OTP: code,
+              'Company Name': 'Connect',
+            },
+          },
+        } as Request,
+        res
+      );
+    } catch (err: any) {
+      console.error('Signup successful but error sending SMS:', err.message || err);
+    }
+
+    // inApp
+    try {
+      // Make sure this function doesn't send its own response
+      await NotificationController.sendNotification(
+        {
+          body: {
+            notificationType: 'inApp',
             templateName: 'login_otp',
             recipientId: user?.id,
             recipientType: user?.primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
