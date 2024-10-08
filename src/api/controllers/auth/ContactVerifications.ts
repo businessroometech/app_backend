@@ -125,13 +125,13 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         },
       };
 
-      try {
-        await NotificationController.sendNotification({ body: notificationData } as Request, res);
-        notificationData.notificationType = 'inApp';
-        await NotificationController.sendNotification({ body: notificationData } as Request, res);
-      } catch (notificationError: any) {
-        console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
-      }
+      // try {
+      //   await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      //   notificationData.notificationType = 'inApp';
+      //   await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      // } catch (notificationError: any) {
+      //   console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
+      // }
     }
 
     return res.status(200).json({
