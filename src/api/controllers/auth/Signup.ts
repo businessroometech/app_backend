@@ -96,9 +96,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       recipientId: newUser.id,
       recipientType: primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
       data: {
-        'Customer Name': fullName,
-        'Provider Name': fullName,
-        'Company Name': 'Connect',
+        'var1': fullName,
       },
     };
 

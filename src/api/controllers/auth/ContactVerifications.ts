@@ -119,9 +119,9 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         notificationType: 'sms',
         templateName: 'login_otp',
         recipientNumber: mobileNumber,
+        recipientType: 'Service Provider',
         data: {
-          'OTP': code,
-          'Company Name': 'Connect',
+          'var1': code,
         },
       };
 
@@ -284,9 +284,9 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
       notificationType: 'sms',
       templateName: 'login_otp',
       recipientNumber: mobileNumber,
+      recipientType: 'Customer',
       data: {
-        'OTP': code,
-        'Company Name': 'Connect',
+        'var1': code,
       },
     };
 
