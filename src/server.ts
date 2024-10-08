@@ -53,6 +53,8 @@ import { Transaction } from './api/entity/payment/Transaction';
 import { Notification } from './api/entity/notifications/Notification';
 import { Template } from './api/entity/notifications/Template';
 import { DeliveryLog } from './api/entity/notifications/DeliveryLog';
+import swaggerUi from 'swagger-ui-express';
+import swaggerFile from '../swagger_output.json'; 
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -66,6 +68,12 @@ const AppDataSource = new DataSource({
   synchronize: true,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
+
+// Serve the public folder for Swagger UI assets
+app.use(express.static('dist/public'));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+
 
 // Initialize the DataSource
 AppDataSource.initialize()
