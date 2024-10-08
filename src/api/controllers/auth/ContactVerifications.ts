@@ -120,15 +120,18 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         templateName: 'login_otp',
         recipientNumber: mobileNumber,
         data: {
-          "OTP": code,
+          'OTP': code,
           'Company Name': 'Connect',
         },
       };
 
       try {
-        await NotificationController.sendNotification({ body: notificationData } as Request, res);
+        const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+        console.log(smsResult.message);
+
         notificationData.notificationType = 'inApp';
-        await NotificationController.sendNotification({ body: notificationData } as Request, res);
+        const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+        console.log(inAppResult.message);
       } catch (notificationError: any) {
         console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
       }
@@ -141,6 +144,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         code,
       },
     });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ status: 'error', message: 'Server error.' });
@@ -281,15 +285,18 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
       templateName: 'login_otp',
       recipientNumber: mobileNumber,
       data: {
-        "OTP": code,
+        'OTP': code,
         'Company Name': 'Connect',
       },
     };
 
     try {
-      await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(smsResult.message);
+
       notificationData.notificationType = 'inApp';
-      await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(inAppResult.message);
     } catch (notificationError: any) {
       console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
     }

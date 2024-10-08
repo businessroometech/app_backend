@@ -103,9 +103,12 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     };
 
     try {
-      await NotificationController.sendNotification({ body: notificationData } as Request, res);
-      notificationData.notificationType = 'inApp'; // Change to in-app notification
-      await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(smsResult.message);
+
+      notificationData.notificationType = 'inApp';
+      const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(inAppResult.message);
     } catch (notificationError: any) {
       console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
     }
