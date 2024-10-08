@@ -6,13 +6,13 @@ import { PersonalDetailsCustomer } from "@/api/entity/profile/personal/PersonalD
 import { BusinessDetails } from "@/api/entity/profile/business/BusinessDetails";
 
 class SMSService {
-    static async sendSMS(providerTemplateId: string, recipientId: string, recipientType: string, data: { [key: string]: any }): Promise<any> {
+    static async sendSMS(providerTemplateId: string, recipientId: string, recipientType: string, recipientNumber: string, data: { [key: string]: any }): Promise<any> {
         const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
         const businessDetailsRepository = AppDataSource.getRepository(BusinessDetails);
         const personalDetailsCustomerRepository = AppDataSource.getRepository(PersonalDetailsCustomer);
 
-        if (!recipientId) {
-            throw new Error('Recipient ID is required.');
+        if (!recipientId && !recipientNumber) {
+            throw new Error('Recipient ID or Recipient Number is required.');
         }
 
         let details;
@@ -21,24 +21,34 @@ class SMSService {
             if (!details) {
                 details = await businessDetailsRepository.findOne({ where: { userId: recipientId } });
             }
-        }
-        else {
+        } else {
             details = await personalDetailsCustomerRepository.findOne({ where: { userId: recipientId } });
         }
 
+        let options: AxiosRequestConfig;
+        let formattedMobileNumber: string | undefined;
+
+        // If details are not found, use the provided recipientNumber directly
         if (!details) {
-            throw new Error(`No personal details found for userId: ${recipientId}`);
+            const phoneNumber = parsePhoneNumberFromString(recipientNumber, 'IN'); // 'IN' stands for India
+
+            if (!phoneNumber || !phoneNumber.isValid()) {
+                throw new Error(`Invalid mobile number: ${recipientNumber}`);
+            }
+
+            formattedMobileNumber = phoneNumber.format('E.164');
+        } else {
+            // Use the mobile number from details if it exists
+            const phoneNumber = parsePhoneNumberFromString(details.mobileNumber, 'IN');
+
+            if (!phoneNumber || !phoneNumber.isValid()) {
+                throw new Error(`Invalid mobile number: ${details.mobileNumber}`);
+            }
+
+            formattedMobileNumber = phoneNumber.format('E.164');
         }
 
-        const phoneNumber = parsePhoneNumberFromString(details?.mobileNumber, 'IN'); // 'IN' stands for India
-
-        if (!phoneNumber || !phoneNumber.isValid()) {
-            throw new Error(`Invalid mobile number: ${details?.mobileNumber}`);
-        }
-
-        const formattedMobileNumber = phoneNumber.format('E.164');
-
-        const options: AxiosRequestConfig = {
+        options = {
             method: 'POST',
             url: 'https://control.msg91.com/api/v5/flow',
             headers: {

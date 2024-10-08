@@ -17,17 +17,22 @@ class NotificationController {
         return content;
     }
 
-    static async sendNotification(req: Request, res: Response) {
-        const { notificationType, templateName, recipientId, recipientType, data } = req.body;
+    static async sendNotification(req: Request): Promise<{ status: string, message: string }> {
+        const { notificationType, templateName, recipientId, recipientNumber, recipientType, data } = req.body;
         let notification: Notification | null = null;
 
         try {
+            if (notificationType === 'sms' && !recipientId && !recipientNumber) {
+                console.error('Recipient ID or Recipient Number is required for SMS notifications.');
+                return { status: 'error', message: 'Recipient ID or Recipient Number is required for SMS notifications.' };
+            }
+
             const templateRepository = AppDataSource.getRepository(Template);
             const template = await templateRepository.findOne({ where: { templateName } });
 
             if (!template) {
                 console.error(`Template with name ${templateName} not found`);
-                return res.status(400).json({ message: `Template with name ${templateName} not found` });
+                return { status: 'error', message: `Template with name ${templateName} not found` };
             }
 
             notification = new Notification();
@@ -38,7 +43,6 @@ class NotificationController {
             notification.isRead = false;
             notification.data = data;
 
-            let result;
             try {
                 switch (notificationType) {
                     case 'email':
@@ -46,7 +50,7 @@ class NotificationController {
                         notification.status = 'Sent';
                         break;
                     case 'sms':
-                        result = await SMSService.sendSMS(template.providerTemplateId, recipientId, recipientType, data);
+                        await SMSService.sendSMS(template.providerTemplateId, recipientId, recipientType,recipientNumber, data);
                         notification.content = this.replaceTemplateVariables(template.templatePhoneContent, data);
                         notification.notificationType = 'sms';
                         notification.status = 'Sent';
@@ -59,19 +63,19 @@ class NotificationController {
                     default:
                         notification.status = 'Failed';
                         console.error(`Invalid notification type: ${notificationType}`);
-                        return res.status(400).json({ status: "error", message: 'Invalid notification type' });
+                        return { status: 'error', message: 'Invalid notification type' };
                 }
             } catch (notificationError) {
                 console.error(`Failed to send ${notificationType} notification :`, notificationError);
                 notification.status = 'Failed';
-                return res.status(400).json({ status: "error", message: `Failed to send ${notificationType} notification` });
+                return { status: 'error', message: `Failed to send ${notificationType} notification` };
             }
 
             const notificationRepository = AppDataSource.getRepository(Notification);
             await notificationRepository.save(notification);
 
-            return res.status(200).json({ status: "success", message: 'Notification sent successfully', data: { result } });
-
+            console.log('Notification sent successfully');
+            return { status: 'success', message: 'Notification sent successfully' };
         } catch (error: any) {
             console.error('Error in sendNotification:', error);
 
@@ -83,10 +87,10 @@ class NotificationController {
                     console.error('Failed to save notification status:', saveError);
                 }
             }
-            console.log("Error sending notifications :", error);
-            return res.status(500).json({ status: "error", message: 'Failed to send notification' });
+            return { status: 'error', message: 'Error sending notification' };
         }
     }
+
 
     static async fetchSentNotifications(req: Request, res: Response) {
         try {
