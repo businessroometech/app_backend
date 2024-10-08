@@ -332,20 +332,20 @@ export const addToCart = async (req: Request, res: Response) => {
     cart.updatedBy = 'system';
     await cart.save();
 
-    await NotificationController.sendNotification(
-      {
-        body: {
-          notificationType: 'sms',
-          templateName: 'confirm_order_cus', // The template name in the database
-          recipientId: customerId,
-          recipientType: 'Customer',
-          data: {
-            'Order ID': cart.id,
-          },
-        },
-      } as Request,
-      res
-    );
+    // await NotificationController.sendNotification(
+    //   {
+    //     body: {
+    //       notificationType: 'sms',
+    //       templateName: 'confirm_order_cus', // The template name in the database
+    //       recipientId: customerId,
+    //       recipientType: 'Customer',
+    //       data: {
+    //         'Order ID': cart.id,
+    //       },
+    //     },
+    //   } as Request,
+    //   res
+    // );
 
     return res.status(201).json({
       status: 'success',

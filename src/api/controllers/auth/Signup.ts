@@ -106,6 +106,24 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       console.error('Signup successful but error sending SMS:', err.message || err);
     }
 
+    try {
+      await NotificationController.sendNotification({
+        body: {
+          notificationType: 'inApp',
+          templateName: primaryRole === 'Customer' ? 'welcome_cus' : 'welcome_sp',
+          recipientId: newUser?.id,
+          recipientType: primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
+          data: {
+            'Customer Name': fullName,
+            'Provider Name': fullName,
+            'Company Name': 'Connect',
+          },
+        },
+      } as Request, res);
+    } catch (err: any) {
+      console.error('Signup successful but error sending SMS:', err.message || err);
+    }
+
     res.status(201).json({
       status: 'success',
       message: 'Signup completed',

@@ -83,21 +83,20 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    await NotificationController.sendNotification(
-      {
-        body: {
-          notificationType: 'sms',
-          templateName: 'login_otp',
-          recipientId: user?.id,
-          recipientType: 'User',
-          data: {
-            OTP: '',
-            'Company Name': 'Connect',
-          },
-        },
-      } as Request,
-      res
-    );
+    // await NotificationController.sendNotification(
+    //   {
+    //     body: {
+    //       notificationType: 'inApp',
+    //       templateName: 'login_otp',
+    //       recipientId: user?.id,
+    //       recipientType: 'User',
+    //       data: {
+    //         'Company Name': 'Connect',
+    //       },
+    //     },
+    //   } as Request,
+    //   res
+    // );
 
     res.status(200).json({
       status: 'success',
