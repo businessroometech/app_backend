@@ -114,25 +114,24 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         .save();
     }
 
-    try {
-      // Make sure this function doesn't send its own response
-      await NotificationController.sendNotification(
-        {
-          body: {
-            notificationType: 'sms',
-            templateName: 'login_otp',
-            recipientId: user?.id,
-            recipientType: user?.primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
-            data: {
-              OTP: code,
-              'Company Name': 'Connect',
-            },
-          },
-        } as Request,
-        res
-      );
-    } catch (err: any) {
-      console.error('Signup successful but error sending SMS:', err.message || err);
+    if (useCase === 'Signup') {
+      const notificationData = {
+        notificationType: 'sms',
+        templateName: 'login_otp',
+        recipientNumber: mobileNumber,
+        data: {
+          "OTP": code,
+          'Company Name': 'Connect',
+        },
+      };
+
+      try {
+        await NotificationController.sendNotification({ body: notificationData } as Request, res);
+        notificationData.notificationType = 'inApp';
+        await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      } catch (notificationError: any) {
+        console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
+      }
     }
 
     return res.status(200).json({
@@ -276,28 +275,25 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
     }
 
 
+    // Send notifications (SMS and in-app) to welcome the user
+    const notificationData = {
+      notificationType: 'sms',
+      templateName: 'login_otp',
+      recipientNumber: mobileNumber,
+      data: {
+        "OTP": code,
+        'Company Name': 'Connect',
+      },
+    };
+
     try {
-      // Make sure this function doesn't send its own response
-      await NotificationController.sendNotification(
-        {
-          body: {
-            notificationType: 'sms',
-            templateName: 'login_otp',
-            recipientId: user?.id,
-            recipientType: user?.primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
-            data: {
-              OTP: code,
-              'Company Name': 'Connect',
-            },
-          },
-        } as Request,
-        res
-      );
-    } catch (err: any) {
-      console.error('Signup successful but error sending SMS:', err.message || err);
+      await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      notificationData.notificationType = 'inApp';
+      await NotificationController.sendNotification({ body: notificationData } as Request, res);
+    } catch (notificationError: any) {
+      console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
     }
 
-    //-------SMS sending logic---------------
     res.status(200).json({ status: 'success', message: 'Verification code sent successfully.' });
   } catch (error) {
     console.error(error);

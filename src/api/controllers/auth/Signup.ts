@@ -5,15 +5,13 @@ import { UserSectorCategory } from '@/api/entity/user/UserSectorCategory';
 import { AppDataSource } from '@/server';
 import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
 import NotificationController from '../notifications/Notification';
-// import { QueryRunner } from 'typeorm';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
-
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
 
   try {
-    // Ensure transaction starts before any return
+    // Start the transaction
     await queryRunner.startTransaction();
 
     const {
@@ -25,24 +23,25 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       userType = 'Individual',
       sectorId,
       categoryId,
-      createdBy,
-      updatedBy,
+      createdBy = 'system',
+      updatedBy = 'system',
     } = req.body;
 
+    // Validate required fields
     if (!mobileNumber || !password) {
-      // No need to rollback, as no transaction started
       res.status(400).json({ status: 'error', message: 'Please provide a mobile number and password.' });
       return;
     }
 
-    // Ensure you are always using the queryRunner for repository operations
+    // Ensure you're using queryRunner for repository operations
     const userLoginRepository = queryRunner.manager.getRepository(UserLogin);
     const personalDetailsRepository = queryRunner.manager.getRepository(PersonalDetails);
     const businessDetailsRepository = queryRunner.manager.getRepository(BusinessDetails);
 
+    // Check for existing user with the same mobile number
     const existingUser = await userLoginRepository.findOne({ where: { mobileNumber } });
     if (existingUser) {
-      await queryRunner.rollbackTransaction();  // Rollback transaction properly
+      await queryRunner.rollbackTransaction();
       res.status(400).json({
         status: 'error',
         message: 'Mobile number already registered',
@@ -51,18 +50,20 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Create a new user entry
     const newUser = userLoginRepository.create({
       mobileNumber,
       password,
-      primaryRole: primaryRole || 'ServiceProvider',
-      userType: userType || 'Individual',
-      createdBy: createdBy || 'system',
-      updatedBy: updatedBy || 'system',
+      primaryRole,
+      userType,
+      createdBy,
+      updatedBy,
     });
 
-    await userLoginRepository.save(newUser);  // Use the transaction-aware repository
+    await userLoginRepository.save(newUser);
 
     let details;
+    // Create personal or business details based on userType
     if (userType === 'Individual') {
       details = personalDetailsRepository.create({
         fullName,
@@ -72,7 +73,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         emailAddress: emailAddress || null,
       });
 
-      await personalDetailsRepository.save(details);  // Use the transaction-aware repository
+      await personalDetailsRepository.save(details);
     } else {
       details = businessDetailsRepository.create({
         companyName: fullName,
@@ -82,46 +83,31 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         emailAddress: emailAddress || null,
       });
 
-      await businessDetailsRepository.save(details);  // Use the transaction-aware repository
+      await businessDetailsRepository.save(details);
     }
 
-    await queryRunner.commitTransaction();  // Commit if everything is successful
+    // Commit the transaction if everything is successful
+    await queryRunner.commitTransaction();
 
-    // Send SMS to welcome the user
-    try {
-      await NotificationController.sendNotification({
-        body: {
-          notificationType: 'sms',
-          templateName: primaryRole === 'Customer' ? 'welcome_cus' : 'welcome_sp',
-          recipientId: newUser?.id,
-          recipientType: primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
-          data: {
-            'Customer Name': fullName,
-            'Provider Name': fullName,
-            'Company Name': 'Connect',
-          },
-        },
-      } as Request, res);
-    } catch (err: any) {
-      console.error('Signup successful but error sending SMS:', err.message || err);
-    }
+    // Send notifications (SMS and in-app) to welcome the user
+    const notificationData = {
+      notificationType: 'sms',
+      templateName: primaryRole === 'Customer' ? 'welcome_cus' : 'welcome_sp',
+      recipientId: newUser.id,
+      recipientType: primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
+      data: {
+        'Customer Name': fullName,
+        'Provider Name': fullName,
+        'Company Name': 'Connect',
+      },
+    };
 
     try {
-      await NotificationController.sendNotification({
-        body: {
-          notificationType: 'inApp',
-          templateName: primaryRole === 'Customer' ? 'welcome_cus' : 'welcome_sp',
-          recipientId: newUser?.id,
-          recipientType: primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
-          data: {
-            'Customer Name': fullName,
-            'Provider Name': fullName,
-            'Company Name': 'Connect',
-          },
-        },
-      } as Request, res);
-    } catch (err: any) {
-      console.error('Signup successful but error sending SMS:', err.message || err);
+      await NotificationController.sendNotification({ body: notificationData } as Request, res);
+      notificationData.notificationType = 'inApp'; // Change to in-app notification
+      await NotificationController.sendNotification({ body: notificationData } as Request, res);
+    } catch (notificationError: any) {
+      console.error('Signup successful but error sending notification:', notificationError.message || notificationError);
     }
 
     res.status(201).json({
@@ -134,9 +120,9 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     });
 
   } catch (error: any) {
-    // Check if the transaction is active before rolling back
+    // Rollback transaction if an error occurs
     if (queryRunner.isTransactionActive) {
-      await queryRunner.rollbackTransaction();  // Ensure rollback happens only if transaction is active
+      await queryRunner.rollbackTransaction();
     }
     console.error('Error during signup:', error);
     if (error.code === 'ER_DUP_ENTRY') {
@@ -148,6 +134,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
     res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
   } finally {
+    // Release the query runner
     await queryRunner.release();
   }
 };

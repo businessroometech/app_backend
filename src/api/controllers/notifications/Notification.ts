@@ -18,7 +18,7 @@ class NotificationController {
     }
 
     static async sendNotification(req: Request, res: Response) {
-        const { notificationType, templateName, recipientId, recipientType, data } = req.body;
+        const { notificationType, templateName, recipientId, recipientNumber, recipientType, data } = req.body;
         let notification: Notification | null = null;
 
         try {
@@ -46,7 +46,7 @@ class NotificationController {
                         notification.status = 'Sent';
                         break;
                     case 'sms':
-                        result = await SMSService.sendSMS(template.providerTemplateId, recipientId, recipientType, data);
+                        result = await SMSService.sendSMS(template.providerTemplateId, recipientId, recipientNumber, recipientType, data);
                         notification.content = this.replaceTemplateVariables(template.templatePhoneContent, data);
                         notification.notificationType = 'sms';
                         notification.status = 'Sent';
