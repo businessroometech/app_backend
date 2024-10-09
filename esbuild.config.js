@@ -13,7 +13,7 @@ build({
   target: ['es2020'],               // JavaScript target
   tsconfig: './tsconfig.json',      // TypeScript config
   format: 'cjs',
-  external: ['src/swagger_output.json','swagger-ui-express']                    // CommonJS format
+ // external: ['src/swagger_output.json','swagger-ui-express']                    // CommonJS format
 }).then(() => {
   console.log('Build finished');
 }).catch(() => process.exit(1));
