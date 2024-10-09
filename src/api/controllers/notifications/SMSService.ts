@@ -6,7 +6,7 @@ import { PersonalDetailsCustomer } from "@/api/entity/profile/personal/PersonalD
 import { BusinessDetails } from "@/api/entity/profile/business/BusinessDetails";
 
 class SMSService {
-    static async sendSMS(providerTemplateId: string, recipientId: string, recipientType: string, recipientNumber: string, data: { [key: string]: any }): Promise<any> {
+    static async sendSMS(providerTemplateId: string, smsTitle: string, recipientId: string, recipientType: string, recipientNumber: string, data: { [key: string]: any }): Promise<any> {
         const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
         const businessDetailsRepository = AppDataSource.getRepository(BusinessDetails);
         const personalDetailsCustomerRepository = AppDataSource.getRepository(PersonalDetailsCustomer);
@@ -21,26 +21,24 @@ class SMSService {
             if (!details) {
                 details = await businessDetailsRepository.findOne({ where: { userId: recipientId } });
             }
-        } else {
+        } else if (recipientType === 'Customer') {
             details = await personalDetailsCustomerRepository.findOne({ where: { userId: recipientId } });
         }
 
         let options: AxiosRequestConfig;
         let formattedMobileNumber: string | undefined;
 
-        // If details are not found, use the provided recipientNumber directly
         if (!details) {
-            const phoneNumber = parsePhoneNumberFromString(recipientNumber, 'IN'); // 'IN' stands for India
 
+            const phoneNumber = parsePhoneNumberFromString(recipientNumber, 'IN'); 
             if (!phoneNumber || !phoneNumber.isValid()) {
                 throw new Error(`Invalid mobile number: ${recipientNumber}`);
             }
 
             formattedMobileNumber = phoneNumber.format('E.164');
         } else {
-            // Use the mobile number from details if it exists
-            const phoneNumber = parsePhoneNumberFromString(details.mobileNumber, 'IN');
 
+            const phoneNumber = parsePhoneNumberFromString(details.mobileNumber, 'IN');
             if (!phoneNumber || !phoneNumber.isValid()) {
                 throw new Error(`Invalid mobile number: ${details.mobileNumber}`);
             }
@@ -61,6 +59,7 @@ class SMSService {
                 recipients: [
                     {
                         mobiles: formattedMobileNumber,
+                        title: smsTitle,
                         ...data
                     }
                 ]

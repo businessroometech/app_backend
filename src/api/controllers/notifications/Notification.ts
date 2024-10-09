@@ -50,7 +50,7 @@ class NotificationController {
                         notification.status = 'Sent';
                         break;
                     case 'sms':
-                        await SMSService.sendSMS(template.providerTemplateId, recipientId, recipientType,recipientNumber, data);
+                        await SMSService.sendSMS(template.providerTemplateId, template.templatePhoneTitle , recipientId, recipientType,recipientNumber, data);
                         notification.content = this.replaceTemplateVariables(template.templatePhoneContent, data);
                         notification.notificationType = 'sms';
                         notification.status = 'Sent';
