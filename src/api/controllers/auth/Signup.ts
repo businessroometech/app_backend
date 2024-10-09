@@ -103,7 +103,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     try {
       const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
       console.log(smsResult.message);
-
       notificationData.notificationType = 'inApp';
       const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
       console.log(inAppResult.message);

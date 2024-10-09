@@ -24,7 +24,7 @@ import NotificationController from '../notifications/Notification';
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
   try {
     const { categoryId, subCategoryId } = req.body;
-    const { serviceName, minPrice, maxPrice, city } = req.body; 
+    const { serviceName, minPrice, maxPrice, city } = req.body;
 
     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -332,21 +332,6 @@ export const addToCart = async (req: Request, res: Response) => {
     cart.updatedBy = 'system';
     await cart.save();
 
-    // await NotificationController.sendNotification(
-    //   {
-    //     body: {
-    //       notificationType: 'sms',
-    //       templateName: 'confirm_order_cus', // The template name in the database
-    //       recipientId: customerId,
-    //       recipientType: 'Customer',
-    //       data: {
-    //         'Order ID': cart.id,
-    //       },
-    //     },
-    //   } as Request,
-    //   res
-    // );
-
     return res.status(201).json({
       status: 'success',
       message: 'Item added to cart successfully',
@@ -387,6 +372,7 @@ export const fetchCartItem = async (req: Request, res: Response) => {
   }
 };
 
+// here notification : confirm_order_cus
 export const convertCartToOrder = async (req: Request, res: Response) => {
   const { cartId, userId } = req.body;
 
@@ -476,6 +462,38 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     // cart is no longer active now ( Active = false )
     cart.isActive = false;
     cart.save();
+
+    // --------------- order confirmed --------------------------
+    // const notificationData = {
+    //   notificationType: 'inApp',
+    //   templateName: 'confirm_order_cus',
+    //   recipientId: serviceJob?.customerId,
+    //   recipientType: 'Customer',
+    //   data: {
+    //     'Order ID': serviceJob?.orderItemBookingId,
+    //   },
+    // };
+
+    // try {
+    //   const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
+    //   console.log(inAppResultCustomer.message);
+
+    //   // service provider in app notification
+    //   notificationData.templateName = 'new_order_sp';
+    //   notificationData.recipientId = serviceJob?.serviceProviderId;
+    //   notificationData.recipientType = 'ServiceProvider';
+    //   const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
+    //   console.log(inAppResultService.message);
+
+    //   // service provider sms notification
+    //   notificationData.notificationType = 'sms';
+    //   const smsResultService = await NotificationController.sendNotification({
+    //     body: notificationData,
+    //   } as Request);
+    //   console.log(smsResultService.message);
+    // } catch (notificationError: any) {
+    //   console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
+    // }
 
     return res.status(200).json({
       status: 'success',
@@ -609,6 +627,7 @@ export const cancelOrderItemBooking = async (req: Request, res: Response) => {
     // Save the changes to the order item booking
     await orderItemBooking.save();
 
+    //
     return res.status(200).json({
       status: 'success',
       message: 'Order item booking successfully cancelled',
@@ -621,7 +640,7 @@ export const cancelOrderItemBooking = async (req: Request, res: Response) => {
 };
 
 // Reschedule OrderItemBooking
-
+// Reschedule notification here : rescheduled_order_cus
 export const rescheduleOrder = async (req: Request, res: Response) => {
   const {
     orderId,
@@ -715,6 +734,30 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
       oldServiceJob.reasonIfReschedueledByCustomer = reason;
       oldServiceJob.updatedBy = updatedBy || 'system';
       await oldServiceJob.save();
+      // --------------------------- reschedule of order ---------------------------
+      // const notificationData = {
+      //   notificationType: 'inApp',
+      //   templateName: 'rescheduled_order_sp',
+      //   recipientId: oldServiceJob?.serviceProviderId,
+      //   recipientType: 'ServiceProvider',
+      //   data: {
+      //     'Order ID': oldServiceJob?.orderItemBookingId,
+      //   },
+      // };
+
+      // try {
+      //   const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
+      //   // customer
+      //   notificationData.templateName = 'rescheduled_order_cus';
+      //   notificationData.recipientType = 'Customer';
+      //   notificationData.recipientId = oldServiceJob?.customerId;
+      //   const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
+
+      //   console.log(inAppResultService.message);
+      //   console.log(inAppResultCustomer.message);
+      // } catch (notificationError: any) {
+      //   console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
+      // }
     }
 
     // Create a new service job for the new booking
@@ -751,3 +794,6 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
     res.status(500).json({ status: 'error', message: 'Error rescheduling order' });
   }
 };
+
+// service reminder notification is missing : service_reminder_cus
+// provider reassigned notification : provider_reassigned_cus
