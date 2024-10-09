@@ -160,21 +160,21 @@ export const acceptService = async (req: Request, res: Response) => {
         orderItemBooking.status = "Assigned";
         await orderItemBooking.save();
 
-        await NotificationController.sendNotification(
-            {
-              body: {
-                notificationType: 'sms',
-                templateName: 'order_accepted_sp', // The template name in the database
-                recipientId: serviceJob?.id,
-                recipientType: 'Service Provider',
-                data: {
-                  'Order ID':orderItemBookingId,
-                //   X days is missing
-                },
-              },
-            } as Request,
-            res
-          );
+        // await NotificationController.sendNotification(
+        //     {
+        //       body: {
+        //         notificationType: 'sms',
+        //         templateName: 'order_accepted_sp', // The template name in the database
+        //         recipientId: serviceJob?.id,
+        //         recipientType: 'Service Provider',
+        //         data: {
+        //           'Order ID':orderItemBookingId,
+        //         //   X days is missing
+        //         },
+        //       },
+        //     } as Request,
+        //     res
+        //   );
       
 
         res.status(200).json({ status: "success", message: "Service accepted successfully", data: { serviceJob, orderItemBooking } });
