@@ -11,10 +11,10 @@ export class Notification {
   @Column({ type: 'uuid' })
   templateId!: string;
 
-  @Column({ type: 'uuid', default: "" })
+  @Column({ type: 'uuid', nullable: true })
   recipientId!: string;
 
-  @Column({ type: 'varchar', length: 15, default: "" })
+  @Column({ type: 'varchar', length: 15, nullable: true })
   recipientNumber!: string;
 
   @Column({ type: 'varchar' })

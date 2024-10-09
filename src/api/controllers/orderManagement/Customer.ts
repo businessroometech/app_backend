@@ -24,7 +24,7 @@ import NotificationController from '../notifications/Notification';
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
   try {
     const { categoryId, subCategoryId } = req.body;
-    const { serviceName, minPrice, maxPrice, city } = req.query; // Get query parameters
+    const { serviceName, minPrice, maxPrice, city } = req.body; 
 
     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -214,7 +214,7 @@ export const addOrUpdateAddress = async (req: Request, res: Response) => {
       userAddress.state = state;
       userAddress.pincode = pincode;
       userAddress.updatedBy = userId;
-      userAddress.updatedBy = 'system' || updatedBy;
+      userAddress.updatedBy = updatedBy || 'system';
     } else {
       userAddress = userAddressRepository.create({
         userId,
@@ -224,7 +224,7 @@ export const addOrUpdateAddress = async (req: Request, res: Response) => {
         city,
         state,
         pincode,
-        createdBy: 'system' || createdBy,
+        createdBy: createdBy || 'system',
       });
     }
 
@@ -523,8 +523,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
 
 export const fetchOrderHistory = async (req: Request, res: Response) => {
   try {
-    const { type = 'scheduled', onDate } = req.query;
-    const { customerId } = req.body;
+    const { customerId, type = 'scheduled', onDate } = req.body;
 
     if (!customerId) {
       return res.status(400).json({ status: 'error', message: 'Customer ID is required.' });
