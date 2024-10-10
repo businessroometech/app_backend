@@ -172,30 +172,30 @@ export const acceptService = async (req: Request, res: Response) => {
     await orderItemBooking.save();
 
     // ------------------------------- order accepted ----------------------------
-    // const notificationData = {
-    //   notificationType: 'inApp',
-    //   templateName: 'order_accepted_sp',
-    //   recipientId: serviceJob?.serviceProviderId,
-    //   recipientType: 'ServiceProvider',
-    //   data: {
-    //     'Order ID': serviceJob?.orderItemBookingId,
-    //      'X': // deliveryDate - current date,
-    //   },
-    // };
+    const notificationData = {
+      notificationType: 'inApp',
+      templateName: 'order_accepted_sp',
+      recipientId: serviceJob?.serviceProviderId,
+      recipientType: 'ServiceProvider',
+      data: {
+        'Order ID': serviceJob?.orderItemBookingId,
+        X: '3', // deliveryDate - current date,
+      },
+    };
 
-    // try {
-    //   const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
-    //   // customer
-    //   notificationData.templateName = 'order_accepted_cu';
-    //   notificationData.recipientType = 'Customer';
-    //   notificationData.recipientId = serviceJob?.customerId;
-    //   const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
+    try {
+      const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
+      // customer
+      notificationData.templateName = 'order_accepted_cu';
+      notificationData.recipientType = 'Customer';
+      notificationData.recipientId = serviceJob?.customerId;
+      const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
 
-    //   console.log(inAppResultService.message);
-    //   console.log(inAppResultCustomer.message);
-    // } catch (notificationError: any) {
-    //   console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
-    // }
+      console.log("--- in app accept order service ---",inAppResultService.message);
+      console.log("--- in app accept order customer ---",inAppResultCustomer.message);
+    } catch (notificationError: any) {
+      console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
+    }
 
     res
       .status(200)

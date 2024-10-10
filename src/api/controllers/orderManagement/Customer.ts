@@ -464,36 +464,36 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     cart.save();
 
     // --------------- order confirmed --------------------------
-    // const notificationData = {
-    //   notificationType: 'inApp',
-    //   templateName: 'confirm_order_cus',
-    //   recipientId: serviceJob?.customerId,
-    //   recipientType: 'Customer',
-    //   data: {
-    //     'Order ID': serviceJob?.orderItemBookingId,
-    //   },
-    // };
+    const notificationData = {
+      notificationType: 'inApp',
+      templateName: 'confirm_order_cus',
+      recipientId: serviceJob?.customerId,
+      recipientType: 'Customer',
+      data: {
+        'Order ID': serviceJob?.orderItemBookingId,
+      },
+    };
 
-    // try {
-    //   const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
-    //   console.log(inAppResultCustomer.message);
+    try {
+      const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(inAppResultCustomer.message);
 
-    //   // service provider in app notification
-    //   notificationData.templateName = 'new_order_sp';
-    //   notificationData.recipientId = serviceJob?.serviceProviderId;
-    //   notificationData.recipientType = 'ServiceProvider';
-    //   const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
-    //   console.log(inAppResultService.message);
+      // service provider in app notification
+      notificationData.templateName = 'new_order_sp';
+      notificationData.recipientId = serviceJob?.serviceProviderId;
+      notificationData.recipientType = 'ServiceProvider';
+      const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(inAppResultService.message);
 
-    //   // service provider sms notification
-    //   notificationData.notificationType = 'sms';
-    //   const smsResultService = await NotificationController.sendNotification({
-    //     body: notificationData,
-    //   } as Request);
-    //   console.log(smsResultService.message);
-    // } catch (notificationError: any) {
-    //   console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
-    // }
+      // service provider sms notification
+      // notificationData.notificationType = 'sms';
+      // const smsResultService = await NotificationController.sendNotification({
+      //   body: notificationData,
+      // } as Request);
+      // console.log(smsResultService.message);
+    } catch (notificationError: any) {
+      console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
+    }
 
     return res.status(200).json({
       status: 'success',
@@ -735,29 +735,29 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
       oldServiceJob.updatedBy = updatedBy || 'system';
       await oldServiceJob.save();
       // --------------------------- reschedule of order ---------------------------
-      // const notificationData = {
-      //   notificationType: 'inApp',
-      //   templateName: 'rescheduled_order_sp',
-      //   recipientId: oldServiceJob?.serviceProviderId,
-      //   recipientType: 'ServiceProvider',
-      //   data: {
-      //     'Order ID': oldServiceJob?.orderItemBookingId,
-      //   },
-      // };
+      const notificationData = {
+        notificationType: 'inApp',
+        templateName: 'rescheduled_order_sp',
+        recipientId: oldServiceJob?.serviceProviderId,
+        recipientType: 'ServiceProvider',
+        data: {
+          'Order ID': oldServiceJob?.orderItemBookingId,
+        },
+      };
 
-      // try {
-      //   const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
-      //   // customer
-      //   notificationData.templateName = 'rescheduled_order_cus';
-      //   notificationData.recipientType = 'Customer';
-      //   notificationData.recipientId = oldServiceJob?.customerId;
-      //   const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
+      try {
+        const inAppResultService = await NotificationController.sendNotification({ body: notificationData } as Request);
+        // customer
+        notificationData.templateName = 'rescheduled_order_cus';
+        notificationData.recipientType = 'Customer';
+        notificationData.recipientId = oldServiceJob?.customerId;
+        const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
 
-      //   console.log(inAppResultService.message);
-      //   console.log(inAppResultCustomer.message);
-      // } catch (notificationError: any) {
-      //   console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
-      // }
+        console.log("-- reschedule in service provider ----",inAppResultService.message);
+        console.log("-- reschedule in customer ----",inAppResultCustomer.message);
+      } catch (notificationError: any) {
+        console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
+      }
     }
 
     // Create a new service job for the new booking
