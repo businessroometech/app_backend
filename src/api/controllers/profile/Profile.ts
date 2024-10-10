@@ -741,7 +741,7 @@ export const getBusinessDetails = async (req: Request, res: Response) => {
 
 export const setPersonalDetailsCustomer = async (req: Request, res: Response) => {
     try {
-        const { userId, fullName, emailAddress, mobileNumber, createdBy, updatedBy } = req.body;
+        const { userId, fullName, emailAddress, mobileNumber, profilePictureUploadId, createdBy, updatedBy } = req.body;
 
         const personalDetailsCustomerRepository = AppDataSource.getRepository(PersonalDetailsCustomer);
 
@@ -750,6 +750,7 @@ export const setPersonalDetailsCustomer = async (req: Request, res: Response) =>
         if (!details) {
             details = await personalDetailsCustomerRepository.create({
                 userId,
+                profilePictureUploadId,
                 fullName,
                 emailAddress,
                 mobileNumber,
@@ -758,6 +759,7 @@ export const setPersonalDetailsCustomer = async (req: Request, res: Response) =>
             }).save();
         }
         else {
+            if (profilePictureUploadId) details.profilePictureUploadId = profilePictureUploadId;
             if (fullName) details.fullName = fullName;
             if (emailAddress) details.emailAddress = emailAddress;
             details.updatedBy = updatedBy || 'system';
