@@ -11,6 +11,8 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_TEST_KEY_SECRET || '',
 });
 
+const baseUrl = process.env.NODE_ENV === 'development' ? process.env.API_BASE_URL_DEV : process.env.API_BASE_URL_PROD;
+
 export const createOrder = async (req: Request, res: Response) => {
     try {
 
@@ -90,7 +92,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
             try {
                 // Convert cart to order
                 const response = await axios.post(
-                    `http://localhost:5000/api/v1/order-management/customer/cart-to-order`,
+                    `${baseUrl}/api/v1/order-management/customer/cart-to-order`,
                     { cartId, userId },
                     {
                         headers: {
