@@ -67,7 +67,7 @@ class SMSService {
         };
 
         try {
-            const { data } = await axios.request(options);
+          //  const { data } = await axios.request(options);
             return data;
         } catch (error: any) {
             console.error('Error:', error?.message || 'Unknown error occurred during SMS request');
