@@ -747,8 +747,10 @@ export const setPersonalDetailsCustomer = async (req: Request, res: Response) =>
 
         let details = await personalDetailsCustomerRepository.findOne({ where: { userId } });
         let statusCode = 201;
+        console.log("Details :", details);
+
         if (!details) {
-            details = await personalDetailsCustomerRepository.create({
+            details = personalDetailsCustomerRepository.create({
                 userId,
                 profilePictureUploadId,
                 fullName,
@@ -756,22 +758,44 @@ export const setPersonalDetailsCustomer = async (req: Request, res: Response) =>
                 mobileNumber,
                 createdBy: createdBy || 'system',
                 updatedBy: updatedBy || 'system',
-            }).save();
-        }
-        else {
+            });
+
+            await personalDetailsCustomerRepository.save(details);
+        } else {
             if (profilePictureUploadId) details.profilePictureUploadId = profilePictureUploadId;
             if (fullName) details.fullName = fullName;
             if (emailAddress) details.emailAddress = emailAddress;
             details.updatedBy = updatedBy || 'system';
-            await details.save();
+
+            await personalDetailsCustomerRepository.save(details);
             statusCode = 200;
         }
-        return res.status(statusCode).json({ status: "success", message: "Personal details created/updated successfully", data: { details } });
-    } catch (error) {
-        console.log("Server Error :", error);
-        return res.status(500).json({ status: "error", message: "Error creating/updating Personal details" });
+
+        return res.status(statusCode).json({
+            status: "success",
+            message: "Personal details created/updated successfully",
+            data: { details },
+        });
+    } catch (error: any) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            console.error("Duplicate Error:", error);
+            return res.status(500).json({
+                status: "error",
+                message: "EmailAddress already present",
+                error: error.message || error,
+            });
+        }
+        else {
+            console.error("Server Error:", error);
+            return res.status(500).json({
+                status: "error",
+                message: "Error creating/updating Personal details",
+                error: error.message || error,
+            });
+        }
     }
-}
+};
+
 
 export const getPersonalDetailsCustomer = async (req: Request, res: Response) => {
     try {
