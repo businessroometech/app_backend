@@ -264,8 +264,6 @@ export const getAllAddresses = async (req: Request, res: Response) => {
   }
 };
 
-// testing something
-
 export const deleteAddress = async (req: Request, res: Response) => {
   try {
     const { userId, addressId } = req.body;
