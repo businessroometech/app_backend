@@ -204,7 +204,7 @@ export const addOrUpdateAddress = async (req: Request, res: Response) => {
       userAddress = await userAddressRepository.findOne({ where: { id: addressId, userId } });
 
       if (!userAddress) {
-        return res.status(404).json({ message: 'Address not found' });
+        return res.status(400).json({ message: 'Address not found' });
       }
 
       userAddress.title = title;
@@ -253,12 +253,6 @@ export const getAllAddresses = async (req: Request, res: Response) => {
 
     const addresses = await userAddressRepository.find({ where: { userId } });
 
-    if (addresses.length === 0) {
-      return res
-        .status(400)
-        .json({ status: 'error', message: 'No addresses found for this user or maybe user is Invalid' });
-    }
-
     return res.status(200).json({
       status: 'success',
       message: 'Addresses retrieved successfully',
@@ -266,6 +260,34 @@ export const getAllAddresses = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const deleteAddress = async (req: Request, res: Response) => {
+  try {
+    const { userId, addressId } = req.body;
+
+    if (!userId || !addressId) {
+      return res.status(400).json({ message: 'UserId and AddressId are required' });
+    }
+
+    const userAddressRepository = AppDataSource.getRepository(UserAddress);
+
+    const address = await userAddressRepository.findOneBy({ userId, id: addressId });
+
+    if (!address) {
+      return res.status(400).json({ message: 'Address not found' });
+    }
+
+    await userAddressRepository.delete({ userId, id: addressId });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Address deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting address:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

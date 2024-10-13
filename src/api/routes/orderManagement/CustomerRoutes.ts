@@ -10,6 +10,7 @@ import {
     getProvidedServicesByCategoryAndSubCategory,
     getAvailableTimeSlots,
     addOrUpdateAddress,
+    deleteAddress,
     getAllAddresses,
     fetchCartItem,
     convertCartToOrder,
@@ -29,6 +30,7 @@ Router.post('/order-history', fetchOrderHistory)
 
 Router.post('/get-address', getAllAddresses)
 Router.post('/add-or-update-address', addOrUpdateAddress);
+Router.post('/delete-address', deleteAddress)
 
 Router.post('/add-to-cart', addToCart);
 Router.post('/get-cart-item', fetchCartItem);
