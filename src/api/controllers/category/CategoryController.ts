@@ -8,8 +8,10 @@ export const getCategories = async (req: Request, res: Response) => {
     const { sectorId } = req.body;
 
     const categoryRepository = AppDataSource.getRepository(Category);
-
-    const categories = await categoryRepository.find({ where: { sectorId } });
+    
+    let categories;
+    if(!sectorId) categories = await categoryRepository.find();
+    else categories = await categoryRepository.find({ where: { sectorId } });
 
     res.status(200).json({
       status: 'success',
