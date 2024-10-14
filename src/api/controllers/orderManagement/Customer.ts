@@ -103,6 +103,51 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
   }
 };
 
+export const getDistinctCitiesBySubCategory = async (req: Request, res: Response) => {
+  const { subCategoryId } = req.body;
+
+  try {
+    const providedServiceRepository = AppDataSource.getRepository(ProvidedService)
+    const providedServices = await providedServiceRepository.find({ where: { subCategoryId } });
+
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const businessDetailsRepository = AppDataSource.getRepository(BusinessDetails);
+
+    const citySet = new Set<string>();
+
+    for (const providedService of providedServices) {
+      const userLogin = await userLoginRepository.findOne({ where: { id: providedService.serviceProviderId } });
+
+      if (userLogin) {
+        let city = '';
+        if (userLogin.userType === 'Individual') {
+          const personalDetails = await personalDetailsRepository.findOne({ where: { userId: userLogin.id } });
+          if (personalDetails && personalDetails.currentAddress) {
+            city = personalDetails.currentAddress.city.toLowerCase();
+          }
+        } else if (userLogin.userType === 'Business') {
+          const businessDetails = await businessDetailsRepository.findOne({ where: { userId: userLogin.id } });
+          if (businessDetails && businessDetails.currentAddress) {
+            city = businessDetails.currentAddress.city.toLowerCase();
+          }
+        }
+
+        if (city) {
+          citySet.add(city);
+        }
+      }
+    }
+
+    const cityList = Array.from(citySet);
+
+    return res.status(200).json({ status: "success", message: "All available cities fetched", data: { cities: cityList } });
+  } catch (error) {
+    console.error('Error fetching distinct cities:', error);
+    return res.status(500).json({ message: 'Error fetching cities', error });
+  }
+};
+
 const timeSlots = [
   '8:00 AM - 9:00 AM',
   '9:00 AM - 10:00 AM',

@@ -8,6 +8,7 @@ import {
     // rescheduleOrderItemBooking,
     // cancelOrderItemBooking,
     getProvidedServicesByCategoryAndSubCategory,
+    getDistinctCitiesBySubCategory,
     getAvailableTimeSlots,
     addOrUpdateAddress,
     deleteAddress,
@@ -24,6 +25,7 @@ const Router = express.Router();
 
 // Router.post('/add-bookings', addBooking);
 Router.post('/providers', getProvidedServicesByCategoryAndSubCategory);
+Router.post('/providers/cites', getDistinctCitiesBySubCategory);
 Router.post('/timeSlots/:date', getAvailableTimeSlots);
 
 Router.post('/order-history', fetchOrderHistory)
