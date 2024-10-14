@@ -23,3 +23,34 @@ export const getCategories = async (req: Request, res: Response) => {
     res.status(500).json({ status: 'error', message: 'Failed to fetch categories' });
   }
 };
+
+export const postCategories = async (req: Request, res: Response) => {
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  const { sectorId, categoryName, categoryDescription } = req.body;
+
+  // Validate request body
+  if (!sectorId) return res.status(400).json({ status: 'Unsuccessful', message: 'Please provide Sector ID' });
+
+  if (!categoryName) return res.status(400).json({ status: 'Unsuccessful', message: 'Please provide Category Name' });
+
+  try {
+    const categoryRepository = AppDataSource.getRepository(Category);
+
+    // Create and save the new category
+    const newCategory = categoryRepository.create({
+      sectorId,
+      categoryName,
+      categoryDescription: categoryDescription || null,
+    });
+
+    await categoryRepository.save(newCategory);
+
+    return res.status(201).json({ status: 'Successful', message: 'Category created successfully' });
+  } catch (error) {
+    console.error('Error while creating category:', error);
+    return res.status(500).json({ status: 'Unsuccessful', message: 'Server error while creating category' });
+  } finally {
+    await queryRunner.release();
+  }
+};
