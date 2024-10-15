@@ -21,14 +21,14 @@ export const createInvoice = async (req: Request, res: Response) => {
         invoice.serviceProviderId = serviceProviderId;
         invoice.orderId = orderId;
         invoice.transactionId = transactionId;
-        invoice.createdBy = createdBy || 'system'; 
+        invoice.createdBy = createdBy || 'system';
 
         await invoice.save();
 
-        return res.status(201).json({ message: 'Invoice created successfully', invoice });
+        return res.status(201).json({ status: "success", message: 'Invoice created successfully', data: { invoice } });
     } catch (error) {
         console.error('Error creating invoice:', error);
-        return res.status(500).json({ message: 'Error creating invoice', error });
+        return res.status(500).json({ status: "error", message: 'Error creating invoice' });
     }
 };
 
@@ -49,13 +49,9 @@ export const getInvoices = async (req: Request, res: Response) => {
             invoices = await invoiceRepository.find();
         }
 
-        if (!invoices) {
-            return res.status(404).json({ message: 'No invoices found' });
-        }
-
-        return res.status(200).json({ invoices });
+        return res.status(200).json({ status: "success", message: "fetched invoice successfully", data: { invoices } });
     } catch (error) {
         console.error('Error fetching invoices:', error);
-        return res.status(500).json({ message: 'Error fetching invoices', error });
+        return res.status(500).json({ status: "error", message: 'Error fetching invoices' });
     }
 };
