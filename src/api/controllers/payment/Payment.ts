@@ -115,7 +115,16 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     createdBy: 'system'
                 };
 
-                await addTransactionAndLog(transactionData);
+                const transaction = await addTransactionAndLog(transactionData);
+
+                let invoiceNo = 'unique_number';
+                await axios.post(`${baseUrl}/api/v1/invoices/create-invoice`, {
+                    invoiceNo,
+                    customerId: response.data.data.orderItem.customerId,
+                    serviceProviderId: response.data.data.orderItem.serviceProviderId,
+                    orderId: response.data.data.order.id,
+                    transactionId: transaction.id,
+                })
 
                 return res.status(200).json({
                     status: "success",
