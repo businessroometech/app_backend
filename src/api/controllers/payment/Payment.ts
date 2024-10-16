@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
+import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import axios from 'axios';
 import { Transaction } from '@/api/entity/payment/Transaction';
@@ -115,7 +116,16 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     createdBy: 'system'
                 };
 
-                await addTransactionAndLog(transactionData);
+                const transaction = await addTransactionAndLog(transactionData);
+
+                let invoiceNo = uuidv4();
+                await axios.post(`${baseUrl}/api/v1/invoices/create-invoice`, {
+                    invoiceNo,
+                    customerId: response.data.data.orderItem.customerId,
+                    serviceProviderId: response.data.data.orderItem.serviceProviderId,
+                    orderId: response.data.data.order.id,
+                    transactionId: transaction.id,
+                })
 
                 return res.status(200).json({
                     status: "success",

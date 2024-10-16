@@ -46,6 +46,12 @@ export class CartItemBooking extends BaseEntity {
     @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
     sgstPercentage!: number;
 
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // CGST set to 9%
+    cgstPrice!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
+    sgstPrice!: number;
+
     @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
     totalTax!: number;
 
@@ -112,17 +118,17 @@ export class CartItemBooking extends BaseEntity {
         if (this.cgstPercentage === undefined || isNaN(this.cgstPercentage)) {
             this.cgstPercentage = 9; // default CGST to 9%
         }
-
+        
         if (this.sgstPercentage === undefined || isNaN(this.sgstPercentage)) {
             this.sgstPercentage = 9; // default SGST to 9%
         }
-
+        
         // Calculate CGST and SGST
-        const cgst = (taxableAmount * this.cgstPercentage) / 100;
-        const sgst = (taxableAmount * this.sgstPercentage) / 100;
+        this.cgstPrice = (taxableAmount * this.cgstPercentage) / 100;
+        this.sgstPrice = (taxableAmount * this.sgstPercentage) / 100;
 
         // Set total tax
-        this.totalTax = cgst + sgst;
+        this.totalTax = this.cgstPrice + this.sgstPrice;
 
         // Set total price after adding taxes
         this.totalPrice = this.price + this.totalTax;
