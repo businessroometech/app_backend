@@ -350,6 +350,8 @@ export const addToCart = async (req: Request, res: Response) => {
       providedServiceId,
       workDetails,
       mrp,
+      cgstPercentage,
+      sgstPercentage,
       deliveryDate,
       deliveryTime,
       deliveryAddressId,
@@ -389,6 +391,8 @@ export const addToCart = async (req: Request, res: Response) => {
     cartItemBooking.deliveryAddressId = deliveryAddressId;
     cartItemBooking.additionalNote = additionalNote || '';
     cartItemBooking.attachments = attachments || [];
+    if (cgstPercentage) cartItemBooking.cgstPercentage = cgstPercentage;
+    if (sgstPercentage) cartItemBooking.sgstPercentage = sgstPercentage;
     cartItemBooking.createdBy = 'system';
     await cartItemBooking.save();
 
@@ -489,6 +493,8 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     orderItem.discountAmount = cartItem.discountAmount;
     orderItem.cgstPercentage = cartItem.cgstPercentage;
     orderItem.sgstPercentage = cartItem.sgstPercentage;
+    orderItem.cgstPrice = cartItem.cgstPrice;
+    orderItem.sgstPrice = cartItem.sgstPrice;
     orderItem.totalTax = cartItem.totalTax;
     orderItem.totalPrice = cartItem.totalPrice;
     orderItem.deliveryDate = cartItem.deliveryDate;
@@ -515,6 +521,8 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     serviceJob.discountAmount = orderItem.discountAmount;
     serviceJob.cgstPercentage = orderItem.cgstPercentage;
     serviceJob.sgstPercentage = orderItem.sgstPercentage;
+    serviceJob.cgstPrice = orderItem.cgstPrice;
+    serviceJob.sgstPrice = orderItem.sgstPrice;
     serviceJob.totalTax = orderItem.totalTax;
     serviceJob.totalPrice = orderItem.totalPrice;
     serviceJob.deliveryDate = orderItem.deliveryDate;
