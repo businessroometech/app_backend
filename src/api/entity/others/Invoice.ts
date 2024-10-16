@@ -18,7 +18,7 @@ export class Invoice extends BaseEntity {
     @Column({ type: "varchar" })
     invoiceNo !: string;
 
-    @Column({ type: 'date', default: () => 'CURRENT_DATE' })
+    @Column({ type: 'date'})
     issueDate!: string;
 
     @Column({ type: 'uuid' })

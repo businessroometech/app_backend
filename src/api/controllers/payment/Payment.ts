@@ -121,6 +121,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 let invoiceNo = uuidv4();
                 await axios.post(`${baseUrl}/api/v1/invoices/create-invoice`, {
                     invoiceNo,
+                    issueDate: Date.now(),
                     customerId: response.data.data.orderItem.customerId,
                     serviceProviderId: response.data.data.orderItem.serviceProviderId,
                     orderId: response.data.data.order.id,

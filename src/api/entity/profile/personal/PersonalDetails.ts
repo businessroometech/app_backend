@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -47,7 +48,7 @@ export class PersonalDetails extends BaseEntity {
 
   @Column({ type: 'text' })
   bio!: string;
- 
+
   @Column({ type: 'json' })
   permanentAddress!: Address;
 
@@ -86,6 +87,7 @@ export class PersonalDetails extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  // @OneToOne(() => UserLogin, user => user.personalDetails)
-  // user !: UserLogin;
+  @OneToOne(() => UserLogin, (user) => user.personalDetails)
+  @JoinColumn({ name: "userId" })
+  user!: UserLogin;
 }
