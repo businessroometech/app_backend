@@ -24,7 +24,7 @@ import NotificationController from '../notifications/Notification';
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
   try {
     const { categoryId, subCategoryId } = req.body;
-    const { serviceName, minPrice, maxPrice, city } = req.body;
+    const { serviceName, minPrice, maxPrice, city, sortBy='asc' } = req.body;
 
     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -64,6 +64,10 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
                  OR (userLogin.userType = :business AND businessDetails.currentAddress->>'city' = :city)`,
         { individual: 'Individual', business: 'Business', city }
       );
+    }
+
+    if (sortBy && (sortBy.toLowerCase() === 'asc' || sortBy.toLowerCase() === 'desc')) {
+      providedServicesQuery.orderBy('providedService.price', sortBy.toUpperCase() as 'ASC' | 'DESC');
     }
 
     const providedServices = await providedServicesQuery.getMany();
@@ -169,13 +173,42 @@ interface SlotAccumulator {
   evening: string[];
 }
 
+function convertTo24HourFormat(time: string): number {
+  const [timePart, period] = time.split(' ');
+  let [hours, minutes] = timePart.split(':').map(Number);
+
+  if (period === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (period === 'AM' && hours === 12) {
+    hours = 0; // Midnight edge case
+  }
+
+  return hours * 60 + minutes; // Return total minutes for easier comparison
+}
+
 export const getAvailableTimeSlots = async (req: Request, res: Response) => {
   try {
-    const { date } = req.params;
+    const { date } = req.body;
 
     if (!date) {
       return res.status(400).json({ message: 'Please provide a valid delivery date' });
     }
+
+    const today = new Date().toISOString().split('T')[0];
+    const currentTime = new Date();
+
+    const selectedDate = new Date(date);
+    const selectedDateString = selectedDate.toISOString().split('T')[0];
+
+    // Convert current time to '8:00 AM' format
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const formattedHour = hours % 12 === 0 ? 12 : hours % 12;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const currentTimeFormatted = `${formattedHour}:${formattedMinutes} ${period}`;
+
+    console.log('Current Time:', currentTimeFormatted);
 
     const bookedJobs = await ServiceJob.find({
       where: {
@@ -188,15 +221,31 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
     const bookedTimes = bookedJobs.map((job) => job.deliveryTime);
     console.log('Booked Times:', bookedTimes);
 
-    const availableSlots = timeSlots.filter((slot) => !bookedTimes.includes(slot));
+    const availableSlots = timeSlots.filter((slot) => {
+      const slotStartTime = slot.split(' - ')[0];
+
+      // If the selected date is in the past, exclude all slots
+      if (selectedDate < new Date(today)) {
+        return false;
+      }
+
+      // If the selected date is today, exclude slots that are in the past
+      if (selectedDateString === today) {
+        if (convertTo24HourFormat(slotStartTime) <= convertTo24HourFormat(currentTimeFormatted)) {
+          return false; // Exclude past slots
+        }
+      }
+
+      return !bookedTimes.includes(slot); // Only include unbooked slots
+    });
+
     console.log('Available Times:', availableSlots);
 
-    let final = availableSlots.reduce<SlotAccumulator>(
+    const final = availableSlots.reduce<SlotAccumulator>(
       (acc, curr) => {
-        let num = curr.split(' ')[0];
-        let type = curr.split(' ')[1];
+        const [num, period] = curr.split(' ');
 
-        if (type === 'AM') {
+        if (period === 'AM') {
           acc.morning.push(curr);
         } else if (parseInt(num) % 12 <= 4) {
           acc.afternoon.push(curr);
