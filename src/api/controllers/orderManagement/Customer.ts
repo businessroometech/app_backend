@@ -601,10 +601,6 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
       relations: ['providedService', 'providedService.subCategory', 'address'],
     });
 
-    if (!orderItem) {
-      res.status(401).json({ status: 'error', message: 'No booked item is present' });
-    }
-
     res.status(200).json({ status: 'success', message: 'Successfully fetched the booked item', data: { orderItem } });
   } catch (error) {
     console.error('Error fetching booked item :', error);
