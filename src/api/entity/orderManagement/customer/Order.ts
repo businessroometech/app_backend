@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, OneToOne, } from 'typeorm';
 import { OrderItemBooking } from './OrderItemBooking';
+import { Invoice } from '../../others/Invoice';
 
 @Entity({ name: "Order" })
 export class Order extends BaseEntity {

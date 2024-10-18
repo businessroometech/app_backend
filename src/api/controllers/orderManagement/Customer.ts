@@ -24,7 +24,7 @@ import NotificationController from '../notifications/Notification';
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
   try {
     const { categoryId, subCategoryId } = req.body;
-    const { serviceName, minPrice, maxPrice, city, sortBy='asc' } = req.body;
+    const { serviceName, minPrice, maxPrice, city, sortBy = 'asc' } = req.body;
 
     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -35,7 +35,6 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
       .leftJoinAndSelect('providedService.subCategory', 'subCategory')
       .leftJoin(UserLogin, 'userLogin', 'userLogin.id = providedService.serviceProviderId')
 
-      // Conditionally join and map personalDetails for Individual userType
       .leftJoinAndMapOne(
         'providedService.personalDetails',
         PersonalDetails,
@@ -44,7 +43,6 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
         { individual: 'Individual' }
       )
 
-      // Conditionally join and map businessDetails for Business userType
       .leftJoinAndMapOne(
         'providedService.businessDetails',
         BusinessDetails,
@@ -58,11 +56,12 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     if (minPrice && maxPrice) {
       providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
     }
+
     if (city) {
       providedServicesQuery.andWhere(
-        `(userLogin.userType = :individual AND personalDetails.currentAddress->>'city' = :city) 
-                 OR (userLogin.userType = :business AND businessDetails.currentAddress->>'city' = :city)`,
-        { individual: 'Individual', business: 'Business', city }
+        `(userLogin.userType = :individual AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(personalDetails.currentAddress, '$.city'))) = :city) 
+         OR (userLogin.userType = :business AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(businessDetails.currentAddress, '$.city'))) = :city)`,
+        { individual: 'Individual', business: 'Business', city: city.toLowerCase() }
       );
     }
 
@@ -71,6 +70,8 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     }
 
     const providedServices = await providedServicesQuery.getMany();
+
+    const overallMaxPrice = providedServices.reduce((max, service) => (service.price > max ? service.price : max), 0);
 
     const allServiceIds = providedServices.flatMap((service) => service.serviceIds);
 
@@ -99,13 +100,18 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     res.status(200).json({
       status: 'success',
       message: 'Successfully fetched service providers',
-      data: { providedServices: enrichedProvidedServices },
+      data: {
+        providedServices: enrichedProvidedServices,
+        maxPrice: overallMaxPrice,
+      },
     });
   } catch (error) {
     console.error('Error fetching provided services:', error);
     res.status(500).json({ message: 'Server error. Please try again later.' });
   }
 };
+
+
 
 export const getDistinctCitiesBySubCategory = async (req: Request, res: Response) => {
   const { subCategoryId } = req.body;
