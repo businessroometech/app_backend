@@ -15,6 +15,9 @@ export class Order extends BaseEntity {
     // @Column({ type: "uuid" })
     // sectorId !: string;
 
+    @Column({ type: 'uuid', nullable: true})
+    invoiceId !: string;
+
     @Column({ type: "decimal", precision: 10, scale: 2 })
     totalAmount !: number;
 

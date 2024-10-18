@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import axios from 'axios';
 import { Transaction } from '@/api/entity/payment/Transaction';
 import { AppDataSource } from '@/server';
+import { Order } from '@/api/entity/orderManagement/customer/Order';
+import { Invoice } from '@/api/entity/others/Invoice';
 
 // initializing razorpay
 const razorpay = new Razorpay({
@@ -119,7 +121,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 const transaction = await addTransactionAndLog(transactionData);
 
                 let invoiceNo = uuidv4();
-                await axios.post(`${baseUrl}/api/v1/invoices/create-invoice`, {
+                let invoice: Invoice = await axios.post(`${baseUrl}/api/v1/invoices/create-invoice`, {
                     invoiceNo,
                     issueDate: Date.now(),
                     customerId: response.data.data.orderItem.customerId,
@@ -127,6 +129,17 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     orderId: response.data.data.order.id,
                     transactionId: transaction.id,
                 })
+
+                const orderRepository = AppDataSource.getRepository(Order);
+
+                let order = await orderRepository.findOne({ where: { id: response.data.data.order.id } });
+
+                if (!order) {
+                    return res.status(400).json({ status: "error", message: "OrderId is required to add invoice" });
+                }
+
+                order.invoiceId = invoice.id;
+                await order.save();
 
                 return res.status(200).json({
                     status: "success",

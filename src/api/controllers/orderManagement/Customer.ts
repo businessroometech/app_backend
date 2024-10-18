@@ -566,6 +566,7 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     serviceJob.orderItemBookingId = orderItem.id;
     serviceJob.customerId = orderItem.customerId;
     serviceJob.serviceProviderId = orderItem.serviceProviderId;
+    serviceJob.invoiceId = order.invoiceId;
     serviceJob.jobId = orderItem.OrderItemId;
     serviceJob.status = 'Pending';
     serviceJob.workDetails = orderItem.workDetails;
@@ -879,8 +880,8 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
         notificationData.recipientId = oldServiceJob?.customerId;
         const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
 
-        console.log("-- reschedule in service provider ----",inAppResultService.message);
-        console.log("-- reschedule in customer ----",inAppResultCustomer.message);
+        console.log("-- reschedule in service provider ----", inAppResultService.message);
+        console.log("-- reschedule in customer ----", inAppResultCustomer.message);
       } catch (notificationError: any) {
         console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
       }
