@@ -650,13 +650,16 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
     }
 
     const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
 
     const orderItem = await orderItemBookingRepository.findOne({
       where: { id: orderItemBookingId, orderId },
       relations: ['providedService', 'providedService.subCategory', 'address'],
     });
 
-    res.status(200).json({ status: 'success', message: 'Successfully fetched the booked item', data: { orderItem } });
+    const user = await userLoginRepository.findOne({ where: { id: orderItem?.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });
+
+    res.status(200).json({ status: 'success', message: 'Successfully fetched the booked item', data: { orderItem, details: user?.personalDetails ? user.personalDetails : user?.businessDetails } });
   } catch (error) {
     console.error('Error fetching booked item :', error);
     return res.status(500).json({ message: 'Error fetching booked item ', error });
