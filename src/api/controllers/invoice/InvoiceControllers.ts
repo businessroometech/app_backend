@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AppDataSource } from "../../../server";
 import { Invoice } from '../../entity/others/Invoice';
 import { Order } from '@/api/entity/orderManagement/customer/Order';
+import { UserLogin } from '@/api/entity/user/UserLogin';
 
 export const createInvoice = async (req: Request, res: Response) => {
     try {
@@ -44,6 +45,8 @@ export const getInvoices = async (req: Request, res: Response) => {
 
         const invoiceRepository = AppDataSource.getRepository(Invoice);
         const orderRepository = AppDataSource.getRepository(Order);
+        const userLoginRepository = AppDataSource.getRepository(UserLogin);
+
         let invoices: Invoice[] = [];
 
         if (id) {
@@ -59,10 +62,12 @@ export const getInvoices = async (req: Request, res: Response) => {
 
         const invoicesWithOrders = await Promise.all(
             invoices.map(async (invoice) => {
-                const order = await orderRepository.findOne({ where: { id: invoice.orderId }, relations: ['orderItems'] });
+                const order = await orderRepository.findOne({ where: { id: invoice.orderId }, relations: ['orderItems', 'orderItems.providedService', 'orderItems.providedService.subCategory', 'orderItems.providedService.category', 'orderItems.providedService.sector'] });
+                const user = await userLoginRepository.findOne({ where: { id: invoice.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });
                 return {
                     ...invoice,
                     order,
+                    serviceProviderDetails: user?.userType === 'Individual' ? user.personalDetails : user?.businessDetails
                 };
             })
         );
