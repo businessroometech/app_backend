@@ -91,7 +91,6 @@ export const verifyPayment = async (req: Request, res: Response) => {
         let generated_signature = hmac.digest('hex');
 
         if (generated_signature === razorpay_signature) {
-            // valid signature
             try {
                 // Convert cart to order
                 const response = await axios.post(
@@ -120,24 +119,35 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
                 const transaction = await addTransactionAndLog(transactionData);
 
-                let invoiceNo = uuidv4();
-                let invoice: Invoice = await axios.post(`${baseUrl}/api/v1/invoices/create-invoice`, {
-                    invoiceNo,
-                    issueDate: Date.now(),
-                    customerId: response.data.data.orderItem.customerId,
-                    serviceProviderId: response.data.data.orderItem.serviceProviderId,
-                    orderId: response.data.data.order.id,
-                    transactionId: transaction.id,
-                })
+                const invoiceNo = uuidv4();
+                const issueDate = new Date().toISOString().split('T')[0];
+                let invoice;
+                try {
+                    const res = await axios.post(`${baseUrl}/api/v1/invoices/create-invoice`, {
+                        invoiceNo,
+                        issueDate,
+                        customerId: response.data.data.orderItem.customerId,
+                        serviceProviderId: response.data.data.orderItem.serviceProviderId,
+                        orderId: response.data.data.order.id,
+                        transactionId: transaction.id
+                    },
+                        {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                    invoice = res.data.data.invoice;
+                    console.log('Invoice created successfully:', invoice);
+                } catch (error) {
+                    console.error('Error creating invoice:', error);
+                }
 
                 const orderRepository = AppDataSource.getRepository(Order);
-
                 let order = await orderRepository.findOne({ where: { id: response.data.data.order.id } });
-
                 if (!order) {
                     return res.status(400).json({ status: "error", message: "OrderId is required to add invoice" });
                 }
-
                 order.invoiceId = invoice.id;
                 await order.save();
 
@@ -145,7 +155,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                     status: "success",
                     message: "Payment verification and order creation successful",
                     data: {
-                        order: response.data.data.order,
+                        order,
                         orderItemBooking: response.data.data.orderItem
                     }
                 });
@@ -197,60 +207,6 @@ export const verifyPayment = async (req: Request, res: Response) => {
     }
 };
 
-
-// export const verifyPayment = async (req: Request, res: Response) => {
-//     try {
-
-//         const { razorpay_payment_id, razorpay_order_id, razorpay_signature, cartId, userId } = req.body;
-
-//         const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
-
-//         let hmac = crypto.createHmac('sha256', key_secret);
-//         hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
-//         let generated_signature = hmac.digest('hex');
-
-//         if (generated_signature === razorpay_signature) {
-//             // valid signature
-
-//             // save to DB   
-
-//             // convert cart to order
-//             try {
-//                 const response = await axios.post(
-//                     `http://localhost:5000/api/v1/order-management/customer/cart-to-order`,
-//                     { cartId, customerId: userId },
-//                     {
-//                         headers: {
-//                             'Content-Type': 'application/json'
-//                         }
-//                     }
-//                 );
-
-//                 return res.status(200).json({
-//                     status: "success",
-//                     message: "Payment verification and order creation successful",
-//                     data: {
-//                         order: response.data.data.order,
-//                         orderItemBookings: response.data.data.orderItems
-//                     }
-//                 });
-//             } catch (err) {
-//                 console.error('Error converting cart to order:', err);
-//                 return res.status(400).json({
-//                     status: "error",
-//                     message: "Payment verified but failed to convert cart to order",
-//                 });
-//             }
-//         }
-//         else {
-//             res.status(400).json({ status: "error", message: "signature verification failed" });
-//         }
-
-//     } catch (error) {
-//         console.error('Error verifying payment:', error);
-//         return res.status(500).json({ status: "error", message: "Internal server error" });
-//     }
-// }
 
 // export const refund = async (req: Request, res: Response) => {
 //     try {

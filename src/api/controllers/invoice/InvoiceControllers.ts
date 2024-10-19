@@ -15,6 +15,11 @@ export const createInvoice = async (req: Request, res: Response) => {
             createdBy,
         } = req.body;
 
+        // Basic validation
+        if (!invoiceNo || !issueDate || !customerId || !serviceProviderId || !orderId || !transactionId) {
+            return res.status(400).json({ status: "error", message: 'Missing required fields' });
+        }
+
         const invoice = new Invoice();
         invoice.invoiceNo = invoiceNo;
         invoice.issueDate = issueDate;

@@ -693,7 +693,7 @@ export const fetchOrderHistory = async (req: Request, res: Response) => {
       query = { ...query, status: In(['Rejected', 'Completed', 'Cancelled', 'Rescheduled']) as any };
     }
 
-    const [orderItems, count] = await orderItemBookingRepository.findAndCount({ where: query, relations: ['address', 'user.personalDetails', 'user.businessDetails', 'providedService', 'providedService.subCategory'] });
+    const [orderItems, count] = await orderItemBookingRepository.findAndCount({ where: query, relations: ['address', 'order', 'user.personalDetails', 'user.businessDetails', 'providedService', 'providedService.subCategory'] });
 
     res.status(200).json({
       status: 'success',
