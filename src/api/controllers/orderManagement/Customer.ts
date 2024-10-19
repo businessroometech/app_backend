@@ -655,7 +655,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
 
     const orderItem = await orderItemBookingRepository.findOne({
       where: { id: orderItemBookingId, orderId },
-      relations: ['providedService', 'providedService.subCategory', 'address'],
+      relations: ['providedService', 'providedService.subCategory', 'providedService.category',  'address'],
     });
 
     const user = await userLoginRepository.findOne({ where: { id: orderItem?.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });
