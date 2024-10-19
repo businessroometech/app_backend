@@ -17,6 +17,7 @@ import { SubCategory } from '@/api/entity/sector/SubCategory';
 import { Service } from '@/api/entity/sector/Service';
 import { UserLogin } from '@/api/entity/user/UserLogin';
 import { CartItemBooking } from '../../customer/CartItemBooking';
+import { Sector } from '@/api/entity/sector/Sector';
 
 @Entity({ name: 'ProvidedService' })
 export class ProvidedService extends BaseEntity {
@@ -103,6 +104,9 @@ export class ProvidedService extends BaseEntity {
 
   @ManyToOne(() => UserLogin, userLogin => userLogin.providedServices)
   users !: UserLogin[];
+
+  @ManyToOne(() => Sector, sector => sector.providedServices)
+  sector !: Sector;
 
   @ManyToOne(() => Category, category => category.providedServices)
   category !: Category;
