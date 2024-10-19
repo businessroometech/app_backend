@@ -69,9 +69,9 @@ class SMSService {
         };
 
         try {
-            // console.log('SMS Data before provider initiate options', options);
-            // const { data } = await axios.request(options);
-            // console.log('SMS Data setn to user ', data);
+            console.log('SMS Data before provider initiate options', options);
+            const { data } = await axios.request(options);
+            console.log('SMS Data setn to user ', data);
             return data;
         } catch (error: any) {
             console.error('SMS Error:', error?.message || 'Unknown error occurred during SMS request');
