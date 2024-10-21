@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from "../../../server";
 import { Invoice } from '../../entity/others/Invoice';
+import { Order } from '@/api/entity/orderManagement/customer/Order';
+import { UserLogin } from '@/api/entity/user/UserLogin';
 
 export const createInvoice = async (req: Request, res: Response) => {
     try {
@@ -13,6 +15,11 @@ export const createInvoice = async (req: Request, res: Response) => {
             transactionId,
             createdBy,
         } = req.body;
+
+        // Basic validation
+        if (!invoiceNo || !issueDate || !customerId || !serviceProviderId || !orderId || !transactionId) {
+            return res.status(400).json({ status: "error", message: 'Missing required fields' });
+        }
 
         const invoice = new Invoice();
         invoice.invoiceNo = invoiceNo;
@@ -34,24 +41,44 @@ export const createInvoice = async (req: Request, res: Response) => {
 
 export const getInvoices = async (req: Request, res: Response) => {
     try {
-        const { id, customerId, serviceProviderId } = req.query;
+        const { id, customerId, serviceProviderId } = req.body;
 
         const invoiceRepository = AppDataSource.getRepository(Invoice);
-        let invoices: Invoice | Invoice[] | null;
+        const orderRepository = AppDataSource.getRepository(Order);
+        const userLoginRepository = AppDataSource.getRepository(UserLogin);
+
+        let invoices: Invoice[] = [];
 
         if (id) {
-            invoices = await invoiceRepository.findOne({ where: { id: id as string } });
+            const invoice = await invoiceRepository.findOne({ where: { id: id as string }, relations: ['transaction'] });
+            if (invoice) invoices = [invoice];
         } else if (customerId) {
-            invoices = await invoiceRepository.find({ where: { customerId: customerId as string } });
+            invoices = await invoiceRepository.find({ where: { customerId: customerId as string }, relations: ['transaction'] });
         } else if (serviceProviderId) {
-            invoices = await invoiceRepository.find({ where: { serviceProviderId: serviceProviderId as string } });
+            invoices = await invoiceRepository.find({ where: { serviceProviderId: serviceProviderId as string }, relations: ['transaction'] });
         } else {
-            invoices = await invoiceRepository.find();
+            invoices = await invoiceRepository.find({ relations: ['transaction'] });
         }
 
-        return res.status(200).json({ status: "success", message: "fetched invoice successfully", data: { invoices } });
+        const invoicesWithOrders = await Promise.all(
+            invoices.map(async (invoice) => {
+                const order = await orderRepository.findOne({ where: { id: invoice.orderId }, relations: ['orderItems', 'orderItems.providedService', 'orderItems.providedService.subCategory', 'orderItems.providedService.category', 'orderItems.providedService.sector'] });
+                const user = await userLoginRepository.findOne({ where: { id: invoice.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });
+                return {
+                    ...invoice,
+                    order,
+                    serviceProviderDetails: user?.userType === 'Individual' ? user.personalDetails : user?.businessDetails
+                };
+            })
+        );
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Fetched invoices successfully',
+            data: { invoices: invoicesWithOrders },
+        });
     } catch (error) {
         console.error('Error fetching invoices:', error);
-        return res.status(500).json({ status: "error", message: 'Error fetching invoices' });
+        return res.status(500).json({ status: 'error', message: 'Error fetching invoices' });
     }
 };

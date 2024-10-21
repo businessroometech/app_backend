@@ -7,6 +7,8 @@ import { Sector } from '../../sector/Sector';
 import { UserLogin } from '../../user/UserLogin';
 import { ServiceJob } from '../serviceProvider/serviceJob/ServiceJob';
 import { UserAddress } from '../../user/UserAddress';
+import { Invoice } from '../../others/Invoice';
+import invoices from 'razorpay/dist/types/invoices';
 
 @Entity({ name: "OrderItemBooking" })
 export class OrderItemBooking extends BaseEntity {
