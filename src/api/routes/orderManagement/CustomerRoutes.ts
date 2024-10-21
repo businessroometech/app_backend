@@ -17,9 +17,11 @@ import {
     cancelOrderItemBooking,
     rescheduleOrder,
     fetchOrderHistory,
-    fetchBookingItem
+    fetchBookingItem,createOrUpdateTicket,
+    getTicketList,
+    getTicket,
+    deleteTicket
 } from '@/api/controllers/orderManagement/Customer';
-
 const Router = express.Router();
 
 // Router.post('/add-bookings', addBooking);
@@ -32,7 +34,7 @@ Router.post('/get-address', getAllAddresses)
 Router.post('/add-or-update-address', addOrUpdateAddress);
 Router.post('/delete-address', deleteAddress)
 
-Router.post('/add-to-cart', addToCart);
+Router.post('/add-to-cart', addToCart); 
 Router.post('/get-cart-item', fetchCartItem);
 Router.post('/get-booked-item', fetchBookingItem);
 Router.post('/cart-to-order', convertCartToOrder);

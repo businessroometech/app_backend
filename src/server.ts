@@ -17,6 +17,9 @@ import customerRouter from './api/routes/orderManagement/CustomerRoutes';
 import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
 import paymentRouter from "./api/routes/payment/PaymentRoutes";
 import notificationRouter from "./api/routes/notifications/NotificationRoutes";
+import eventRouter from './api/routes/events/eventsRoutes'
+
+
 
 
 const logger = pino({ name: 'server start' });
@@ -113,7 +116,8 @@ app.use('/api/v1/order-management/customer', customerRouter);
 app.use('/api/v1/order-management/service-provider', serviceProviderRouter);
 app.use('/api/v1/checkout', paymentRouter);
 app.use('/api/v1/notifications', notificationRouter);
-// app.use('/health-check', healthCheckRouter);
+app.use('/api/v1/event-managment/customer', eventRouter);
+// app.use('/health-check', healthCheckRouter) ;
 
 // Error handlers
 app.use(errorHandler());

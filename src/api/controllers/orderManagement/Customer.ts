@@ -18,6 +18,7 @@ import { UserAddress } from '@/api/entity/user/UserAddress';
 import { FindOptionsWhere, In } from 'typeorm';
 import { format } from 'date-fns';
 import NotificationController from '../notifications/Notification';
+import { TicketItem } from '@/api/entity/event/TicketItem';
 
 // ----------------------------------------------** IMP ** NEED TO ADD ACID PROPERTIES------------------------------------------
 
@@ -304,7 +305,7 @@ export const addToCart = async (req: Request, res: Response) => {
       serviceProviderId,
       providedServiceId,
       workDetails,
-      mrp,
+      mrp, 
       deliveryDate,
       deliveryTime,
       deliveryAddressId,
