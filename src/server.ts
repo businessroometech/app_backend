@@ -18,7 +18,7 @@ import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderR
 import paymentRouter from "./api/routes/payment/PaymentRoutes";
 import notificationRouter from "./api/routes/notifications/NotificationRoutes";
 import invoiceRouter from "./api/routes/invoice/InvoiceRoutes";
-
+import EventRouter from './api/routes/event/EventRoutes';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -117,6 +117,9 @@ app.use('/api/v1/checkout', paymentRouter);
 app.use('/api/v1/notifications', notificationRouter);
 app.use('/api/v1/invoices', invoiceRouter);
 // app.use('/health-check', healthCheckRouter);
+
+// event management
+app.use('/api/v1/manage-event/customer', EventRouter);
 
 // Error handlers
 app.use(errorHandler());
