@@ -9,8 +9,10 @@ import { Request, Response } from 'express';
 export const CreatedEvent = async (req: Request, res: Response) => {
   const userLoginRepository = AppDataSource.getRepository(UserLogin);
   const sectorRepository = AppDataSource.getRepository(Sector);
+  // const eventRepository = AppDataSource.getRepository(Event);
   const validationConfigs: ValidationConfig[] = [
     { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
+    // { field: 'eventId', repository: eventRepository, errorMessage: 'Please provide userId' },
     { field: 'sectorId', repository: sectorRepository, errorMessage: 'Please provide sectorId' },
   ];
 
@@ -18,7 +20,8 @@ export const CreatedEvent = async (req: Request, res: Response) => {
   if (!entities) return;
 
   try {
-    res.status(200).json({ status: 'success', message: 'Event created successfully' });
+    // const filteredEvent = await eventRepository.find({ where: { 'filtered' } });
+    // res.status(200).json({ status: 'success', message: 'Event created successfully', data:filteredEvent });
   } catch (error) {
     console.error('Error creating event:', error);
     return res.status(500).json({ status: 'error', message: 'Error creating event' });
@@ -28,8 +31,10 @@ export const CreatedEvent = async (req: Request, res: Response) => {
 export const getCreatedEventDetails = async (req: Request, res: Response) => {
   const userLoginRepository = AppDataSource.getRepository(UserLogin);
   const sectorRepository = AppDataSource.getRepository(Sector);
+  // const eventRepository = AppDataSource.getRepository(Event);
   const validationConfigs: ValidationConfig[] = [
     { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
+    // { field: 'eventId', repository: eventRepository, errorMessage: 'Please provide userId' },
     { field: 'sectorId', repository: sectorRepository, errorMessage: 'Please provide sectorId' },
   ];
 
@@ -37,7 +42,8 @@ export const getCreatedEventDetails = async (req: Request, res: Response) => {
   if (!entities) return;
 
   try {
-    res.status(200).json({ status: 'success', data: entities });
+    // const eventDetails = await eventRepository.find({ where: { 'eventId' } });
+    // res.status(200).json({ status: 'success', message: 'Event created successfully', data:filteredEvent });
   } catch (error) {
     console.error('Error getting event details:', error);
     return res.status(500).json({ status: 'error', message: 'Error getting event details' });
@@ -54,8 +60,20 @@ export const cancelCreatedEvent = async (req: Request, res: Response) => {
 };
 
 export const rescheduleCreatedEvent = async (req: Request, res: Response) => {
+  const userLoginRepository = AppDataSource.getRepository(UserLogin);
+  const sectorRepository = AppDataSource.getRepository(Sector);
+  // const eventRepository = AppDataSource.getRepository(Event);
+  // const rescheduleRepository = AppDataSource.getRepository(Reschedule);
+  const validationConfigs: ValidationConfig[] = [
+    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
+    // { field: 'eventId', repository: eventRepository, errorMessage: 'Please provide userId' },
+    // { field: 'scheduleId', repository: eventRepository, errorMessage: 'Please provide userId' },
+    { field: 'sectorId', repository: sectorRepository, errorMessage: 'Please provide sectorId' },
+  ];
+
   try {
-    res.status(200).json({ status: 'success', message: 'Event rescheduled successfully' });
+    // const rescheduleEvent = await eventRepository.find({ where: { 'eventId' } });
+    // res.status(200).json({ status: 'success', message: 'Event Rescheduled successfully', data:filteredEvent });
   } catch (error) {
     console.error('Error rescheduling event:', error);
     return res.status(500).json({ status: 'error', message: 'Error rescheduling event' });
@@ -94,6 +112,7 @@ export const getEventServiceProviders = async (req: Request, res: Response) => {
 };
 
 export const postBookServiceProvider = async (req: Request, res: Response) => {
+  
   try {
     res.status(200).json({ status: 'success', message: 'Service provider booked successfully' });
   } catch (error) {
