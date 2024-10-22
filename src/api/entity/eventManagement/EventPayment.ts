@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn } from 'typeorm';
+import { randomBytes } from 'crypto';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
+import { Event } from './Event';
 
 @Entity({ name: "EventPayment" })
 export class EventPayment extends BaseEntity {
@@ -26,4 +28,33 @@ export class EventPayment extends BaseEntity {
 
     @Column({ type: 'date' })
     paymentDate!: string;
+
+    @Column({ type: 'varchar', default: 'system' })
+    createdBy!: string;
+
+    @Column({ type: 'varchar', default: 'system', nullable: true })
+    updatedBy!: string;
+
+    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
+    createdAt!: Date;
+
+    @UpdateDateColumn({
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP(6)',
+        onUpdate: 'CURRENT_TIMESTAMP(6)',
+        precision: 6,
+    })
+    updatedAt!: Date;
+
+    @BeforeInsert()
+    async beforeInsert() {
+        this.id = this.generateUUID();
+    }
+
+    private generateUUID(): string {
+        return randomBytes(16).toString('hex');
+    }
+
+    @ManyToOne(() => Event, event => event.eventPayments)
+    event !: Event;
 }

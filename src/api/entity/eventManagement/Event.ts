@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
+import { randomBytes } from 'crypto';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, BeforeInsert } from 'typeorm';
+import { EventBooking } from './EventBooking';
+import { DressCode } from './DressCode';
+import { EventMedia } from './EventMedia';
+import { EventParticipant } from './EventParticipant';
+import { EventPayment } from './EventPayment';
+import { EventRule } from './EventRule';
+import { EventSchedule } from './EventSchedule';
 
 @Entity({ name: "Event" })
 export class Event extends BaseEntity {
@@ -62,4 +70,52 @@ export class Event extends BaseEntity {
 
     @Column({ type: 'simple-array' })
     schedules!: string[];
+
+    @Column({ type: 'varchar', default: 'system' })
+    createdBy!: string;
+
+    @Column({ type: 'varchar', default: 'system', nullable: true })
+    updatedBy!: string;
+
+    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
+    createdAt!: Date;
+
+    @UpdateDateColumn({
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP(6)',
+        onUpdate: 'CURRENT_TIMESTAMP(6)',
+        precision: 6,
+    })
+    updatedAt!: Date;
+
+    @BeforeInsert()
+    async beforeInsert() {
+        this.id = this.generateUUID();
+    }
+
+    private generateUUID(): string {
+        return randomBytes(16).toString('hex');
+    }
+
+    @OneToMany(() => DressCode, dressCode => dressCode.event)
+    dressCodes !: DressCode[];
+
+    @OneToMany(() => EventBooking, eventBooking => eventBooking.event)
+    eventBookings !: EventBooking[];
+
+    @OneToMany(() => EventMedia, eventMedia => eventMedia.event)
+    eventMedia !: EventMedia[];
+
+    @OneToMany(() => EventParticipant, eventParticipant => eventParticipant.event)
+    eventParticipants !: EventParticipant[];
+
+    @OneToMany(() => EventPayment, eventPayment => eventPayment.event)
+    eventPayments !: EventPayment[];
+
+    @OneToMany(() => EventRule, eventRule => eventRule.event)
+    eventRules !: EventRule[];
+
+    @OneToMany(() => EventSchedule, eventSchedule => eventSchedule.event)
+    eventSchedules !: EventSchedule[];
+
 }

@@ -1,10 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
-import { Ticket } from './Ticket';
-import { randomBytes } from 'crypto';
 import { Event } from './Event';
+import { randomBytes } from 'crypto';
 
-@Entity({ name: "EventParticipant" })
-export class EventParticipant extends BaseEntity {
+@Entity({ name: "EventRule" })
+export class EventRule extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -12,17 +11,11 @@ export class EventParticipant extends BaseEntity {
     @Column({ type: 'uuid' })
     eventId!: string;
 
-    @Column({ type: 'uuid' })
-    userId!: string;
+    @Column({ type: 'varchar', length: 100 })
+    ruleType!: string;
 
-    @Column({ type: 'uuid', nullable: true })
-    ticketId ?: Ticket;
-
-    @Column({ type: 'enum', enum: ['attending', 'not_attending', 'waiting'] })
-    status!: 'attending' | 'not_attending' | 'waiting';
-
-    @Column({ type: 'date' })
-    registrationDate!: string;
+    @Column({ type: 'text' })
+    description!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -50,9 +43,6 @@ export class EventParticipant extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventParticipants)
+    @ManyToOne(() => Event, event => event.eventRules)
     event !: Event;
-
-    @ManyToOne(() => Ticket, ticket => ticket.eventParticipants)
-    ticket !: Ticket;
 }
