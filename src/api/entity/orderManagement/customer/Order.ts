@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, OneToOne, } from 'typeorm';
 import { OrderItemBooking } from './OrderItemBooking';
+import { Invoice } from '../../others/Invoice';
 
 @Entity({ name: "Order" })
 export class Order extends BaseEntity {
@@ -13,6 +14,9 @@ export class Order extends BaseEntity {
 
     // @Column({ type: "uuid" })
     // sectorId !: string;
+
+    @Column({ type: 'uuid', nullable: true})
+    invoiceId !: string;
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
     totalAmount !: number;
