@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
 
-@Entity({ name: "Event" })
-export class Event extends BaseEntity {
+@Entity({ name: "EventDraft" })
+export class EventDraft extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -29,9 +29,6 @@ export class Event extends BaseEntity {
 
     @Column({ type: 'boolean', default: false })
     isInviteOnly!: boolean;
-
-    @Column({ type: 'enum', enum: ['upcoming', 'ongoing', 'completed', 'cancelled', 'rescheduled'] })
-    status!: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'rescheduled';
 
     @Column({ type: 'varchar', length: 255, nullable: true })
     venueName?: string;
