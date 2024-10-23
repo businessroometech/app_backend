@@ -11,36 +11,38 @@ class ErrorHandler extends Error {
 }
 
 const errorMiddleware = (err: any, req: Request, res: Response, next: NextFunction) => {
+  // Default values for statusCode and message
   err.statusCode = err.statusCode || 500;
   err.message = err.message || "Internal server error";
 
-  // TypeORM invalid ID error (similar to MongoDB CastError)
+  // Handling TypeORM invalid ID error (similar to MongoDB CastError)
   if (err.name === "EntityNotFoundError") {
-    const message = `Resource not found with ID: ${err.id}`;
+    const message = `Resource not found with ID: ${err.id || "unknown"}`;
     err = new ErrorHandler(message, 400);
   }
 
-  // Duplicate key error (TypeORM MySQL specific)
+  // Handling MySQL duplicate key error (ER_DUP_ENTRY)
   if (err.code === 'ER_DUP_ENTRY') {
     const message = `Duplicate field value entered`;
     err = new ErrorHandler(message, 409);
   }
 
-  // JWT error
+  // Handling JWT error (Invalid Token)
   if (err.name === 'JsonWebTokenError') {
     const message = "Invalid Token, please login again";
     err = new ErrorHandler(message, 401);
   }
 
-  // JWT expired error
+  // Handling JWT expired error
   if (err.name === 'TokenExpiredError') {
     const message = "Your token has expired, please login again";
     err = new ErrorHandler(message, 401);
   }
 
+  // Send error response
   res.status(err.statusCode).json({
     success: false,
-    error: err.message
+    message: err.message
   });
 };
 

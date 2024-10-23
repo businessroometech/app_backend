@@ -10,7 +10,7 @@ export class EventBooking extends BaseEntity {
     id!: string;
 
     @Column({ type: 'uuid' })
-    eventId!: string;
+    eventId!: string; 
 
     @Column({ type: 'uuid' })
     userId!: string;

@@ -19,9 +19,6 @@ import paymentRouter from "./api/routes/payment/PaymentRoutes";
 import notificationRouter from "./api/routes/notifications/NotificationRoutes";
 import eventRouter from './api/routes/events/eventsRoutes'
 
-
-
-
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
