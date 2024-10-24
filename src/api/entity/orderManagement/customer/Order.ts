@@ -12,10 +12,10 @@ export class Order extends BaseEntity {
     @Column({ type: "uuid" })
     customerId !: string;
 
-    // @Column({ type: "uuid" })
-    // sectorId !: string;
+    @Column({ type: 'varchar', default: 'not_generated' })
+    refOrderId !: string;
 
-    @Column({ type: 'uuid', nullable: true})
+    @Column({ type: 'uuid', nullable: true })
     invoiceId !: string;
 
     @Column({ type: "decimal", precision: 10, scale: 2 })
