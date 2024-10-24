@@ -1,16 +1,13 @@
 import {
-    addOrUpdateTicket,
+  addOrUpdateTicket,
   createEvents,
-
   createOrUpdateEvent,
-
-//   createOrUpdateTicket,
-//   deleteTicket,
-//   eventByDetails,
+  deleteUserEvent,
+  eventByDetails,
   eventDetailsOptions,
-//   getNearEvent,
-//   getTicket,
-//   getTicketList,
+  getNearEvent,
+  getPopularEvents,
+  getUserEvent,
 } from '@/api/controllers/events/eventController';
 import express from 'express';
 
@@ -24,11 +21,14 @@ Router.post('/update-ticket', addOrUpdateTicket);
 // Router.post('/get-ticket', getTicket);
 // Router.post('/delete-ticket', deleteTicket);
 
-// // Event
+// Event
 Router.post('/create-event', createOrUpdateEvent);
-// Router.post('/get-near-events', getNearEvent);
-// Router.post('/event-details', eventByDetails);
+Router.post('/get-near-events', getNearEvent);
+Router.post('/event-details', eventByDetails);
 Router.post('/get-event-details-options', eventDetailsOptions);
+Router.post('/get-popular-events', getPopularEvents);
+Router.post('/get-user-event   ', getUserEvent);
+Router.post('delete-user-event', deleteUserEvent);
 
 // EVENT BOOKING
 

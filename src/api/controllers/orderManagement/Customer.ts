@@ -25,7 +25,7 @@ import { TicketItem } from '@/api/entity/event/TicketItem';
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
   try {
     const { categoryId, subCategoryId } = req.body;
-    const { serviceName, minPrice, maxPrice, city } = req.body;
+    const { serviceName, minPrice, maxPrice, city, sortBy = 'asc' } = req.body;
 
     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
     const serviceRepository = AppDataSource.getRepository(Service);
@@ -36,7 +36,6 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
       .leftJoinAndSelect('providedService.subCategory', 'subCategory')
       .leftJoin(UserLogin, 'userLogin', 'userLogin.id = providedService.serviceProviderId')
 
-      // Conditionally join and map personalDetails for Individual userType
       .leftJoinAndMapOne(
         'providedService.personalDetails',
         PersonalDetails,
@@ -45,7 +44,6 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
         { individual: 'Individual' }
       )
 
-      // Conditionally join and map businessDetails for Business userType
       .leftJoinAndMapOne(
         'providedService.businessDetails',
         BusinessDetails,
@@ -59,15 +57,22 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     if (minPrice && maxPrice) {
       providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
     }
+
     if (city) {
       providedServicesQuery.andWhere(
-        `(userLogin.userType = :individual AND personalDetails.currentAddress->>'city' = :city) 
-                 OR (userLogin.userType = :business AND businessDetails.currentAddress->>'city' = :city)`,
-        { individual: 'Individual', business: 'Business', city }
+        `(userLogin.userType = :individual AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(personalDetails.currentAddress, '$.city'))) = :city) 
+         OR (userLogin.userType = :business AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(businessDetails.currentAddress, '$.city'))) = :city)`,
+        { individual: 'Individual', business: 'Business', city: city.toLowerCase() }
       );
     }
 
+    if (sortBy && (sortBy.toLowerCase() === 'asc' || sortBy.toLowerCase() === 'desc')) {
+      providedServicesQuery.orderBy('providedService.price', sortBy.toUpperCase() as 'ASC' | 'DESC');
+    }
+
     const providedServices = await providedServicesQuery.getMany();
+
+    const overallMaxPrice = providedServices.reduce((max, service) => (service.price > max ? service.price : max), 0);
 
     const allServiceIds = providedServices.flatMap((service) => service.serviceIds);
 
@@ -96,11 +101,60 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     res.status(200).json({
       status: 'success',
       message: 'Successfully fetched service providers',
-      data: { providedServices: enrichedProvidedServices },
+      data: {
+        providedServices: enrichedProvidedServices,
+        maxPrice: overallMaxPrice,
+      },
     });
   } catch (error) {
     console.error('Error fetching provided services:', error);
     res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+};
+
+
+export const getDistinctCitiesBySubCategory = async (req: Request, res: Response) => {
+  const { subCategoryId } = req.body;
+
+  try {
+    const providedServiceRepository = AppDataSource.getRepository(ProvidedService)
+    const providedServices = await providedServiceRepository.find({ where: { subCategoryId } });
+
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const businessDetailsRepository = AppDataSource.getRepository(BusinessDetails);
+
+    const citySet = new Set<string>();
+
+    for (const providedService of providedServices) {
+      const userLogin = await userLoginRepository.findOne({ where: { id: providedService.serviceProviderId } });
+
+      if (userLogin) {
+        let city = '';
+        if (userLogin.userType === 'Individual') {
+          const personalDetails = await personalDetailsRepository.findOne({ where: { userId: userLogin.id } });
+          if (personalDetails && personalDetails.currentAddress) {
+            city = personalDetails.currentAddress.city.toLowerCase();
+          }
+        } else if (userLogin.userType === 'Business') {
+          const businessDetails = await businessDetailsRepository.findOne({ where: { userId: userLogin.id } });
+          if (businessDetails && businessDetails.currentAddress) {
+            city = businessDetails.currentAddress.city.toLowerCase();
+          }
+        }
+
+        if (city) {
+          citySet.add(city);
+        }
+      }
+    }
+
+    const cityList = Array.from(citySet);
+
+    return res.status(200).json({ status: "success", message: "All available cities fetched", data: { cities: cityList } });
+  } catch (error) {
+    console.error('Error fetching distinct cities:', error);
+    return res.status(500).json({ message: 'Error fetching cities', error });
   }
 };
 
@@ -125,13 +179,41 @@ interface SlotAccumulator {
   evening: string[];
 }
 
+function convertTo24HourFormat(time: string): number {
+  const [timePart, period] = time.split(' ');
+  let [hours, minutes] = timePart.split(':').map(Number);
+
+  if (period === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (period === 'AM' && hours === 12) {
+    hours = 0; 
+  }
+
+  return hours * 60 + minutes; 
+}
+
 export const getAvailableTimeSlots = async (req: Request, res: Response) => {
   try {
-    const { date } = req.params;
+    const { date } = req.body;
 
     if (!date) {
       return res.status(400).json({ message: 'Please provide a valid delivery date' });
     }
+
+    const currentISTDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const today = currentISTDate.toISOString().split('T')[0];
+
+    const hours = currentISTDate.getHours();
+    const minutes = currentISTDate.getMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const formattedHour = hours % 12 === 0 ? 12 : hours % 12;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const currentTimeFormatted = `${formattedHour}:${formattedMinutes} ${period}`;
+
+    console.log('Current IST Time:', currentTimeFormatted);
+
+    const selectedDate = new Date(date);
+    const selectedDateString = selectedDate.toISOString().split('T')[0];
 
     const bookedJobs = await ServiceJob.find({
       where: {
@@ -144,15 +226,29 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
     const bookedTimes = bookedJobs.map((job) => job.deliveryTime);
     console.log('Booked Times:', bookedTimes);
 
-    const availableSlots = timeSlots.filter((slot) => !bookedTimes.includes(slot));
+    const availableSlots = timeSlots.filter((slot) => {
+      const slotStartTime = slot.split(' - ')[0];
+
+      if (selectedDate < new Date(today)) {
+        return false;
+      }
+
+      if (selectedDateString === today) {
+        if (convertTo24HourFormat(slotStartTime) <= convertTo24HourFormat(currentTimeFormatted)) {
+          return false; // Exclude past slots
+        }
+      }
+
+      return !bookedTimes.includes(slot); 
+    });
+
     console.log('Available Times:', availableSlots);
 
-    let final = availableSlots.reduce<SlotAccumulator>(
+    const final = availableSlots.reduce<SlotAccumulator>(
       (acc, curr) => {
-        let num = curr.split(' ')[0];
-        let type = curr.split(' ')[1];
+        const [num, period] = curr.split(' ');
 
-        if (type === 'AM') {
+        if (period === 'AM') {
           acc.morning.push(curr);
         } else if (parseInt(num) % 12 <= 4) {
           acc.afternoon.push(curr);
@@ -175,6 +271,124 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
+// const timeSlots = [
+//   '8:00 AM - 9:00 AM',
+//   '9:00 AM - 10:00 AM',
+//   '10:00 AM - 11:00 AM',
+//   '11:00 AM - 12:00 PM',
+//   '12:00 PM - 1:00 PM',
+//   '1:00 PM - 2:00 PM',
+//   '2:00 PM - 3:00 PM',
+//   '3:00 PM - 4:00 PM',
+//   '4:00 PM - 5:00 PM',
+//   '5:00 PM - 6:00 PM',
+//   '6:00 PM - 7:00 PM',
+//   '7:00 PM - 8:00 PM',
+// ];
+
+// interface SlotAccumulator {
+//   morning: string[];
+//   afternoon: string[];
+//   evening: string[];
+// }
+
+// function convertTo24HourFormat(time: string): number {
+//   const [timePart, period] = time.split(' ');
+//   let [hours, minutes] = timePart.split(':').map(Number);
+
+//   if (period === 'PM' && hours !== 12) {
+//     hours += 12;
+//   } else if (period === 'AM' && hours === 12) {
+//     hours = 0; // Midnight edge case
+//   }
+
+//   return hours * 60 + minutes; // Return total minutes for easier comparison
+// }
+
+// export const getAvailableTimeSlots = async (req: Request, res: Response) => {
+//   try {
+//     const { date } = req.body;
+
+//     if (!date) {
+//       return res.status(400).json({ message: 'Please provide a valid delivery date' });
+//     }
+
+//     const today = new Date().toISOString().split('T')[0];
+//     const currentTime = new Date();
+
+//     const selectedDate = new Date(date);
+//     const selectedDateString = selectedDate.toISOString().split('T')[0];
+
+//     // Convert current time to '8:00 AM' format
+//     const hours = currentTime.getHours();
+//     const minutes = currentTime.getMinutes();
+//     const period = hours >= 12 ? 'PM' : 'AM';
+//     const formattedHour = hours % 12 === 0 ? 12 : hours % 12;
+//     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+//     const currentTimeFormatted = `${formattedHour}:${formattedMinutes} ${period}`;
+
+//     console.log('Current Time:', currentTimeFormatted);
+
+//     const bookedJobs = await ServiceJob.find({
+//       where: {
+//         deliveryDate: date as string,
+//         status: 'Accepted',
+//       },
+//       select: ['deliveryTime'],
+//     });
+
+//     const bookedTimes = bookedJobs.map((job) => job.deliveryTime);
+//     console.log('Booked Times:', bookedTimes);
+
+//     const availableSlots = timeSlots.filter((slot) => {
+//       const slotStartTime = slot.split(' - ')[0];
+
+//       // If the selected date is in the past, exclude all slots
+//       if (selectedDate < new Date(today)) {
+//         return false;
+//       }
+
+//       // If the selected date is today, exclude slots that are in the past
+//       if (selectedDateString === today) {
+//         if (convertTo24HourFormat(slotStartTime) <= convertTo24HourFormat(currentTimeFormatted)) {
+//           return false; // Exclude past slots
+//         }
+//       }
+
+//       return !bookedTimes.includes(slot); // Only include unbooked slots
+//     });
+
+//     console.log('Available Times:', availableSlots);
+
+//     const final = availableSlots.reduce<SlotAccumulator>(
+//       (acc, curr) => {
+//         const [num, period] = curr.split(' ');
+
+//         if (period === 'AM') {
+//           acc.morning.push(curr);
+//         } else if (parseInt(num) % 12 <= 4) {
+//           acc.afternoon.push(curr);
+//         } else {
+//           acc.evening.push(curr);
+//         }
+
+//         return acc;
+//       },
+//       { morning: [], afternoon: [], evening: [] }
+//     );
+
+//     return res.status(200).json({
+//       status: 'success',
+//       message: 'Available time slots fetched successfully',
+//       data: { availableSlots: final },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching available time slots:', error);
+//     return res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
 
 // -------------------------Address--------------------------------------
 
@@ -305,7 +519,9 @@ export const addToCart = async (req: Request, res: Response) => {
       serviceProviderId,
       providedServiceId,
       workDetails,
-      mrp, 
+      mrp,
+      cgstPercentage,
+      sgstPercentage,
       deliveryDate,
       deliveryTime,
       deliveryAddressId,
@@ -345,6 +561,8 @@ export const addToCart = async (req: Request, res: Response) => {
     cartItemBooking.deliveryAddressId = deliveryAddressId;
     cartItemBooking.additionalNote = additionalNote || '';
     cartItemBooking.attachments = attachments || [];
+    if (cgstPercentage) cartItemBooking.cgstPercentage = cgstPercentage;
+    if (sgstPercentage) cartItemBooking.sgstPercentage = sgstPercentage;
     cartItemBooking.createdBy = 'system';
     await cartItemBooking.save();
 
@@ -445,6 +663,8 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     orderItem.discountAmount = cartItem.discountAmount;
     orderItem.cgstPercentage = cartItem.cgstPercentage;
     orderItem.sgstPercentage = cartItem.sgstPercentage;
+    orderItem.cgstPrice = cartItem.cgstPrice;
+    orderItem.sgstPrice = cartItem.sgstPrice;
     orderItem.totalTax = cartItem.totalTax;
     orderItem.totalPrice = cartItem.totalPrice;
     orderItem.deliveryDate = cartItem.deliveryDate;
@@ -461,6 +681,7 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     serviceJob.orderItemBookingId = orderItem.id;
     serviceJob.customerId = orderItem.customerId;
     serviceJob.serviceProviderId = orderItem.serviceProviderId;
+    serviceJob.invoiceId = order.invoiceId;
     serviceJob.jobId = orderItem.OrderItemId;
     serviceJob.status = 'Pending';
     serviceJob.workDetails = orderItem.workDetails;
@@ -471,6 +692,8 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     serviceJob.discountAmount = orderItem.discountAmount;
     serviceJob.cgstPercentage = orderItem.cgstPercentage;
     serviceJob.sgstPercentage = orderItem.sgstPercentage;
+    serviceJob.cgstPrice = orderItem.cgstPrice;
+    serviceJob.sgstPrice = orderItem.sgstPrice;
     serviceJob.totalTax = orderItem.totalTax;
     serviceJob.totalPrice = orderItem.totalPrice;
     serviceJob.deliveryDate = orderItem.deliveryDate;
@@ -543,17 +766,16 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
     }
 
     const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
 
     const orderItem = await orderItemBookingRepository.findOne({
       where: { id: orderItemBookingId, orderId },
-      relations: ['providedService', 'providedService.subCategory', 'address'],
+      relations: ['providedService', 'providedService.subCategory', 'providedService.category',  'address'],
     });
 
-    if (!orderItem) {
-      res.status(401).json({ status: 'error', message: 'No booked item is present' });
-    }
+    const user = await userLoginRepository.findOne({ where: { id: orderItem?.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });
 
-    res.status(200).json({ status: 'success', message: 'Successfully fetched the booked item', data: { orderItem } });
+    res.status(200).json({ status: 'success', message: 'Successfully fetched the booked item', data: { orderItem, details: user?.personalDetails ? user.personalDetails : user?.businessDetails } });
   } catch (error) {
     console.error('Error fetching booked item :', error);
     return res.status(500).json({ message: 'Error fetching booked item ', error });
@@ -572,25 +794,36 @@ export const fetchOrderHistory = async (req: Request, res: Response) => {
 
     const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
 
-    let query: FindOptionsWhere<OrderItemBooking> = { customerId };
+    const queryBuilder = orderItemBookingRepository
+      .createQueryBuilder('orderItemBooking')
+      .leftJoinAndSelect('orderItemBooking.address', 'address')
+      .leftJoinAndSelect('orderItemBooking.order', 'order')
+      .leftJoinAndSelect('orderItemBooking.user', 'user')
+      .leftJoinAndSelect('user.personalDetails', 'personalDetails')
+      .leftJoinAndSelect('user.businessDetails', 'businessDetails')
+      .leftJoinAndSelect('orderItemBooking.providedService', 'providedService')
+      .leftJoinAndSelect('providedService.subCategory', 'subCategory')
+      .where('orderItemBooking.customerId = :customerId', { customerId });
 
     if (onDate) {
       const parsedDate = new Date(onDate as string);
       const formattedDate = format(parsedDate, 'yyyy-MM-dd');
-      query = { ...query, deliveryDate: formattedDate };
+      queryBuilder.andWhere('orderItemBooking.deliveryDate = :deliveryDate', { deliveryDate: formattedDate });
     }
 
     if (type === 'scheduled') {
-      query = { ...query, status: In(['Pending', 'Assigned']) as any };
+      queryBuilder.andWhere('orderItemBooking.status IN (:...statuses)', { statuses: ['Pending', 'Assigned'] });
     } else {
-      query = { ...query, status: In(['Rejected', 'Completed', 'Cancelled', 'Rescheduled']) as any };
+      queryBuilder.andWhere('orderItemBooking.status IN (:...statuses)', {
+        statuses: ['Rejected', 'Completed', 'Cancelled', 'Rescheduled'],
+      });
     }
 
-    const [orderItems, count] = await orderItemBookingRepository.findAndCount({ where: query, relations: ['address', 'user', 'providedService', 'providedService.subCategory'] });
+    const [orderItems, count] = await queryBuilder.getManyAndCount();
 
     res.status(200).json({
       status: 'success',
-      message: '',
+      message: 'Orders fetched successfully',
       data: {
         orderItems,
         count,
@@ -718,6 +951,9 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
         discountPercentage: orderItemBooking.discountPercentage,
         cgstPercentage: orderItemBooking.cgstPercentage,
         sgstPercentage: orderItemBooking.sgstPercentage,
+        cgstPrice: orderItemBooking.cgstPrice,
+        sgstPrice: orderItemBooking.sgstPrice,
+        attachments: orderItemBooking.attachments,
         totalTax: orderItemBooking.totalTax,
         totalPrice: orderItemBooking.totalPrice,
         deliveryDate: newDeliveryDate,
@@ -776,8 +1012,8 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
         notificationData.recipientId = oldServiceJob?.customerId;
         const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
 
-        console.log("-- reschedule in service provider ----",inAppResultService.message);
-        console.log("-- reschedule in customer ----",inAppResultCustomer.message);
+        console.log("-- reschedule in service provider ----", inAppResultService.message);
+        console.log("-- reschedule in customer ----", inAppResultCustomer.message);
       } catch (notificationError: any) {
         console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
       }

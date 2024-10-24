@@ -5,11 +5,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn, 
+  OneToMany, 
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserLogin } from '../../user/UserLogin';
+import { Event } from '../../eventManagement/Event';
 
 interface Address {
   addressLine1: string,
@@ -47,7 +50,7 @@ export class PersonalDetails extends BaseEntity {
 
   @Column({ type: 'text' })
   bio!: string;
- 
+
   @Column({ type: 'json' })
   permanentAddress!: Address;
 
@@ -86,6 +89,8 @@ export class PersonalDetails extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  // @OneToOne(() => UserLogin, user => user.personalDetails)
-  // user !: UserLogin;
+  @OneToOne(() => UserLogin, (user) => user.personalDetails)
+  @JoinColumn({ name: "userId" })
+  user!: UserLogin;
+
 }

@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, OneToOne, } from 'typeorm';
+import { Invoice } from '../others/Invoice';
 
 @Entity({ name: "Transaction" })
 export class Transaction extends BaseEntity {
@@ -69,4 +70,7 @@ export class Transaction extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
+
+    @OneToOne(() => Invoice, invoice => invoice.transaction)
+    invoice !: Invoice;
 }

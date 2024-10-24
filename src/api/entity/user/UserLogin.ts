@@ -17,6 +17,8 @@ import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
 import { OrderItemProduct } from '../orderManagement/customer/OrderItemProduct';
 import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 import { PersonalDetails } from '../profile/personal/PersonalDetails';
+import { BusinessDetails } from '../profile/business/BusinessDetails';
+import { Event } from '../eventManagement/Event';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -87,6 +89,12 @@ export class UserLogin extends BaseEntity {
   @OneToMany(() => OrderItemProduct, item => item.user)
   orderItemProducts !: OrderItemProduct[];
 
-  // @OneToOne(() => PersonalDetails, details => details.user)
-  // personalDetails !: PersonalDetails;
+  @OneToOne(() => PersonalDetails, (details) => details.user, { cascade: true })
+  personalDetails!: PersonalDetails;
+
+  @OneToOne(() => BusinessDetails, (details) => details.user, { cascade: true })
+  businessDetails!: BusinessDetails;
+
+  @OneToMany(() => Event,(details) => details.user, { cascade: true })
+  event!: Event;
 }

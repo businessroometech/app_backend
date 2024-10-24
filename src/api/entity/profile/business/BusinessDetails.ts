@@ -5,9 +5,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserLogin } from '../../user/UserLogin';
 
 interface Address {
   addressLine1: string,
@@ -90,4 +93,8 @@ export class BusinessDetails extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
+
+  @OneToOne(() => UserLogin, (user) => user.businessDetails)
+  @JoinColumn({ name: "userId" })
+  user!: UserLogin;
 }

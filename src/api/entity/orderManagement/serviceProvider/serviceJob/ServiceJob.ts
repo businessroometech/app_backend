@@ -23,6 +23,9 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: 'uuid' })
     serviceProviderId!: string;
 
+    @Column({ type: "uuid" , nullable: true})
+    invoiceId !: string;
+
     @Column({ type: "enum", enum: ["Pending", "Accepted", "Rejected", "InProcess", "Completed", "Cancelled", "Rescheduled"], default: "Pending" })
     status!: string;
 
@@ -52,6 +55,12 @@ export class ServiceJob extends BaseEntity {
 
     @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
     sgstPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // CGST set to 9%
+    cgstPrice!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
+    sgstPrice!: number;
 
     @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
     totalTax!: number;

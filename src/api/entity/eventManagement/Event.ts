@@ -1,5 +1,17 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, BeforeInsert } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  BaseEntity,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  BeforeInsert,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { EventBooking } from './EventBooking';
 import { DressCode } from './DressCode';
 import { EventMedia } from './EventMedia';
@@ -7,115 +19,135 @@ import { EventParticipant } from './EventParticipant';
 import { EventPayment } from './EventPayment';
 import { EventRule } from './EventRule';
 import { EventSchedule } from './EventSchedule';
+import { PersonalDetails } from '../profile/personal/PersonalDetails';
+import { login } from '@/api/controllers/auth/Login';
+import { UserLogin } from '../user/UserLogin';
 
-@Entity({ name: "Event" })
+@Entity({ name: 'Event' })
 export class Event extends BaseEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @OneToOne(() => UserLogin, (user) => user.event)
+  @JoinColumn({ name: 'userId' })
+  user!: UserLogin;
 
-    @Column({ type: 'varchar', length: 255 })
-    name!: string;
+  @Column({ type: 'uuid' })
+  userId!: string;
 
-    @Column({ type: 'text', nullable: true })
-    description?: string;
+  @Column({ type: 'varchar', length: 255 })
+  name!: string;
 
-    @Column({ type: 'enum', enum: ['Physical', 'Virtual'] })
-    eventType!: 'Physical' | 'Virtual';
+  @Column({ type: 'text', nullable: true })
+  description?: string;
 
-    @Column({ type: 'varchar', length: 100 })
-    category!: string;
+  @Column({ type: 'int', nullable: true, default: 1 })
+  count?: number;
 
-    @Column({ type: 'timestamp' })
-    startDatetime!: Date;
+  @Column({ type: 'enum', enum: ['Physical', 'Virtual'] })
+  eventType!: 'Physical' | 'Virtual';
 
-    @Column({ type: 'timestamp' })
-    endDatetime!: Date;
+  @Column({ type: 'varchar', length: 100 })
+  category!: string;
 
-    @Column({ type: 'int', nullable: true })
-    capacity?: number;
+  @Column({ type: 'timestamp' })
+  startDatetime!: Date;
 
-    @Column({ type: 'boolean', default: false })
-    isInviteOnly!: boolean;
+  @Column({ type: 'timestamp' })
+  endDatetime!: Date;
 
-    @Column({ type: 'enum', enum: ['upcoming', 'ongoing', 'completed', 'cancelled', 'rescheduled'] })
-    status!: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'rescheduled';
+  @Column({ type: 'int', nullable: true })
+  capacity?: number;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    venueName?: string;
+  @Column({ type: 'boolean', default: false })
+  isInviteOnly!: boolean;
 
-    @Column({ type: 'uuid' })
-    addressId!: string;
+  @Column({ type: 'enum', enum: ['upcoming', 'ongoing', 'completed', 'cancelled', 'rescheduled'] })
+  status!: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'rescheduled';
 
-    @Column({ type: 'text', nullable: true })
-    bannerImageUrl?: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  venueName?: string;
 
-    @Column({ type: 'text', nullable: true })
-    livestreamLink?: string;
+  @Column({ type: 'uuid' })
+  addressId!: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    platformName?: string;
+  @Column({ type: 'text', nullable: true })
+  bannerImageUrl?: string;
 
-    @Column({ type: 'text', nullable: true })
-    meetingAccessLink?: string;
+  @Column({ type: 'text', nullable: true })
+  livestreamLink?: string;
 
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    accessCode?: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  platformName?: string;
 
-    @Column({ type: 'timestamp', nullable: true })
-    registrationDeadline?: Date;
+  @Column({ type: 'char', length: 255, nullable: true, default: "false" })
+  inclusions?: string;
 
-    @Column({ type: 'uuid' })
-    organizerId!: string;
+  @Column({ type: 'int', nullable: true, default: 0 })
+  ageLimit?: number;
 
-    @Column({ type: 'simple-array' })
-    schedules!: string[];
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  restrictions?: string;
 
-    @Column({ type: 'varchar', default: 'system' })
-    createdBy!: string;
+  @Column({ type: 'text', nullable: true })
+  meetingAccessLink?: string;
 
-    @Column({ type: 'varchar', default: 'system', nullable: true })
-    updatedBy!: string;
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  accessCode?: string;
 
-    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
-    createdAt!: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  registrationDeadline?: Date;
 
-    @UpdateDateColumn({
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP(6)',
-        onUpdate: 'CURRENT_TIMESTAMP(6)',
-        precision: 6,
-    })
-    updatedAt!: Date;
+  @Column({ type: 'uuid' })
+  organizerId!: string;
 
-    @BeforeInsert()
-    async beforeInsert() {
-        this.id = this.generateUUID();
-    }
+  @Column({ type: 'simple-array' })
+  schedules!: string[];
 
-    private generateUUID(): string {
-        return randomBytes(16).toString('hex');
-    }
+  @Column({ type: 'varchar', default: 'system' })
+  createdBy!: string;
 
-    @OneToMany(() => DressCode, dressCode => dressCode.event)
-    dressCodes !: DressCode[];
+  @Column({ type: 'varchar', default: 'system', nullable: true })
+  updatedBy!: string;
 
-    @OneToMany(() => EventBooking, eventBooking => eventBooking.event)
-    eventBookings !: EventBooking[];
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
+  createdAt!: Date;
 
-    @OneToMany(() => EventMedia, eventMedia => eventMedia.event)
-    eventMedia !: EventMedia[];
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    precision: 6,
+  })
+  updatedAt!: Date;
 
-    @OneToMany(() => EventParticipant, eventParticipant => eventParticipant.event)
-    eventParticipants !: EventParticipant[];
+  @BeforeInsert()
+  async beforeInsert() {
+    this.id = this.generateUUID();
+  }
 
-    @OneToMany(() => EventPayment, eventPayment => eventPayment.event)
-    eventPayments !: EventPayment[];
+  private generateUUID(): string {
+    return randomBytes(16).toString('hex');
+  }
 
-    @OneToMany(() => EventRule, eventRule => eventRule.event)
-    eventRules !: EventRule[];
+  @OneToMany(() => DressCode, (dressCode) => dressCode.event)
+  dressCodes!: DressCode[];
 
-    @OneToMany(() => EventSchedule, eventSchedule => eventSchedule.event)
-    eventSchedules !: EventSchedule[];
+  @OneToMany(() => EventBooking, (eventBooking) => eventBooking.event)
+  eventBookings!: EventBooking[];
 
+  @OneToMany(() => EventMedia, (eventMedia) => eventMedia.event)
+  eventMedia!: EventMedia[];
+
+  @OneToMany(() => EventParticipant, (eventParticipant) => eventParticipant.event)
+  eventParticipants!: EventParticipant[];
+
+  @OneToMany(() => EventPayment, (eventPayment) => eventPayment.event)
+  eventPayments!: EventPayment[];
+
+  @OneToMany(() => EventRule, (eventRule) => eventRule.event)
+  eventRules!: EventRule[];
+
+  @OneToMany(() => EventSchedule, (eventSchedule) => eventSchedule.event)
+  eventSchedules!: EventSchedule[];
 }

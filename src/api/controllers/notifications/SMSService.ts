@@ -16,13 +16,15 @@ class SMSService {
         }
 
         let details;
-        if (recipientType === 'ServiceProvider') {
-            details = await personalDetailsRepository.findOne({ where: { userId: recipientId } });
-            if (!details) {
-                details = await businessDetailsRepository.findOne({ where: { userId: recipientId } });
+        if (recipientId) {
+            if (recipientType === 'ServiceProvider') {
+                details = await personalDetailsRepository.findOne({ where: { userId: recipientId } });
+                if (!details) {
+                    details = await businessDetailsRepository.findOne({ where: { userId: recipientId } });
+                }
+            } else if (recipientType === 'Customer') {
+                details = await personalDetailsCustomerRepository.findOne({ where: { userId: recipientId } });
             }
-        } else if (recipientType === 'Customer') {
-            details = await personalDetailsCustomerRepository.findOne({ where: { userId: recipientId } });
         }
 
         let options: AxiosRequestConfig;
@@ -30,7 +32,7 @@ class SMSService {
 
         if (!details) {
 
-            const phoneNumber = parsePhoneNumberFromString(recipientNumber, 'IN'); 
+            const phoneNumber = parsePhoneNumberFromString(recipientNumber, 'IN');
             if (!phoneNumber || !phoneNumber.isValid()) {
                 throw new Error(`Invalid mobile number: ${recipientNumber}`);
             }
@@ -67,10 +69,12 @@ class SMSService {
         };
 
         try {
-          //  const { data } = await axios.request(options);
+            console.log('SMS Data before provider initiate options', options);
+            const { data } = await axios.request(options);
+            console.log('SMS Data setn to user ', data);
             return data;
         } catch (error: any) {
-            console.error('Error:', error?.message || 'Unknown error occurred during SMS request');
+            console.error('SMS Error:', error?.message || 'Unknown error occurred during SMS request');
             throw error;
         }
     }
