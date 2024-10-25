@@ -3,10 +3,6 @@ import express from 'express';
 import {
     // addBooking,
     addToCart,
-    // removeFromCart,
-    // checkout,
-    // rescheduleOrderItemBooking,
-    // cancelOrderItemBooking,
     getProvidedServicesByCategoryAndSubCategory,
     getDistinctCitiesBySubCategory,
     getAvailableTimeSlots,
@@ -18,10 +14,8 @@ import {
     cancelOrderItemBooking,
     rescheduleOrder,
     fetchOrderHistory,
-    fetchBookingItem,createOrUpdateTicket,
-    getTicketList,
-    getTicket,
-    deleteTicket
+    fetchBookingItem,
+ 
 } from '@/api/controllers/orderManagement/Customer';
 const Router = express.Router();
 

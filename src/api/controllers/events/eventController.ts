@@ -14,6 +14,7 @@ import { EventSchedule } from '@/api/entity/eventManagement/EventSchedule';
 import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
 import { UserAddress } from '@/api/entity/user/UserAddress';
 import { EventDraft } from '@/api/entity/eventManagement/EventDraft';
+import { Dropdown } from '@/api/entity/eventManagement/Dropdown';
 
 
 // __________________________________Common Methods________________________________
@@ -66,6 +67,21 @@ export const validateUserId = async (userId: string, res: Response) => {
 // testing
 export const createEvents = async (req: Request, res: Response) => {
   res.json({ name: 'event-start' });
+};
+
+// we can pass in where get the event or ticket , when user seen any event more than one i will increse count one
+export const incrementCounter = async (eventId: string) => {
+  const eventRepository = AppDataSource.getRepository(Event);
+  const event = await eventRepository.findOne({ where: { id: eventId } });
+  if (!event) {
+    throw new ErrorHandler('Event not found', 404);
+  }
+  // Increment the count
+  event.count = event.count ? (parseInt(event.count, 10) + 1).toString() : '1';
+  // Save the updated event
+  await eventRepository.save(event);
+  
+  return event; 
 };
 
 // __________________________________event Ticket________________________________
@@ -500,7 +516,10 @@ export const getNearEvent = catchAsyncErrors(async (req: Request, res: Response)
         message: 'No physical events found',
       });
     }
-  
+    
+    for (const event of physicalEvents) {
+      await incrementCounter(event.id);
+    }
   // Return the matched physical events
   return res.status(200).json({
     status: 'success',
@@ -519,35 +538,6 @@ export const getPopularEvents=async(req: Request, res: Response) =>{
     return res.status(200).json(events);
   } catch (error) {
     console.error('Error fetching sorted events:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-}
- 
-export const incrementCounter=async(req: Request, res: Response)=> {
-  try {
-    const { eventId } = req.body; 
-
-    // Find the event by ID
-    const event = await Event.findOne({ where: { id: eventId } });
-
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
-    // Increment the count
-    if (event.count) {
-      event.count = (parseInt(event.count) + 1).toString();
-    } else {
-      event.count = 1
-    }
-
-    // Save the updated event
-    await event.save();
-
-    return res.status(200).json({ message: 'Event count incremented successfully', event });
-
-  } catch (error) {
-    console.error('Error incrementing event count:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -709,32 +699,30 @@ export const deleteUserEvent = catchAsyncErrors(async (req: Request, res: Respon
 });
 
 // get-event-details-options in form
+// Get event details options
 export const eventDetailsOptions = catchAsyncErrors(async (req: Request, res: Response) => {
-  const { userId, require } = req.body;
+  const { require } = req.body;
 
-  // Validate user ID
-  const user = await validateUserId(userId, res);
-  if (!user) {
-    return;
+  // Fetch dropdown data from the repository
+  const dropRepository = AppDataSource.getRepository(Dropdown);
+  const dropDown = await dropRepository.find(); 
+
+  if (!dropDown) {
+    return res.status(404).json({
+      status: 'error',
+      message: 'Dropdown data not found',
+    });
   }
-
-  // Initialize the data variable
   let data: any = {};
-
   // Check the 'require' field and respond accordingly
   switch (require) {
     case "eventType":
-      data.eventType = [
-        'conference', 'seminar', 'workshop', 'webinar', 'meetup', 'networking', 
-        'trade show', 'expo', 'festival', 'concert', 'hackathon', 'competition', 
-        'fundraiser', 'gala', 'banquet', 'award ceremony', 'product launch', 
-        'team building', 'training', 'retreat',
-      ];
+      data.eventType = dropDown.eventType; 
       break;
     case "eventDate":
       data.eventDate = [
-        new Date(), // Current date
-        new Date(new Date().setDate(new Date().getDate() + 30)), // 30 days from now
+        new Date(), 
+        new Date(new Date().setDate(new Date().getDate() + 30)), 
       ];
       break;
     case "eventStartTime":
@@ -744,20 +732,12 @@ export const eventDetailsOptions = catchAsyncErrors(async (req: Request, res: Re
       break;
     case "eventEndTime":
       data.eventEndTime = [
-        new Date(new Date().getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString(), 
+        new Date(new Date().getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString(), // Add 2 hours
       ];
       break;
-    case "dressCode":
-      data.dressCode = [
-        { gender: 'male' },
-        { gender: 'female' },
-        { gender: 'transgender' },
-        { gender: 'non-binary' },
-        { gender: 'genderqueer' },
-        { gender: 'genderfluid' },
-      ];
+    case "gender":
+      data.gender = dropDown.gender; 
       break;
-
     case "rsvpDeadline":
       data.rsvpDeadline = {
         date: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // Yesterday's date
@@ -765,25 +745,14 @@ export const eventDetailsOptions = catchAsyncErrors(async (req: Request, res: Re
       };
       break;
     case "eventEntryCharge":
-      data.eventEntryCharge = [
-        { type: 'couple' },
-        { type: 'single' },
-        { type: 'group' },
-        { type: 'family' },
-        { type: 'student' },
-        { type: 'vip' },
-        { type: 'early bird' },
-        { type: 'senior citizen' },
-      ];
+      data.eventEntryCharge = dropDown.entryType; 
       break;
-
     default:
       return res.status(400).json({
         status: 'error',
         message: 'Invalid "require" parameter',
       });
   }
-  // Return the response
   return res.status(200).json({
     status: 'success',
     data,

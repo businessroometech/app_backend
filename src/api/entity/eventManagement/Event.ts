@@ -47,13 +47,13 @@ export class Event extends BaseEntity {
   @Column({ type: 'enum', enum: ['Physical', 'Virtual'] })
   eventType!: 'Physical' | 'Virtual';
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100,  nullable: true })
   category!: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp' ,  nullable: true})
   startDatetime!: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp' ,  nullable: true})
   endDatetime!: Date;
 
   @Column({ type: 'int', nullable: true })
