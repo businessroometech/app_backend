@@ -142,29 +142,29 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
 
 export const verifyUuidToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    // const uuidToken = req.cookies.uuidToken;
+    const uuidToken = req.cookies.uuidToken;
 
-    // if (!uuidToken) {
-    //   res.status(401).json({ status: 'error', message: 'UUID token is missing' });
-    //   return;
-    // }
+    if (!uuidToken) {
+      res.status(401).json({ status: 'error', message: 'UUID token is missing' });
+      return;
+    }
 
-    // // Finding the token in the database using the HMAC
-    // const hmac = createHmac(uuidToken);
-    // const token = await Token.findOne({ where: { hmac } });
+    // Finding the token in the database using the HMAC
+    const hmac = createHmac(uuidToken);
+    const token = await Token.findOne({ where: { hmac } });
 
-    // if (!token) {
-    //   res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
-    //   return;
-    // }
+    if (!token) {
+      res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
+      return;
+    }
 
-    // if (new Date() > token.expiresAt) {
-    //   await Token.remove(token);
-    //   res.status(403).json({ status: 'error', message: 'UUID token expired' });
-    //   return;
-    // }
-    const { userId, rememberMe = false } = req.body;
-    const token = { userId };
+    if (new Date() > token.expiresAt) {
+      await Token.remove(token);
+      res.status(403).json({ status: 'error', message: 'UUID token expired' });
+      return;
+    }
+    const { rememberMe = false } = req.body;
+    // const token = { userId };
 
     const newAccessToken = generateAccessToken({ id: token.userId });
     const newRefreshToken = generateRefreshToken({ id: token.userId });
@@ -175,7 +175,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
     });
 
     // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { userId } });
+    const rt = await RefreshToken.findOne({ where: { userId: token.userId } });
 
     const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
     const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -191,7 +191,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       await rt.save();
     } else {
       await RefreshToken.create({
-        userId,
+        userId: token.userId,
         token: newRefreshToken,
         expiresAt: new Date(Date.now() + expiresIn),
       }).save();

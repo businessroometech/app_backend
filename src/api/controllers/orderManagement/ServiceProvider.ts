@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import { ServiceJob } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJob';
 import { Between, In } from 'typeorm';
-import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths } from 'date-fns';
+import { format, isValid, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, subYears, subWeeks } from 'date-fns';
 // import { Service } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { OrderItemBooking } from '@/api/entity/orderManagement/customer/OrderItemBooking';
 import { ProvidedService } from '@/api/entity/orderManagement/serviceProvider/service/ProvidedService';
 import { Service } from '@/api/entity/sector/Service';
+import { SubCategory } from '@/api/entity/sector/SubCategory';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -369,6 +370,77 @@ export const deleteProvidedService = async (req: Request, res: Response) => {
 
 // ---------------------------------------------HOME PAGE----------------------------------------------
 
+// export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Response) => {
+//     const { year, period, userId, sectorId } = req.body;
+
+//     if (!year || !userId || !sectorId) {
+//         return res.status(400).json({ message: 'Year, userId, and sectorId are required.' });
+//     }
+
+//     const yearAsNumber = parseInt(year as string);
+//     if (isNaN(yearAsNumber)) {
+//         return res.status(400).json({ message: 'Invalid year format.' });
+//     }
+
+//     let startDate: Date;
+//     let endDate: Date;
+
+//     switch (period) {
+//         case 'year':
+//             startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+//             endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+//             break;
+//         case 'month':
+//             startDate = startOfMonth(new Date());
+//             endDate = endOfMonth(new Date());
+//             break;
+//         case 'week':
+//             startDate = startOfWeek(new Date());
+//             endDate = endOfWeek(new Date());
+//             break;
+//         default:
+//             startDate = startOfYear(new Date(yearAsNumber, 0, 1));
+//             endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+//     }
+
+//     try {
+//         const predefinedStatuses = ['Pending', 'Completed', 'Rejected', 'Accepted']; // List all possible statuses
+
+//         const statusCounts = await ServiceJob
+//             .createQueryBuilder("serviceJob")
+//             .select("serviceJob.status", "status")
+//             .addSelect("COUNT(*)", "count")
+//             .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+//             .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+//             .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+//             .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+//             .groupBy("serviceJob.status")
+//             .getRawMany();
+
+//         // Convert query results to a map for easier processing
+//         const statusCountMap = new Map<string, number>();
+//         statusCounts.forEach(({ status, count }) => {
+//             statusCountMap.set(status, parseInt(count));
+//         });
+
+//         // Ensure all predefined statuses are included in the result
+//         const result = predefinedStatuses.map(status => ({
+//             status,
+//             count: statusCountMap.get(status) || 0
+//         }));
+
+
+//         return res.status(200).json({
+//             status: "success",
+//             message: "Fetched service jobs by year, month, and week",
+//             data: { statusCounts: result }
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Server error.' });
+//     }
+// };
+
 export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Response) => {
     const { year, period, userId, sectorId } = req.body;
 
@@ -383,63 +455,86 @@ export const getServiceJobsBy_Year_Month_Week = async (req: Request, res: Respon
 
     let startDate: Date;
     let endDate: Date;
+    let prevStartDate: Date;
+    let prevEndDate: Date;
 
+    // Determine the start and end dates based on the selected period (year, month, week)
     switch (period) {
         case 'year':
             startDate = startOfYear(new Date(yearAsNumber, 0, 1));
             endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            prevStartDate = startOfYear(subYears(startDate, 1));
+            prevEndDate = endOfYear(subYears(endDate, 1));
             break;
         case 'month':
             startDate = startOfMonth(new Date());
             endDate = endOfMonth(new Date());
+            prevStartDate = startOfMonth(subMonths(startDate, 1));
+            prevEndDate = endOfMonth(subMonths(endDate, 1));
             break;
         case 'week':
             startDate = startOfWeek(new Date());
             endDate = endOfWeek(new Date());
+            prevStartDate = startOfWeek(subWeeks(startDate, 1));
+            prevEndDate = endOfWeek(subWeeks(endDate, 1));
             break;
         default:
             startDate = startOfYear(new Date(yearAsNumber, 0, 1));
             endDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            prevStartDate = startOfYear(subYears(startDate, 1));
+            prevEndDate = endOfYear(subYears(endDate, 1));
     }
 
+    console.log(startDate, endDate);
+    console.log(prevStartDate, prevEndDate);
+
     try {
-        const predefinedStatuses = ['Pending', 'Completed', 'Rejected', 'Accepted']; // List all possible statuses
+        // Define the list of possible statuses
+        const predefinedStatuses = ['Pending', 'Completed', 'Rejected', 'Accepted'];
 
-        const statusCounts = await ServiceJob
-            .createQueryBuilder("serviceJob")
-            .select("serviceJob.status", "status")
-            .addSelect("COUNT(*)", "count")
-            .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
-            .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
-            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
-            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
-            .groupBy("serviceJob.status")
-            .getRawMany();
+        // Helper function to get service job counts for a given date range
+        const getServiceJobCounts = async (startDate: Date, endDate: Date) => {
+            const statusCounts = await ServiceJob
+                .createQueryBuilder("serviceJob")
+                .select("serviceJob.status", "status")
+                .addSelect("COUNT(*)", "count")
+                .innerJoin("serviceJob.orderItemBooking", "orderItemBooking")
+                .where("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate, endDate })
+                .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+                .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+                .groupBy("serviceJob.status")
+                .getRawMany();
 
-        // Convert query results to a map for easier processing
-        const statusCountMap = new Map<string, number>();
-        statusCounts.forEach(({ status, count }) => {
-            statusCountMap.set(status, parseInt(count));
-        });
+            const statusCountMap = new Map<string, number>();
+            statusCounts.forEach(({ status, count }) => {
+                statusCountMap.set(status, parseInt(count));
+            });
 
-        // Ensure all predefined statuses are included in the result
-        const result = predefinedStatuses.map(status => ({
-            status,
-            count: statusCountMap.get(status) || 0
-        }));
+            return predefinedStatuses.map(status => ({
+                status,
+                count: statusCountMap.get(status) || 0
+            }));
+        };
 
+        // Fetch counts for the current period
+        const currentPeriodCounts = await getServiceJobCounts(startDate, endDate);
+
+        // Fetch counts for the previous period
+        const prevPeriodCounts = await getServiceJobCounts(prevStartDate, prevEndDate);
 
         return res.status(200).json({
             status: "success",
             message: "Fetched service jobs by year, month, and week",
-            data: { statusCounts: result }
+            data: {
+                currentPeriod: currentPeriodCounts,
+                previousPeriod: prevPeriodCounts
+            }
         });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Server error.' });
     }
 };
-
 
 export const totalAmountBy_Year_Month_Week = async (req: Request, res: Response) => {
 
@@ -620,10 +715,6 @@ export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Respon
     const startDatePreviousMonth = startOfMonth(subMonths(startDateCurrentMonth, 1));
     const endDatePreviousMonth = endOfMonth(startDatePreviousMonth);
 
-    console.log(startDateCurrentMonth,endDateCurrentMonth);
-    console.log("**************");
-    console.log(startDatePreviousMonth,endDatePreviousMonth);
-
     try {
         // Calculate average price for the given month
         const avgPriceCurrentMonthResult = await ServiceJob
@@ -663,5 +754,114 @@ export const compareAvgPriceWithPreviousMonth = async (req: Request, res: Respon
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Server error.' });
+    }
+};
+
+export const totalSalesSubCategoryWise = async (req: Request, res: Response) => {
+    const { year, period, sectorId, userId } = req.body;
+
+    if (!year || !period || !userId || !sectorId) {
+        return res.status(400).json({ message: 'Year, userId, or sectorId is required.' });
+    }
+
+    const yearAsNumber = parseInt(year as string);
+    if (isNaN(yearAsNumber)) {
+        return res.status(400).json({ message: 'Invalid year format.' });
+    }
+
+    let currentPeriodStartDate: Date;
+    let currentPeriodEndDate: Date;
+    let previousPeriodStartDate: Date;
+    let previousPeriodEndDate: Date;
+
+    // Calculate the start and end dates for both current and previous periods
+    switch (period) {
+        case 'year':
+            currentPeriodStartDate = startOfYear(new Date(yearAsNumber, 0, 1));
+            currentPeriodEndDate = endOfYear(new Date(yearAsNumber, 11, 31));
+            previousPeriodStartDate = startOfYear(subYears(new Date(yearAsNumber, 0, 1), 1));
+            previousPeriodEndDate = endOfYear(subYears(new Date(yearAsNumber, 11, 31), 1));
+            break;
+        case 'month':
+            currentPeriodStartDate = startOfMonth(new Date());
+            currentPeriodEndDate = endOfMonth(new Date());
+            previousPeriodStartDate = startOfMonth(subMonths(new Date(), 1));
+            previousPeriodEndDate = endOfMonth(subMonths(new Date(), 1));
+            break;
+        case 'week':
+            currentPeriodStartDate = startOfWeek(new Date());
+            currentPeriodEndDate = endOfWeek(new Date());
+            previousPeriodStartDate = startOfWeek(subWeeks(new Date(), 1));
+            previousPeriodEndDate = endOfWeek(subWeeks(new Date(), 1));
+            break;
+        default:
+            return res.status(400).json({ message: 'Invalid period type. Should be "year", "month", or "week".' });
+    }
+
+    try {
+        // Fetch sales for the current period
+        const currentPeriodSales = await SubCategory
+            .createQueryBuilder('subCategory')
+            .leftJoin('subCategory.providedServices', 'providedService')
+            .leftJoin('providedService.orderItemBookings', 'orderItemBooking')
+            .leftJoin('orderItemBooking.serviceJobs', 'serviceJob')
+            .select('subCategory.subCategoryName', 'subCategory')
+            .addSelect('SUM(serviceJob.price)', 'totalSales')
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate: currentPeriodStartDate, endDate: currentPeriodEndDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy('subCategory.subCategoryName')
+            .getRawMany();
+
+        // Fetch sales for the previous period
+        const previousPeriodSales = await SubCategory
+            .createQueryBuilder('subCategory')
+            .leftJoin('subCategory.providedServices', 'providedService')
+            .leftJoin('providedService.orderItemBookings', 'orderItemBooking')
+            .leftJoin('orderItemBooking.serviceJobs', 'serviceJob')
+            .select('subCategory.subCategoryName', 'subCategory')
+            .addSelect('SUM(serviceJob.price)', 'totalSales')
+            .where('serviceJob.status = :status', { status: 'Completed' })
+            .andWhere("serviceJob.deliveryDate BETWEEN :startDate AND :endDate", { startDate: previousPeriodStartDate, endDate: previousPeriodEndDate })
+            .andWhere("serviceJob.serviceProviderId = :userId", { userId })
+            .andWhere("orderItemBooking.sectorId = :sectorId", { sectorId })
+            .groupBy('subCategory.subCategoryName')
+            .getRawMany();
+
+        // Create a map to store subcategory sales for both periods
+        const salesMap: { [key: string]: { currentPeriodSales: number | null, previousPeriodSales: number | null } } = {};
+
+        // Populate the salesMap with current period sales
+        currentPeriodSales.forEach((item) => {
+            salesMap[item.subCategory] = {
+                currentPeriodSales: parseFloat(item.totalSales) || 0,
+                previousPeriodSales: 0
+            };
+        });
+
+        // Populate the salesMap with previous period sales, ensuring each subcategory is accounted for
+        previousPeriodSales.forEach((item) => {
+            if (salesMap[item.subCategory]) {
+                salesMap[item.subCategory].previousPeriodSales = parseFloat(item.totalSales) || 0;
+            } else {
+                salesMap[item.subCategory] = {
+                    currentPeriodSales: 0,
+                    previousPeriodSales: parseFloat(item.totalSales) || 0
+                };
+            }
+        });
+
+        // Convert the salesMap to an array for response
+        const result = Object.keys(salesMap).map(subCategory => ({
+            subCategory,
+            currentPeriodSales: salesMap[subCategory].currentPeriodSales,
+            previousPeriodSales: salesMap[subCategory].previousPeriodSales
+        }));
+
+        return res.status(200).json({ status: "success", message: "Successfully fetched total sales sub category wise", data: { result } });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: 'Something went wrong' });
     }
 };
