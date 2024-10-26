@@ -15,8 +15,6 @@ import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
 import { UserAddress } from '@/api/entity/user/UserAddress';
 import { EventDraft } from '@/api/entity/eventManagement/EventDraft';
 import { Dropdown } from '@/api/entity/eventManagement/Dropdown';
-
-
 // __________________________________Common Methods________________________________
 
 // Dynamic function to map and create related entities
@@ -77,105 +75,65 @@ export const incrementCounter = async (eventId: string) => {
     throw new ErrorHandler('Event not found', 404);
   }
   // Increment the count
-  event.count = event.count ? (parseInt(event.count, 10) + 1).toString() : '1';
+  event.count = (event.count ?? 0) + 1;
   // Save the updated event
   await eventRepository.save(event);
-  
-  return event; 
+  return event;
 };
 
 // __________________________________event Ticket________________________________
 
-// Add or Update Ticket
-export const addOrUpdateTicket = catchAsyncErrors(async (req: Request, res: Response) => {
-  const {
-    ticketId,
-    eventId,
-    ticketType,
-    price,
-    quantityAvailable,
-    isFree,
-    inclusions,
-  } = req.body;
-
+// Update Ticket
+export const updateTicket = catchAsyncErrors(async (req: Request, res: Response) => {
+  const { ticketId, eventId, ticketType, price, quantityAvailable, isFree, inclusions } = req.body;
   // Validate required fields
-  if (!eventId || !ticketType || !price || !quantityAvailable || isFree === undefined) {
-    throw new ErrorHandler('Missing required fields', 400);
-  }
-
-  const ticketRepository = AppDataSource.getRepository(Ticket);
-  const eventRepository = AppDataSource.getRepository(Event);
-
-  // Check if the event exists
-  const event = await eventRepository.findOne({ where: { id: eventId } });
-  if (!event) {
-    throw new ErrorHandler('Event not found', 404);
-  }
-
-  let ticket;
-  if (ticketId) {
-    // Update existing ticket
-    ticket = await ticketRepository.findOne({ where: { id: ticketId } });
-    if (!ticket) {
-      throw new ErrorHandler('Ticket not found', 404);
-    }
-
-    // Update the ticket fields
-    ticket.ticketType = ticketType;
-    ticket.price = price;
-    ticket.quantityAvailable = quantityAvailable;
-    ticket.isFree = isFree;
-    ticket.inclusions = inclusions;
-  } else {
-    // Create a new ticket
-    ticket = ticketRepository.create({
-      eventId,
-      ticketType,
-      price,
-      quantityAvailable,
-      isFree,
-      inclusions,
+  if (!ticketId || !eventId || !ticketType || !quantityAvailable) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Missing required fields',
     });
   }
-
-  // Save the ticket
+  const ticketRepository = AppDataSource.getRepository(Ticket);
+  // Find the ticket by ID
+  let ticket = await ticketRepository.findOne({ where: { id: ticketId, eventId } });
+  if (!ticket) {
+    return res.status(404).json({
+      status: 'error',
+      message: 'Ticket not found',
+    });
+  }
+  // Update the ticket fields
+  ticket.ticketType = ticketType;
+  ticket.price = isFree ? 0 : price;
+  ticket.quantityAvailable = quantityAvailable;
+  ticket.isFree = isFree;
+  ticket.inclusions = inclusions;
   await ticketRepository.save(ticket);
-
-  const message = ticketId ? 'Ticket updated successfully' : 'Ticket created successfully';
-
   return res.status(200).json({
     status: 'success',
-    message,
+    message: 'Ticket updated successfully',
     data: {
       ticket,
     },
   });
 });
 
-// Get Tickets by User ID
+// Get Tickets by event ID
 export const getTicketList = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
-
-    // Validate userId
-    if (!userId) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'User ID is required',
-      });
+    const { eventId } = req.body;
+    if (!eventId) {
+      res.status(404).json({ status: 'error', message: 'event id is required' });
     }
-
-    // Query the database for tickets associated with the userId
-    const tickets = await TicketItem.find({ where: { userId } });
-
+    const ticketCodeRepo = AppDataSource.getRepository(Ticket);
+    const tickets = await ticketCodeRepo.find({ where: { eventId } });
     // Check if tickets were found
     if (tickets.length === 0) {
       return res.status(404).json({
         status: 'error',
-        message: 'No tickets found for this User ID',
+        message: 'No tickets found for this event',
       });
     }
-
     // Return the found tickets
     return res.status(200).json({
       status: 'success',
@@ -191,86 +149,74 @@ export const getTicketList = async (req: Request, res: Response) => {
 };
 
 // Get Ticket details
-// export const getTicket = catchAsyncErrors(async (req: Request, res: Response) => {
-//   const { id } = req.body;
+export const getTicket = catchAsyncErrors(async (req: Request, res: Response) => {
+  const { id } = req.body;
+  // Validate that ticket ID is provided
+  if (!id) {
+    throw new ErrorHandler('Ticket ID is required', 400);
+  }
+  // Get the ticket repository
+  const ticketRepository = AppDataSource.getRepository(Ticket);
+  // Find the ticket by ID
+  const ticket = await ticketRepository.find({ where: { id } });
+  // Check if the ticket was found
+  if (!ticket) {
+    throw new ErrorHandler('Ticket not found', 404);
+  }
+  // Return the ticket details
+  return res.status(200).json({
+    status: 'success',
+    message: 'Ticket retrieved successfully',
+    ticket,
+  });
+});
 
-//   // Validate that ticket ID is provided
-//   if (!id) {
-//     throw new ErrorHandler('Ticket ID is required', 400);
-//   }
+// Delete Ticket
+export const deleteTicket = async (req: Request, res: Response) => {
+  try {
+    const { ticketId } = req.body;
+    // Validate that ticketId is provided
+    if (!ticketId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'ticketId is required',
+      });
+    }
+    const TicketItem = AppDataSource.getRepository(Ticket);
+    const ticket = await TicketItem.findOne({ where: { id: ticketId } });
+    // Check if the ticket exists
+    if (!ticket) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Ticket not found',
+      });
+    }
+    // Delete the ticket
+    await ticket.remove();
 
-//   // Get the ticket repository
-//   const ticketRepository =AppDataSource.getRepository(Ticket);
-
-//   // Find the ticket by ID
-//   const ticket = await ticketRepository.find({ where: { id } });
-
-//   // Check if the ticket was found
-//   if (!ticket) {
-//     throw new ErrorHandler('Ticket not found', 404);
-//   }
-
-//   // Return the ticket details
-//   return res.status(200).json({
-//     status: 'success',
-//     message: 'Ticket retrieved successfully',
-//     ticket,
-//   });
-// });
-
-// // Delete Ticket
-// export const deleteTicket = async (req: Request, res: Response) => {
-//   try {
-//     const { ticketId } = req.body;
-
-//     // Validate that ticketId is provided
-//     if (!ticketId) {
-//       return res.status(400).json({
-//         status: "error",
-//         message: "ticketId is required"
-//       });
-//     }
-
-//     // Find the ticket by ticketId
-//     const ticket = await TicketItem.findById({ where: { id: ticketId } });
-
-//     // Check if the ticket exists
-//     if (!ticket) {
-//       return res.status(404).json({
-//         status: "error",
-//         message: "Ticket not found"
-//       });
-//     }
-
-//     // Delete the ticket
-//     await TicketItem.deleteById(ticketId);
-
-//     return res.status(200).json({
-//       status: "success",
-//       message: "Ticket deleted",
-//       ticketId
-//     });
-
-//   } catch (err) {
-//     console.log(`${err} error deleting ticket`);
-//     return res.status(500).json({
-//       status: "error",
-//       message: "Internal server error",
-//       error: err.message
-//     });
-//   }
-// };
+    return res.status(200).json({
+      status: 'success',
+      message: 'Ticket deleted',
+      ticketId,
+    });
+  } catch (err) {
+    console.log(`${err} error deleting ticket`);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
 
 // ______________________event controller__________________________________________
 
 // Create or Update event
 // If eventId is provided, find the event and update it. If only userId is provided, create a new event.
 // There are two entities: DraftEvent and Event. If isDraft is true, save the event in DraftEvent, otherwise save in Event.
-
+// also created ticket
 export const createOrUpdateEvent = async (req: Request, res: Response) => {
   try {
     const {
-      // TODO
       userId,
       eventId,
       name,
@@ -294,19 +240,23 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       eventMedia,
       eventRules,
       isDraft,
+      ticketType,
+      price,
+      quantityAvailable,
+      isFree,
+      inclusions,
     } = req.body;
 
     const user = await validateUserId(userId, res);
     if (!user) {
-      // If validation fails, exit the function
       return;
     }
-
-
     // Choose the correct repository based on the draft status
     const eventRepository = isDraft ? AppDataSource.getRepository(EventDraft) : AppDataSource.getRepository(Event);
-    let event:any;
-
+    const ticketRepos = AppDataSource.getRepository(Ticket);
+    const userRepos = AppDataSource.getRepository(PersonalDetails);
+    const userInfo = userRepos.findOne({ where: { userId } });
+    let event: any;
     // If eventId is provided, find the event by its ID
     if (eventId) {
       event = await eventRepository.findOne({ where: { id: eventId } });
@@ -316,7 +266,6 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           message: 'Event not found',
         });
       }
-
       // Update the existing event with new details
       Object.assign(event, {
         userId,
@@ -336,11 +285,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         accessCode,
         registrationDeadline,
         organizerId,
-        
       });
-
-     
-      
     } else {
       // If eventId is not provided, create a new event
       event = eventRepository.create({
@@ -363,14 +308,26 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         organizerId,
         schedules,
       });
-
     }
-
     // Save the event to the appropriate table (DraftEvent or Event)
     const eventData = await event.save();
-    const eventDataId = eventData?.id
-     // Handle related entities
-     if (dressCodes) {
+    const eventDataId = eventData?.id;
+    let ticket;
+    if (isDraft === false) {
+      ticket = ticketRepos.create({
+        eventId: eventDataId,
+        ticketType,
+        price: isFree === true ? 0 : price,
+        quantityAvailable,
+        isFree,
+        inclusions,
+      });
+
+      ticket = await ticket.save();
+    }
+
+    // Handle related entities
+    if (dressCodes) {
       const dressCodeRepo = AppDataSource.getRepository(DressCode);
       const mappedDressCodes = await createRelatedEntities({
         repository: dressCodeRepo,
@@ -415,12 +372,10 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           eventId,
           ruleType: rule.ruleType,
           description: rule.description,
-          
         }),
       });
       event.eventRules = mappedEventRules;
     }
-
     if (schedules) {
       const eventScheduleRepo = AppDataSource.getRepository(EventSchedule);
       const mappedSchedules = await createRelatedEntities({
@@ -438,10 +393,8 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       });
       event.schedules = mappedSchedules;
     }
-
     // Determine the success message
     const message = eventId ? 'Event updated successfully' : 'Event created successfully';
-
     if (isDraft) {
       return res.status(200).json({
         status: 'success',
@@ -449,13 +402,21 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         data: { event },
       });
     }
-    await event.save()
+    const saveEvent = await event.save();
+    const saveId = saveEvent.id;
+
+    // delete draft event
+    if (isDraft === false) {
+      const draftRepos = AppDataSource.getRepository(EventDraft);
+      const findDraft = await draftRepos.findOne({ where: { id: saveId } });
+      await findDraft?.remove();
+    }
+
     return res.status(200).json({
       status: 'success',
       message,
-      data: { event },
+      data: { event, ticket },
     });
-
   } catch (error) {
     console.error('Error while creating or updating the event:', error);
     return res.status(500).json({
@@ -466,8 +427,8 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
 };
 
 // get-near-events
-// 1st we find all city and state, then match with user city if is equal then show events othwerwise match with match with state if match then show event if not show all physical events 
-// show only physical eventType not vertual 
+// 1st we find all city and state, then match with user city if is equal then show events othwerwise match with match with state if match then show event if not show all physical events
+// show only physical eventType not vertual
 export const getNearEvent = catchAsyncErrors(async (req: Request, res: Response) => {
   const { locationId } = req.body;
   // Get repositories
@@ -492,34 +453,34 @@ export const getNearEvent = catchAsyncErrors(async (req: Request, res: Response)
   }
   // If no city or state match, fetch all physical events
   let physicalEvents;
-  if (locationMatch.length>0) {
+  if (locationMatch.length > 0) {
     // If a city or state match is found, fetch "Physical" events from the matched location
     physicalEvents = await eventRepository.find({
       where: {
-        eventType: "Physical",
-        addressId: locationMatch.id, 
+        eventType: 'Physical',
+        addressId: locationMatch.id,
       },
     });
   } else {
     // If no location matches, fetch all "Physical" events
     physicalEvents = await eventRepository.find({
       where: {
-        eventType: "Physical",
+        eventType: 'Physical',
       },
     });
   }
 
-    // If no physical events found, return an error
-    if (physicalEvents.length === 0) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'No physical events found',
-      });
-    }
-    
-    for (const event of physicalEvents) {
-      await incrementCounter(event.id);
-    }
+  // If no physical events found, return an error
+  if (physicalEvents.length === 0) {
+    return res.status(404).json({
+      status: 'error',
+      message: 'No physical events found',
+    });
+  }
+
+  for (const event of physicalEvents) {
+    await incrementCounter(event.id);
+  }
   // Return the matched physical events
   return res.status(200).json({
     status: 'success',
@@ -528,24 +489,22 @@ export const getNearEvent = catchAsyncErrors(async (req: Request, res: Response)
   });
 });
 
-// // TODO get popular event
-export const getPopularEvents=async(req: Request, res: Response) =>{
+// get Popular Events
+export const getPopularEvents = async (req: Request, res: Response) => {
   try {
-    const events = await Event.createQueryBuilder('event')
-      .orderBy('CAST(event.count as SIGNED)', 'DESC') 
-      .getMany();
+    const events = await Event.createQueryBuilder('event').orderBy('CAST(event.count as SIGNED)', 'DESC').getMany();
 
     return res.status(200).json(events);
   } catch (error) {
     console.error('Error fetching sorted events:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-}
+};
 
-//TODO not work 
-//  get-event-details by details="about", "schedule" 
+//TODO not work
+//  get-event-details by details="about", "schedule"
 export const eventByDetails = catchAsyncErrors(async (req: Request, res: Response) => {
-  const { details, eventId, userId } = req.body; 
+  const { details, eventId, userId } = req.body;
 
   // Repositories
   const eventRepository = AppDataSource.getRepository(Event);
@@ -559,20 +518,20 @@ export const eventByDetails = catchAsyncErrors(async (req: Request, res: Respons
   const eventPromise = eventRepository.findOne({ where: { id: eventId } });
   const personalDetailsPromise = personalDetailsRepository.findOne({ where: { id: userId } });
   const ticketPromise = ticketRepository.findOne({ where: { id: eventId } });
-  
+
   const [event, personalDetails, ticket] = await Promise.all([eventPromise, personalDetailsPromise, ticketPromise]);
 
   if (!event) {
-    throw new ErrorHandler("Event not found", 404);
+    throw new ErrorHandler('Event not found', 404);
   }
 
   // Fetch the event address if it exists
-  const eventAddress =  await addressRepository.findOne({ where: { id: event.addressId } })
-    
+  const eventAddress = await addressRepository.findOne({ where: { id: event.addressId } });
+
   // Prepare response based on 'details' field
   let response: any = {};
 
-  if (details === "about") {
+  if (details === 'about') {
     response = {
       aboutEvent: event.description,
       organiserId: event.userId,
@@ -581,32 +540,32 @@ export const eventByDetails = catchAsyncErrors(async (req: Request, res: Respons
       organiserPhone: personalDetails?.mobileNumber,
       organiserLocation: eventAddress?.addressLine1,
     };
-  } else if (details === "schedule") {
-    const schedules = await scheduleRepository.find({ where: {eventId: eventId } });
-    console.log("schedules", schedules);
-    console.log("schedulesId", schedules.id);
+  } else if (details === 'schedule') {
+    const schedules = await scheduleRepository.find({ where: { eventId: eventId } });
+    console.log('schedules', schedules);
+    console.log('schedulesId', schedules.id);
     response = {
       scheduleEventId: schedules.id,
       scheduleEventTitle: schedules.title,
       scheduleEventTimeStart: schedules.startTime,
       scheduleEventTimeEnd: schedules.endTime,
     };
-  } else if (details === "dressCode") {
-    const dressCodes = await dressCodeRepository.find({ where: {eventId: eventId } });
-    response = dressCodes.map(dressCode => ({
+  } else if (details === 'dressCode') {
+    const dressCodes = await dressCodeRepository.find({ where: { eventId: eventId } });
+    response = dressCodes.map((dressCode) => ({
       dressCodeId: dressCode.id,
       dressCodeType: dressCode.type,
       dressCodeGender: dressCode.gender,
       dressCode: dressCode.dressCode,
     }));
-  } else if (details === "restrictions") {
+  } else if (details === 'restrictions') {
     response = {
       Inclusions: event.inclusions,
       ageRestrictions: event.ageLimit,
       eventEntryType: ticket?.isFree,
     };
   } else {
-    throw new ErrorHandler("Invalid details type", 400);
+    throw new ErrorHandler('Invalid details type', 400);
   }
 
   // Add common event details
@@ -620,7 +579,7 @@ export const eventByDetails = catchAsyncErrors(async (req: Request, res: Respons
   };
 
   // Merge the specific and common responses
-  const data = { common:commonDetails, details:response };
+  const data = { common: commonDetails, details: response };
 
   // Return the response
   return res.status(200).json({
@@ -636,9 +595,9 @@ export const getUserEvent = catchAsyncErrors(async (req: Request, res: Response)
 
   // Check if userId is provided
   const user = await validateUserId(userId, res);
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
   // Get the event repository
   const eventRepository = AppDataSource.getRepository(Event);
   // Fetch the events by userId
@@ -665,11 +624,11 @@ export const deleteUserEvent = catchAsyncErrors(async (req: Request, res: Respon
   const { eventId, userId } = req.body;
 
   const user = await validateUserId(userId, res);
-    if (!user) {
-      return;
-    }
+  if (!user) {
+    return;
+  }
 
-  // Check if eventId 
+  // Check if eventId
   if (!eventId) {
     return res.status(400).json({
       status: 'fail',
@@ -698,59 +657,35 @@ export const deleteUserEvent = catchAsyncErrors(async (req: Request, res: Respon
   });
 });
 
-// get-event-details-options in form
-// Get event details options
+// Get event details dropdown
 export const eventDetailsOptions = catchAsyncErrors(async (req: Request, res: Response) => {
-  const { require } = req.body;
-
-  // Fetch dropdown data from the repository
+  const { masterdataType } = req.body;
   const dropRepository = AppDataSource.getRepository(Dropdown);
-  const dropDown = await dropRepository.find(); 
+  const dropDown = await dropRepository.find();
+  console.log('dropDown', dropDown);
 
-  if (!dropDown) {
+  if (!dropDown || dropDown.length === 0) {
     return res.status(404).json({
       status: 'error',
       message: 'Dropdown data not found',
     });
   }
+  const dropdownData = dropDown[0];
   let data: any = {};
-  // Check the 'require' field and respond accordingly
-  switch (require) {
-    case "eventType":
-      data.eventType = dropDown.eventType; 
+  switch (masterdataType) {
+    case 'eventType':
+      data.eventType = dropdownData.eventType;
       break;
-    case "eventDate":
-      data.eventDate = [
-        new Date(), 
-        new Date(new Date().setDate(new Date().getDate() + 30)), 
-      ];
+    case 'gender':
+      data.gender = dropdownData.gender;
       break;
-    case "eventStartTime":
-      data.eventStartTime = [
-        new Date().getHours() === 0 ? 'Full Day' : new Date().toLocaleTimeString(),
-      ];
-      break;
-    case "eventEndTime":
-      data.eventEndTime = [
-        new Date(new Date().getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString(), // Add 2 hours
-      ];
-      break;
-    case "gender":
-      data.gender = dropDown.gender; 
-      break;
-    case "rsvpDeadline":
-      data.rsvpDeadline = {
-        date: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // Yesterday's date
-        time: new Date().toLocaleTimeString(),
-      };
-      break;
-    case "eventEntryCharge":
-      data.eventEntryCharge = dropDown.entryType; 
+    case 'eventEntryCharge':
+      data.eventEntryCharge = dropdownData.entryType;
       break;
     default:
       return res.status(400).json({
         status: 'error',
-        message: 'Invalid "require" parameter',
+        message: 'Invalid "masterdataType" parameter',
       });
   }
   return res.status(200).json({
@@ -759,87 +694,26 @@ export const eventDetailsOptions = catchAsyncErrors(async (req: Request, res: Re
   });
 });
 
-
 // _______________________________EVENT BOOKING____________________________________
-// Buy ticket
-
-// export const buyTicket = catchAsyncErrors(async (req: Request, res: Response) => {
-//   const { eventId, ticketId, quantity } = req.body;
-//   const eventRepository = getRepository(Event);
-
-//   // Validate the input
-//   if (!eventId || !ticketId) {
-//     throw new ErrorHandler("Event ID or Ticket ID is invalid, please retry after login", 404);
-//   }
-
-//   // Fetch the event based on eventId
-//   const event = await eventRepository.findOne({
-//     where: { id: eventId }
-//   });
-
-//   if (!event) {
-//     throw new ErrorHandler("Event not found", 404);
-//   }
-
-//   // Prepare the response data
-//   const data = {
-//     ticketId,
-//     ticketType,
-//     ticketPrice,
-//     restrictions,
-//     quantity,
-//     totalPrice
-//   };
-//   const message = 'Ticket details retrieved successfully';
-//   return res.status(200).json({
-//     status: 'success',
-//     message,
-//     data
-//   });
-// });
-
-// // ticket-order-summery
-
-// export const ticketOrderSummary = catchAsyncErrors(async (req: Request, res: Response) => {
-//   const { eventId, ticketId, quantity, userId } = req.body;
-//   const eventRepository = getRepository(Event);
-
-//   // Validate input
-//   if (!eventId || !ticketId || !quantity || !userId) {
-//     throw new ErrorHandler("Event ID, Ticket ID, Quantity, or User ID is missing or invalid", 404);
-//   }
-
-//   // Fetch the event based on eventId
-//   const event = await eventRepository.findOne({
-//     where: { id: eventId }
-//   });
-
-//   if (!event) {
-//     throw new ErrorHandler("Event not found", 404);
-//   }
-
-//   // Simulate ticket details (replace this with actual ticket fetching logic)
-//   const ticketType = "VIP";
-//   const ticketPrice = 500;
-//   let grandTotal = 0;
-
-//   // Calculate total and grand total prices
-//   const totalPrice = quantity * ticketPrice;
-//   grandTotal += totalPrice;
-//   const data = {
-//     ticketId,
-//     ticketType,
-//     ticketPrice,
-//     quantity,
-//     totalPrice,
-//     grandTotal
-//   };
-//   const message = 'Ticket order summary retrieved successfully';
-//   return res.status(200).json({
-//     status: 'success',
-//     message,
-//     data
-//   });
-// });
-
-// payment-success-summery
+// Buyed ticket
+export const buyedTicket = catchAsyncErrors(async (req: Request, res: Response) => {
+  const { id } = req.body;
+  // Validate that ticket ID is provided
+  if (!id) {
+    throw new ErrorHandler('Ticket ID is required', 400);
+  }
+  // Get the ticket repository
+  const ticketRepository = AppDataSource.getRepository(Ticket);
+  // Find the ticket by ID
+  const ticket = await ticketRepository.find({ where: { id } });
+  // Check if the ticket was found
+  if (!ticket) {
+    throw new ErrorHandler('Ticket not found', 404);
+  }
+  // Return the ticket details
+  return res.status(200).json({
+    status: 'success',
+    message: 'Ticket retrieved successfully',
+    ticket,
+  });
+});
