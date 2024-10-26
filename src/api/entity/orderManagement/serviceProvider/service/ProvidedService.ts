@@ -15,6 +15,9 @@ import { OrderItemBooking } from '../../customer/OrderItemBooking';
 import { Category } from '@/api/entity/sector/Category';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
 import { Service } from '@/api/entity/sector/Service';
+import { UserLogin } from '@/api/entity/user/UserLogin';
+import { CartItemBooking } from '../../customer/CartItemBooking';
+import { Sector } from '@/api/entity/sector/Sector';
 
 @Entity({ name: 'ProvidedService' })
 export class ProvidedService extends BaseEntity {
@@ -86,6 +89,9 @@ export class ProvidedService extends BaseEntity {
     precision: 6,
   })
   updatedAt!: Date;
+    userLogin: any;
+    personalDetails: any;
+    businessDetails: any;
 
   @BeforeInsert()
   async beforeInsert() {
@@ -96,6 +102,12 @@ export class ProvidedService extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
+  @ManyToOne(() => UserLogin, userLogin => userLogin.providedServices)
+  users !: UserLogin[];
+
+  @ManyToOne(() => Sector, sector => sector.providedServices)
+  sector !: Sector;
+
   @ManyToOne(() => Category, category => category.providedServices)
   category !: Category;
 
@@ -104,6 +116,9 @@ export class ProvidedService extends BaseEntity {
 
   @OneToMany(() => OrderItemBooking, orderItem => orderItem.providedService)
   orderItemBookings !: OrderItemBooking[];
+
+  @OneToMany(() => CartItemBooking, cartItem => cartItem.providedService)
+  cartItemBookings !: CartItemBooking[];
 
   @ManyToOne(() => Service, service => service.providedService)
   services !: Service[];

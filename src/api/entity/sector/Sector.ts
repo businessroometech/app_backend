@@ -10,14 +10,19 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 
 @Entity({ name: 'Sector' })
 export class Sector extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar' })
   sectorName!: string;
+
+  @Column({ type: 'text' })
+  imageKey !: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -47,4 +52,7 @@ export class Sector extends BaseEntity {
 
   @OneToMany(() => OrderItemBooking, item => item.sector)
   orderItems !: OrderItemBooking;
+
+  @OneToMany(() => ProvidedService, item => item.sector)
+  providedServices !: ProvidedService[];
 }

@@ -35,6 +35,9 @@ export class EducationalDetails extends BaseEntity {
   @Column({ type: 'text', default: "" })
   achievements!: string;
 
+  @Column({ type: 'simple-array' })
+  licAndCertUploadIds!: string[];  
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 

@@ -9,6 +9,8 @@ import { RefreshToken } from '@/api/entity/others/RefreshToken';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { Token } from '@/api/entity/others/Token';
 import { OtpVerification } from '@/api/entity/others/OtpVerification';
+import { AppDataSource } from '@/server';
+import NotificationController from '../notifications/Notification';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
@@ -31,7 +33,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
+    const user: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
 
     if (!user || !(await UserLogin.validatePassword(password, user.password))) {
       res.status(401).json({ status: 'error', message: 'Invalid credentials' });
@@ -54,7 +59,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.cookie('refreshToken', refreshToken, cookieOptions);
 
       // store referesh token to the DB
-      const rt = await RefreshToken.findOne({ where: { userId: user.id } });
+      const rt = await refreshRepository.findOne({ where: { userId: user.id } });
 
       const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
       const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -63,19 +68,35 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       if (isNaN(expiresIn)) {
         throw new Error('Invalid expiration time');
       }
-
       if (rt) {
         rt.token = refreshToken;
         rt.expiresAt = new Date(Date.now() + expiresIn);
         await rt.save();
       } else {
-        await RefreshToken.create({
-          userId: user.id,
-          token: refreshToken,
-          expiresAt: new Date(Date.now() + expiresIn),
-        }).save();
+        await refreshRepository
+          .create({
+            userId: user.id,
+            token: refreshToken,
+            expiresAt: new Date(Date.now() + expiresIn),
+          })
+          .save();
       }
     }
+
+    // await NotificationController.sendNotification(
+    //   {
+    //     body: {
+    //       notificationType: 'inApp',
+    //       templateName: 'login_otp',
+    //       recipientId: user?.id,
+    //       recipientType: 'User',
+    //       data: {
+    //         'Company Name': 'Connect',
+    //       },
+    //     },
+    //   } as Request,
+    //   res
+    // );
 
     res.status(200).json({
       status: 'success',
@@ -116,16 +137,21 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
     const uuidToken = uuidv4(); // Generating a UUID
     const hmac = createHmac(uuidToken);
 
-    const token = await Token.create({
-      userId: decoded.id,
-      hmac,
-      expiresAt: new Date(Date.now() + parseInt(process.env.UUID_TOKEN_EXPIRES_IN!)),
-    }).save();
+    const tokenRepository = AppDataSource.getRepository(Token);
+
+    const token = await tokenRepository
+      .create({
+        userId: decoded.id,
+        hmac,
+        expiresAt: new Date(Date.now() + parseInt(process.env.UUID_TOKEN_EXPIRES_IN!)),
+      })
+      .save();
 
     res.cookie('uuidToken', uuidToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: parseInt(process.env.UUID_TOKEN_EXPIRES_IN!),
+      sameSite: 'none',
     });
 
     res.status(200).json({ status: 'success', message: 'UUID token created', data: { token } });
@@ -133,8 +159,7 @@ export const generateUuidToken = async (req: Request, res: Response): Promise<vo
     console.error(error);
     if (error.name === 'TokenExpiredError') {
       res.status(403).json({ status: 'error', message: 'Token expired. Please log in again.' });
-    }
-    else {
+    } else {
       res.status(500).json({ status: 'error', message: 'Server error.' });
     }
   }
@@ -149,9 +174,11 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    const tokenRepository = AppDataSource.getRepository(Token);
+
     // Finding the token in the database using the HMAC
     const hmac = createHmac(uuidToken);
-    const token = await Token.findOne({ where: { hmac } });
+    const token = await tokenRepository.findOne({ where: { hmac } });
 
     if (!token) {
       res.status(401).json({ status: 'error', message: 'Invalid UUID token' });
@@ -159,7 +186,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
     }
 
     if (new Date() > token.expiresAt) {
-      await Token.remove(token);
+      await tokenRepository.remove(token);
       res.status(403).json({ status: 'error', message: 'UUID token expired' });
       return;
     }
@@ -174,8 +201,10 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       secure: process.env.NODE_ENV === 'production',
     });
 
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
     // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { userId: token.userId } });
+    const rt = await refreshRepository.findOne({ where: { userId: token.userId } });
 
     const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
     const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -190,11 +219,13 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       rt.expiresAt = new Date(Date.now() + expiresIn);
       await rt.save();
     } else {
-      await RefreshToken.create({
-        userId: token.userId,
-        token: newRefreshToken,
-        expiresAt: new Date(Date.now() + expiresIn),
-      }).save();
+      await refreshRepository
+        .create({
+          userId: token.userId,
+          token: newRefreshToken,
+          expiresAt: new Date(Date.now() + expiresIn),
+        })
+        .save();
     }
 
     // Destroying the UUID token after use
@@ -205,7 +236,7 @@ export const verifyUuidToken = async (req: Request, res: Response): Promise<void
       message: 'UUID token verified',
       data: {
         accessToken: newAccessToken,
-        userId: token.userId
+        userId: token.userId,
       },
     });
   } catch (error) {
@@ -224,9 +255,11 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
     const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
 
-    const refresh = await RefreshToken.findOne({ where: { userId: payload.id } });
+    const refresh = await refreshRepository.findOne({ where: { userId: payload.id } });
 
     if (!refresh) {
       res.status(401).json({ status: 'error', message: 'Refresh token not found' });
@@ -271,7 +304,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       message: 'New access token and refresh token generated',
       data: {
         accessToken: newAccessToken,
-        userId: payload.id
+        userId: payload.id,
       },
     });
   } catch (error: any) {
@@ -296,7 +329,6 @@ export const protectedRoute = (req: Request, res: Response): void => {
   res.status(200).json({ message: 'This is a protected route', user: req.user });
 };
 
-
 //--------------------------------------------- FOR MOBILE APP ---------------------------------------------------------------
 
 export const verifyCode_mobile_app = async (req: Request, res: Response): Promise<void> => {
@@ -304,18 +336,21 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     const { verificationCode, mobileNumber } = req.body;
 
     if (!verificationCode || !mobileNumber) {
-      res
-        .status(400)
-        .json({ status: 'error', message: 'Please provide mobileNumber and verification code' });
+      res.status(400).json({ status: 'error', message: 'Please provide mobileNumber and verification code' });
       return;
     }
 
-    let isVerify = await OtpVerification.findOne({ where: { mobileNumber, verificationCode, useCase: "Signup" } });
+    const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
+    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+
+    let isVerify = await otpVerificationRepository.findOne({
+      where: { mobileNumber, verificationCode, useCase: 'Signup' },
+    });
 
     if (!isVerify) {
       res.status(400).json({ status: 'error', message: 'Invalid verification code or mobileNumber' });
       return;
-
     }
 
     const expiryDate = new Date(isVerify.expiresAt);
@@ -323,19 +358,17 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     if (new Date() > expiryDate) {
       res.status(400).json({ status: 'error', message: 'Verification code is expired.' });
       return;
-
     }
 
     isVerify.isVerified = true;
     await isVerify.save();
 
     //checking is the profile completed or not
-    const user: UserLogin | null = await UserLogin.findOne({ where: { mobileNumber } });
+    const user: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber } });
 
     if (!user) {
-      res.status(400).json({ status: "error", message: "User with mobile number does not exist" });
+      res.status(400).json({ status: 'error', message: 'User with mobile number does not exist' });
       return;
-
     }
 
     const accessToken = generateAccessToken(user!);
@@ -353,7 +386,7 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // store referesh token to the DB
-    const rt = await RefreshToken.findOne({ where: { userId: user!.id } });
+    const rt = await refreshRepository.findOne({ where: { userId: user!.id } });
 
     // const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
     const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
@@ -368,18 +401,22 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
       rt.expiresAt = new Date(Date.now() + expiresIn);
       await rt.save();
     } else {
-      await RefreshToken.create({
-        userId: user!.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + expiresIn),
-      }).save();
+      await refreshRepository
+        .create({
+          userId: user!.id,
+          token: refreshToken,
+          expiresAt: new Date(Date.now() + expiresIn),
+        })
+        .save();
     }
 
     res.status(200).json({
-      status: 'success', message: 'Mobile number verified successfully', data: {
+      status: 'success',
+      message: 'Mobile number verified successfully',
+      data: {
         user,
-        accessToken
-      }
+        accessToken,
+      },
     });
   } catch (err) {
     console.error(err);

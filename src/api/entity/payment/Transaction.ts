@@ -1,23 +1,33 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, OneToOne, } from 'typeorm';
+import { Invoice } from '../others/Invoice';
 
 @Entity({ name: "Transaction" })
 export class Transaction extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
-   
-    @Column({ type: "uuid" })
-    orderId !: string;
 
     @Column({ type: "uuid" })
     userId !: string;
 
     @Column({ type: "uuid" })
-    paymentId !: string;
+    orderId !: string;
 
-    @Column({ type: "float" })
-    amount !: number;
+    @Column({ type: "varchar" })
+    currency!: string;
+
+    @Column({ type: "varchar" })
+    method!: string;
+
+    @Column({ type: "uuid" })
+    razorpayOrderId !: string;
+
+    @Column({ type: "uuid" })
+    razorpayPaymentId !: string;
+
+    @Column({ type: 'decimal', precision: 10, scale: 4 })
+    amount!: number;
 
     @Column({
         type: 'enum',
@@ -25,8 +35,15 @@ export class Transaction extends BaseEntity {
     })
     transactionType !: 'Payment' | 'Refund';
 
-    @Column({ type: "varchar" })
+    @Column({
+        type: 'enum',
+        enum: ['Pending', 'Success', 'Failed'],
+        default: 'Pending'
+    })
     status !: string;
+
+    @Column({ type: 'json', nullable: true })
+    metadata !: object;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -53,4 +70,7 @@ export class Transaction extends BaseEntity {
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
+
+    @OneToOne(() => Invoice, invoice => invoice.transaction)
+    invoice !: Invoice;
 }

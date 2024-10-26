@@ -12,14 +12,17 @@ export class Cart extends BaseEntity {
     @Column({ type: "uuid" })
     customerId !: string;
 
-    // @Column({ type: "uuid" })
-    // sectorId !: string;
-
-    @Column({ type: "float" })
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
     totalAmount !: number;
 
-    @Column({ type: 'int' })
-    totalItems !: number; 
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalTax !: number;
+
+    @Column({ type: 'int', default: 0 })
+    totalItems !: number;
+
+    @Column({ type: 'boolean', default: true })
+    isActive !: boolean;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -50,6 +53,6 @@ export class Cart extends BaseEntity {
     @OneToMany(() => CartItemBooking, item => item.cart)
     cartItemBookings !: CartItemBooking[];
 
-    @OneToMany(() => CartItemProduct, item => item.cart)
-    cartItemProducts !: CartItemProduct[];
+    // @OneToMany(() => CartItemProduct, item => item.cart)
+    // cartItemProducts !: CartItemProduct[];
 }

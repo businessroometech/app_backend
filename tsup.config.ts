@@ -6,5 +6,6 @@ export default defineConfig({
     "dts": true,
     "sourcemap": true,
     "minify": true,
+    "treeshake": true,
     "noExternal": ['typeorm', './ormconfig.ts'], // Include TypeORM and ormconfig.ts
 });

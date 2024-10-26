@@ -41,7 +41,7 @@ export class CartItemProduct extends BaseEntity {
     @Column({ type: 'date' })
     deliveryDate!: string;
 
-    @Column({ type: 'time' })
+    @Column({ type: 'varchar' })
     deliveryTime!: string;
 
     @Column({ type: 'json' })

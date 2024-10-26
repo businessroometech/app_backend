@@ -1,51 +1,77 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne, } from 'typeorm';
-// import { Service } from '../serviceProvider/service/ProvidedService';
-// import { Cart } from './Cart';
-
-interface Address {
-    addressLine1: string,
-    addressLine2: string,
-    city: string,
-    state: string,
-    pincode: string,
-}
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, BeforeInsert, ManyToOne } from 'typeorm';
+import { Cart } from './Cart';
+import { Service } from '../../sector/Service';
+import { ProvidedService } from '../serviceProvider/service/ProvidedService';
 
 @Entity({ name: "CartItemBooking" })
 export class CartItemBooking extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
-    id !: string;
+    id!: string;
 
     @Column({ type: "uuid" })
-    cartId !: string;
+    cartId!: string;
 
     @Column({ type: "uuid" })
-    sectorId !: string;
+    sectorId!: string;
 
     @Column({ type: "uuid" })
-    customerId !: string;
+    customerId!: string;
 
     @Column({ type: "uuid" })
-    serviceProviderId !: string;
+    serviceProviderId!: string;
 
     @Column({ type: "uuid" })
-    serviceId !: string;
+    providedServiceId!: string;
 
-    @Column({ type: "float" })
-    price !: number;
+    @Column({ type: "text" })
+    workDetails!: string;
+
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    price!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2 })
+    mrp!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    discountPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    discountAmount!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // CGST set to 9%
+    cgstPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
+    sgstPercentage!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // CGST set to 9%
+    cgstPrice!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
+    sgstPrice!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalTax!: number;
+
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+    totalPrice!: number;
 
     @Column({ type: 'date' })
     deliveryDate!: string;
 
-    @Column({ type: 'time' })
+    @Column({ type: 'varchar' })
     deliveryTime!: string;
 
-    @Column({ type: 'json' })
-    deliveryAddress!: Address;
+    @Column({ type: 'uuid' })
+    deliveryAddressId!: string;
 
     @Column({ type: 'text', nullable: true })
     additionalNote!: string;
+
+    @Column({ type: "simple-array" })  // store document IDs
+    attachments!: string[];
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -66,16 +92,64 @@ export class CartItemBooking extends BaseEntity {
 
     @BeforeInsert()
     async beforeInsert() {
-        this.id = this.generateUUID();
+        // Set UUID if not already generated
+        if (!this.id) {
+            this.id = this.generateUUID();
+        }
+
+        // Ensure 'mrp' is valid and provided
+        if (!this.mrp || isNaN(this.mrp)) {
+            throw new Error("Invalid 'mrp' value provided");
+        }
+
+        // Ensure 'discountPercentage' is valid, default to 0 if not provided
+        if (this.discountPercentage === undefined || isNaN(this.discountPercentage)) {
+            this.discountPercentage = 0;
+        }
+
+        // Calculate the discount amount based on the discount percentage
+        this.discountAmount = (this.mrp * this.discountPercentage) / 100;
+
+        // Calculate the taxable amount after discount
+        const taxableAmount = this.mrp - this.discountAmount;
+        this.price = taxableAmount;
+
+        // Ensure 'cgstPercentage' and 'sgstPercentage' are valid, default to 9 if not provided
+        if (this.cgstPercentage === undefined || isNaN(this.cgstPercentage)) {
+            this.cgstPercentage = 9; // default CGST to 9%
+        }
+        
+        if (this.sgstPercentage === undefined || isNaN(this.sgstPercentage)) {
+            this.sgstPercentage = 9; // default SGST to 9%
+        }
+        
+        // Calculate CGST and SGST
+        this.cgstPrice = (taxableAmount * this.cgstPercentage) / 100;
+        this.sgstPrice = (taxableAmount * this.sgstPercentage) / 100;
+
+        // Set total tax
+        this.totalTax = this.cgstPrice + this.sgstPrice;
+
+        // Set total price after adding taxes
+        this.totalPrice = this.price + this.totalTax;
+
+        // Ensure totalPrice is not NaN
+        if (isNaN(this.totalPrice)) {
+            throw new Error("Invalid total price calculation");
+        }
     }
+
 
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
 
+    @ManyToOne(() => ProvidedService, service => service.cartItemBookings)
+    providedService!: ProvidedService;
+
     // @ManyToOne(() => Service, service => service.cartItemBookings)
     // service!: Service;
 
-    // @ManyToOne(() => Cart, cart => cart.cartItemBookings)
-    // cart !: Cart;
+    @ManyToOne(() => Cart, cart => cart.cartItemBookings)
+    cart !: Cart;
 }

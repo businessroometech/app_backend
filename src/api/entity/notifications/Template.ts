@@ -1,34 +1,30 @@
 import { randomBytes } from 'crypto';
-import {
-  BaseEntity,
-  BeforeInsert,
-  Column,
-  CreateDateColumn,
-  Entity,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany } from 'typeorm';
+import { Notification } from './Notification';
 
-@Entity({ name: 'Category' })
-export class Category extends BaseEntity {
+@Entity({ name: 'Template' })
+export class Template {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
-  sectorId!: string;
+  @Column({ type: 'text' })
+  templateAppTitle!: string;
+
+  @Column({ type: 'text' })
+  templatePhoneTitle!: string;
+
+  @Column({ type: 'text' })
+  templateAppContent!: string;
+
+  @Column({ type: 'text' })
+  templatePhoneContent!: string;
 
   @Column({ type: 'varchar' })
-  categoryName!: string;
+  templateName!: string;
 
-  @Column({ type: 'text' })
-  categoryDescription!: string;
-
-  @Column({ type: 'text' })
-  imageKey !: string;
+  @Column({ type: 'varchar', nullable: true })
+  providerTemplateId!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -52,10 +48,10 @@ export class Category extends BaseEntity {
     this.id = this.generateUUID();
   }
 
-  private generateUUID() {
+  private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToMany(() => ProvidedService, providedService => providedService.category)
-  providedServices !: ProvidedService[];
+  @OneToMany(() => Notification, notifications => notifications.notifications)
+  template !: Template;
 }

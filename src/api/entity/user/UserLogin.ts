@@ -7,12 +7,17 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
 import { OrderItemProduct } from '../orderManagement/customer/OrderItemProduct';
+import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
+import { PersonalDetails } from '../profile/personal/PersonalDetails';
+import { BusinessDetails } from '../profile/business/BusinessDetails';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -74,9 +79,18 @@ export class UserLogin extends BaseEntity {
     return await bcrypt.compare(password, hashedPassword);
   }
 
+  @OneToMany(() => ProvidedService, providedService => providedService.users)
+  providedServices !: ProvidedService[];
+
   @OneToMany(() => OrderItemBooking, item => item.user)
   orderItemBookings !: OrderItemBooking[];
 
   @OneToMany(() => OrderItemProduct, item => item.user)
   orderItemProducts !: OrderItemProduct[];
+
+  @OneToOne(() => PersonalDetails, (details) => details.user, { cascade: true })
+  personalDetails!: PersonalDetails;
+
+  @OneToOne(() => BusinessDetails, (details) => details.user, { cascade: true })
+  businessDetails!: BusinessDetails;
 }

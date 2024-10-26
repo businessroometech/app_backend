@@ -11,10 +11,7 @@ export class RescheduledBooking extends BaseEntity {
     orderId !: string;
 
     @Column({ type: "uuid" })
-    prevBookingId !: string;
-
-    @Column({ type: "uuid" })
-    newBookingId !: string;
+    orderItemId !: string;
 
     @Column({ type: "uuid" })
     customerId !: string;
