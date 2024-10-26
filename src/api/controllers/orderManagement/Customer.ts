@@ -19,6 +19,7 @@ import { FindOptionsWhere, In } from 'typeorm';
 import { format } from 'date-fns';
 import NotificationController from '../notifications/Notification';
 import { TicketItem } from '@/api/entity/event/TicketItem';
+import { ServiceJobRescheduled } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJobReschedueled';
 
 // ----------------------------------------------** IMP ** NEED TO ADD ACID PROPERTIES------------------------------------------
 
@@ -186,10 +187,10 @@ function convertTo24HourFormat(time: string): number {
   if (period === 'PM' && hours !== 12) {
     hours += 12;
   } else if (period === 'AM' && hours === 12) {
-    hours = 0; 
+    hours = 0;
   }
 
-  return hours * 60 + minutes; 
+  return hours * 60 + minutes;
 }
 
 export const getAvailableTimeSlots = async (req: Request, res: Response) => {
@@ -239,7 +240,7 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
         }
       }
 
-      return !bookedTimes.includes(slot); 
+      return !bookedTimes.includes(slot);
     });
 
     console.log('Available Times:', availableSlots);
@@ -271,124 +272,6 @@ export const getAvailableTimeSlots = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
-
-
-// const timeSlots = [
-//   '8:00 AM - 9:00 AM',
-//   '9:00 AM - 10:00 AM',
-//   '10:00 AM - 11:00 AM',
-//   '11:00 AM - 12:00 PM',
-//   '12:00 PM - 1:00 PM',
-//   '1:00 PM - 2:00 PM',
-//   '2:00 PM - 3:00 PM',
-//   '3:00 PM - 4:00 PM',
-//   '4:00 PM - 5:00 PM',
-//   '5:00 PM - 6:00 PM',
-//   '6:00 PM - 7:00 PM',
-//   '7:00 PM - 8:00 PM',
-// ];
-
-// interface SlotAccumulator {
-//   morning: string[];
-//   afternoon: string[];
-//   evening: string[];
-// }
-
-// function convertTo24HourFormat(time: string): number {
-//   const [timePart, period] = time.split(' ');
-//   let [hours, minutes] = timePart.split(':').map(Number);
-
-//   if (period === 'PM' && hours !== 12) {
-//     hours += 12;
-//   } else if (period === 'AM' && hours === 12) {
-//     hours = 0; // Midnight edge case
-//   }
-
-//   return hours * 60 + minutes; // Return total minutes for easier comparison
-// }
-
-// export const getAvailableTimeSlots = async (req: Request, res: Response) => {
-//   try {
-//     const { date } = req.body;
-
-//     if (!date) {
-//       return res.status(400).json({ message: 'Please provide a valid delivery date' });
-//     }
-
-//     const today = new Date().toISOString().split('T')[0];
-//     const currentTime = new Date();
-
-//     const selectedDate = new Date(date);
-//     const selectedDateString = selectedDate.toISOString().split('T')[0];
-
-//     // Convert current time to '8:00 AM' format
-//     const hours = currentTime.getHours();
-//     const minutes = currentTime.getMinutes();
-//     const period = hours >= 12 ? 'PM' : 'AM';
-//     const formattedHour = hours % 12 === 0 ? 12 : hours % 12;
-//     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-//     const currentTimeFormatted = `${formattedHour}:${formattedMinutes} ${period}`;
-
-//     console.log('Current Time:', currentTimeFormatted);
-
-//     const bookedJobs = await ServiceJob.find({
-//       where: {
-//         deliveryDate: date as string,
-//         status: 'Accepted',
-//       },
-//       select: ['deliveryTime'],
-//     });
-
-//     const bookedTimes = bookedJobs.map((job) => job.deliveryTime);
-//     console.log('Booked Times:', bookedTimes);
-
-//     const availableSlots = timeSlots.filter((slot) => {
-//       const slotStartTime = slot.split(' - ')[0];
-
-//       // If the selected date is in the past, exclude all slots
-//       if (selectedDate < new Date(today)) {
-//         return false;
-//       }
-
-//       // If the selected date is today, exclude slots that are in the past
-//       if (selectedDateString === today) {
-//         if (convertTo24HourFormat(slotStartTime) <= convertTo24HourFormat(currentTimeFormatted)) {
-//           return false; // Exclude past slots
-//         }
-//       }
-
-//       return !bookedTimes.includes(slot); // Only include unbooked slots
-//     });
-
-//     console.log('Available Times:', availableSlots);
-
-//     const final = availableSlots.reduce<SlotAccumulator>(
-//       (acc, curr) => {
-//         const [num, period] = curr.split(' ');
-
-//         if (period === 'AM') {
-//           acc.morning.push(curr);
-//         } else if (parseInt(num) % 12 <= 4) {
-//           acc.afternoon.push(curr);
-//         } else {
-//           acc.evening.push(curr);
-//         }
-
-//         return acc;
-//       },
-//       { morning: [], afternoon: [], evening: [] }
-//     );
-
-//     return res.status(200).json({
-//       status: 'success',
-//       message: 'Available time slots fetched successfully',
-//       data: { availableSlots: final },
-//     });
-//   } catch (error) {
-//     console.error('Error fetching available time slots:', error);
-//     return res.status(500).json({ message: 'Internal server error' });
-//   }
-// };
 
 // -------------------------Address--------------------------------------
 
@@ -682,7 +565,7 @@ export const convertCartToOrder = async (req: Request, res: Response) => {
     serviceJob.customerId = orderItem.customerId;
     serviceJob.serviceProviderId = orderItem.serviceProviderId;
     serviceJob.invoiceId = order.invoiceId;
-    serviceJob.jobId = orderItem.OrderItemId;
+    serviceJob.jobId = order.refOrderId;
     serviceJob.status = 'Pending';
     serviceJob.workDetails = orderItem.workDetails;
     serviceJob.additionalNote = orderItem.additionalNote || '';
@@ -770,7 +653,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
 
     const orderItem = await orderItemBookingRepository.findOne({
       where: { id: orderItemBookingId, orderId },
-      relations: ['providedService', 'providedService.subCategory', 'providedService.category',  'address'],
+      relations: ['providedService', 'providedService.subCategory', 'providedService.category', 'address'],
     });
 
     const user = await userLoginRepository.findOne({ where: { id: orderItem?.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });
@@ -910,9 +793,8 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
   try {
     const orderRepository = AppDataSource.getRepository(Order);
     const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
-    const rescheduledBookingRepository = AppDataSource.getRepository(RescheduledBooking);
-
-    // Fetch all order item bookings related to the order
+    const reschedueledBookingRepository = AppDataSource.getRepository(RescheduledBooking);
+    const serviceJobReschedueledRepository = AppDataSource.getRepository(ServiceJobRescheduled);
 
     const order = await orderRepository.findOne({ where: { id: orderId } });
     if (!order) {
@@ -926,81 +808,45 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
       return;
     }
 
-    const newOrder = await orderRepository
-      .create({
-        customerId: order.customerId,
-        totalAmount: order.totalAmount,
-        totalItems: order.totalItems,
-        totalTax: order.totalTax,
-      })
-      .save();
-
-    // Create a new order item booking for each rescheduled one
-    const newOrderItemBooking = await orderItemBookingRepository
-      .create({
-        orderId: newOrder.id,
-        sectorId: orderItemBooking.sectorId,
-        customerId: orderItemBooking.customerId,
-        serviceProviderId: orderItemBooking.serviceProviderId,
-        providedServiceId: orderItemBooking.providedServiceId,
-        status: 'Pending',
-        workDetails: orderItemBooking.workDetails,
-        price: orderItemBooking.price,
-        mrp: orderItemBooking.mrp,
-        discountAmount: orderItemBooking.discountAmount,
-        discountPercentage: orderItemBooking.discountPercentage,
-        cgstPercentage: orderItemBooking.cgstPercentage,
-        sgstPercentage: orderItemBooking.sgstPercentage,
-        cgstPrice: orderItemBooking.cgstPrice,
-        sgstPrice: orderItemBooking.sgstPrice,
-        attachments: orderItemBooking.attachments,
-        totalTax: orderItemBooking.totalTax,
-        totalPrice: orderItemBooking.totalPrice,
-        deliveryDate: newDeliveryDate,
-        deliveryTime: newDeliveryTime,
-        deliveryAddressId: orderItemBooking.deliveryAddressId,
-        additionalNote: orderItemBooking.additionalNote,
-        createdBy: createdBy || 'system',
-        updatedBy: updatedBy || 'system',
-      })
-      .save();
-
-    // Create a rescheduled booking record
-    const rescheduledBooking = await rescheduledBookingRepository
-      .create({
-        prevOrderId: orderItemBooking.orderId,
-        newOrderId: newOrderItemBooking.orderId,
-        prevBookingId: orderItemBooking.id,
-        newBookingId: newOrderItemBooking.id,
-        customerId: orderItemBooking.customerId,
-        serviceProviderId: orderItemBooking.serviceProviderId,
-        reason,
-        createdBy: createdBy || 'system',
-        updatedBy: updatedBy || 'system',
-      })
-      .save();
-
-    // Update the status of the old order item booking
-    orderItemBooking.status = 'Rescheduled';
+    orderItemBooking.status = 'Pending';
+    orderItemBooking.deliveryDate = newDeliveryDate;
+    orderItemBooking.deliveryTime = newDeliveryTime;
     orderItemBooking.updatedBy = updatedBy || 'system';
     await orderItemBooking.save();
 
-    // Update the service job associated with the old order item booking
-    const oldServiceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemBooking.id } });
+    await reschedueledBookingRepository.create({
+      orderId: order.id,
+      orderItemId: orderItemBooking.id,
+      customerId: orderItemBooking.customerId,
+      serviceProviderId: orderItemBooking.serviceProviderId,
+      reason,
+    }).save();
 
-    if (oldServiceJob) {
-      oldServiceJob.status = 'Rescheduled';
-      oldServiceJob.reasonIfReschedueledByCustomer = reason;
-      oldServiceJob.updatedBy = updatedBy || 'system';
-      await oldServiceJob.save();
+    // Update the service job associated with the old order item booking
+    const serviceJob = await ServiceJob.findOne({ where: { orderItemBookingId: orderItemBooking.id } });
+
+    if (serviceJob) {
+      serviceJob.status = 'Pending';
+      serviceJob.updatedBy = updatedBy || 'system';
+      await serviceJob.save();
+
+
+      await serviceJobReschedueledRepository.create({
+        orderId: order.id,
+        serviceJobId: serviceJob.id,
+        customerId: serviceJob.customerId,
+        serviceProviderId: serviceJob.serviceProviderId,
+        reason,
+      }).save();
+
       // --------------------------- reschedule of order ---------------------------
       const notificationData = {
         notificationType: 'inApp',
         templateName: 'rescheduled_order_sp',
-        recipientId: oldServiceJob?.serviceProviderId,
+        recipientId: serviceJob?.serviceProviderId,
         recipientType: 'ServiceProvider',
         data: {
-          'Order ID': oldServiceJob?.orderItemBookingId,
+          'Order ID': serviceJob?.orderItemBookingId,
         },
       };
 
@@ -1009,7 +855,7 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
         // customer
         notificationData.templateName = 'rescheduled_order_cus';
         notificationData.recipientType = 'Customer';
-        notificationData.recipientId = oldServiceJob?.customerId;
+        notificationData.recipientId = serviceJob?.customerId;
         const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
 
         console.log("-- reschedule in service provider ----", inAppResultService.message);
@@ -1019,34 +865,11 @@ export const rescheduleOrder = async (req: Request, res: Response) => {
       }
     }
 
-    // Create a new service job for the new booking
-    const newServiceJob = await ServiceJob.create({
-      orderItemBookingId: newOrderItemBooking.id,
-      jobId: newOrderItemBooking.OrderItemId,
-      customerId: newOrderItemBooking.customerId,
-      serviceProviderId: newOrderItemBooking.serviceProviderId,
-      status: 'Pending',
-      workDetails: newOrderItemBooking.workDetails,
-      additionalNote: newOrderItemBooking.additionalNote || '',
-      price: newOrderItemBooking.price,
-      mrp: newOrderItemBooking.mrp,
-      discountPercentage: newOrderItemBooking.discountPercentage,
-      discountAmount: newOrderItemBooking.discountAmount,
-      cgstPercentage: newOrderItemBooking.cgstPercentage,
-      sgstPercentage: newOrderItemBooking.sgstPercentage,
-      totalTax: newOrderItemBooking.totalTax,
-      totalPrice: newOrderItemBooking.totalPrice,
-      deliveryDate: newOrderItemBooking.deliveryDate,
-      deliveryTime: newOrderItemBooking.deliveryTime,
-      deliveryAddressId: newOrderItemBooking.deliveryAddressId,
-      createdBy: createdBy || 'system',
-      updatedBy: updatedBy || 'system',
-    }).save();
 
     res.status(200).json({
       status: 'success',
       message: 'Order rescheduled successfully',
-      data: { rescheduledBooking, newOrderItemBooking, newServiceJob },
+      data: { order, orderItemBooking },
     });
   } catch (error) {
     console.log(error);

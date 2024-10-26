@@ -70,6 +70,7 @@ import { EventRule } from './api/entity/eventManagement/EventRule';
 import { EventSchedule } from './api/entity/eventManagement/EventSchedule';
 import { Ticket } from './api/entity/eventManagement/Ticket';
 import { Dropdown } from './api/entity/eventManagement/Dropdown';
+import { ServiceJobRescheduled } from './api/entity/orderManagement/serviceProvider/serviceJob/ServiceJobReschedueled';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({

@@ -14,11 +14,15 @@ import { ProvidedService } from '../orderManagement/serviceProvider/service/Prov
 
 @Entity({ name: 'Sector' })
 export class Sector extends BaseEntity {
+
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar' })
   sectorName!: string;
+
+  @Column({ type: 'text' })
+  imageKey !: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

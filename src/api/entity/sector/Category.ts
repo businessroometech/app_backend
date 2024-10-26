@@ -27,6 +27,9 @@ export class Category extends BaseEntity {
   @Column({ type: 'text' })
   categoryDescription!: string;
 
+  @Column({ type: 'text' })
+  imageKey !: string;
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 

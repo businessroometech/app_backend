@@ -16,9 +16,6 @@ export class OrderItemBooking extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id !: string;
 
-    @Column({ type: 'varchar' })
-    OrderItemId !: string;
-
     @Column({ type: "uuid" })
     orderId !: string;
 
@@ -140,14 +137,14 @@ export class OrderItemBooking extends BaseEntity {
             this.user = foundUser;
         }
 
-        if (!this.OrderItemId) this.OrderItemId = await this.generateOrderId();
+        await this.generateOrderId();
     }
 
     private generateUUID(): string {
         return randomBytes(16).toString('hex');
     }
 
-    private async generateOrderId(): Promise<string> {
+    private async generateOrderId(): Promise<void> {
         const cityCode = this.address.city.slice(0, 2).toLowerCase();
         const date = new Date();
         const dateCode = `${(date.getFullYear() % 100).toString().padStart(2, '0')}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
@@ -174,7 +171,15 @@ export class OrderItemBooking extends BaseEntity {
         let orderSeq = (count + 1).toString();
         if (orderSeq.length < 0) orderSeq.padStart(4, '0');
 
-        return `${cityCode}${dateCode}${sectorCode}${typeCode}${orderSeq}`;
+        const generatedOrderId = `${cityCode}${dateCode}${sectorCode}${typeCode}${orderSeq}`;
+
+        const order = await Order.findOne({ where: { id: this.orderId } });
+        if (order) {
+            order.refOrderId = generatedOrderId;
+            await order.save();
+        } else {
+            throw new Error('Order not found for the given orderId');
+        }
     }
 
     @ManyToOne(() => ProvidedService, service => service.orderItemBookings)
