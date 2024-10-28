@@ -6,6 +6,7 @@ import { Service } from '@/api/entity/sector/Service';
 import { Category } from '@/api/entity/sector/Category';
 import { AppDataSource } from '@/server';
 import { generatePresignedUrl } from '../awsFuctions/AwsFunctions';
+import { UserCategoryMapping } from '@/api/entity/user/UserCategoryMapping';
 
 export const getAllSectors = async (req: Request, res: Response) => {
   try {
@@ -180,5 +181,24 @@ export const getServicesSubCategoryWise = async (req: Request, res: Response) =>
   } catch (error) {
     console.error('Error fetching services:', error);
     res.status(500).json({ status: 'error', message: 'Failed to fetch services' });
+  }
+}
+
+export const getUserSectorCategoryMapping = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+    const userCategoryMappingRepository = AppDataSource.getRepository(UserCategoryMapping);
+    const userCategoryMapping = await userCategoryMappingRepository.find({ where: { userId } });
+
+    res.status(200).json({
+      status: "success",
+      message: "Succesfully fetched the user-category mapping",
+      data: {
+        userCategoryMapping,
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching user-category mapping:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to fetch user-category mapping' });
   }
 }
