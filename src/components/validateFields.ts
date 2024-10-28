@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 
 export interface ValidationConfig {
-  field: string; 
-  repository: any; 
-  errorMessage: string; 
+  field: string;
+  repository: any;
+  errorMessage: string;
 }
 
 export const validateAndFetchEntities = async (req: Request, res: Response, fieldsToValidate: ValidationConfig[]) => {
-  const results: Record<string, any> = {}; 
+  const results: Record<string, any> = {};
 
   for (const config of fieldsToValidate) {
     const { field, repository, errorMessage } = config;
@@ -30,5 +30,5 @@ export const validateAndFetchEntities = async (req: Request, res: Response, fiel
     }
   }
 
-  return results; 
+  return results;
 };
