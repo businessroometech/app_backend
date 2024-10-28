@@ -1,17 +1,17 @@
 import { Request, Response } from 'express';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { PersonalDetails } from '@/api/entity/profile/personal/PersonalDetails';
-import { UserSectorCategory } from '@/api/entity/user/UserSectorCategory';
+import { UserCategoryMapping } from '@/api/entity/user/UserCategoryMapping';
 import { AppDataSource } from '@/server';
 import { BusinessDetails } from '@/api/entity/profile/business/BusinessDetails';
 import NotificationController from '../notifications/Notification';
+import { PrimaryRoleMapping } from '@/api/entity/user/PrimaryRoleMapping';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
 
   try {
-    // Start the transaction
     await queryRunner.startTransaction();
 
     const {
@@ -27,18 +27,17 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       updatedBy = 'system',
     } = req.body;
 
-    // Validate required fields
     if (!mobileNumber || !password) {
       res.status(400).json({ status: 'error', message: 'Please provide a mobile number and password.' });
       return;
     }
 
-    // Ensure you're using queryRunner for repository operations
     const userLoginRepository = queryRunner.manager.getRepository(UserLogin);
+    const primaryRoleMappedRepository = queryRunner.manager.getRepository(PrimaryRoleMapping);
     const personalDetailsRepository = queryRunner.manager.getRepository(PersonalDetails);
     const businessDetailsRepository = queryRunner.manager.getRepository(BusinessDetails);
+    const userCategoryMappingRepository = queryRunner.manager.getRepository(UserCategoryMapping);
 
-    // Check for existing user with the same mobile number
     const existingUser = await userLoginRepository.findOne({ where: { mobileNumber } });
     if (existingUser) {
       await queryRunner.rollbackTransaction();
@@ -50,20 +49,28 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Create a new user entry
     const newUser = userLoginRepository.create({
       mobileNumber,
       password,
-      primaryRole,
       userType,
       createdBy,
       updatedBy,
     });
-
     await userLoginRepository.save(newUser);
 
+    const primaryRoleMapped = primaryRoleMappedRepository.create({
+      userId: newUser.id,
+      primaryRole,
+    });
+    await primaryRoleMappedRepository.save(primaryRoleMapped);
+
+    await userCategoryMappingRepository.create({
+      userId: newUser.id,
+      sectorId,
+      categoryId,
+    }).save();
+
     let details;
-    // Create personal or business details based on userType
     if (userType === 'Individual') {
       details = personalDetailsRepository.create({
         fullName,
@@ -72,7 +79,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         userId: newUser.id,
         emailAddress: emailAddress || null,
       });
-
       await personalDetailsRepository.save(details);
     } else {
       details = businessDetailsRepository.create({
@@ -82,27 +88,23 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         userId: newUser.id,
         emailAddress: emailAddress || null,
       });
-
       await businessDetailsRepository.save(details);
     }
 
-    // Commit the transaction if everything is successful
     await queryRunner.commitTransaction();
 
-    // Send notifications (SMS and in-app) to welcome the user
     const notificationData = {
       notificationType: 'sms',
       templateName: primaryRole === 'Customer' ? 'welcome_cus' : 'welcome_sp',
       recipientId: newUser.id,
       recipientType: primaryRole === 'Customer' ? 'Customer' : 'ServiceProvider',
-      data: {
-        'var1': fullName,
-      },
+      data: { 'var1': fullName },
     };
 
     try {
       const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
       console.log(smsResult.message);
+
       notificationData.notificationType = 'inApp';
       const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
       console.log(inAppResult.message);
@@ -118,9 +120,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         details,
       },
     });
-
   } catch (error: any) {
-    // Rollback transaction if an error occurs
     if (queryRunner.isTransactionActive) {
       await queryRunner.rollbackTransaction();
     }
@@ -134,7 +134,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
     res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
   } finally {
-    // Release the query runner
     await queryRunner.release();
   }
 };

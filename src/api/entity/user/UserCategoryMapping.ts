@@ -7,15 +7,10 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
-} from 'typeorm';1
+} from 'typeorm';
 
-interface SectorCategory {
-    sectorId: string;
-    categoryIds: string[];
-}
-
-@Entity({ name: 'UserSectorCategory' })
-export class UserSectorCategory extends BaseEntity {
+@Entity({ name: 'UserCategoryMapping' })
+export class UserCategoryMapping extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -23,8 +18,11 @@ export class UserSectorCategory extends BaseEntity {
     @Column({ type: 'uuid' })
     userId!: string;
 
-    @Column({ type: 'simple-json' })
-    sectorCategoryAssociation!: SectorCategory[];
+    @Column({ type: 'uuid' })
+    sectorId !: string;
+
+    @Column({ type: 'uuid' })
+    categoryId !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

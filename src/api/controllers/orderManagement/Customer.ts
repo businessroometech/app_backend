@@ -644,7 +644,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
     const { orderItemBookingId, orderId } = req.body;
 
     if (!orderItemBookingId || !orderId) {
-      res.status(401).json({ status: 'error', message: 'orderItemBookingId or orderId is required' });
+      res.status(400).json({ status: 'error', message: 'orderItemBookingId or orderId is required' });
     }
 
     const orderItemBookingRepository = AppDataSource.getRepository(OrderItemBooking);
@@ -652,7 +652,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
 
     const orderItem = await orderItemBookingRepository.findOne({
       where: { id: orderItemBookingId, orderId },
-      relations: ['providedService', 'providedService.subCategory', 'providedService.category', 'address'],
+      relations: [ 'order', 'providedService', 'providedService.subCategory', 'providedService.category', 'address'],
     });
 
     const user = await userLoginRepository.findOne({ where: { id: orderItem?.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });

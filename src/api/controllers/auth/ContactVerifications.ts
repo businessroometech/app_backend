@@ -6,6 +6,7 @@ import { UserLogin } from '../../entity/user/UserLogin';
 import { OtpVerification } from '@/api/entity/others/OtpVerification';
 import { AppDataSource } from '@/server';
 import NotificationController from '../notifications/Notification';
+import { PrimaryRoleMapping } from '@/api/entity/user/PrimaryRoleMapping';
 
 const generateVerificationCode = (): string => {
   return Math.floor(1000 + Math.random() * 9000).toString();
@@ -210,6 +211,7 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
     }
 
     const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const primaryRoleMappedRepository = AppDataSource.getRepository(PrimaryRoleMapping);
     const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
 
     // check for registration
@@ -220,18 +222,28 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
         .create({
           mobileNumber,
           password: '',
-          primaryRole: 'Customer',
           userType: 'Individual',
           createdBy: createdBy || 'system',
           updatedBy: updatedBy || 'system',
-        })
-        .save();
+        }).save();
+
+      await primaryRoleMappedRepository.create({
+        primaryRole: 'Customer',
+        userId: user.id
+      }).save();
+
+      await user.save();
+      
     } else {
-      if (user?.primaryRole === 'ServiceProvider') {
-        res
-          .status(400)
-          .json({ status: 'error', message: 'This mobile number is already registered as Service Provider' });
-        return;
+
+      const primaryRoleMappings = await primaryRoleMappedRepository.find({ where: { userId: user.id } });
+      const prm = primaryRoleMappings.find((ele) => ele.primaryRole === 'Customer');
+
+      if (!prm) {
+        await primaryRoleMappedRepository.create({
+          primaryRole: 'Customer',
+          userId: user.id
+        }).save();
       }
     }
 

@@ -6,8 +6,7 @@ import {
   BeforeUpdate,
   Column,
   CreateDateColumn,
-  Entity,
-  ManyToMany,
+  Entity, 
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -18,6 +17,7 @@ import { OrderItemProduct } from '../orderManagement/customer/OrderItemProduct';
 import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 import { PersonalDetails } from '../profile/personal/PersonalDetails';
 import { BusinessDetails } from '../profile/business/BusinessDetails';
+import { PrimaryRoleMapping } from './PrimaryRoleMapping';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -31,8 +31,8 @@ export class UserLogin extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   password!: string;
 
-  @Column({ type: 'enum', enum: ['Customer', 'ServiceProvider'] })
-  primaryRole !: 'Customer' | 'ServiceProvider';
+  @Column({ type: 'text' })
+  primaryRoleId !: string;
 
   @Column({ type: 'enum', enum: ['Individual', 'Business'] })
   userType !: 'Individual' | 'Business';
@@ -93,4 +93,8 @@ export class UserLogin extends BaseEntity {
 
   @OneToOne(() => BusinessDetails, (details) => details.user, { cascade: true })
   businessDetails!: BusinessDetails;
+
+  @OneToMany(() => PrimaryRoleMapping, prm => prm.user, { cascade: true })
+  primaryRoles !: PrimaryRoleMapping[];
+
 }
