@@ -4,7 +4,7 @@ import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
 const Router = express.Router();
 
-Router.post('/create-invoice', authenticate, createInvoice);
+Router.post('/create-invoice', createInvoice);
 Router.post('/get-invoices', authenticate, getInvoices);
 
 export default Router;
