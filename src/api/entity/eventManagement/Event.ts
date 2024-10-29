@@ -22,6 +22,7 @@ import { EventSchedule } from './EventSchedule';
 import { PersonalDetails } from '../profile/personal/PersonalDetails';
 import { login } from '@/api/controllers/auth/Login';
 import { UserLogin } from '../user/UserLogin';
+import { EventOrganiser } from './EventOrganiser';
 
 @Entity({ name: 'Event' })
 export class Event extends BaseEntity {
@@ -147,6 +148,9 @@ export class Event extends BaseEntity {
   
   @OneToMany(() => EventSchedule, (eventSchedule) => eventSchedule.event)
   eventSchedules!: EventSchedule[];
+
+  @OneToMany(() => EventOrganiser, (organiser) => organiser.eventId)
+  organiser!: EventOrganiser[];
   
   @ManyToOne(() => UserLogin, (user) => user.event)
   user!: UserLogin;

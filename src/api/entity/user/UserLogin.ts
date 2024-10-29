@@ -19,6 +19,8 @@ import { ProvidedService } from '../orderManagement/serviceProvider/service/Prov
 import { PersonalDetails } from '../profile/personal/PersonalDetails';
 import { BusinessDetails } from '../profile/business/BusinessDetails';
 import { Event } from '../eventManagement/Event';
+import { EventDraft } from '../eventManagement/EventDraft';
+import { SoldTicket } from '../eventManagement/SoldTicket';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -97,4 +99,10 @@ export class UserLogin extends BaseEntity {
 
   @OneToMany(() => Event,(details) => details.user, { cascade: true })
   event!: Event;
+
+  @OneToMany(() => EventDraft, (eventDraft) => eventDraft.user)
+  eventDrafts!: EventDraft[];
+  
+  @OneToMany(() => SoldTicket, (soldTicket) => soldTicket.boughtBy)
+  soldTickets?: SoldTicket[];
 }

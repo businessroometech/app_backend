@@ -14,7 +14,7 @@ export class EventDraft extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
   
-    @OneToOne(() => UserLogin, (user) => user.event)
+    @ManyToOne(() => UserLogin, (user) => user.eventDrafts)
     @JoinColumn({ name: 'userId' })
     user!: UserLogin;
   
