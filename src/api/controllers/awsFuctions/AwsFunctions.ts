@@ -100,14 +100,13 @@ export const getDocumentFromBucket = async (req: Request, res: Response) => {
       const document = await documentUploadRepository.findOne({ where: { id: documentId } });
 
       if (!document) {
-        res.status(404).json({ status: 'error', message: 'Invalid document Id' });
+        res.status(400).json({ status: 'error', message: 'Invalid document Id' });
         return;
       }
 
-      // Generate presigned URL using the document's bucket and key
-      presignedUrl = await generatePresignedUrl(document.bucketName, document.key);
+      presignedUrl = await generatePresignedUrl( document.key, document.bucketName);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 'success',
         message: 'Document URL received',
         data: {
@@ -117,10 +116,10 @@ export const getDocumentFromBucket = async (req: Request, res: Response) => {
         },
       });
     } else if (key && bucket) {
-      // Generate presigned URL using the provided key and bucket
+
       presignedUrl = await generatePresignedUrl(bucket, key);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 'success',
         message: 'Document URL received',
         data: { url: presignedUrl },
@@ -131,48 +130,3 @@ export const getDocumentFromBucket = async (req: Request, res: Response) => {
     res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
-
-// export const getDocumentFromBucket = async (req: Request, res: Response) => {
-//   try {
-//     const { documentId, key, bucket } = req.body;
-
-//     if (documentId) {
-
-//       const documentUploadRepository = AppDataSource.getRepository(DocumentUpload);
-//       const document = await documentUploadRepository.findOne({ where: { id: documentId } });
-
-//       if (!document) {
-//         res.status(404).json({ status: "error", message: "Invalid document Id" });
-//         return;
-//       }
-
-//       const params: GetObjectCommandInput = {
-//         Bucket: document.bucketName,
-//         Key: document.key
-//       };
-
-//       const command = new GetObjectCommand(params);
-//       const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL expires in 1 hour
-//       const documentType = document.contentType;
-//       const documentName = document.documentName;
-
-//       res.status(200).json({ status: "success", message: "Document url recieved", data: { url: presignedUrl, type: documentType, name: documentName } });
-//     }
-//     else if (key && bucket) {
-
-//       const params: GetObjectCommandInput = {
-//         Bucket: bucket,
-//         Key: key
-//       };
-
-//       const command = new GetObjectCommand(params);
-//       const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-
-//       res.status(200).json({ status: "success", message: "Document url recieved", data: { url: presignedUrl } });
-//     }
-
-//   } catch (error) {
-//     console.error('Error retrieving document:', error);
-//     res.status(500).json({ status: "error", message: 'Internal Server Error' });
-//   }
-// }
