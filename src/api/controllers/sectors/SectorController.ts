@@ -188,7 +188,7 @@ export const getUserSectorCategoryMapping = async (req: Request, res: Response) 
   try {
     const { userId } = req.body;
     const userCategoryMappingRepository = AppDataSource.getRepository(UserCategoryMapping);
-    const userCategoryMapping = await userCategoryMappingRepository.find({ where: { userId } });
+    const userCategoryMapping = await userCategoryMappingRepository.find({ where: { userId } , relations: ['category']});
 
     res.status(200).json({
       status: "success",

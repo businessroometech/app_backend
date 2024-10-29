@@ -229,7 +229,8 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
 
       await primaryRoleMappedRepository.create({
         primaryRole: 'Customer',
-        userId: user.id
+        userId: user.id,
+        mobileNumber: user.mobileNumber
       }).save();
 
       await user.save();
@@ -242,7 +243,8 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
       if (!prm) {
         await primaryRoleMappedRepository.create({
           primaryRole: 'Customer',
-          userId: user.id
+          userId: user.id,
+          mobileNumber: user.mobileNumber
         }).save();
       }
     }

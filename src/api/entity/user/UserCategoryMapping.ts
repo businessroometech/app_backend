@@ -5,9 +5,11 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    ManyToOne,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
+import { Category } from '../sector/Category';
 
 @Entity({ name: 'UserCategoryMapping' })
 export class UserCategoryMapping extends BaseEntity {
@@ -49,4 +51,7 @@ export class UserCategoryMapping extends BaseEntity {
     private generateUUID() {
         return randomBytes(16).toString('hex');
     }
+
+    @ManyToOne(() => Category, category => category.userCategoryMappings)
+    category !: Category;
 }

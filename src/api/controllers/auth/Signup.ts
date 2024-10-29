@@ -60,6 +60,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const primaryRoleMapped = primaryRoleMappedRepository.create({
       userId: newUser.id,
+      mobileNumber: newUser.mobileNumber,
       primaryRole,
     });
     await primaryRoleMappedRepository.save(primaryRoleMapped);

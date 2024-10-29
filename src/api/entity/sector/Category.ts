@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
+import { UserCategoryMapping } from '../user/UserCategoryMapping';
 
 @Entity({ name: 'Category' })
 export class Category extends BaseEntity {
@@ -58,4 +59,7 @@ export class Category extends BaseEntity {
 
   @OneToMany(() => ProvidedService, providedService => providedService.category)
   providedServices !: ProvidedService[];
+
+  @OneToMany(() => UserCategoryMapping, userCategoryMapping => userCategoryMapping.category)
+  userCategoryMappings !: UserCategoryMapping[];
 }
