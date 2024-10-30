@@ -25,7 +25,7 @@ import { authenticate } from '@/api/middlewares/auth/Authenticate';
 const Router = express.Router();
 
 // Router.post('/add-bookings', addBooking);
-Router.post('/providers', authenticate, getProvidedServicesByCategoryAndSubCategory);
+Router.post('/providers', getProvidedServicesByCategoryAndSubCategory);
 Router.post('/providers/cities', authenticate, getDistinctCitiesBySubCategory);
 Router.post('/timeSlots', authenticate, getAvailableTimeSlots);
 
