@@ -10,8 +10,8 @@ import { Invoice } from '@/api/entity/others/Invoice';
 
 // initializing razorpay
 const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_TEST_KEY_ID || '',
-    key_secret: process.env.RAZORPAY_TEST_KEY_SECRET || '',
+    key_id: process.env.RAZORPAY_KEY_ID || '',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || '',
 });
 
 const baseUrl = process.env.NODE_ENV === 'development' ? process.env.API_BASE_URL_DEV : process.env.API_BASE_URL_PROD;
@@ -84,7 +84,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
         const payment = await razorpay.payments.fetch(razorpay_payment_id);
         const paymentMethod = payment.method;
 
-        const key_secret: any = process.env.RAZORPAY_TEST_KEY_SECRET;
+        const key_secret: any = process.env.RAZORPAY_KEY_SECRET;
 
         let hmac = crypto.createHmac('sha256', key_secret);
         hmac.update(razorpay_order_id + '|' + razorpay_payment_id);

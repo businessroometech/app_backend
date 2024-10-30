@@ -23,6 +23,6 @@ export const env = cleanEnv(process.env, {
   LOCAL_DB_NAME: str(),
 
   // Razorpay
-  RAZORPAY_TEST_KEY_ID: str(),
-  RAZORPAY_TEST_KEY_SECRET: str()
+  RAZORPAY_KEY_ID: str(),
+  RAZORPAY_KEY_SECRET: str()
 });
