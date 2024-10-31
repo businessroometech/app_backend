@@ -28,6 +28,7 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
     const { serviceName, minPrice, maxPrice, city, sortBy = 'asc' } = req.body;
 
     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
+    const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
     const serviceRepository = AppDataSource.getRepository(Service);
 
     let providedServicesQuery = providedServiceRepository
@@ -91,12 +92,18 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
 
     const servicesMap = new Map(services.map((service) => [service.id, service]));
 
-    const enrichedProvidedServices = providedServices
-      .map((providedService) => ({
+    const fetchClients = async (serviceProviderId: string) => {
+      const sps = await serviceJobRepository.findAndCount({ where: { serviceProviderId, status: 'Completed' } });
+      return sps[1];
+    };
+
+    const enrichedProvidedServices = await Promise.all(
+      providedServices.map(async (providedService) => ({
         ...providedService,
+        serviceProviderClientsCount: await fetchClients(providedService.serviceProviderId),
         services: providedService.serviceIds.map((id) => servicesMap.get(id)).filter(Boolean),
       }))
-      .filter((providedService) => providedService.services.length > 0);
+    );
 
     res.status(200).json({
       status: 'success',
@@ -652,7 +659,7 @@ export const fetchBookingItem = async (req: Request, res: Response) => {
 
     const orderItem = await orderItemBookingRepository.findOne({
       where: { id: orderItemBookingId, orderId },
-      relations: [ 'order', 'providedService', 'providedService.subCategory', 'providedService.category', 'address'],
+      relations: ['order', 'providedService', 'providedService.subCategory', 'providedService.category', 'address'],
     });
 
     const user = await userLoginRepository.findOne({ where: { id: orderItem?.serviceProviderId }, relations: ['personalDetails', 'businessDetails'] });
