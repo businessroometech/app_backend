@@ -1,8 +1,8 @@
 import { randomBytes } from "crypto";
 import { BaseEntity, BeforeInsert, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
-@Entity({ name: "RescheduledBooking" })
-export class RescheduledBooking extends BaseEntity {
+@Entity({ name: "ServiceJobRescheduled" })
+export class ServiceJobRescheduled extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id !: string;
@@ -11,7 +11,7 @@ export class RescheduledBooking extends BaseEntity {
     orderId !: string;
 
     @Column({ type: "uuid" })
-    orderItemId !: string;
+    serviceJobId !: string;
 
     @Column({ type: "uuid" })
     customerId !: string;

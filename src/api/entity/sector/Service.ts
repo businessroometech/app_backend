@@ -25,7 +25,7 @@ export class Service extends BaseEntity {
     @Column({ type: 'varchar', length: 255 })
     name!: string;
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text' , default: ""})
     bio!: string;
 
     @Column({ type: 'varchar', default: 'system' })

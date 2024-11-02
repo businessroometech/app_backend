@@ -18,7 +18,7 @@ export const CreatedEvent = async (req: Request, res: Response) => {
     const data = await eventRepository.find({
       where: {
         status: status,
-        userId: userId,
+        // userId: userId,
       },
     });
     res.status(200).json({ status: 'success', message: 'Event created successfully', data: data });

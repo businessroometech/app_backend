@@ -56,10 +56,10 @@ export class ServiceJob extends BaseEntity {
     @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
     sgstPercentage!: number;
 
-    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // CGST set to 9%
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  
     cgstPrice!: number;
 
-    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 })  // SGST set to 9%
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 9 }) 
     sgstPrice!: number;
 
     @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
@@ -91,9 +91,6 @@ export class ServiceJob extends BaseEntity {
 
     @Column({ type: 'text', default: "" })
     reasonIfCancelledByCustomer !: string;
-
-    @Column({ type: 'text', default: "" })
-    reasonIfReschedueledByCustomer !: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

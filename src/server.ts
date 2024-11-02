@@ -57,6 +57,7 @@ import { DeliveryLog } from './api/entity/notifications/DeliveryLog';
 import swaggerUi from 'swagger-ui-express';
 import swaggerFile from '../swagger_output.json';
 import { Invoice } from './api/entity/others/Invoice';
+import { ServiceJobRescheduled } from './api/entity/orderManagement/serviceProvider/serviceJob/ServiceJobReschedueled';
 import { Event } from './api/entity/eventManagement/Event';
 import { DressCode } from './api/entity/eventManagement/DressCode';
 import { BankDetails } from './api/entity/eventManagement/BankDetails';
@@ -77,7 +78,7 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog, Invoice, Event, DressCode, BankDetails, EventBooking, EventDraft, EventMedia, EventParticipant, EventPayment, EventRule, EventSchedule, Ticket],
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog, Invoice, ServiceJobRescheduled, Event, DressCode, BankDetails, EventBooking, EventDraft, EventMedia, EventParticipant, EventPayment, EventRule, EventSchedule, Ticket],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
