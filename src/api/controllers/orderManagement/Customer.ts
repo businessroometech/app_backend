@@ -22,9 +22,106 @@ import { ServiceJobRescheduled } from '@/api/entity/orderManagement/serviceProvi
 
 // ----------------------------------------------** IMP ** NEED TO ADD ACID PROPERTIES------------------------------------------
 
+// export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
+//   try {
+//     const { categoryId, subCategoryId } = req.body;
+//     const { serviceName, minPrice, maxPrice, city, sortBy = 'asc' } = req.body;
+
+//     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
+//     const serviceJobRepository = AppDataSource.getRepository(ServiceJob);
+//     const serviceRepository = AppDataSource.getRepository(Service);
+
+//     let providedServicesQuery = providedServiceRepository
+//       .createQueryBuilder('providedService')
+//       .leftJoinAndSelect('providedService.category', 'category')
+//       .leftJoinAndSelect('providedService.subCategory', 'subCategory')
+//       .leftJoin(UserLogin, 'userLogin', 'userLogin.id = providedService.serviceProviderId')
+
+//       .leftJoinAndMapOne(
+//         'providedService.personalDetails',
+//         PersonalDetails,
+//         'personalDetails',
+//         'personalDetails.userId = userLogin.id AND userLogin.userType = :individual',
+//         { individual: 'Individual' }
+//       )
+
+//       .leftJoinAndMapOne(
+//         'providedService.businessDetails',
+//         BusinessDetails,
+//         'businessDetails',
+//         'businessDetails.userId = userLogin.id AND userLogin.userType = :business',
+//         { business: 'Business' }
+//       )
+//       .where('providedService.categoryId = :categoryId', { categoryId })
+//       .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId });
+
+//     if (minPrice && maxPrice) {
+//       providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
+//     }
+
+//     if (city) {
+//       providedServicesQuery.andWhere(
+//         `(userLogin.userType = :individual AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(personalDetails.currentAddress, '$.city'))) = :city) 
+//          OR (userLogin.userType = :business AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(businessDetails.currentAddress, '$.city'))) = :city)`,
+//         { individual: 'Individual', business: 'Business', city: city.toLowerCase() }
+//       );
+//     }
+
+//     if (sortBy && (sortBy.toLowerCase() === 'asc' || sortBy.toLowerCase() === 'desc')) {
+//       providedServicesQuery.orderBy('providedService.price', sortBy.toUpperCase() as 'ASC' | 'DESC');
+//     }
+
+//     const providedServices = await providedServicesQuery.getMany();
+
+//     const overallMaxPrice = providedServices.reduce((max, service) => (service.price > max ? service.price : max), 0);
+
+//     const allServiceIds = providedServices.flatMap((service) => service.serviceIds);
+
+//     let services: any[] = [];
+//     if (allServiceIds.length > 0) {
+//       const servicesQuery = serviceRepository
+//         .createQueryBuilder('service')
+//         .where('service.id IN (:...ids)', { ids: allServiceIds });
+
+//       if (serviceName) {
+//         servicesQuery.andWhere('service.name LIKE :serviceName', { serviceName: `%${serviceName}%` });
+//       }
+
+//       services = await servicesQuery.getMany();
+//     }
+
+//     const servicesMap = new Map(services.map((service) => [service.id, service]));
+
+//     const fetchClients = async (serviceProviderId: string) => {
+//       const sps = await serviceJobRepository.findAndCount({ where: { serviceProviderId, status: 'Completed' } });
+//       return sps[1];
+//     };
+
+//     const enrichedProvidedServices = await Promise.all(
+//       providedServices.map(async (providedService) => ({
+//         ...providedService,
+//         serviceProviderClientsCount: await fetchClients(providedService.serviceProviderId),
+//         services: providedService.serviceIds.map((id) => servicesMap.get(id)).filter(Boolean),
+//       }))
+//     );
+
+//     res.status(200).json({
+//       status: 'success',
+//       message: 'Successfully fetched service providers',
+//       data: {
+//         providedServices: enrichedProvidedServices,
+//         maxPrice: overallMaxPrice,
+//       },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching provided services:', error);
+//     res.status(500).json({ message: 'Server error. Please try again later.' });
+//   }
+// };
+
 export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, res: Response) => {
   try {
-    const { categoryId, subCategoryId } = req.body;
+    const { categoryId, subCategoryId, subCategoryName } = req.body;
     const { serviceName, minPrice, maxPrice, city, sortBy = 'asc' } = req.body;
 
     const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
@@ -52,8 +149,14 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
         'businessDetails.userId = userLogin.id AND userLogin.userType = :business',
         { business: 'Business' }
       )
-      .where('providedService.categoryId = :categoryId', { categoryId })
-      .andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId });
+      .where('providedService.categoryId = :categoryId', { categoryId });
+
+    // Applying subcategory filter based on subCategoryName or subCategoryId
+    if (subCategoryName) {
+      providedServicesQuery.andWhere('LOWER(subCategory.name) = :subCategoryName', { subCategoryName: subCategoryName.toLowerCase() });
+    } else if (subCategoryId) {
+      providedServicesQuery.andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId });
+    }
 
     if (minPrice && maxPrice) {
       providedServicesQuery.andWhere('providedService.price BETWEEN :minPrice AND :maxPrice', { minPrice, maxPrice });
