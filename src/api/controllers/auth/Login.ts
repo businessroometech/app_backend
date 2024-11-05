@@ -18,6 +18,12 @@ const generateAccessToken = (user: { id: string }, rememberMe: boolean = false):
   });
 };
 
+const generateAccessTokenForMobile = (user: { id: string }): string => {
+  return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
+    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN_MOBILE,
+  });
+};
+
 const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.REFRESH_SECRET_KEY!, {
     expiresIn: rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_REMEMBER : process.env.JWT_REFRESH_EXPIRES_IN,
@@ -83,20 +89,31 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // await NotificationController.sendNotification(
-    //   {
-    //     body: {
-    //       notificationType: 'inApp',
-    //       templateName: 'login_otp',
-    //       recipientId: user?.id,
-    //       recipientType: 'User',
-    //       data: {
-    //         'Company Name': 'Connect',
-    //       },
-    //     },
-    //   } as Request,
-    //   res
-    // );
+    // Send notifications (SMS and in-app) to welcome the user
+    const notificationData = {
+      notificationType: 'sms',
+      templateName: 'welcome_cus',
+      recipientNumber: mobileNumber,
+      recipientType: 'Customer',
+      data: {
+        'Customer Name': user?.personalDetails?.fullName,
+        'Company Name': 'Connect',
+      },
+    };
+
+    try {
+      const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(smsResult.message);
+
+      notificationData.notificationType = 'inApp';
+      const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(inAppResult.message);
+    } catch (notificationError: any) {
+      console.error(
+        'Signup successful but error sending notification:',
+        notificationError.message || notificationError
+      );
+    }
 
     res.status(200).json({
       status: 'success',
@@ -342,7 +359,7 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
 
     const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
     const userLoginRepository = AppDataSource.getRepository(UserLogin);
-    const refreshRepository = AppDataSource.getRepository(RefreshToken);
+    // const refreshRepository = AppDataSource.getRepository(RefreshToken);
 
     let isVerify = await otpVerificationRepository.findOne({
       where: { mobileNumber, verificationCode, useCase: 'Signup' },
@@ -371,44 +388,44 @@ export const verifyCode_mobile_app = async (req: Request, res: Response): Promis
       return;
     }
 
-    const accessToken = generateAccessToken(user!);
+    const accessToken = generateAccessTokenForMobile(user);
 
-    const refreshToken = generateRefreshToken(user!);
+    // const refreshToken = generateRefreshToken(user!);
 
-    let cookieOptions: CookieOptions = {
-      httpOnly: true,
-    };
+    // let cookieOptions: CookieOptions = {
+    //   httpOnly: true,
+    // };
 
-    if (process.env.NODE_ENV === 'production') {
-      cookieOptions = { ...cookieOptions, secure: true };
-    }
+    // if (process.env.NODE_ENV === 'production') {
+    //   cookieOptions = { ...cookieOptions, secure: true };
+    // }
 
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+    // res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    // store referesh token to the DB
-    const rt = await refreshRepository.findOne({ where: { userId: user!.id } });
+    // // store referesh token to the DB
+    // const rt = await refreshRepository.findOne({ where: { userId: user!.id } });
 
-    // const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
-    const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
-    const expiresIn = defaultExpiresIn;
+    // // const rememberMeExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN_REMENBER || '600000', 10);
+    // const defaultExpiresIn = parseInt(process.env.REFRESH_TOKEN_IN_DB_EXPIRES_IN || '3600000', 10);
+    // const expiresIn = defaultExpiresIn;
 
-    if (isNaN(expiresIn)) {
-      throw new Error('Invalid expiration time');
-    }
+    // if (isNaN(expiresIn)) {
+    //   throw new Error('Invalid expiration time');
+    // }
 
-    if (rt) {
-      rt.token = refreshToken;
-      rt.expiresAt = new Date(Date.now() + expiresIn);
-      await rt.save();
-    } else {
-      await refreshRepository
-        .create({
-          userId: user!.id,
-          token: refreshToken,
-          expiresAt: new Date(Date.now() + expiresIn),
-        })
-        .save();
-    }
+    // if (rt) {
+    //   rt.token = refreshToken;
+    //   rt.expiresAt = new Date(Date.now() + expiresIn);
+    //   await rt.save();
+    // } else {
+    //   await refreshRepository
+    //     .create({
+    //       userId: user!.id,
+    //       token: refreshToken,
+    //       expiresAt: new Date(Date.now() + expiresIn),
+    //     })
+    //     .save();
+    // }
 
     res.status(200).json({
       status: 'success',

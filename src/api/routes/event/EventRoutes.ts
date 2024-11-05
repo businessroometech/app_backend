@@ -24,7 +24,7 @@ import express from 'express';
 const Router = express.Router();
 
 // CREATED EVENT
-Router.post('/created/get-all-event',authenticate, CreatedEvent);
+Router.post('/created/get-all-event', CreatedEvent);
 Router.post('/created/get-event-details',authenticate, getCreatedEventDetails);
 Router.post('/created/cancel',authenticate, cancelCreatedEvent);
 Router.post('/created/reschedule',authenticate, rescheduleCreatedEvent);
