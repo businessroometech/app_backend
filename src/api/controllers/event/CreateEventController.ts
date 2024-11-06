@@ -1,18 +1,26 @@
 import { Event } from '@/api/entity/eventManagement/Event';
 import { EventParticipant } from '@/api/entity/eventManagement/EventParticipant';
-import { Sector } from '@/api/entity/sector/Sector';
-import { UserLogin } from '@/api/entity/user/UserLogin';
+import { validateRequestBody } from '@/common/utils/requestBodyValidation';
 import { validateAndFetchEntities, ValidationConfig } from '@/components/validateFields';
 import { AppDataSource } from '@/server';
 import { Request, Response } from 'express';
 
 // Route handlers
-
 export const CreatedEvent = async (req: Request, res: Response) => {
-  const userRepository = AppDataSource.getRepository(UserLogin);
+  const validationRules = {
+    userId: { required: false, type: 'string' },
+  };
+  // Request validation start
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
+
   const eventRepository = AppDataSource.getRepository(Event);
 
   const { userId, status } = req.body;
+
+  if (!userId) res.status(400).json({ status: 'failed', message: 'Please provide userId or status' });
 
   try {
     const data = await eventRepository.find({
@@ -29,16 +37,15 @@ export const CreatedEvent = async (req: Request, res: Response) => {
 };
 
 export const getCreatedEventDetails = async (req: Request, res: Response) => {
-  const userLoginRepository = AppDataSource.getRepository(UserLogin);
-  const sectorRepository = AppDataSource.getRepository(Sector);
   const eventRepository = AppDataSource.getRepository(Event);
-  const validationConfigs: ValidationConfig[] = [
-    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
-    { field: 'id', repository: eventRepository, errorMessage: 'Please provide userId' },
-  ];
-
-  const entities = await validateAndFetchEntities(req, res, validationConfigs);
-  if (!entities) return;
+  const validationRules = {
+    id: { required: false, type: 'string' },
+  };
+  // Request validation start
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
 
   const { id } = req.body;
 
@@ -52,16 +59,15 @@ export const getCreatedEventDetails = async (req: Request, res: Response) => {
 };
 
 export const cancelCreatedEvent = async (req: Request, res: Response) => {
-  const userLoginRepository = AppDataSource.getRepository(UserLogin);
-  const sectorRepository = AppDataSource.getRepository(Sector);
   const eventRepository = AppDataSource.getRepository(Event);
-  const validationConfigs: ValidationConfig[] = [
-    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
-    { field: 'id', repository: eventRepository, errorMessage: 'Please provide userId' },
-  ];
-
-  const entities = await validateAndFetchEntities(req, res, validationConfigs);
-  if (!entities) return;
+  const validationRules = {
+    id: { required: false, type: 'string' },
+  };
+  // Request validation start
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
 
   const { id, status } = req.body;
   try {
@@ -82,19 +88,21 @@ export const cancelCreatedEvent = async (req: Request, res: Response) => {
 };
 
 export const rescheduleCreatedEvent = async (req: Request, res: Response) => {
-  const userLoginRepository = AppDataSource.getRepository(UserLogin);
   const eventRepository = AppDataSource.getRepository(Event);
 
-  const validationConfigs: ValidationConfig[] = [
-    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
-    { field: 'id', repository: eventRepository, errorMessage: 'Please provide eventId' },
-  ];
-
-  // Validate and fetch related entities based on user input
-  const entities = await validateAndFetchEntities(req, res, validationConfigs);
-  if (!entities) return;
+  const validationRules = {
+    id: { required: false, type: 'string' },
+  };
+  // Request validation start
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
 
   const { id, startDatetime, endDatetime } = req.body;
+
+  if (!startDatetime || !endDatetime)
+    return res.status(500).json({ status: 'error', message: 'Reschedulling unsuccessful' });
 
   try {
     // Find the event by eventId
@@ -122,20 +130,19 @@ export const rescheduleCreatedEvent = async (req: Request, res: Response) => {
 
 // INVITATION
 export const getEventParticipants = async (req: Request, res: Response) => {
-  const userLoginRepository = AppDataSource.getRepository(UserLogin);
   const eventRepository = AppDataSource.getRepository(Event);
-  const participantsRepository = AppDataSource.getRepository(EventParticipant);
-  const validationConfigs: ValidationConfig[] = [
-    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
-    { field: 'eventId', repository: eventRepository, errorMessage: 'Please provide userId' },
-  ];
+  const validationRules = {
+    id: { required: false, type: 'string' },
+  };
+  // Request validation start
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
 
-  const entities = await validateAndFetchEntities(req, res, validationConfigs);
-  if (!entities) return;
-
-  const { eventId } = req.body;
+  const { id } = req.body;
   try {
-    const event = await eventRepository.findOne({ where: { id: eventId } });
+    const event = await eventRepository.findOne({ where: { id: id } });
 
     if (!event) {
       return res.status(404).json({ status: 'error', message: 'Event not found' });
@@ -148,15 +155,19 @@ export const getEventParticipants = async (req: Request, res: Response) => {
   }
 };
 
+// there is no link to send fo booking
 export const postSendEventInviation = async (req: Request, res: Response) => {
-  const userLoginRepository = AppDataSource.getRepository(UserLogin);
   const eventRepository = AppDataSource.getRepository(Event);
-  const validationConfigs: ValidationConfig[] = [
-    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
-    { field: 'eventId', repository: eventRepository, errorMessage: 'Please provide userId' },
-  ];
+  const validationRules = {
+    id: { required: false, type: 'string' },
+  };
+  // Request validation start
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
 
-  const { eventId } = req.body;
+  const { id } = req.body;
   try {
     res.status(200).json({ status: 'success', message: 'Invitation sent successfully' });
   } catch (error) {

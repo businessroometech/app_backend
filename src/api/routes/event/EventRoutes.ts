@@ -25,10 +25,10 @@ const Router = express.Router();
 
 // CREATED EVENT
 Router.post('/created/get-all-event', CreatedEvent);
-Router.post('/created/get-event-details',authenticate, getCreatedEventDetails);
-Router.post('/created/cancel',authenticate, cancelCreatedEvent);
-Router.post('/created/reschedule',authenticate, rescheduleCreatedEvent);
-Router.post('/created/invite/participants',authenticate, getEventParticipants);
+Router.post('/created/get-event-details', getCreatedEventDetails);
+Router.post('/created/cancel', cancelCreatedEvent);
+Router.post('/created/reschedule', rescheduleCreatedEvent);
+Router.post('/created/invite/participants', getEventParticipants);
 Router.post('/created/invite/send',authenticate, postSendEventInviation);
 
 // BOOKED EVENT

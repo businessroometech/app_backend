@@ -1,4 +1,3 @@
-// Define the types for validation rules
 interface ValidationRule {
     required?: boolean;
     type?: 'string' | 'number' | 'boolean' | 'object' | 'array';
@@ -29,11 +28,11 @@ export const validateRequestBody = (body: Record<string, any>, rules: Record<str
 
         // Validate string length (if applicable)
         if (rule.type === 'string') {
-            if (rule.minLength && value.length < rule.minLength) {
+            if (rule.minLength !== undefined && value.length < rule.minLength) {
                 errors[field] = `${field} must be at least ${rule.minLength} characters long`;
                 continue;
             }
-            if (rule.maxLength && value.length > rule.maxLength) {
+            if (rule.maxLength !== undefined && value.length > rule.maxLength) {
                 errors[field] = `${field} must be less than ${rule.maxLength} characters long`;
                 continue;
             }
@@ -47,20 +46,3 @@ export const validateRequestBody = (body: Record<string, any>, rules: Record<str
 
     return Object.keys(errors).length === 0 ? null : errors;
 };
-
-
-
-    // // request validation start 
-    // const validationRules: any = {
-    //     username: { required: true, type: 'string', minLength: 3 },
-    //     age: { required: true, type: 'number', validate: (value) => value > 0 },
-    //     email: { required: true, type: 'string', validate: (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) },
-    //   };
-  
-    //   const errors = validateRequestBody(req.body, validationRules);
-  
-    //   if (errors) {
-    //     res.status(400).json({ errors });
-    //     return; 
-    //   }
-    //   // request validation end 

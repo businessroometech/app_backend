@@ -22,7 +22,7 @@ export const validateAndFetchEntities = async (req: Request, res: Response, fiel
       const entity = await repository.findOne({ where: { id: fieldValue } });
 
       if (!entity) {
-        res.status(404).json({ status: 'error', message: `${field} not found` });
+        res.status(500).json({ status: 'error', message: `${field} not found` });
         return null;
       }
 

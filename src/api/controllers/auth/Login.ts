@@ -271,30 +271,22 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       res.status(401).json({ status: 'error', message: 'Refresh token is not present in cookies' });
       return;
     }
-
     const refreshRepository = AppDataSource.getRepository(RefreshToken);
-
     const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
-
     const refresh = await refreshRepository.findOne({ where: { userId: payload.id } });
-
     if (!refresh) {
       res.status(401).json({ status: 'error', message: 'Refresh token not found' });
       return;
     }
-
     const isTokenValid = await bcrypt.compare(refreshToken, refresh.token);
-
     if (!isTokenValid || refresh.revokedTokens.includes(refreshToken)) {
       res.status(401).json({ status: 'error', message: 'Invalid or revoked refresh token. Please log in again.' });
       return;
     }
-
     if (new Date() > refresh.expiresAt) {
       res.status(401).json({ status: 'error', message: 'Refresh token expired. Please log in again.' });
       return;
     }
-
     const newAccessToken = generateAccessToken({ id: payload.id });
     const newRefreshToken = generateRefreshToken({ id: payload.id });
 
@@ -333,9 +325,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     }
   }
 };
-
-//----------for protected routed you have to extend request interface-------
-
 declare module 'express' {
   interface Request {
     user?: any;

@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 
 @Entity({ name: "DressCode" })
 export class DressCode extends BaseEntity {
-
+ 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
@@ -16,6 +16,9 @@ export class DressCode extends BaseEntity {
 
     @Column({ type: 'text' })
     dressCode!: string;
+
+    @Column({ type: 'text' })
+    type!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

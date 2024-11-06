@@ -18,6 +18,7 @@ import { UserAddress } from '@/api/entity/user/UserAddress';
 import { FindOptionsWhere, In } from 'typeorm';
 import { format } from 'date-fns';
 import NotificationController from '../notifications/Notification';
+import { TicketItem } from '@/api/entity/event/TicketItem';
 import { ServiceJobRescheduled } from '@/api/entity/orderManagement/serviceProvider/serviceJob/ServiceJobReschedueled';
 
 // ----------------------------------------------** IMP ** NEED TO ADD ACID PROPERTIES------------------------------------------

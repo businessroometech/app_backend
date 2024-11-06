@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, OneToOne } from 'typeorm';
 import { Event } from './Event';
 import { randomBytes } from 'crypto';
 import { EventBooking } from './EventBooking';
 import { EventParticipant } from './EventParticipant';
+import { SoldTicket } from './SoldTicket';
 
 @Entity({ name: "Ticket" })
 export class Ticket extends BaseEntity {
@@ -59,4 +60,8 @@ export class Ticket extends BaseEntity {
 
     @OneToMany(() => EventParticipant, eventParticipant => eventParticipant.ticket)
     eventParticipants !: EventParticipant[];
+
+
+  @OneToOne(() => SoldTicket, soldTicket => soldTicket.ticket)
+  soldTicket!: SoldTicket[];
 }
