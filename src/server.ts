@@ -60,6 +60,10 @@ import { Invoice } from './api/entity/others/Invoice';
 import { ServiceJobRescheduled } from './api/entity/orderManagement/serviceProvider/serviceJob/ServiceJobReschedueled';
 import { UserCategoryMapping } from './api/entity/user/UserCategoryMapping';
 import { PrimaryRoleMapping } from './api/entity/user/PrimaryRoleMapping';
+import { ServiceQuestion } from './api/entity/orderManagement/serviceProvider/service/ServiceQuestion';
+import { ServiceQuestionOption } from './api/entity/orderManagement/serviceProvider/service/ServiceQuestionOption';
+import { ProviderAnswer } from './api/entity/orderManagement/serviceProvider/service/ProviderAnswer';
+import { CategoryQuestionMapping } from './api/entity/orderManagement/serviceProvider/service/CategoryQuestionMapping';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -69,7 +73,7 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog, Invoice, ServiceJobRescheduled, PrimaryRoleMapping , UserCategoryMapping],
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog, Invoice, ServiceJobRescheduled, PrimaryRoleMapping , UserCategoryMapping, ServiceQuestion, ServiceQuestionOption, ProviderAnswer, CategoryQuestionMapping],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });

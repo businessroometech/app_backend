@@ -21,6 +21,9 @@ import { Service } from '@/api/entity/sector/Service';
 import { AppDataSource } from '@/server';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
 import NotificationController from '../notifications/Notification';
+import { CategoryQuestionMapping } from '@/api/entity/orderManagement/serviceProvider/service/CategoryQuestionMapping';
+import { ServiceQuestionOption } from '@/api/entity/orderManagement/serviceProvider/service/ServiceQuestionOption';
+import { ProviderAnswer } from '@/api/entity/orderManagement/serviceProvider/service/ProviderAnswer';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -191,8 +194,8 @@ export const acceptService = async (req: Request, res: Response) => {
       notificationData.recipientId = serviceJob?.customerId;
       const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
 
-      console.log("--- in app accept order service ---",inAppResultService.message);
-      console.log("--- in app accept order customer ---",inAppResultCustomer.message);
+      console.log("--- in app accept order service ---", inAppResultService.message);
+      console.log("--- in app accept order customer ---", inAppResultCustomer.message);
     } catch (notificationError: any) {
       console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
     }
@@ -1002,3 +1005,40 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
 // notification here : rescheduled_order_sp ---> missing
 // service reminder : service_reminder_sp --> missing
 //  Service Provider Rejects the Order : order_rejected_quote_sp --> missing
+
+
+
+// -------------------- SERVICE QUESTIONS -------------------------------
+
+export const getQuestions = async (req: Request, res: Response) => {
+  try {
+    const { serviceProviderId, categoryId } = req.body;
+
+    const categoryServiceMappingRepository = AppDataSource.getRepository(CategoryQuestionMapping);
+    const serviceQuestionOptionRepository = AppDataSource.getRepository(ServiceQuestionOption);
+    const providerAnswerRepository = AppDataSource.getRepository(ProviderAnswer);
+
+    const categoryServiceMapping = await categoryServiceMappingRepository.find({
+      where: { categoryId }
+    });
+
+    const questions = categoryServiceMapping.map((ele) => ele.serviceQuestion);
+
+    const questionsWithOptionsAndAnswer = await Promise.all(
+      questions.map(async (q) => {
+        const options = await serviceQuestionOptionRepository.find({ where: { questionId: q.id } });
+        const answer = await providerAnswerRepository.find({ where: { serviceProviderId, questionTemplateId: q.id } });
+        return { question: q, questionOptions: options, answer: answer };
+      })
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "Question Fetched with answers if present",
+      data: { questions: questionsWithOptionsAndAnswer },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 'error', message: 'Error fetching questions for this service' });
+  }
+};
