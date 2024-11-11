@@ -984,7 +984,7 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
           previousPeriodSales: parseFloat(item.totalSales) || 0,
         };
       }
-    });
+    }); 
 
     // Convert the salesMap to an array for response
     const result = Object.keys(salesMap).map((subCategory) => ({
@@ -1042,3 +1042,52 @@ export const getQuestions = async (req: Request, res: Response) => {
     return res.status(500).json({ status: 'error', message: 'Error fetching questions for this service' });
   }
 };
+
+export const addAnswer = async (req: Request, res: Response) => {
+  try {
+    const { serviceProviderId, answers = [] } = req.body;
+
+    if (!serviceProviderId || !Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({ status: "error", message: 'Invalid request payload' });
+    }
+
+    const questionTemplateIds = answers.map((ele) => ele.questionTemplateId);
+
+    const existingAnswers = await ProviderAnswer.find({
+      where: {
+        serviceProviderId,
+        questionTemplateId: In(questionTemplateIds),
+      },
+    });
+
+    const existingAnswerMap = new Map(
+      existingAnswers.map((answer) => [answer.questionTemplateId, answer])
+    );
+
+    const providerAnswers = answers.map((ele) => {
+      const existingAnswer = existingAnswerMap.get(ele.questionTemplateId);
+
+      if (existingAnswer) {
+        existingAnswer.answerText = ele.answerText;
+        return existingAnswer;
+      } else {
+        const newAnswer = new ProviderAnswer();
+        newAnswer.serviceProviderId = serviceProviderId;
+        newAnswer.questionTemplateId = ele.questionTemplateId;
+        newAnswer.answerText = ele.answerText;
+        return newAnswer;
+      }
+    });
+
+    await ProviderAnswer.save(providerAnswers);
+
+    res.status(201).json({
+      message: 'Provider answers processed successfully',
+      data: providerAnswers,
+    });
+  } catch (error) {
+    console.error('Error processing provider answers:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
