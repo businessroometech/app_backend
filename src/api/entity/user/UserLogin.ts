@@ -31,8 +31,8 @@ export class UserLogin extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   password!: string;
 
-  @Column({ type: 'text' })
-  primaryRoleId !: string;
+  // @Column({ type: 'text' })
+  // primaryRoleId !: string;
 
   @Column({ type: 'enum', enum: ['Individual', 'Business'] })
   userType !: 'Individual' | 'Business';

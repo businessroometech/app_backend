@@ -227,12 +227,13 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
           updatedBy: updatedBy || 'system',
         }).save();
 
-      await primaryRoleMappedRepository.create({
+      const primaryRoleMapped = await primaryRoleMappedRepository.create({
         primaryRole: 'Customer',
         userId: user.id,
         mobileNumber: user.mobileNumber
       }).save();
 
+      // user.primaryRoleId = primaryRoleMapped.id;
       await user.save();
       
     } else {
