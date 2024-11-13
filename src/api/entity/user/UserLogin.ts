@@ -17,6 +17,9 @@ import { OrderItemProduct } from '../orderManagement/customer/OrderItemProduct';
 import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
 import { PersonalDetails } from '../profile/personal/PersonalDetails';
 import { BusinessDetails } from '../profile/business/BusinessDetails';
+import { Event } from '../eventManagement/Event';
+import { EventDraft } from '../eventManagement/EventDraft';
+import { SoldTicket } from '../eventManagement/SoldTicket';
 import { PrimaryRoleMapping } from './PrimaryRoleMapping';
 
 @Entity({ name: 'UserLogin' })
@@ -93,6 +96,15 @@ export class UserLogin extends BaseEntity {
 
   @OneToOne(() => BusinessDetails, (details) => details.user, { cascade: true })
   businessDetails!: BusinessDetails;
+
+  @OneToMany(() => Event,(details) => details.user, { cascade: true })
+  event!: Event;
+
+  @OneToMany(() => EventDraft, (eventDraft) => eventDraft.user)
+  eventDrafts!: EventDraft[];
+  
+  @OneToMany(() => SoldTicket, (soldTicket) => soldTicket.boughtBy)
+  soldTickets?: SoldTicket[];
 
   @OneToMany(() => PrimaryRoleMapping, prm => prm.user, { cascade: true })
   primaryRoles !: PrimaryRoleMapping[];

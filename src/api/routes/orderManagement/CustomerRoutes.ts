@@ -3,10 +3,6 @@ import express from 'express';
 import {
     // addBooking,
     addToCart,
-    // removeFromCart,
-    // checkout,
-    // rescheduleOrderItemBooking,
-    // cancelOrderItemBooking,
     getProvidedServicesByCategoryAndSubCategory,
     getDistinctCitiesBySubCategory,
     getAvailableTimeSlots,
@@ -18,7 +14,8 @@ import {
     cancelOrderItemBooking,
     rescheduleOrder,
     fetchOrderHistory,
-    fetchBookingItem
+    fetchBookingItem,
+ 
 } from '@/api/controllers/orderManagement/Customer';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
