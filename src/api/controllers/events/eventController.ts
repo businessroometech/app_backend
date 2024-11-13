@@ -19,6 +19,7 @@ import { validateRequestBody } from '@/common/utils/requestBodyValidation';
 import { EventOrganiser, SocialMediaLink } from '@/api/entity/eventManagement/EventOrganiser';
 import { minLength } from 'class-validator';
 import { SoldTicket } from '@/api/entity/eventManagement/SoldTicket';
+import NotificationController from '../notifications/Notification';
 // __________________________________Common Methods________________________________
 
 // Dynamic function to map and create related entities
@@ -289,7 +290,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
     dressCodes: { required: false },
     eventMedia: { required: false },
     eventRules: { required: false },
-    isDraft: { required: false, type: 'boolean' },
+    isDraft: { required: true, type: 'boolean' },
     ticketType: { required: false, type: 'string' },
     price: { required: false, type: 'number' },
     quantityAvailable: { required: false, type: 'number' },
@@ -333,7 +334,6 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       price,
       quantityAvailable,
       isFree,
-
       inclusions,
     } = req.body;
 
@@ -539,12 +539,40 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
     }
 
     // Determine the success message
-    const message = eventId ? 'Event updated successfully' : 'Event created successfully';
-    if (isDraft) {
-      return res.status(201).json({ status: 'success', message });
+    // const message = eventId ? 'Event updated successfully' : 'Event created successfully';
+    // if (isDraft) {
+    //   return res.status(201).json({ status: 'success', message });
+    // }
+    
+    const notificationData = {
+      notificationType: 'inApp',
+      templateName: 'order_accepted_sp',
+      recipientId: userId,
+      recipientType: 'Events',
+      data: {
+        'OrderId': event.id,
+        X: '3',
+      },
+    };
+
+    try {
+       await NotificationController.sendNotification({ body: notificationData } as Request);
+      notificationData.templateName = 'order_accepted_cu';
+      notificationData.recipientType = 'Event';
+      notificationData.recipientId = userId;
+      await NotificationController.sendNotification({ body: notificationData } as Request);
+
+    } catch (notificationError: any) {
+      console.error('Order rejected but error sending notification:', notificationError.message || notificationError);
     }
 
-    return res.status(201).json({ status: 'success', message, data: eventData });
+    return res.status(201).json({
+      status: 'success',
+      message: [`Event ${eventId ? "updated" : "created"} ${isDraft ? "and saved as a draft" : "successfully"}.`],
+      data: eventData,
+    });
+
+    // return res.status(201).json({ status: 'success', message, data: eventData });
   } catch (error) {
     console.error('Error creating or updating event:', error);
     return res.status(500).json({
