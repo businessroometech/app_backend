@@ -227,6 +227,8 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
           updatedBy: updatedBy || 'system',
         }).save();
 
+      await user.save();
+
       const primaryRoleMapped = await primaryRoleMappedRepository.create({
         primaryRole: 'Customer',
         userId: user.id,
@@ -234,8 +236,7 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
       }).save();
 
       // user.primaryRoleId = primaryRoleMapped.id;
-      await user.save();
-      
+
     } else {
 
       const primaryRoleMappings = await primaryRoleMappedRepository.find({ where: { userId: user.id } });

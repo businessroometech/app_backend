@@ -63,6 +63,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         createdBy,
         updatedBy,
       });
+      await userLoginRepository.save(user);
 
       const primaryRoleMapped = primaryRoleMappedRepository.create({
         userId: user.id,
@@ -72,7 +73,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       await primaryRoleMappedRepository.save(primaryRoleMapped);
 
       // user.primaryRoleId = primaryRoleMapped.id;
-      await userLoginRepository.save(user);
     }
 
     await userCategoryMappingRepository.create({
