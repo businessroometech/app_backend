@@ -26,6 +26,9 @@ export class CategoryQuestionMapping extends BaseEntity {
     @Column({ type: 'uuid' })
     questionId !: String;
 
+    @Column({ type: 'enum', enum: ['Business', 'Individual'] })
+    userType !: 'Business' | 'Individual';
+
     @Column({ type: 'bool', default: true })
     isActive !: Boolean;
 
