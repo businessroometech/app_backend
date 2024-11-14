@@ -1,8 +1,5 @@
 import { EventBooking } from '@/api/entity/eventManagement/EventBooking';
-import { Sector } from '@/api/entity/sector/Sector';
-import { UserLogin } from '@/api/entity/user/UserLogin';
 import { validateRequestBody } from '@/common/utils/requestBodyValidation';
-import { validateAndFetchEntities, ValidationConfig } from '@/components/validateFields';
 import { AppDataSource } from '@/server';
 import { Request, Response } from 'express';
 
