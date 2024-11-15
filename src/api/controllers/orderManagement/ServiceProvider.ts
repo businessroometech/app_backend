@@ -24,6 +24,7 @@ import NotificationController from '../notifications/Notification';
 import { CategoryQuestionMapping } from '@/api/entity/orderManagement/serviceProvider/service/CategoryQuestionMapping';
 import { ServiceQuestionOption } from '@/api/entity/orderManagement/serviceProvider/service/ServiceQuestionOption';
 import { ProviderAnswer } from '@/api/entity/orderManagement/serviceProvider/service/ProviderAnswer';
+import { ServiceQuestion } from '@/api/entity/orderManagement/serviceProvider/service/ServiceQuestion';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -984,7 +985,7 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
           previousPeriodSales: parseFloat(item.totalSales) || 0,
         };
       }
-    }); 
+    });
 
     // Convert the salesMap to an array for response
     const result = Object.keys(salesMap).map((subCategory) => ({
@@ -1012,23 +1013,25 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
 
 export const getQuestions = async (req: Request, res: Response) => {
   try {
-    const { serviceProviderId, categoryId } = req.body;
+    const { serviceProviderId, categoryId, userType } = req.body;
 
-    const categoryServiceMappingRepository = AppDataSource.getRepository(CategoryQuestionMapping);
+    const categoryQuestionMappingRepository = AppDataSource.getRepository(CategoryQuestionMapping);
     const serviceQuestionOptionRepository = AppDataSource.getRepository(ServiceQuestionOption);
     const providerAnswerRepository = AppDataSource.getRepository(ProviderAnswer);
+    const serviceQuestionRepository = AppDataSource.getRepository(ServiceQuestion);
 
-    const categoryServiceMapping = await categoryServiceMappingRepository.find({
-      where: { categoryId }
+    const categoryQuestionMapping = await categoryQuestionMappingRepository.find({
+      where: { categoryId, userType }, relations: ['serviceQuestion']
     });
 
-    const questions = categoryServiceMapping.map((ele) => ele.serviceQuestion);
+    const questionIds = categoryQuestionMapping.map((ele) => ele.questionId);
 
     const questionsWithOptionsAndAnswer = await Promise.all(
-      questions.map(async (q) => {
-        const options = await serviceQuestionOptionRepository.find({ where: { questionId: q.id } });
-        const answer = await providerAnswerRepository.find({ where: { serviceProviderId, questionTemplateId: q.id } });
-        return { question: q, questionOptions: options, answer: answer };
+      questionIds.map(async (qId: any) => {
+        const question = await serviceQuestionRepository.find({ where: { id: qId } });
+        const options = await serviceQuestionOptionRepository.find({ where: { questionId: qId } });
+        const answer = await providerAnswerRepository.find({ where: { serviceProviderId, questionTemplateId: qId } });
+        return { question: question, questionOptions: options, answer: answer };
       })
     );
 
