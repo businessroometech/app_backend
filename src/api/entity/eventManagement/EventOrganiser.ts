@@ -11,6 +11,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Event } from './Event';
+import { randomBytes } from 'crypto';
 
 @Entity({ name: 'EventOrganiser' })
 export class EventOrganiser extends BaseEntity {
@@ -34,12 +35,32 @@ export class EventOrganiser extends BaseEntity {
 
   @OneToMany(() => SocialMediaLink, (socialMedia) => socialMedia.organiser, { cascade: true })
   socialmedia?: SocialMediaLink[];
-
-  @CreateDateColumn({ type: 'text', nullable: true })
-  createdAt?: Date;
-
-  @UpdateDateColumn({ type: 'text', nullable: true })
-  updatedAt?: Date;
+  
+  @Column({ type: 'varchar', default: 'system' })
+  createdBy!: string;
+  
+  @Column({ type: 'varchar', default: 'system', nullable: true })
+  updatedBy!: string;
+  
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
+  createdAt!: Date;
+  
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    precision: 6,
+  })
+  updatedAt!: Date;
+  
+  @BeforeInsert()
+  async beforeInsert() {
+    this.id = this.generateUUID();
+  }
+  
+  private generateUUID(): string {
+    return randomBytes(16).toString('hex');
+  }
 }
 
 @Entity({ name: 'SocialMediaLink' })
@@ -59,4 +80,30 @@ export class SocialMediaLink extends BaseEntity {
 
   @ManyToOne(() => Event, (event) => event.organiser)
   event?: Event;
+  
+  @Column({ type: 'varchar', default: 'system' })
+  createdBy!: string;
+  
+  @Column({ type: 'varchar', default: 'system', nullable: true })
+  updatedBy!: string;
+  
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
+  createdAt!: Date;
+  
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    precision: 6,
+  })
+  updatedAt!: Date;
+  
+  @BeforeInsert()
+  async beforeInsert() {
+    this.id = this.generateUUID();
+  }
+  
+  private generateUUID(): string {
+    return randomBytes(16).toString('hex');
+  }
 }

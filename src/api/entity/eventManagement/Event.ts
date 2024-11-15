@@ -23,7 +23,7 @@ import { PersonalDetails } from '../profile/personal/PersonalDetails';
 import { login } from '@/api/controllers/auth/Login';
 import { UserLogin } from '../user/UserLogin';
 import { EventOrganiser } from './EventOrganiser';
-
+ 
 @Entity({ name: 'Event' })
 export class Event extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
