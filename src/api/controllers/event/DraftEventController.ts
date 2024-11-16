@@ -59,7 +59,8 @@ export const getDraftDetails = async (req: Request, res: Response) => {
 
   try {
     const drafts = await draftRepository.find({ where: { id } });
-    if (drafts) return res.status(204).json({ status: 'success', message: 'No draft found', data: [] });
+    if (!drafts || drafts.length === 0)
+      return res.status(204).json({ status: 'error', message: 'No draft found', data: [] });
 
     return res.status(200).json({ status: 'success', message: 'Drafts fetched successfully', data: drafts });
   } catch (error) {
