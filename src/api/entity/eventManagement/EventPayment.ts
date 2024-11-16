@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
 import { Event } from './Event';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: "EventPayment" })
 export class EventPayment extends BaseEntity {
@@ -57,4 +58,7 @@ export class EventPayment extends BaseEntity {
 
     @ManyToOne(() => Event, event => event.eventPayments)
     event !: Event;
+
+    @ManyToOne(() => Event, event => event.eventPayments)
+    eventDraft !: EventDraft;
 }

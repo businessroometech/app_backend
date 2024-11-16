@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
 import { Event } from './Event';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: "EventMedia" })
 export class EventMedia extends BaseEntity {
@@ -49,6 +50,9 @@ export class EventMedia extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventMedias)
+    @ManyToOne(() => Event, event => event.eventMedia)
     event !: Event;
+
+    @ManyToOne(() => Event, event => event.eventMedia)
+    eventDraft !: EventDraft;
 }

@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
 import { Event } from './Event';
 import { randomBytes } from 'crypto';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: "DressCode" })
 export class DressCode extends BaseEntity {
@@ -8,7 +9,7 @@ export class DressCode extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', nullable:true })
     eventId!: string;
 
     @Column({ type: 'varchar', length: 50, nullable: true })
@@ -48,4 +49,7 @@ export class DressCode extends BaseEntity {
 
     @ManyToOne(() => Event, event => event.dressCodes)
     event !: Event;
+
+    @ManyToOne(() => Event, event => event.dressCodes)
+    eventDraft !: EventDraft;
 }

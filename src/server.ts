@@ -73,6 +73,8 @@ import { Dropdown } from './api/entity/eventManagement/Dropdown';
 import { ServiceJobRescheduled } from './api/entity/orderManagement/serviceProvider/serviceJob/ServiceJobReschedueled';
 import { EventOrganiser, SocialMediaLink } from './api/entity/eventManagement/EventOrganiser';
 import { SoldTicket } from './api/entity/eventManagement/SoldTicket';
+import { EventPartner } from './api/entity/eventManagement/EventPartner';
+import { EventSpecker } from './api/entity/eventManagement/EventSpeckers';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -82,8 +84,8 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog, Invoice, Event, DressCode, BankDetails, EventBooking, EventDraft, EventMedia, EventParticipant, EventPayment, EventRule, EventSchedule, Ticket, Dropdown, EventOrganiser, SocialMediaLink, SoldTicket],
-  synchronize: false,
+  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog, Invoice, Event, DressCode, BankDetails, EventBooking, EventDraft, EventMedia, EventParticipant, EventPayment, EventRule, EventSchedule, Ticket, Dropdown, EventOrganiser, SocialMediaLink, SoldTicket, EventPartner, EventSpecker],
+  synchronize: true,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 

@@ -1,35 +1,25 @@
 import { randomBytes } from 'crypto';
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity, BeforeInsert } from 'typeorm';
 
-@Entity({ name: "BankDetails" })
-export class BankDetails extends BaseEntity {
-
+@Entity({ name: "EventPartner" })
+export class EventPartner extends BaseEntity  {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
     @Column({ type: 'uuid' })
-    userId!: string;
-
-    @Column({ type: 'uuid', nullable:true })
     eventId!: string;
 
     @Column({ type: 'varchar', length: 255 })
-    bankName!: string;
+    imgUrl!: string;
 
     @Column({ type: 'varchar', length: 255 })
-    accountHolderName!: string;
-
-    @Column({ type: 'varchar', length: 255 })
-    accountNumber!: string;
-
-    @Column({ type: 'varchar', length: 50 })
-    ifscCode!: string;
+    name!: string;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
 
     @Column({ type: 'varchar', default: 'system', nullable: true })
-    updatedBy!: string;
+    updatedBy?: string;
 
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
     createdAt!: Date;
@@ -42,6 +32,7 @@ export class BankDetails extends BaseEntity {
     })
     updatedAt!: Date;
 
+    
     @BeforeInsert()
     async beforeInsert() {
         this.id = this.generateUUID();

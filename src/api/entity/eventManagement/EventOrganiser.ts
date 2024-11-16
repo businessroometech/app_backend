@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { Event } from './Event';
 import { randomBytes } from 'crypto';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: 'EventOrganiser' })
 export class EventOrganiser extends BaseEntity {
@@ -80,6 +81,9 @@ export class SocialMediaLink extends BaseEntity {
 
   @ManyToOne(() => Event, (event) => event.organiser)
   event?: Event;
+
+  @ManyToOne(() => Event, (event) => event.organiser)
+  eventDraft?: EventDraft;
   
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

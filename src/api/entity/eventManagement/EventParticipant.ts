@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDa
 import { Ticket } from './Ticket';
 import { randomBytes } from 'crypto';
 import { Event } from './Event';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: "EventParticipant" })
 export class EventParticipant extends BaseEntity {
@@ -52,6 +53,9 @@ export class EventParticipant extends BaseEntity {
 
     @ManyToOne(() => Event, event => event.eventParticipants)
     event !: Event;
+
+    @ManyToOne(() => Event, event => event.eventParticipants)
+    eventDraft !: EventDraft;
 
     @ManyToOne(() => Ticket, ticket => ticket.eventParticipants)
     ticket !: Ticket;

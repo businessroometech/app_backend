@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
 import { Event } from './Event';
 import { randomBytes } from 'crypto';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: "EventSchedule" })
 export class EventSchedule extends BaseEntity {
@@ -51,4 +52,7 @@ export class EventSchedule extends BaseEntity {
 
     @ManyToOne(() => Event, event => event.eventSchedules)
     event !: Event;
+
+    @ManyToOne(() => Event, event => event.eventSchedules)
+    eventDraft !: EventDraft;
 }
