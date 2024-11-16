@@ -19,8 +19,6 @@ import { EventParticipant } from './EventParticipant';
 import { EventPayment } from './EventPayment';
 import { EventRule } from './EventRule';
 import { EventSchedule } from './EventSchedule';
-import { PersonalDetails } from '../profile/personal/PersonalDetails';
-import { login } from '@/api/controllers/auth/Login';
 import { UserLogin } from '../user/UserLogin';
 import { EventOrganiser } from './EventOrganiser';
 

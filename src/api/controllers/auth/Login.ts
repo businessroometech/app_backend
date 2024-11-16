@@ -89,20 +89,31 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // await NotificationController.sendNotification(
-    //   {
-    //     body: {
-    //       notificationType: 'inApp',
-    //       templateName: 'login_otp',
-    //       recipientId: user?.id,
-    //       recipientType: 'User',
-    //       data: {
-    //         'Company Name': 'Connect',
-    //       },
-    //     },
-    //   } as Request,
-    //   res
-    // );
+    // Send notifications (SMS and in-app) to welcome the user
+    const notificationData = {
+      notificationType: 'sms',
+      templateName: 'welcome_cus',
+      recipientNumber: mobileNumber,
+      recipientType: 'Customer',
+      data: {
+        'Customer Name': user?.personalDetails?.fullName,
+        'Company Name': 'Connect',
+      },
+    };
+
+    try {
+      const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(smsResult.message);
+
+      notificationData.notificationType = 'inApp';
+      const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(inAppResult.message);
+    } catch (notificationError: any) {
+      console.error(
+        'Signup successful but error sending notification:',
+        notificationError.message || notificationError
+      );
+    }
 
     res.status(200).json({
       status: 'success',
