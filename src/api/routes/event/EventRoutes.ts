@@ -10,7 +10,7 @@ import {
 import {
   getAllCreatedDraft,
   getDraftDetails,
-  postCreatedEventDraft,
+  //   postCreatedEventDraft,
 } from '@/api/controllers/event/DraftEventController';
 import {
   getBookedAllTicket,
@@ -42,9 +42,8 @@ Router.post('/booked/ticket/get-booked', getBookedAllTicket);
 Router.post('/booked/ticket/ticket-details', getBookedTicketDetails);
 
 // DRAFT
-Router.post('/created/create-draft', postCreatedEventDraft);
+// Router.post('/created/create-draft', postCreatedEventDraft);
 Router.post('/created/draft/all-draft', getAllCreatedDraft);
 Router.post('/created/draft/draft-details', getDraftDetails);
 
 export default Router;
- 
