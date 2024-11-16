@@ -51,6 +51,9 @@ export const getCreatedEventDetails = async (req: Request, res: Response) => {
 
   try {
     const eventDetails = await eventRepository.find({ where: { id } });
+    if (!eventDetails || eventDetails.length === 0) {
+      return res.status(204).json({ status: 'error', message: 'Event not found', data: [] });
+    }
     return res.status(200).json({ status: 'success', message: 'Event fetched successfully', data: eventDetails });
   } catch (error) {
     console.error('Error getting event details:', error);
@@ -74,7 +77,7 @@ export const cancelCreatedEvent = async (req: Request, res: Response) => {
     let event = await eventRepository.findOne({ where: { id } });
 
     if (!event) {
-      return res.status(404).json({ status: 'error', message: 'Event not found' });
+      return res.status(204).json({ status: 'error', message: 'Event not found' });
     }
 
     event.status = 'cancelled';
@@ -109,8 +112,8 @@ export const rescheduleCreatedEvent = async (req: Request, res: Response) => {
     let event = await eventRepository.findOne({ where: { id } });
 
     // Check if the event exists
-    if (!event) {
-      return res.status(404).json({ status: 'error', message: 'Event not found' });
+    if (!event || event.length === 0) {
+      return res.status(204).json({ status: 'error', message: 'Event not found' });
     }
 
     // Update the event's start and end datetimes, and set status to 'rescheduled'
