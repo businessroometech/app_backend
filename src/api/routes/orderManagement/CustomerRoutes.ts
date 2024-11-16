@@ -30,10 +30,8 @@ Router.post('/providers', getProvidedServicesByCategoryAndSubCategory);
 Router.post('/providers/cities', authenticate, getDistinctCitiesBySubCategory);
 Router.post('/timeSlots', authenticate, getAvailableTimeSlots);
 
-//  ===================================      EVENT MANAGEMENT       ========================================
 Router.post('/event/providers', getEventServiceProviders);
 Router.post('/event/providers/book', postBookServiceProvider);
-//  =========================================================================================================
 
 Router.post('/order-history', authenticate, fetchOrderHistory);
 
