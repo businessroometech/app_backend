@@ -154,7 +154,7 @@ export const getProvidedServicesByCategoryAndSubCategory = async (req: Request, 
 
     // Applying subcategory filter based on subCategoryName or subCategoryId
     if (subCategoryName) {
-      providedServicesQuery.andWhere('LOWER(subCategory.name) = :subCategoryName', { subCategoryName: subCategoryName.toLowerCase() });
+      providedServicesQuery.andWhere('LOWER(subCategory.subCategoryName) = :subCategoryName', { subCategoryName: subCategoryName.toLowerCase() });
     } else if (subCategoryId) {
       providedServicesQuery.andWhere('providedService.subCategoryId = :subCategoryId', { subCategoryId });
     }
