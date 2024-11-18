@@ -10,7 +10,7 @@ import {
 import {
   getAllCreatedDraft,
   getDraftDetails,
-  postCreatedEventDraft,
+  //   postCreatedEventDraft,
 } from '@/api/controllers/event/DraftEventController';
 import {
   getBookedAllTicket,
@@ -29,22 +29,21 @@ Router.post('/created/get-event-details', getCreatedEventDetails);
 Router.post('/created/cancel', cancelCreatedEvent);
 Router.post('/created/reschedule', rescheduleCreatedEvent);
 Router.post('/created/invite/participants', getEventParticipants);
-Router.post('/created/invite/send',authenticate, postSendEventInviation);
+Router.post('/created/invite/send', postSendEventInviation);
 
 // BOOKED EVENT
-Router.post('/booked/get-all-booked-event',authenticate, BookedEvent);
-Router.post('/booked/get-booked-details',authenticate, getBookedEventDetails);
+Router.post('/booked/get-all-booked-event', BookedEvent);
+Router.post('/booked/get-booked-details', getBookedEventDetails);
 
 // TICKET
-Router.post('/created/ticket/get-booked',authenticate, getCreatedAllTicket);
-Router.post('/created/ticket/ticket-details',authenticate, getCreatedTicketDetails);
-Router.post('/booked/ticket/get-booked',authenticate, getBookedAllTicket);
-Router.post('/booked/ticket/ticket-details',authenticate, getBookedTicketDetails);
+Router.post('/created/ticket/get-booked', getCreatedAllTicket);
+Router.post('/created/ticket/ticket-details', getCreatedTicketDetails);
+Router.post('/booked/ticket/get-booked', getBookedAllTicket);
+Router.post('/booked/ticket/ticket-details', getBookedTicketDetails);
 
 // DRAFT
-Router.post('/created/create-draft',authenticate, postCreatedEventDraft);
-Router.post('/created/draft/all-draft',authenticate, getAllCreatedDraft);
-Router.post('/created/draft/draft-details',authenticate, getDraftDetails);
+// Router.post('/created/create-draft', postCreatedEventDraft);
+Router.post('/created/draft/all-draft', getAllCreatedDraft);
+Router.post('/created/draft/draft-details', getDraftDetails);
 
 export default Router;
- 

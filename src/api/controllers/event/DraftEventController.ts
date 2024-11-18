@@ -1,33 +1,37 @@
 import { EventDraft } from '@/api/entity/eventManagement/EventDraft';
-import { Sector } from '@/api/entity/sector/Sector';
 import { UserLogin } from '@/api/entity/user/UserLogin';
-import { validateAndFetchEntities, ValidationConfig } from '@/components/validateFields';
+import { validateRequestBody } from '@/common/utils/requestBodyValidation';
 import { AppDataSource } from '@/server';
 import { Request, Response } from 'express';
 
 // CREATING
-export const postCreatedEventDraft = async (req: Request, res: Response) => {
-  try {
-  } catch (error) {
-    console.error('Error creating invoice:', error);
-    return res.status(500).json({ status: 'error', message: 'Error creating invoice' });
-  }
-};
+// export const postCreatedEventDraft = async (req: Request, res: Response) => {
+//   try {
+//   } catch (error) {
+//     console.error('Error creating invoice:', error);
+//     return res.status(500).json({ status: 'error', message: 'Error creating invoice' });
+//   }
+// };
 
 export const getAllCreatedDraft = async (req: Request, res: Response) => {
+  const validationRules = {
+    userId: { required: false, type: 'string' },
+  };
+  // Request validation start
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
+
   const userLoginRepository = AppDataSource.getRepository(UserLogin);
-  const eventRepository = AppDataSource.getRepository(Event);
   const draftRepository = AppDataSource.getRepository(EventDraft);
 
-  const validationConfigs: ValidationConfig[] = [
-    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
-    { field: 'eventId', repository: eventRepository, errorMessage: 'Please provide eventId' },
-  ];
-  const entities = await validateAndFetchEntities(req, res, validationConfigs);
-  if (!entities) return;
+  const { userId } = req.body;
 
   try {
-    const drafts = await draftRepository.find();
+    const drafts = await draftRepository.find({ where: { userId } });
+    if (!drafts || drafts.length === 0)
+      return res.status(204).json({ status: 'success', message: 'Drafts is empty', data: drafts });
 
     return res.status(200).json({ status: 'success', message: 'Drafts fetched successfully', data: drafts });
   } catch (error) {
@@ -37,23 +41,26 @@ export const getAllCreatedDraft = async (req: Request, res: Response) => {
 };
 
 export const getDraftDetails = async (req: Request, res: Response) => {
-  const userLoginRepository = AppDataSource.getRepository(UserLogin);
-  const sectorRepository = AppDataSource.getRepository(Sector);
-  const eventRepository = AppDataSource.getRepository(Event);
+  const validationRules = {
+    userId: { required: false, type: 'string' },
+    id: { required: false, type: 'string' },
+  };
+
+  const errors = validateRequestBody(req.body, validationRules);
+  if (errors) {
+    return res.status(400).json({ errors });
+  }
+
   const draftRepository = AppDataSource.getRepository(EventDraft);
 
-  const validationConfigs: ValidationConfig[] = [
-    { field: 'userId', repository: userLoginRepository, errorMessage: 'Please provide userId' },
-    { field: 'eventId', repository: eventRepository, errorMessage: 'Please provide eventId' },
-    { field: 'sectorId', repository: sectorRepository, errorMessage: 'Please provide sectorId' },
-  ];
+  const { id, userId } = req.body;
 
-  const entities = await validateAndFetchEntities(req, res, validationConfigs);
-  if (!entities) return;
+  if (userId) return res.status(500).json({ status: 'error', message: 'User Id is not defined' });
 
-  const { id } = req.body;
   try {
     const drafts = await draftRepository.find({ where: { id } });
+    if (!drafts || drafts.length === 0)
+      return res.status(204).json({ status: 'error', message: 'No draft found', data: [] });
 
     return res.status(200).json({ status: 'success', message: 'Drafts fetched successfully', data: drafts });
   } catch (error) {
