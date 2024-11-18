@@ -1,29 +1,15 @@
-import { randomBytes } from 'crypto';
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  BaseEntity,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-  BeforeInsert,
-  OneToOne,
-  JoinColumn,
-} from 'typeorm';
-import { EventBooking } from './EventBooking';
-import { DressCode } from './DressCode';
-import { EventMedia } from './EventMedia';
-import { EventParticipant } from './EventParticipant';
-import { EventPayment } from './EventPayment';
-import { EventRule } from './EventRule';
-import { EventSchedule } from './EventSchedule';
-import { PersonalDetails } from '../profile/personal/PersonalDetails';
-import { login } from '@/api/controllers/auth/Login';
-import { UserLogin } from '../user/UserLogin';
-import { EventOrganiser } from './EventOrganiser';
- 
+import { randomBytes } from "crypto";
+import { BaseEntity, BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { DressCode } from "./DressCode";
+import { EventBooking } from "./EventBooking";
+import { EventMedia } from "./EventMedia";
+import { EventParticipant } from "./EventParticipant";
+import { EventPayment } from "./EventPayment";
+import { EventRule } from "./EventRule";
+import { EventSchedule } from "./EventSchedule";
+import { EventOrganiser } from "./EventOrganiser";
+import { UserLogin } from "../user/UserLogin";
+
 @Entity({ name: 'EventDraft' })
 export class EventDraft extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -69,10 +55,10 @@ export class EventDraft extends BaseEntity {
   addressId!: string;
 
   @Column({ type: 'text', nullable: true })
-  bannerImageUrl?: string;
+  bannerImageId?: string;
 
-  @Column({ type: 'text', nullable: true })
-  mediaImageUrl?: string;
+  // @Column({ type: 'text', nullable: true })
+  // mediaImageUrl?: string;
 
   @Column({ type: 'text', nullable: true })
   livestreamLink?: string;
@@ -81,12 +67,12 @@ export class EventDraft extends BaseEntity {
   platformName?: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  hostName?: string; 
+  hostName?: string;
 
   @Column({ type: 'text', nullable: true })
-  mapLink?: string; 
+  mapLink?: string;
 
-  @Column({ type: 'char', length: 255, nullable: true, default: "false" })
+  @Column({ type: 'char', length: 255, nullable: true, default: 'false' })
   inclusions?: string;
 
   @Column({ type: 'int', nullable: true, default: 0 })
@@ -107,24 +93,30 @@ export class EventDraft extends BaseEntity {
   @Column({ type: 'varchar', length: 50, nullable: true })
   additinalTitle?: string;
 
-  @Column({ type: 'simple-array', nullable:true })
+  @Column({ type: 'simple-array', nullable: true })
   hashtags!: string[];
 
   @Column({ type: 'timestamp', nullable: true })
   registrationDeadline?: Date;
 
-  @Column({ type: 'simple-array', nullable:true })
-  organizerId!: string[];
+  @Column({ type: 'simple-array', nullable: true })
+  organizer!: string[];
 
-  @Column({ type: 'simple-array', nullable:true })
+  @Column({ type: 'simple-array', nullable: true })
   schedules!: string[];
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   cancellationFee?: number;
 
+  @Column({ type: 'varchar', precision: 10, scale: 2, nullable: true })
+  cancellationMedia?: string;
+
+  @Column({ type: 'varchar', precision: 10, scale: 2, nullable: true })
+  refundMedia?: string;
+
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   refundCharges?: number;
-  
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
@@ -151,30 +143,31 @@ export class EventDraft extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToMany(() => DressCode, (dressCode) => dressCode.eventDraft)
-  dressCodes!: DressCode[];
+  // @OneToMany(() => DressCode, (dressCode) => dressCode.eventDraft)
+  // dressCodes!: DressCode[];
 
-  @OneToMany(() => EventBooking, (eventBooking) => eventBooking.eventDraft)
-  eventBookings!: EventBooking[];
+  // @OneToMany(() => EventBooking, (eventBooking) => eventBooking.eventDraft)
+  // eventBookings!: EventBooking[];
 
-  @OneToMany(() => EventMedia, (eventMedia) => eventMedia.eventDraft)
-  eventMedia!: EventMedia[];
+  // @OneToMany(() => EventMedia, (eventMedia) => eventMedia.eventDraft)
+  // eventMedia!: EventMedia[];
 
-  @OneToMany(() => EventParticipant, (eventParticipant) => eventParticipant.eventDraft)
-  eventParticipants!: EventParticipant[];
+  // @OneToMany(() => EventParticipant, (eventParticipant) => eventParticipant.eventDraft)
+  // eventParticipants!: EventParticipant[];
 
-  @OneToMany(() => EventPayment, (eventPayment) => eventPayment.eventDraft)
-  eventPayments!: EventPayment[];
+  // @OneToMany(() => EventPayment, (eventPayment) => eventPayment.eventDraft)
+  // eventPayments!: EventPayment[];
 
-  @OneToMany(() => EventRule, (eventRule) => eventRule.eventDraft)
-  eventRules!: EventRule[];
+  // @OneToMany(() => EventRule, (eventRule) => eventRule.eventDraft)
+  // eventRules!: EventRule[];
 
-  @OneToMany(() => EventSchedule, (eventSchedule) => eventSchedule.eventDraft)
-  eventSchedules!: EventSchedule[];
+  // @OneToMany(() => EventSchedule, (eventSchedule) => eventSchedule.eventDraft)
+  // eventSchedules!: EventSchedule[];
 
-  @OneToMany(() => EventOrganiser, (organiser) => organiser.id)
-  organiser!: EventOrganiser[];
+  // @OneToMany(() => EventOrganiser, (organiser) => organiser.eventDraft)
+  // organisers!: EventOrganiser[];
 
   @ManyToOne(() => UserLogin, (user) => user.eventDrafts)
+  @JoinColumn({ name: 'userId' }) 
   user!: UserLogin;
 }

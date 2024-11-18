@@ -12,6 +12,9 @@ export class DressCode extends BaseEntity {
     @Column({ type: 'uuid', nullable:true })
     eventId!: string;
 
+    // @Column({ type: 'uuid', nullable:true })
+    // eventDraftId!: string;
+
     @Column({ type: 'varchar', length: 50, nullable: true })
     gender?: string;
 
@@ -47,9 +50,9 @@ export class DressCode extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.dressCodes)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.dressCodes)
+    // event !: Event;
 
-    @ManyToOne(() => Event, event => event.dressCodes)
-    eventDraft !: EventDraft;
+    // @ManyToOne(() => EventDraft, (eventDraft) => eventDraft.dressCodes, { nullable: true })
+    // eventDraft?: EventDraft;
 }

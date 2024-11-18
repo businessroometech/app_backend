@@ -9,8 +9,11 @@ export class EventSchedule extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', nullable:true })
     eventId!: string;
+
+    // @Column({ type: 'uuid', nullable:true })
+    // eventDraftId!: string;
 
     @Column({ type: 'varchar', length: 255 })
     title!: string;
@@ -50,9 +53,9 @@ export class EventSchedule extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventSchedules)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.eventSchedules)
+    // event !: Event;
 
-    @ManyToOne(() => Event, event => event.eventSchedules)
-    eventDraft !: EventDraft;
+    // @ManyToOne(() => EventDraft, eventDraft => eventDraft.eventSchedules)
+    // eventDraft !: EventDraft;
 }

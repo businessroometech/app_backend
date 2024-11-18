@@ -69,10 +69,10 @@ export class Event extends BaseEntity {
   addressId!: string;
 
   @Column({ type: 'text', nullable: true })
-  bannerImageUrl?: string;
+  bannerImageId?: string;
 
-  @Column({ type: 'text', nullable: true })
-  mediaImageUrl?: string;
+  // @Column({ type: 'text', nullable: true })
+  // mediaImageUrl?: string;
 
   @Column({ type: 'text', nullable: true })
   livestreamLink?: string;
@@ -114,7 +114,7 @@ export class Event extends BaseEntity {
   registrationDeadline?: Date;
 
   @Column({ type: 'simple-array', nullable:true })
-  organizerId!: string[];
+  organizer!: string[];
 
   @Column({ type: 'simple-array', nullable:true })
   schedules!: string[];
@@ -124,6 +124,12 @@ export class Event extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   refundCharges?: number;
+  
+  @Column({ type: 'varchar', precision: 10, scale: 2, nullable: true })
+  cancellationMedia?: string;
+
+  @Column({ type: 'varchar', precision: 10, scale: 2, nullable: true })
+  refundMedia?: string;
   
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -151,29 +157,29 @@ export class Event extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToMany(() => DressCode, (dressCode) => dressCode.event)
-  dressCodes!: DressCode[];
+  // @OneToMany(() => DressCode, (dressCode) => dressCode.event)
+  // dressCodes!: DressCode[];
 
-  @OneToMany(() => EventBooking, (eventBooking) => eventBooking.event)
-  eventBookings!: EventBooking[];
+  // @OneToMany(() => EventBooking, (eventBooking) => eventBooking.event)
+  // eventBookings!: EventBooking[];
 
-  @OneToMany(() => EventMedia, (eventMedia) => eventMedia.event)
-  eventMedia!: EventMedia[];
+  // @OneToMany(() => EventMedia, (eventMedia) => eventMedia.event)
+  // eventMedia!: EventMedia[];
 
-  @OneToMany(() => EventParticipant, (eventParticipant) => eventParticipant.event)
-  eventParticipants!: EventParticipant[];
+  // @OneToMany(() => EventParticipant, (eventParticipant) => eventParticipant.event)
+  // eventParticipants!: EventParticipant[];
 
-  @OneToMany(() => EventPayment, (eventPayment) => eventPayment.event)
-  eventPayments!: EventPayment[];
+  // @OneToMany(() => EventPayment, (eventPayment) => eventPayment.event)
+  // eventPayments!: EventPayment[];
 
-  @OneToMany(() => EventRule, (eventRule) => eventRule.event)
-  eventRules!: EventRule[];
+  // @OneToMany(() => EventRule, (eventRule) => eventRule.event)
+  // eventRules!: EventRule[];
 
-  @OneToMany(() => EventSchedule, (eventSchedule) => eventSchedule.event)
-  eventSchedules!: EventSchedule[];
+  // @OneToMany(() => EventSchedule, (eventSchedule) => eventSchedule.event)
+  // eventSchedules!: EventSchedule[];
 
-  @OneToMany(() => EventOrganiser, (organiser) => organiser.eventId)
-  organiser!: EventOrganiser[];
+  // @OneToMany(() => EventOrganiser, (organiser) => organiser.eventId)
+  // organiser!: EventOrganiser[];
 
   @ManyToOne(() => UserLogin, (user) => user.event)
   user!: UserLogin;

@@ -9,7 +9,6 @@ import {
     OneToMany, 
     OneToOne 
 } from 'typeorm';
-import { Event } from './Event';
 import { EventBooking } from './EventBooking';
 import { EventParticipant } from './EventParticipant';
 import { SoldTicket } from './SoldTicket';
@@ -64,3 +63,5 @@ export class Ticket extends BaseEntity {
     @OneToOne(() => SoldTicket, soldTicket => soldTicket.ticket, { nullable: true })
     soldTicket?: SoldTicket;
 }
+
+

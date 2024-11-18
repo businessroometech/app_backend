@@ -9,8 +9,11 @@ export class EventRule extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', nullable:true })
     eventId!: string;
+
+    // @Column({ type: 'uuid', nullable:true })
+    // eventDraftId!: string;
 
     @Column({ type: 'varchar', length: 100 })
     ruleType!: string;
@@ -44,9 +47,9 @@ export class EventRule extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventRules)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.eventRules)
+    // event !: Event;
 
-    @ManyToOne(() => Event, event => event.eventRules)
-    eventDraft !: EventDraft;
+    // @ManyToOne(() => EventDraft, eventDraft => eventDraft.eventRules)
+    // eventDraft !: EventDraft;
 }

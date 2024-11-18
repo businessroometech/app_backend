@@ -56,9 +56,9 @@ export class EventPayment extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventPayments)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.eventPayments)
+    // event !: Event;
 
-    @ManyToOne(() => Event, event => event.eventPayments)
-    eventDraft !: EventDraft;
+    // @ManyToOne(() => Event, event => event.eventPayments)
+    // eventDraft !: EventDraft;
 }

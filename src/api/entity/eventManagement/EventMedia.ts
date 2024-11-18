@@ -9,8 +9,11 @@ export class EventMedia extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid' , nullable:true})
     eventId!: string;
+
+    // @Column({ type: 'uuid' , nullable:true})
+    // eventDraftId!: string;
 
     @Column({ type: 'enum', enum: ['image', 'video', 'document'] })
     mediaType!: 'image' | 'video' | 'document';
@@ -50,9 +53,9 @@ export class EventMedia extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventMedia)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.eventMedia)
+    // event !: Event;
 
-    @ManyToOne(() => Event, event => event.eventMedia)
-    eventDraft !: EventDraft;
+    // @ManyToOne(() => EventDraft, eventDraft => eventDraft.eventMedia)
+    // eventDraft !: EventDraft;
 }

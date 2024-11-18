@@ -13,6 +13,9 @@ export class EventBooking extends BaseEntity {
     @Column({ type: 'uuid' })
     eventId!: string;
 
+    // @Column({ type: 'uuid' })
+    // eventDraftId!: string;
+
     @Column({ type: 'uuid' })
     userId!: string;
 
@@ -54,11 +57,11 @@ export class EventBooking extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventBookings)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.eventBookings)
+    // event !: Event;
 
-    @ManyToOne(() => Event, event => event.eventBookings)
-    eventDraft !: EventDraft;
+    // @ManyToOne(() => Event, event => event.eventBookings)
+    // eventDraft !: EventDraft;
 
     @OneToMany(() => Ticket, ticket => ticket.eventBooking)
     tickets !: Ticket[];

@@ -355,7 +355,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       status,
       venueName,
       addressId,
-      bannerImageUrl,
+      bannerImageId,
       livestreamLink,
       accessCode,
       registrationDeadline,
@@ -376,7 +376,12 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       eventSpecker,
       bankDetails,
       additinalTitle,
-      additinalDetail
+      additinalDetail,
+      cancellationMedia,
+      refundMedia,
+      refundCharges,
+      cancellationFee,
+      hashtags
     } = req.body;
 
     const user = await validateUserId(userId, res);
@@ -408,7 +413,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         status,
         venueName,
         addressId,
-        bannerImageUrl,
+        bannerImageId,
         livestreamLink,
         accessCode,
         registrationDeadline,
@@ -424,7 +429,12 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         eventSpecker,
         bankDetails,
         additinalTitle,
-        additinalDetail
+        additinalDetail,
+        cancellationMedia,
+        refundMedia,
+        refundCharges,
+        cancellationFee,
+        hashtags
       });
     } else {
       event = eventRepository.create({
@@ -440,7 +450,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         status,
         venueName,
         addressId,
-        bannerImageUrl,
+        bannerImageId,
         livestreamLink,
         accessCode,
         registrationDeadline,
@@ -456,7 +466,12 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         eventSpecker,
         bankDetails,
         additinalTitle,
-        additinalDetail
+        additinalDetail,
+        cancellationMedia,
+        refundMedia,
+        refundCharges,
+        cancellationFee,
+        hashtags
       });
     }
 
@@ -504,7 +519,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (dressCodes) {
       const dressCodeRepo = AppDataSource.getRepository(DressCode);
       event.dressCodes = await createRelatedEntities({
@@ -518,7 +533,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (eventMedia) {
       const eventMediaRepo = AppDataSource.getRepository(EventMedia);
       event.eventMedia = await createRelatedEntities({
@@ -534,7 +549,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (eventPartner) {
       const eventPartnerRepo = AppDataSource.getRepository(EventPartner);
       event.eventPartner = await createRelatedEntities({
@@ -549,7 +564,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (eventSpecker) {
       const eventSpeckerRepo = AppDataSource.getRepository(EventSpecker);
       event.eventSpecker = await createRelatedEntities({
@@ -563,7 +578,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (bankDetails) {
       const bankDetailsRepo = AppDataSource.getRepository(BankDetails);
       event.bankDetails = await createRelatedEntities({
@@ -580,7 +595,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (eventRules) {
       const eventRuleRepo = AppDataSource.getRepository(EventRule);
       event.eventRules = await createRelatedEntities({
@@ -594,7 +609,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (schedules) {
       const eventScheduleRepo = AppDataSource.getRepository(EventSchedule);
       event.schedules = await createRelatedEntities({
@@ -610,7 +625,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         }),
       });
     }
-    
+
     if (organizer) {
       const organizerRepo = AppDataSource.getRepository(EventOrganiser);
       event.organizer = await createRelatedEntities({
@@ -625,7 +640,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           email: item.email,
         }),
       });
-    
+
       if (organizer.socialMedia) {
         const socialMediaRepo = AppDataSource.getRepository(SocialMediaLink);
         event.organizer.socialMedia = await createRelatedEntities({
@@ -639,7 +654,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           }),
         });
       }
-    }    
+    }
 
     const notificationData = {
       notificationType: 'inApp',

@@ -19,7 +19,10 @@ export class EventOrganiser extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id?: string;
 
-  @Column({ type: 'uuid' })
+  // @Column({ type: 'uuid', nullable: true  })
+  // eventDraftId!: string;
+
+  @Column({ type: 'uuid', nullable: true  })
   eventId!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -35,8 +38,12 @@ export class EventOrganiser extends BaseEntity {
   email?: string;
 
   @OneToMany(() => SocialMediaLink, (socialMedia) => socialMedia.organiser, { cascade: true })
-  socialmedia?: SocialMediaLink[];
+  socialMediaLinks!: SocialMediaLink[];
   
+  // @ManyToOne(() => EventDraft, (eventDraft) => eventDraft.organisers)
+  // @JoinColumn({ name: 'eventDraftId' }) 
+  // eventDraft!: EventDraft;
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
   
@@ -75,15 +82,15 @@ export class SocialMediaLink extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   link?: string;
 
-  @ManyToOne(() => EventOrganiser, (organiser) => organiser.socialmedia)
-  @JoinColumn({ name: 'organiserId' })
-  organiser?: EventOrganiser;
+  @ManyToOne(() => EventOrganiser, (organiser) => organiser.socialMediaLinks)
+  @JoinColumn({ name: 'organiserId' }) 
+  organiser!: EventOrganiser;
 
-  @ManyToOne(() => Event, (event) => event.organiser)
-  event?: Event;
+  // @ManyToOne(() => Event, (event) => event.organiser)
+  // event?: Event;
 
-  @ManyToOne(() => Event, (event) => event.organiser)
-  eventDraft?: EventDraft;
+  // @ManyToOne(() => Event, (event) => event.organiser)
+  // eventDraft?: EventDraft;
   
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
