@@ -385,13 +385,13 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
       const existingAnswer = existingAnswerMap.get(ele.questionTemplateId);
 
       if (existingAnswer) {
-        existingAnswer.answerText = ele.answerText;
+        existingAnswer.answerTexts = ele.answerTexts;
         return existingAnswer;
       } else {
         const newAnswer = new ProviderAnswer();
         newAnswer.serviceProviderId = userId;
         newAnswer.questionTemplateId = ele.questionTemplateId;
-        newAnswer.answerText = ele.answerText;
+        newAnswer.answerTexts = ele.answerTexts;
         return newAnswer;
       }
     });

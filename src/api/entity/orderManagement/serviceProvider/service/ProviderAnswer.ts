@@ -21,8 +21,8 @@ export class ProviderAnswer extends BaseEntity {
     @Column({ type: 'uuid' })
     questionTemplateId!: string;
 
-    @Column({ type: 'text', nullable: false }) 
-    answerText!: string;
+    @Column({ type: 'simple-array' }) 
+    answerTexts!: string[];
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
