@@ -335,7 +335,7 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
       return res.status(400).json({ status: 'error', message: 'UserId not found' });
     }
 
-    if (!Array.isArray(answers) || answers.some((a) => !a.questionTemplateId || !a.answerText)) {
+    if (!Array.isArray(answers) || answers.some((a) => !a.questionTemplateId || !a.answerTexts)) {
       return res.status(400).json({ status: 'error', message: 'Invalid answers format' });
     }
 
