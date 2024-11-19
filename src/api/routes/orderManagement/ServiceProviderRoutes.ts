@@ -33,7 +33,7 @@ Router.post('/service-management/get', authenticate, getProvidedService);
 Router.post('/service-management/add-or-update', authenticate, addOrUpdateProvidedService);
 Router.delete('/service-management', authenticate, deleteProvidedService);
 
-Router.post('/service-management/questions', getQuestions);
+Router.post('/service-management/questions', authenticate, getQuestions);
 
 // home
 Router.post('/by_year_month_week', authenticate, getServiceJobsBy_Year_Month_Week);

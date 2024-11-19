@@ -7,9 +7,11 @@ import {
     UpdateDateColumn,
     BaseEntity,
     BeforeInsert,
+    Unique,
 } from 'typeorm';
 
 @Entity({ name: 'ProviderAnswer' })
+@Unique(['serviceProviderId', 'questionTemplateId'])
 export class ProviderAnswer extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')

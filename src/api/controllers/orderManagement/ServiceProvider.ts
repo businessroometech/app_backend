@@ -378,19 +378,18 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
     });
 
     const existingAnswerMap = new Map(
-      existingAnswers.map((answer) => [answer.questionTemplateId, answer])
+      existingAnswers.map((answer) => [answer.questionTemplateId.trim().toLowerCase(), answer])
     );
-
+    
     const providerAnswers = answers.map((ele: any) => {
-      const existingAnswer = existingAnswerMap.get(ele.questionTemplateId);
-
+      const existingAnswer = existingAnswerMap.get(ele.questionTemplateId.trim().toLowerCase());
       if (existingAnswer) {
         existingAnswer.answerTexts = ele.answerTexts;
         return existingAnswer;
       } else {
         const newAnswer = new ProviderAnswer();
         newAnswer.serviceProviderId = userId;
-        newAnswer.questionTemplateId = ele.questionTemplateId;
+        newAnswer.questionTemplateId = ele.questionTemplateId.trim().toLowerCase();
         newAnswer.answerTexts = ele.answerTexts;
         return newAnswer;
       }
