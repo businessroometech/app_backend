@@ -68,7 +68,7 @@ export class Event extends BaseEntity {
   addressId!: string;
   
   @Column({ type: 'text', nullable: true })
-  bannerImageUrl?: string;
+  bannerImageId?: string;
   
   @Column({ type: 'text', nullable: true })
   livestreamLink?: string;
@@ -95,7 +95,7 @@ export class Event extends BaseEntity {
   registrationDeadline?: Date;
   
   @Column({ type: 'uuid' })
-  organizerId!: string;
+  organizer!: string;
   
   @Column({ type: 'simple-array' })
   schedules!: string[];
