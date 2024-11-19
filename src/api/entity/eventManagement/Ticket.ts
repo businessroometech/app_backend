@@ -1,6 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany, OneToOne } from 'typeorm';
-import { Event } from './Event';
-import { randomBytes } from 'crypto';
+import { 
+    Entity, 
+    PrimaryGeneratedColumn, 
+    Column, 
+    BaseEntity, 
+    ManyToOne, 
+    CreateDateColumn, 
+    UpdateDateColumn, 
+    OneToMany, 
+    OneToOne 
+} from 'typeorm';
 import { EventBooking } from './EventBooking';
 import { EventParticipant } from './EventParticipant';
 import { SoldTicket } from './SoldTicket';
@@ -26,14 +34,14 @@ export class Ticket extends BaseEntity {
     @Column({ type: 'boolean' })
     isFree!: boolean;
 
-    @Column({ type: 'text', nullable: true })
-    inclusions?: string;
+    @Column({ type: 'simple-array', nullable: true })
+    inclusions?: string[];
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
 
     @Column({ type: 'varchar', default: 'system', nullable: true })
-    updatedBy!: string;
+    updatedBy?: string;
 
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
     createdAt!: Date;
@@ -46,22 +54,14 @@ export class Ticket extends BaseEntity {
     })
     updatedAt!: Date;
 
-    @BeforeInsert()
-    async beforeInsert() {
-        this.id = this.generateUUID();
-    }
-
-    private generateUUID(): string {
-        return randomBytes(16).toString('hex');
-    }
-
-    @ManyToOne(() => EventBooking, eventBooking => eventBooking.tickets)
-    eventBooking !: EventBooking;
+    @ManyToOne(() => EventBooking, eventBooking => eventBooking.tickets, { nullable: true })
+    eventBooking?: EventBooking;
 
     @OneToMany(() => EventParticipant, eventParticipant => eventParticipant.ticket)
-    eventParticipants !: EventParticipant[];
+    eventParticipants!: EventParticipant[];
 
-
-  @OneToOne(() => SoldTicket, soldTicket => soldTicket.ticket)
-  soldTicket!: SoldTicket[];
+    @OneToOne(() => SoldTicket, soldTicket => soldTicket.ticket, { nullable: true })
+    soldTicket?: SoldTicket;
 }
+
+

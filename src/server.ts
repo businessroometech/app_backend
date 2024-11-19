@@ -79,6 +79,8 @@ import { ServiceQuestion } from './api/entity/orderManagement/serviceProvider/se
 import { ServiceQuestionOption } from './api/entity/orderManagement/serviceProvider/service/ServiceQuestionOption';
 import { ProviderAnswer } from './api/entity/orderManagement/serviceProvider/service/ProviderAnswer';
 import { CategoryQuestionMapping } from './api/entity/orderManagement/serviceProvider/service/CategoryQuestionMapping';
+import { EventPartner } from './api/entity/eventManagement/EventPartner';
+import { EventSpecker } from './api/entity/eventManagement/EventSpeckers';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -137,8 +139,8 @@ const AppDataSource = new DataSource({
     SocialMediaLink,
     SoldTicket,
     ServiceJobRescheduled,
-  ],
-  synchronize: false,
+  , EventPartner, EventSpecker],
+  synchronize: true,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 

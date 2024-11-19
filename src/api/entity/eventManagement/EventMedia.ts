@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
 import { Event } from './Event';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: "EventMedia" })
 export class EventMedia extends BaseEntity {
@@ -8,8 +9,11 @@ export class EventMedia extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid' , nullable:true})
     eventId!: string;
+
+    // @Column({ type: 'uuid' , nullable:true})
+    // eventDraftId!: string;
 
     @Column({ type: 'enum', enum: ['image', 'video', 'document'] })
     mediaType!: 'image' | 'video' | 'document';
@@ -49,6 +53,9 @@ export class EventMedia extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventMedias)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.eventMedia)
+    // event !: Event;
+
+    // @ManyToOne(() => EventDraft, eventDraft => eventDraft.eventMedia)
+    // eventDraft !: EventDraft;
 }

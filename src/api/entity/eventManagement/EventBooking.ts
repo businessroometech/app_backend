@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, OneToMany } from 'typeorm';
 import { Event } from './Event';
 import { Ticket } from './Ticket';
+import { EventDraft } from './EventDraft';
 
 @Entity({ name: "EventBooking" })
 export class EventBooking extends BaseEntity {
@@ -11,6 +12,9 @@ export class EventBooking extends BaseEntity {
 
     @Column({ type: 'uuid' })
     eventId!: string;
+
+    // @Column({ type: 'uuid' })
+    // eventDraftId!: string;
 
     @Column({ type: 'uuid' })
     userId!: string;
@@ -53,8 +57,11 @@ export class EventBooking extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    @ManyToOne(() => Event, event => event.eventBookings)
-    event !: Event;
+    // @ManyToOne(() => Event, event => event.eventBookings)
+    // event !: Event;
+
+    // @ManyToOne(() => Event, event => event.eventBookings)
+    // eventDraft !: EventDraft;
 
     @OneToMany(() => Ticket, ticket => ticket.eventBooking)
     tickets !: Ticket[];

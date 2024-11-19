@@ -100,7 +100,7 @@ export class UserLogin extends BaseEntity {
   @OneToMany(() => Event,(details) => details.user, { cascade: true })
   event!: Event;
 
-  @OneToMany(() => EventDraft, (eventDraft) => eventDraft.user)
+  @OneToMany(() => EventDraft, (eventDraft) => eventDraft.user, { cascade: true })
   eventDrafts!: EventDraft[];
   
   @OneToMany(() => SoldTicket, (soldTicket) => soldTicket.boughtBy)

@@ -19,6 +19,10 @@ import { validateRequestBody } from '@/common/utils/requestBodyValidation';
 import { EventOrganiser, SocialMediaLink } from '@/api/entity/eventManagement/EventOrganiser';
 import { minLength } from 'class-validator';
 import { SoldTicket } from '@/api/entity/eventManagement/SoldTicket';
+import NotificationController from '../notifications/Notification';
+import { EventPartner } from '@/api/entity/eventManagement/EventPartner';
+import { EventSpecker } from '@/api/entity/eventManagement/EventSpeckers';
+import { BankDetails } from '@/api/entity/eventManagement/BankDetails';
 // __________________________________Common Methods________________________________
 
 // Dynamic function to map and create related entities
@@ -54,7 +58,7 @@ export const validateUserId = async (userId: string, res: Response) => {
     return false;
   }
 
-  const user = await AppDataSource.getRepository(PersonalDetails).find({ where: { id: userId } });
+  const user = await AppDataSource.getRepository(PersonalDetails).find({ where: { userId } });
 
   if (!user) {
     res.status(403).json({
@@ -85,13 +89,49 @@ export const incrementCounter = async (eventId: string) => {
   return event;
 };
 
+const createTicket = catchAsyncErrors(async (req: Request, res: Response) => {
+  const { eventId, userId, ticketType, price, quantityAvailable, isFree, inclusions } = req.body;
+
+  // Validate required fields
+  if (!eventId || !ticketType || quantityAvailable === undefined) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Missing required fields',
+    });
+  }
+
+  const ticketRepository = AppDataSource.getRepository(Ticket);
+
+  // Create a new ticket
+  const ticket = ticketRepository.create({
+    eventId,
+    userId,
+    ticketType,
+    price: isFree ? 0 : price,
+    quantityAvailable,
+    isFree,
+    inclusions,
+  });
+
+  // Save the ticket
+  await ticketRepository.save(ticket);
+
+  return res.status(201).json({
+    status: 'success',
+    message: 'Ticket created successfully',
+    data: {
+      ticket,
+    },
+  });
+});
+
 // __________________________________event Ticket________________________________
 
 // Update Ticket
 export const updateTicket = catchAsyncErrors(async (req: Request, res: Response) => {
   const validationRules = {
     ticketId: { type: 'string' },
-    userId: { required: false, type: 'string',  },
+    userId: { required: false, type: 'string' },
     ticketType: { type: 'string' },
     price: { type: 'number' },
     quantityAvailable: { type: 'number' },
@@ -264,11 +304,9 @@ export const deleteTicket = async (req: Request, res: Response) => {
 // Create or Update event
 // If eventId is provided, find the event and update it. If only userId is provided, create a new event.
 // There are two entities: DraftEvent and Event. If isDraft is true, save the event in DraftEvent, otherwise save in Event.
-// also created ticket
-
 export const createOrUpdateEvent = async (req: Request, res: Response) => {
   const validationRules = {
-    eventId: { type: 'string' },
+    eventId: { required: false, type: 'string' },
     userId: { required: false, type: 'string', minLength: 10 },
     name: { required: false, type: 'string' },
     description: { required: false, type: 'string' },
@@ -276,7 +314,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
     category: { required: false, type: 'string' },
     startDatetime: { required: false, type: 'string' },
     endDatetime: { required: false, type: 'string' },
-    capacity: { required: false, type: 'number', validate: (value: number) => value > 0 },
+    capacity: { required: false, type: 'number' },
     isInviteOnly: { required: false, type: 'boolean' },
     status: { required: false, type: 'string' },
     venueName: { required: false, type: 'string' },
@@ -289,20 +327,18 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
     dressCodes: { required: false },
     eventMedia: { required: false },
     eventRules: { required: false },
-    isDraft: { required: false, type: 'boolean' },
-    ticketType: { required: false, type: 'string' },
-    price: { required: false, type: 'number' },
-    quantityAvailable: { required: false, type: 'number' },
-    isFree: { required: false, type: 'boolean' },
-    inclusions: { required: false, type: 'string' },
+    organizer: { required: false },
+    ticket: { required: false },
+    isDraft: { required: true, type: 'boolean' },
+    hostName: { required: false, type: 'string' },
+    platformName: { required: false, type: 'string' },
+    mapLink: { required: false, type: 'string' },
   };
 
-  // Request validation start
   const errors = validateRequestBody(req.body, validationRules);
   if (errors) {
     return res.status(400).json({ errors });
   }
-  // Request validation end
 
   try {
     const {
@@ -319,7 +355,7 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       status,
       venueName,
       addressId,
-      bannerImageUrl,
+      bannerImageId,
       livestreamLink,
       accessCode,
       registrationDeadline,
@@ -329,27 +365,32 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       eventMedia,
       eventRules,
       isDraft,
-      ticketType,
-      price,
-      quantityAvailable,
-      isFree,
-
+      ticket,
+      hostName,
+      platformName,
+      mapLink,
+      meetingAccessLink,
+      restrictions,
       inclusions,
+      eventPartner,
+      eventSpecker,
+      bankDetails,
+      additinalTitle,
+      additinalDetail,
+      cancellationMedia,
+      refundMedia,
+      refundCharges,
+      cancellationFee,
+      hashtags
     } = req.body;
 
     const user = await validateUserId(userId, res);
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
-    // Choose the correct repository based on the draft status
     const eventRepository = isDraft ? AppDataSource.getRepository(EventDraft) : AppDataSource.getRepository(Event);
-    const ticketRepository = AppDataSource.getRepository(Ticket);
-    const userRepository = AppDataSource.getRepository(PersonalDetails);
 
     let event: any;
 
-    // If eventId is provided, find the event by its ID
     if (eventId) {
       event = await eventRepository.findOne({ where: { id: eventId } });
       if (!event) {
@@ -359,7 +400,6 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         });
       }
 
-      // Update the existing event with new details
       Object.assign(event, {
         userId,
         name,
@@ -373,15 +413,30 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         status,
         venueName,
         addressId,
-        bannerImageUrl,
+        bannerImageId,
         livestreamLink,
         accessCode,
         registrationDeadline,
         organizer,
         schedules,
+        hostName,
+        platformName,
+        mapLink,
+        meetingAccessLink,
+        restrictions,
+        inclusions,
+        eventPartner,
+        eventSpecker,
+        bankDetails,
+        additinalTitle,
+        additinalDetail,
+        cancellationMedia,
+        refundMedia,
+        refundCharges,
+        cancellationFee,
+        hashtags
       });
     } else {
-      // If eventId is not provided, create a new event
       event = eventRepository.create({
         userId,
         name,
@@ -395,34 +450,34 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
         status,
         venueName,
         addressId,
-        bannerImageUrl,
+        bannerImageId,
         livestreamLink,
         accessCode,
         registrationDeadline,
         organizer,
         schedules,
-      });
-    }
-
-    // Save the event to the appropriate table (DraftEvent or Event)
-    const eventData = await event.save();
-    const eventDataId = eventData?.id;
-
-    let ticket;
-    if (!isDraft) {
-      ticket = ticketRepository.create({
-        eventId: eventDataId,
-        ticketType,
-        price: isFree ? 0 : price,
-        quantityAvailable,
-        isFree,
+        hostName,
+        platformName,
+        mapLink,
+        meetingAccessLink,
+        restrictions,
         inclusions,
+        eventPartner,
+        eventSpecker,
+        bankDetails,
+        additinalTitle,
+        additinalDetail,
+        cancellationMedia,
+        refundMedia,
+        refundCharges,
+        cancellationFee,
+        hashtags
       });
-
-      ticket = await ticket.save();
     }
 
-    // Dynamic function to map and create related entities
+    let savedEvent = await event.save();
+    const eventDataId = savedEvent.id;
+
     const createRelatedEntities = async ({
       repository,
       data,
@@ -434,13 +489,40 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
       eventId: string;
       mappingFunction: (item: any, eventId: string) => any;
     }) => {
-      return Promise.all(data.map((item) => repository.create(mappingFunction(item, eventId))));
+      return Promise.all(
+        data.map(async (item) => {
+          // Create the entity object
+          const entity = repository.create(mappingFunction(item, eventId));
+          console.log('entity', entity);
+
+          const savedEntity = await entity.save();
+          console.log('Saved Entity:', savedEntity);
+          return savedEntity;
+        })
+      );
     };
 
-    // Handle related entities
+    if (ticket) {
+      const ticketRepository = AppDataSource.getRepository(Ticket);
+      event.ticket = await createRelatedEntities({
+        repository: ticketRepository,
+        data: ticket,
+        eventId: eventDataId,
+        mappingFunction: (code: any, eventId: string) => ({
+          eventId,
+          userId,
+          ticketType: code.ticketType,
+          isFree: code.isFree,
+          price: code.isFree ? 0 : code.price,
+          quantityAvailable: code.quantityAvailable,
+          inclusions: code.inclusions,
+        }),
+      });
+    }
+
     if (dressCodes) {
       const dressCodeRepo = AppDataSource.getRepository(DressCode);
-      const mappedDressCodes = await createRelatedEntities({
+      event.dressCodes = await createRelatedEntities({
         repository: dressCodeRepo,
         data: dressCodes,
         eventId: eventDataId,
@@ -450,12 +532,11 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           dressCode: code.dressCode,
         }),
       });
-      event.dressCodes = mappedDressCodes;
     }
 
     if (eventMedia) {
       const eventMediaRepo = AppDataSource.getRepository(EventMedia);
-      const mappedEventMedia = await createRelatedEntities({
+      event.eventMedia = await createRelatedEntities({
         repository: eventMediaRepo,
         data: eventMedia,
         eventId: eventDataId,
@@ -467,13 +548,57 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           altText: media.altText,
         }),
       });
+    }
 
-      event.eventMedia = mappedEventMedia;
+    if (eventPartner) {
+      const eventPartnerRepo = AppDataSource.getRepository(EventPartner);
+      event.eventPartner = await createRelatedEntities({
+        repository: eventPartnerRepo,
+        data: eventPartner,
+        eventId: eventDataId,
+        mappingFunction: (code: any, eventId: any) => ({
+          eventId,
+          imgUrl: code.imgUrl,
+          name: code.name,
+          updatedBy: code.updatedBy,
+        }),
+      });
+    }
+
+    if (eventSpecker) {
+      const eventSpeckerRepo = AppDataSource.getRepository(EventSpecker);
+      event.eventSpecker = await createRelatedEntities({
+        repository: eventSpeckerRepo,
+        data: eventSpecker,
+        eventId: eventDataId,
+        mappingFunction: (code: any, eventId: any) => ({
+          eventId,
+          name: code.name,
+          title: code.title,
+        }),
+      });
+    }
+
+    if (bankDetails) {
+      const bankDetailsRepo = AppDataSource.getRepository(BankDetails);
+      event.bankDetails = await createRelatedEntities({
+        repository: bankDetailsRepo,
+        data: bankDetails,
+        eventId: eventDataId,
+        mappingFunction: (code: any, eventId: string) => ({
+          eventId,
+          userId,
+          bankName: code.bankName,
+          accountHolderName: code.accountHolderName,
+          accountNumber: code.accountNumber,
+          ifscCode: code.ifscCode,
+        }),
+      });
     }
 
     if (eventRules) {
       const eventRuleRepo = AppDataSource.getRepository(EventRule);
-      const mappedEventRules = await createRelatedEntities({
+      event.eventRules = await createRelatedEntities({
         repository: eventRuleRepo,
         data: eventRules,
         eventId: eventDataId,
@@ -483,12 +608,11 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           description: rule.description,
         }),
       });
-      event.eventRules = mappedEventRules;
     }
 
     if (schedules) {
       const eventScheduleRepo = AppDataSource.getRepository(EventSchedule);
-      const mappedSchedules = await createRelatedEntities({
+      event.schedules = await createRelatedEntities({
         repository: eventScheduleRepo,
         data: schedules,
         eventId: eventDataId,
@@ -500,14 +624,13 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           endTime: schedule.endTime,
         }),
       });
-      event.schedules = mappedSchedules;
     }
 
     if (organizer) {
       const organizerRepo = AppDataSource.getRepository(EventOrganiser);
-      const mappedOrganizer = await createRelatedEntities({
+      event.organizer = await createRelatedEntities({
         repository: organizerRepo,
-        data: [organizer], // Wrap in an array to match the expected input
+        data: organizer,
         eventId: eventDataId,
         mappingFunction: (item: any, eventId: string) => ({
           eventId,
@@ -515,41 +638,52 @@ export const createOrUpdateEvent = async (req: Request, res: Response) => {
           name: item.name,
           phone: item.phone,
           email: item.email,
-          socialmedia: organizer.socialMedia,
         }),
       });
 
-      event.organizer = mappedOrganizer;
-
       if (organizer.socialMedia) {
         const socialMediaRepo = AppDataSource.getRepository(SocialMediaLink);
-        const mappedSocialMedia = await createRelatedEntities({
+        event.organizer.socialMedia = await createRelatedEntities({
           repository: socialMediaRepo,
           data: organizer.socialMedia,
           eventId: eventDataId,
           mappingFunction: (media: any) => ({
             organizerId: organizer.id,
             platform: media.platform,
-            link: media.platform,
+            link: media.link,
           }),
         });
-
-        event.organizer.socialMedia = mappedSocialMedia;
       }
     }
 
-    // Determine the success message
-    const message = eventId ? 'Event updated successfully' : 'Event created successfully';
-    if (isDraft) {
-      return res.status(201).json({ status: 'success', message });
+    const notificationData = {
+      notificationType: 'inApp',
+      templateName: 'order_accepted_sp',
+      recipientId: userId,
+      recipientType: 'Events',
+      data: { OrderId: savedEvent.id, X: '3' },
+    };
+
+    try {
+      await NotificationController.sendNotification({ body: notificationData } as Request);
+      notificationData.templateName = 'order_accepted_cu';
+      notificationData.recipientType = 'Event';
+      await NotificationController.sendNotification({ body: notificationData } as Request);
+    } catch (notificationError: any) {
+      console.error('Error sending notification:', notificationError.message || notificationError);
     }
 
-    return res.status(201).json({ status: 'success', message, data: eventData });
+    savedEvent = await event.save();
+    return res.status(201).json({
+      status: 'success',
+      message: `Event ${eventId ? 'updated' : 'created'} ${isDraft ? 'and saved as a draft' : 'successfully'}.`,
+      data: savedEvent,
+    });
   } catch (error) {
     console.error('Error creating or updating event:', error);
     return res.status(500).json({
       status: 'error',
-      message: 'An error occurred while creating/updating the event.',
+      message: 'An error occurred while creating or updating the event.',
     });
   }
 };
@@ -696,8 +830,7 @@ export const eventByDetails = catchAsyncErrors(async (req: Request, res: Respons
       organiserPhone: organiser?.phone,
       organiserLocation: eventAddress?.addressLine1,
     };
-  } 
-  else if (details === 'schedule') {
+  } else if (details === 'schedule') {
     const schedules = await scheduleRepository.find({ where: { eventId: eventId } });
     console.log('schedules', schedules);
     console.log('schedulesId', schedules.id);
@@ -707,8 +840,7 @@ export const eventByDetails = catchAsyncErrors(async (req: Request, res: Respons
       scheduleEventTimeStart: schedules.startTime,
       scheduleEventTimeEnd: schedules.endTime,
     };
-  } 
-  else if (details === 'dressCode') {
+  } else if (details === 'dressCode') {
     const dressCodes = await dressCodeRepository.find({ where: { eventId: eventId } });
     response = dressCodes.map((dressCode) => ({
       dressCodeId: dressCode.id,
@@ -810,13 +942,12 @@ export const deleteUserEvent = catchAsyncErrors(async (req: Request, res: Respon
     where: { id: eventId, userId: userId },
   });
 
-  
   const ticketRepository = AppDataSource.getRepository(Ticket);
   // Find the event by eventId and userId to ensure the user has permission to delete it
   const ticket = await ticketRepository.findOne({
     where: { eventId },
   });
-  
+
   // Check if event exists
   if (!event) {
     return res.status(404).json({
@@ -824,14 +955,14 @@ export const deleteUserEvent = catchAsyncErrors(async (req: Request, res: Respon
       message: 'Event not found or you do not have permission to delete this event',
     });
   }
-  
+
   if (ticket) {
     await ticket.remove();
   }
 
   // Delete the event
-  await event.remove();  
- 
+  await event.remove();
+
   // Return a success response
   return res.status(200).json({
     status: 'success',
