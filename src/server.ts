@@ -139,8 +139,10 @@ const AppDataSource = new DataSource({
     SocialMediaLink,
     SoldTicket,
     ServiceJobRescheduled,
-  , EventPartner, EventSpecker],
-  synchronize: true,
+    EventPartner, 
+    EventSpecker
+  ],
+  synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 
