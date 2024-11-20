@@ -29,8 +29,8 @@ export const getCreatedAllTicket = async (req: Request, res: Response) => {
       .status(200)
       .json({ status: 'success', message: 'Created Ticket Event successfully', data: ticketDetails });
   } catch (error) {
-    console.error('Error creating invoice:', error);
-    return res.status(500).json({ status: 'error', message: 'Error creating invoice' });
+    console.error('Internal Server Error:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
 
@@ -52,8 +52,8 @@ export const getCreatedTicketDetails = async (req: Request, res: Response) => {
     const ticketDetails = await ticketRepository.find({ where: { id } });
     return res.status(200).json({ status: 'success', message: 'Ticket fetched successfully', data: ticketDetails });
   } catch (error) {
-    console.error('Error creating invoice:', error);
-    return res.status(500).json({ status: 'error', message: 'Error creating invoice' });
+    console.error('Internal Server Error:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
 
@@ -82,8 +82,8 @@ export const getBookedAllTicket = async (req: Request, res: Response) => {
       .status(200)
       .json({ status: 'success', message: 'Created Ticket fetched successfully', data: ticketDetails });
   } catch (error) {
-    console.error('Error creating invoice:', error);
-    return res.status(500).json({ status: 'error', message: 'Error creating invoice' });
+    console.error('Internal Server Error:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
 
@@ -105,8 +105,8 @@ export const getBookedTicketDetails = async (req: Request, res: Response) => {
     const ticketDetails = await ticketRepository.find({ where: { eventId } });
     return res.status(200).json({ status: 'success', message: 'Ticket successfully', data: ticketDetails });
   } catch (error) {
-    console.error('Error creating invoice:', error);
-    return res.status(500).json({ status: 'error', message: 'Error creating invoice' });
+    console.error('Internal Server Error:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
 
@@ -153,7 +153,7 @@ export const bookingTicket = async (req: Request, res: Response) => {
         .json({ status: 'success', message: 'Created Ticket Event successfully', data: bookingConfirm, ticketData });
     }
   } catch (error) {
-    console.error('Error creating invoice:', error);
+    console.error('Internal Server Error:', error);
     return res.status(500).json({ status: 'error', message: 'Error creating in booking event' });
   }
 };
