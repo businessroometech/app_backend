@@ -115,7 +115,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         .save();
     }
 
-    if (useCase === 'Signup') {
+    if (useCase === 'Signup' || useCase === 'Forgot Password') {
       const notificationData = {
         notificationType: 'sms',
         templateName: 'login_otp',
