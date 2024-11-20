@@ -78,7 +78,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
 
     let otpObj;
 
-    if (useCase === 'Signup' || useCase === 'Forgot password') {
+    if (useCase === 'Signup' || useCase === 'Forgot Password') {
       otpObj = await otpVerificationRepository.findOne({ where: { mobileNumber, useCase } });
     } else {
       otpObj = await otpVerificationRepository.findOne({ where: { userId, useCase } });
