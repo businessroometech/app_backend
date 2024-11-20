@@ -129,32 +129,31 @@ export const bookingTicket = async (req: Request, res: Response) => {
   const { userId, eventId, ticketId, orderId, transactionId, price } = req.body;
 
   try {
+    let ticket = await ticketRepository.findOne({ where: { id: ticketId } });
+    if (!ticket) {
+      return res.status(400).json({ status: 'error', message: 'Ticket not found' });
+    }
+
     if (!price) {
       let bookingUser = bookingRepository.create({
         userId,
         eventId,
         ticketId,
-        amountPaid:price,
-        bookingDate:new Date()
+        amountPaid: price,
+        bookingDate: new Date(),
       });
 
       const bookingConfirm = await bookingUser.save();
-      // const bookingId = bookingConfirm?.id;
 
-      let ticket = await ticketRepository.find({ where: { id: ticketId } });
+      ticket.quantityAvailable -= 1;
+      const ticketData = await ticketRepository.save(ticket);
 
-      Object.assign(ticket, {
-        id: ticketId,
-        eventId: eventId,
-        price: price,
-        quantityAvailable: ticket.quantityAvailable - 1,
-      });
       return res
         .status(200)
-        .json({ status: 'success', message: 'Created Ticket Event successfully', data: bookingConfirm });
+        .json({ status: 'success', message: 'Created Ticket Event successfully', data: bookingConfirm, ticketData });
     }
   } catch (error) {
     console.error('Error creating invoice:', error);
-    return res.status(500).json({ status: 'error', message: 'Error creating invoice' });
+    return res.status(500).json({ status: 'error', message: 'Error creating in booking event' });
   }
 };
