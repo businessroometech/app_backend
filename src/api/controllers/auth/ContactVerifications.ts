@@ -71,6 +71,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
       return res.status(400).json({ status: 'error', message: 'Invalid phone number format.' });
     }
     const formattedNumber = phoneNumber.format('E.164');
+    console.log('Mobile NUmber @ sent code :', mobileNumber);
     console.log('formatted-number :', formattedNumber);
 
     const code = generateVerificationCode();
