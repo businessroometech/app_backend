@@ -130,7 +130,7 @@ export const bookingTicket = async (req: Request, res: Response) => {
 
   try {
     let ticket = await ticketRepository.findOne({ where: { id: ticketId } });
-    if (!ticket) {
+    if (!ticket || ticket?.quantityAvailable <= 0) {
       return res.status(400).json({ status: 'error', message: 'Ticket not found' });
     }
 
