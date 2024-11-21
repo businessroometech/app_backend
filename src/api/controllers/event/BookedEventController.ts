@@ -14,11 +14,11 @@ export const BookedEvent = async (req: Request, res: Response) => {
     return res.status(400).json({ errors });
   }
 
-  const { status, userId } = req.body;
-  if (!status) res.status(400).json({ status: 'error', message: 'Bad request! status is not defined' });
+  const { userId } = req.body;
+  // if (!status) res.status(400).json({ status: 'error', message: 'Bad request! status is not defined' });
 
   try {
-    const data = await bookedReposistory.find({ where: { userId, status } });
+    const data = await bookedReposistory.find({ where: { userId } });
 
     if (!data || data.length === 0) {
       return res.status(204).json({ status: 'error', message: 'Booking not found', data: [] });

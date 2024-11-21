@@ -13,6 +13,7 @@ import {
   //   postCreatedEventDraft,
 } from '@/api/controllers/event/DraftEventController';
 import {
+  bookingTicket,
   getBookedAllTicket,
   getBookedTicketDetails,
   getCreatedAllTicket,
@@ -32,6 +33,7 @@ Router.post('/created/invite/participants', getEventParticipants);
 Router.post('/created/invite/send', postSendEventInviation);
 
 // BOOKED EVENT
+Router.post('/booking/event',bookingTicket)
 Router.post('/booked/get-all-booked-event', BookedEvent);
 Router.post('/booked/get-booked-details', getBookedEventDetails);
 

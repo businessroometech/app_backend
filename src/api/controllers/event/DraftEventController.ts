@@ -53,12 +53,12 @@ export const getDraftDetails = async (req: Request, res: Response) => {
 
   const draftRepository = AppDataSource.getRepository(EventDraft);
 
-  const { id, userId } = req.body;
+  const { userId } = req.body;
 
   if (userId) return res.status(500).json({ status: 'error', message: 'User Id is not defined' });
 
   try {
-    const drafts = await draftRepository.find({ where: { id } });
+    const drafts = await draftRepository.find({ where: { userId } });
     if (!drafts || drafts.length === 0)
       return res.status(204).json({ status: 'error', message: 'No draft found', data: [] });
 

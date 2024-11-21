@@ -68,10 +68,7 @@ export class Event extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   bannerImageId?: string;
-
-  // @Column({ type: 'text', nullable: true })
-  // mediaImageUrl?: string;
-
+  
   @Column({ type: 'text', nullable: true })
   livestreamLink?: string;
 
@@ -110,11 +107,11 @@ export class Event extends BaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   registrationDeadline?: Date;
-
-  @Column({ type: 'simple-array', nullable:true })
-  organizer!: string[];
-
-  @Column({ type: 'simple-array', nullable:true })
+  
+  @Column({ type: 'uuid' })
+  organizer!: string;
+  
+  @Column({ type: 'simple-array' })
   schedules!: string[];
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
