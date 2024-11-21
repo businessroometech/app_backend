@@ -12,7 +12,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserLogin } from '../../user/UserLogin';
-import { Event } from '../../eventManagement/Event';
 
 interface Address {
   addressLine1: string,

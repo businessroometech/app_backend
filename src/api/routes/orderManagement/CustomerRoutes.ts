@@ -22,16 +22,12 @@ import {
 } from '@/api/controllers/orderManagement/Customer';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
-import { getEventServiceProviders, postBookServiceProvider } from '@/api/controllers/event/CreateEventController';
 const Router = express.Router();
 
 // Router.post('/add-bookings', addBooking);
 Router.post('/providers', getProvidedServicesByCategoryAndSubCategory);
 Router.post('/providers/cities', authenticate, getDistinctCitiesBySubCategory);
 Router.post('/timeSlots', authenticate, getAvailableTimeSlots);
-
-Router.post('/event/providers', getEventServiceProviders);
-Router.post('/event/providers/book', postBookServiceProvider);
 
 Router.post('/order-history', authenticate, fetchOrderHistory);
 
