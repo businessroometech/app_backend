@@ -21,6 +21,10 @@ import { Service } from '@/api/entity/sector/Service';
 import { AppDataSource } from '@/server';
 import { SubCategory } from '@/api/entity/sector/SubCategory';
 import NotificationController from '../notifications/Notification';
+import { CategoryQuestionMapping } from '@/api/entity/orderManagement/serviceProvider/service/CategoryQuestionMapping';
+import { ServiceQuestionOption } from '@/api/entity/orderManagement/serviceProvider/service/ServiceQuestionOption';
+import { ProviderAnswer } from '@/api/entity/orderManagement/serviceProvider/service/ProviderAnswer';
+import { ServiceQuestion } from '@/api/entity/orderManagement/serviceProvider/service/ServiceQuestion';
 
 // export const BetweenDates = (from: Date | string, to: Date | string) => {
 //     const formattedFrom = format(new Date(from), 'yyyy-MM-dd HH:mm:ss');
@@ -191,8 +195,8 @@ export const acceptService = async (req: Request, res: Response) => {
       notificationData.recipientId = serviceJob?.customerId;
       const inAppResultCustomer = await NotificationController.sendNotification({ body: notificationData } as Request);
 
-      console.log("--- in app accept order service ---",inAppResultService.message);
-      console.log("--- in app accept order customer ---",inAppResultCustomer.message);
+      console.log("--- in app accept order service ---", inAppResultService.message);
+      console.log("--- in app accept order customer ---", inAppResultCustomer.message);
     } catch (notificationError: any) {
       console.error('Order Rejfected but error sending notification:', notificationError.message || notificationError);
     }
@@ -304,9 +308,13 @@ export const completeService = async (req: Request, res: Response) => {
 };
 
 //-------------------------------------------------- Service Management-----------------------------------------------------------------------
-
 export const addOrUpdateProvidedService = async (req: Request, res: Response) => {
+  const queryRunner = AppDataSource.createQueryRunner();
+
   try {
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     const {
       id,
       userId,
@@ -314,32 +322,32 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
       categoryId,
       subCategoryId,
       serviceIds,
-      experience,
-      certificates,
-      typeOfProjects,
-      projectScaleExpertise,
-      typeOfWorkforce,
-      typesOfClients,
       price,
       per,
       bio,
       uploadedImageIds,
       isActive,
       updatedBy,
+      answers = [],
     } = req.body;
 
     if (!userId) {
       return res.status(400).json({ status: 'error', message: 'UserId not found' });
     }
 
-    const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
+    if (!Array.isArray(answers) || answers.some((a) => !a.questionTemplateId || !a.answerTexts)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid answers format' });
+    }
+
+    const providedServiceRepository = queryRunner.manager.getRepository(ProvidedService);
+    const providerAnswerRepository = queryRunner.manager.getRepository(ProviderAnswer);
 
     let providedService;
 
     if (id) {
       providedService = await providedServiceRepository.findOne({ where: { id } });
       if (!providedService) {
-        return res.status(404).json({ status: 'error', message: 'ProvidedService not found' });
+        throw new Error('ProvidedService not found');
       }
     } else {
       providedService = new ProvidedService();
@@ -351,12 +359,6 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
     if (categoryId !== undefined) providedService.categoryId = categoryId;
     if (subCategoryId !== undefined) providedService.subCategoryId = subCategoryId;
     if (serviceIds !== undefined) providedService.serviceIds = serviceIds;
-    if (experience !== undefined) providedService.experience = experience;
-    if (certificates !== undefined) providedService.certificates = certificates;
-    if (typeOfProjects !== undefined) providedService.typeOfProjects = typeOfProjects;
-    if (projectScaleExpertise !== undefined) providedService.projectScaleExpertise = projectScaleExpertise;
-    if (typeOfWorkforce !== undefined) providedService.typeOfWorkforce = typeOfWorkforce;
-    if (typesOfClients !== undefined) providedService.typesOfClients = typesOfClients;
     if (price !== undefined) providedService.price = price;
     if (per !== undefined) providedService.per = per;
     if (bio !== undefined) providedService.bio = bio;
@@ -364,14 +366,53 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
     if (isActive !== undefined) providedService.isActive = isActive;
     providedService.updatedBy = updatedBy || 'system';
 
-    await providedService.save();
+    await providedServiceRepository.save(providedService);
 
-    return res
-      .status(201)
-      .json({ status: 'success', message: 'ProvidedService created or updated', data: { providedService } });
+    const questionTemplateIds = answers.map((ele: any) => ele.questionTemplateId);
+
+    const existingAnswers = await providerAnswerRepository.find({
+      where: {
+        serviceProviderId: userId,
+        questionTemplateId: In(questionTemplateIds),
+      },
+    });
+
+    const existingAnswerMap = new Map(
+      existingAnswers.map((answer) => [answer.questionTemplateId.trim().toLowerCase(), answer])
+    );
+    
+    const providerAnswers = answers.map((ele: any) => {
+      const existingAnswer = existingAnswerMap.get(ele.questionTemplateId.trim().toLowerCase());
+      if (existingAnswer) {
+        existingAnswer.answerTexts = ele.answerTexts;
+        return existingAnswer;
+      } else {
+        const newAnswer = new ProviderAnswer();
+        newAnswer.serviceProviderId = userId;
+        newAnswer.questionTemplateId = ele.questionTemplateId.trim().toLowerCase();
+        newAnswer.answerTexts = ele.answerTexts;
+        return newAnswer;
+      }
+    });
+
+    await providerAnswerRepository.save(providerAnswers);
+
+    // Commit the transaction
+    await queryRunner.commitTransaction();
+
+    return res.status(201).json({
+      status: 'success',
+      message: 'ProvidedService created or updated',
+      data: { providedService, providerAnswers },
+    });
   } catch (error) {
-    console.error(error);
+    // Rollback the transaction in case of an error
+    await queryRunner.rollbackTransaction();
+    console.error('Error in addOrUpdateProvidedService:', error);
     return res.status(500).json({ status: 'error', message: 'Internal server error' });
+  } finally {
+    // Release the query runner
+    await queryRunner.release();
   }
 };
 
@@ -1002,3 +1043,42 @@ export const totalSalesSubCategoryWise = async (req: Request, res: Response) => 
 // notification here : rescheduled_order_sp ---> missing
 // service reminder : service_reminder_sp --> missing
 //  Service Provider Rejects the Order : order_rejected_quote_sp --> missing
+
+
+
+// -------------------- SERVICE QUESTIONS -------------------------------
+
+export const getQuestions = async (req: Request, res: Response) => {
+  try {
+    const { serviceProviderId, categoryId, userType } = req.body;
+
+    const categoryQuestionMappingRepository = AppDataSource.getRepository(CategoryQuestionMapping);
+    const serviceQuestionOptionRepository = AppDataSource.getRepository(ServiceQuestionOption);
+    const providerAnswerRepository = AppDataSource.getRepository(ProviderAnswer);
+    const serviceQuestionRepository = AppDataSource.getRepository(ServiceQuestion);
+
+    const categoryQuestionMapping = await categoryQuestionMappingRepository.find({
+      where: { categoryId, userType }, relations: ['serviceQuestion']
+    });
+
+    const questionIds = categoryQuestionMapping.map((ele) => ele.questionId);
+
+    const questionsWithOptionsAndAnswer = await Promise.all(
+      questionIds.map(async (qId: any) => {
+        const question = await serviceQuestionRepository.find({ where: { id: qId } });
+        const options = await serviceQuestionOptionRepository.find({ where: { questionId: qId } });
+        const answer = await providerAnswerRepository.find({ where: { serviceProviderId, questionTemplateId: qId } });
+        return { question: question, questionOptions: options, answer: answer };
+      })
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "Question Fetched with answers if present",
+      data: { questions: questionsWithOptionsAndAnswer },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 'error', message: 'Error fetching questions for this service' });
+  }
+};

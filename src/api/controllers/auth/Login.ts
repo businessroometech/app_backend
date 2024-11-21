@@ -89,20 +89,31 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // await NotificationController.sendNotification(
-    //   {
-    //     body: {
-    //       notificationType: 'inApp',
-    //       templateName: 'login_otp',
-    //       recipientId: user?.id,
-    //       recipientType: 'User',
-    //       data: {
-    //         'Company Name': 'Connect',
-    //       },
-    //     },
-    //   } as Request,
-    //   res
-    // );
+    // Send notifications (SMS and in-app) to welcome the user
+    const notificationData = {
+      notificationType: 'sms',
+      templateName: 'welcome_cus',
+      recipientNumber: mobileNumber,
+      recipientType: 'Customer',
+      data: {
+        'Customer Name': user?.personalDetails?.fullName,
+        'Company Name': 'Connect',
+      },
+    };
+
+    try {
+      const smsResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(smsResult.message);
+
+      notificationData.notificationType = 'inApp';
+      const inAppResult = await NotificationController.sendNotification({ body: notificationData } as Request);
+      console.log(inAppResult.message);
+    } catch (notificationError: any) {
+      console.error(
+        'Signup successful but error sending notification:',
+        notificationError.message || notificationError
+      );
+    }
 
     res.status(200).json({
       status: 'success',
@@ -260,30 +271,22 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       res.status(401).json({ status: 'error', message: 'Refresh token is not present in cookies' });
       return;
     }
-
     const refreshRepository = AppDataSource.getRepository(RefreshToken);
-
     const payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY!) as { id: string; exp: number };
-
     const refresh = await refreshRepository.findOne({ where: { userId: payload.id } });
-
     if (!refresh) {
       res.status(401).json({ status: 'error', message: 'Refresh token not found' });
       return;
     }
-
     const isTokenValid = await bcrypt.compare(refreshToken, refresh.token);
-
     if (!isTokenValid || refresh.revokedTokens.includes(refreshToken)) {
       res.status(401).json({ status: 'error', message: 'Invalid or revoked refresh token. Please log in again.' });
       return;
     }
-
     if (new Date() > refresh.expiresAt) {
       res.status(401).json({ status: 'error', message: 'Refresh token expired. Please log in again.' });
       return;
     }
-
     const newAccessToken = generateAccessToken({ id: payload.id });
     const newRefreshToken = generateRefreshToken({ id: payload.id });
 
@@ -322,9 +325,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     }
   }
 };
-
-//----------for protected routed you have to extend request interface-------
-
 declare module 'express' {
   interface Request {
     user?: any;

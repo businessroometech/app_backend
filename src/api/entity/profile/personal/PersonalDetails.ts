@@ -5,12 +5,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
+  JoinColumn, 
+  OneToMany, 
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserLogin } from '../../user/UserLogin';
+import { Event } from '../../eventManagement/Event';
 
 interface Address {
   addressLine1: string,
@@ -90,4 +92,5 @@ export class PersonalDetails extends BaseEntity {
   @OneToOne(() => UserLogin, (user) => user.personalDetails)
   @JoinColumn({ name: "userId" })
   user!: UserLogin;
+
 }

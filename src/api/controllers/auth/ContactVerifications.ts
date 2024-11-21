@@ -71,6 +71,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
       return res.status(400).json({ status: 'error', message: 'Invalid phone number format.' });
     }
     const formattedNumber = phoneNumber.format('E.164');
+    console.log('Mobile NUmber @ sent code :', mobileNumber);
     console.log('formatted-number :', formattedNumber);
 
     const code = generateVerificationCode();
@@ -78,7 +79,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
 
     let otpObj;
 
-    if (useCase === 'Signup' || useCase === 'Forgot password') {
+    if (useCase === 'Signup' || useCase === 'Forgot Password') {
       otpObj = await otpVerificationRepository.findOne({ where: { mobileNumber, useCase } });
     } else {
       otpObj = await otpVerificationRepository.findOne({ where: { userId, useCase } });
@@ -115,7 +116,7 @@ export const sendVerificationCode = async (req: Request, res: Response): Promise
         .save();
     }
 
-    if (useCase === 'Signup') {
+    if (useCase === 'Signup' || useCase === 'Forgot Password') {
       const notificationData = {
         notificationType: 'sms',
         templateName: 'login_otp',
@@ -227,14 +228,16 @@ export const sendVerificationCode_mobile_app = async (req: Request, res: Respons
           updatedBy: updatedBy || 'system',
         }).save();
 
-      await primaryRoleMappedRepository.create({
+      await user.save();
+
+      const primaryRoleMapped = await primaryRoleMappedRepository.create({
         primaryRole: 'Customer',
         userId: user.id,
         mobileNumber: user.mobileNumber
       }).save();
 
-      await user.save();
-      
+      // user.primaryRoleId = primaryRoleMapped.id;
+
     } else {
 
       const primaryRoleMappings = await primaryRoleMappedRepository.find({ where: { userId: user.id } });

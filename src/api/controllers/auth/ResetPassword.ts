@@ -11,7 +11,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     if (!newPassword) {
       return res.status(400).json({ status: 'error', message: 'Please provide a new password.' });
     }
-
+    console.log("MobileNumber and code @ reset password", mobileNumber, verificationCode);
     const userLoginRepository = AppDataSource.getRepository(UserLogin);
     const otpVerificationRepository = AppDataSource.getRepository(OtpVerification);
 
@@ -21,13 +21,12 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'Invalid or expired Otp token.' });
     }
 
-    const user: UserLogin | null = await userLoginRepository.findOne({ where: { id: token.userId } });
+    const user: UserLogin | null = await userLoginRepository.findOne({ where: { mobileNumber: mobileNumber } });
 
     if (!user) {
-      return res.status(404).json({ status: 'error', message: 'User not found' });
+      return res.status(400).json({ status: 'error', message: 'User not found' });
     }
 
-    // const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = newPassword;
     await user.save();
 

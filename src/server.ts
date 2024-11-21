@@ -15,10 +15,11 @@ import CategoriesRouter from './api/routes/category/CategoryRoutes';
 import profileRouter from './api/routes/profile/ProfileRoutes';
 import customerRouter from './api/routes/orderManagement/CustomerRoutes';
 import serviceProviderRouter from './api/routes/orderManagement/ServiceProviderRoutes';
-import paymentRouter from "./api/routes/payment/PaymentRoutes";
-import notificationRouter from "./api/routes/notifications/NotificationRoutes";
-import invoiceRouter from "./api/routes/invoice/InvoiceRoutes";
-
+import paymentRouter from './api/routes/payment/PaymentRoutes';
+import notificationRouter from './api/routes/notifications/NotificationRoutes';
+import eventRouter from './api/routes/events/eventsRoutes';
+import invoiceRouter from './api/routes/invoice/InvoiceRoutes';
+import EventRouter from './api/routes/event/EventRoutes';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -58,8 +59,28 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerFile from '../swagger_output.json';
 import { Invoice } from './api/entity/others/Invoice';
 import { ServiceJobRescheduled } from './api/entity/orderManagement/serviceProvider/serviceJob/ServiceJobReschedueled';
+import { Event } from './api/entity/eventManagement/Event';
+import { DressCode } from './api/entity/eventManagement/DressCode';
+import { BankDetails } from './api/entity/eventManagement/BankDetails';
+import { EventBooking } from './api/entity/eventManagement/EventBooking';
+import { EventDraft } from './api/entity/eventManagement/EventDraft';
+import { EventMedia } from './api/entity/eventManagement/EventMedia';
+import { EventParticipant } from './api/entity/eventManagement/EventParticipant';
+import { EventPayment } from './api/entity/eventManagement/EventPayment';
+import { EventRule } from './api/entity/eventManagement/EventRule';
+import { EventSchedule } from './api/entity/eventManagement/EventSchedule';
+import { Ticket } from './api/entity/eventManagement/Ticket';
+import { Dropdown } from './api/entity/eventManagement/Dropdown';
+import { EventOrganiser, SocialMediaLink } from './api/entity/eventManagement/EventOrganiser';
+import { SoldTicket } from './api/entity/eventManagement/SoldTicket';
 import { UserCategoryMapping } from './api/entity/user/UserCategoryMapping';
 import { PrimaryRoleMapping } from './api/entity/user/PrimaryRoleMapping';
+import { ServiceQuestion } from './api/entity/orderManagement/serviceProvider/service/ServiceQuestion';
+import { ServiceQuestionOption } from './api/entity/orderManagement/serviceProvider/service/ServiceQuestionOption';
+import { ProviderAnswer } from './api/entity/orderManagement/serviceProvider/service/ProviderAnswer';
+import { CategoryQuestionMapping } from './api/entity/orderManagement/serviceProvider/service/CategoryQuestionMapping';
+import { EventPartner } from './api/entity/eventManagement/EventPartner';
+import { EventSpecker } from './api/entity/eventManagement/EventSpeckers';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -69,7 +90,58 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [ServiceJob, OrderItemBooking, OrderItemProduct, Cart, CartItemBooking, CartItemProduct, Order, ProvidedService, ProvidedProduct, SubCategory, Category, Sector, Service, UserLogin, Token, PersonalDetails, PersonalDetailsCustomer, FinancialDetails, EducationalDetails, BusinessDetails, OtpVerification, PasswordResetToken, RefreshToken, DocumentUpload, PasswordResetToken, UserAddress, RescheduledBooking, Transaction, Notification, Template, DeliveryLog, Invoice, ServiceJobRescheduled, PrimaryRoleMapping , UserCategoryMapping],
+  entities: [
+    ServiceJob,
+    OrderItemBooking,
+    OrderItemProduct,
+    Cart,
+    CartItemBooking,
+    CartItemProduct,
+    Order,
+    ProvidedService,
+    ProvidedProduct,
+    SubCategory,
+    Category,
+    Sector,
+    Service,
+    UserLogin,
+    Token,
+    PersonalDetails,
+    PersonalDetailsCustomer,
+    FinancialDetails,
+    EducationalDetails,
+    BusinessDetails,
+    OtpVerification,
+    PasswordResetToken,
+    RefreshToken,
+    DocumentUpload,
+    PasswordResetToken,
+    UserAddress,
+    RescheduledBooking,
+    Transaction,
+    Notification,
+    Template,
+    DeliveryLog,
+    Invoice, ServiceJobRescheduled, PrimaryRoleMapping , UserCategoryMapping, ServiceQuestion, ServiceQuestionOption, ProviderAnswer, CategoryQuestionMapping,
+    Event,
+    DressCode,
+    BankDetails,
+    EventBooking,
+    EventDraft,
+    EventMedia,
+    EventParticipant,
+    EventPayment,
+    EventRule,
+    EventSchedule,
+    Ticket,
+    Dropdown,
+    EventOrganiser,
+    SocialMediaLink,
+    SoldTicket,
+    ServiceJobRescheduled,
+    EventPartner, 
+    EventSpecker
+  ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
@@ -78,7 +150,6 @@ const AppDataSource = new DataSource({
 // app.use(express.static('dist/public'));
 
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
-
 
 // Initialize the DataSource
 AppDataSource.initialize()
@@ -97,12 +168,14 @@ app.set('trust proxy', true);
 app.use(express.json());
 app.use(cookieParser());
 // app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
-app.use(cors({
-  origin: function (origin, callback) {
-    callback(null, true); // Allow all origins
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      callback(null, true); // Allow all origins
+    },
+    credentials: true,
+  })
+);
 app.use(helmet());
 app.use(rateLimiter);
 
@@ -118,8 +191,13 @@ app.use('/api/v1/order-management/customer', customerRouter);
 app.use('/api/v1/order-management/service-provider', serviceProviderRouter);
 app.use('/api/v1/checkout', paymentRouter);
 app.use('/api/v1/notifications', notificationRouter);
+app.use('/api/v1/event-managment/mobile', eventRouter);
+// app.use('/health-check', healthCheckRouter) ;
 app.use('/api/v1/invoices', invoiceRouter);
 // app.use('/health-check', healthCheckRouter);
+
+// event management
+app.use('/api/v1/manage-event/customer', EventRouter);
 
 // Error handlers
 app.use(errorHandler());
