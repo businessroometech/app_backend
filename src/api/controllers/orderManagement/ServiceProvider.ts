@@ -309,12 +309,7 @@ export const completeService = async (req: Request, res: Response) => {
 
 //-------------------------------------------------- Service Management-----------------------------------------------------------------------
 export const addOrUpdateProvidedService = async (req: Request, res: Response) => {
-  const queryRunner = AppDataSource.createQueryRunner();
-
   try {
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     const {
       id,
       userId,
@@ -322,32 +317,32 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
       categoryId,
       subCategoryId,
       serviceIds,
+      experience,
+      certificates,
+      typeOfProjects,
+      projectScaleExpertise,
+      typeOfWorkforce,
+      typesOfClients,
       price,
       per,
       bio,
       uploadedImageIds,
       isActive,
       updatedBy,
-      answers = [],
     } = req.body;
 
     if (!userId) {
       return res.status(400).json({ status: 'error', message: 'UserId not found' });
     }
 
-    if (!Array.isArray(answers) || answers.some((a) => !a.questionTemplateId || !a.answerTexts)) {
-      return res.status(400).json({ status: 'error', message: 'Invalid answers format' });
-    }
-
-    const providedServiceRepository = queryRunner.manager.getRepository(ProvidedService);
-    const providerAnswerRepository = queryRunner.manager.getRepository(ProviderAnswer);
+    const providedServiceRepository = AppDataSource.getRepository(ProvidedService);
 
     let providedService;
 
     if (id) {
       providedService = await providedServiceRepository.findOne({ where: { id } });
       if (!providedService) {
-        throw new Error('ProvidedService not found');
+        return res.status(404).json({ status: 'error', message: 'ProvidedService not found' });
       }
     } else {
       providedService = new ProvidedService();
@@ -359,6 +354,12 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
     if (categoryId !== undefined) providedService.categoryId = categoryId;
     if (subCategoryId !== undefined) providedService.subCategoryId = subCategoryId;
     if (serviceIds !== undefined) providedService.serviceIds = serviceIds;
+    if (experience !== undefined) providedService.experience = experience;
+    if (certificates !== undefined) providedService.certificates = certificates;
+    if (typeOfProjects !== undefined) providedService.typeOfProjects = typeOfProjects;
+    if (projectScaleExpertise !== undefined) providedService.projectScaleExpertise = projectScaleExpertise;
+    if (typeOfWorkforce !== undefined) providedService.typeOfWorkforce = typeOfWorkforce;
+    if (typesOfClients !== undefined) providedService.typesOfClients = typesOfClients;
     if (price !== undefined) providedService.price = price;
     if (per !== undefined) providedService.per = per;
     if (bio !== undefined) providedService.bio = bio;
@@ -366,53 +367,14 @@ export const addOrUpdateProvidedService = async (req: Request, res: Response) =>
     if (isActive !== undefined) providedService.isActive = isActive;
     providedService.updatedBy = updatedBy || 'system';
 
-    await providedServiceRepository.save(providedService);
+    await providedService.save();
 
-    const questionTemplateIds = answers.map((ele: any) => ele.questionTemplateId);
-
-    const existingAnswers = await providerAnswerRepository.find({
-      where: {
-        serviceProviderId: userId,
-        questionTemplateId: In(questionTemplateIds),
-      },
-    });
-
-    const existingAnswerMap = new Map(
-      existingAnswers.map((answer) => [answer.questionTemplateId.trim().toLowerCase(), answer])
-    );
-    
-    const providerAnswers = answers.map((ele: any) => {
-      const existingAnswer = existingAnswerMap.get(ele.questionTemplateId.trim().toLowerCase());
-      if (existingAnswer) {
-        existingAnswer.answerTexts = ele.answerTexts;
-        return existingAnswer;
-      } else {
-        const newAnswer = new ProviderAnswer();
-        newAnswer.serviceProviderId = userId;
-        newAnswer.questionTemplateId = ele.questionTemplateId.trim().toLowerCase();
-        newAnswer.answerTexts = ele.answerTexts;
-        return newAnswer;
-      }
-    });
-
-    await providerAnswerRepository.save(providerAnswers);
-
-    // Commit the transaction
-    await queryRunner.commitTransaction();
-
-    return res.status(201).json({
-      status: 'success',
-      message: 'ProvidedService created or updated',
-      data: { providedService, providerAnswers },
-    });
+    return res
+      .status(201)
+      .json({ status: 'success', message: 'ProvidedService created or updated', data: { providedService } });
   } catch (error) {
-    // Rollback the transaction in case of an error
-    await queryRunner.rollbackTransaction();
-    console.error('Error in addOrUpdateProvidedService:', error);
+    console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal server error' });
-  } finally {
-    // Release the query runner
-    await queryRunner.release();
   }
 };
 
