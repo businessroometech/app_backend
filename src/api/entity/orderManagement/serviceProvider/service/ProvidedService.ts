@@ -40,23 +40,23 @@ export class ProvidedService extends BaseEntity {
   @Column({ type: 'simple-array' })
   serviceIds!: string[];
 
-  // @Column({ type: 'varchar', length: 255 })
-  // experience!: string;
+  @Column({ type: 'varchar', length: 255 })
+  experience!: string;
 
-  // @Column({ type: 'simple-array', })
-  // certificates!: string[];
+  @Column({ type: 'simple-array', })
+  certificates!: string[];
 
-  // @Column({ type: 'simple-array', })
-  // typeOfProjects !: string[];
+  @Column({ type: 'simple-array', })
+  typeOfProjects !: string[];
 
-  // @Column({ type: 'simple-array', })
-  // projectScaleExpertise !: string[];
+  @Column({ type: 'simple-array', })
+  projectScaleExpertise !: string[];
 
-  // @Column({ type: 'simple-array', })
-  // typeOfWorkforce!: string[];
+  @Column({ type: 'simple-array', })
+  typeOfWorkforce!: string[];
 
-  // @Column({ type: 'simple-array', })
-  // typesOfClients !: string[];
+  @Column({ type: 'simple-array', })
+  typesOfClients !: string[];
 
   @Column({ type: 'float' })
   price !: number;
