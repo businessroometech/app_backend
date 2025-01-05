@@ -12,3 +12,4 @@ Router.post('/login', login);
 Router.post('/logout', authenticate, logout);
 
 export default Router;
+

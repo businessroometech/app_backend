@@ -10,6 +10,7 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
+import userPost from '../src/api/routes/userPost/userPost';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -29,7 +30,7 @@ const AppDataSource = new DataSource({
   entities: [
     UserLogin, UserPost
   ],
-  synchronize: true,
+  synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 
@@ -71,6 +72,8 @@ app.use(requestLogger);
 
 // Routes mounting
 app.use('/api/v1/auth', authRouter);
+
+app.use('/api/v1/post', userPost);
 
 // testing api route
 app.get('/', (req, res) => {
