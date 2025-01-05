@@ -18,7 +18,10 @@ export class UserLogin extends BaseEntity {
   id!: string;
 
   @Column({ type: 'varchar' })
-  fullName!: string;
+  firstName!: string;
+
+  @Column({ type: 'varchar' })
+  lastName!: string;
 
   @Column({ type: 'varchar', unique: true })
   email!: string;
