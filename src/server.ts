@@ -71,6 +71,11 @@ app.use(requestLogger);
 // Routes mounting
 app.use('/api/v1/auth', authRouter);
 
+// testing api route
+app.get('/', (req, res) => {
+  res.send('Hello World');
+});
+
 // Error handlers
 app.use(errorHandler());
 
