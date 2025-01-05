@@ -10,7 +10,8 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     await queryRunner.startTransaction();
 
     const {
-      fullName,
+      firstName,
+      lastName,
       emailAddress,
       password,
       createdBy = 'system',
@@ -18,7 +19,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     } = req.body;
 
     // Validate required fields
-    if (!emailAddress || !password || !fullName) {
+    if (!emailAddress || !password || !firstName || !lastName) {
       res.status(400).json({
         status: 'error',
         message: 'Please provide a full name, email address, and password.',
@@ -43,7 +44,8 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     // Create a new user instance
     const newUser = userLoginRepository.create({
-      fullName,
+      firstName,
+      lastName,
       email: emailAddress,
       password,
       createdBy,
@@ -62,7 +64,8 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       data: {
         user: {
           id: newUser.id,
-          fullName: newUser.fullName,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
           email: newUser.email,
           createdAt: newUser.createdAt,
           updatedAt: newUser.updatedAt,

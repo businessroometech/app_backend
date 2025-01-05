@@ -10,11 +10,11 @@ const generateAccessToken = (user: { id: string }, rememberMe: boolean = false):
   });
 };
 
-const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false): string => {
-  return jwt.sign({ id: user.id }, process.env.REFRESH_SECRET_KEY!, {
-    expiresIn: rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_REMEMBER : process.env.JWT_REFRESH_EXPIRES_IN,
-  });
-};
+// const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false): string => {
+//   return jwt.sign({ id: user.id }, process.env.REFRESH_SECRET_KEY!, {
+//     expiresIn: rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_REMEMBER : process.env.JWT_REFRESH_EXPIRES_IN,
+//   });
+// };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -45,17 +45,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Generate tokens
     const accessToken = generateAccessToken(user, rememberMe);
-    const refreshToken = generateRefreshToken(user, rememberMe);
+    // const refreshToken = generateRefreshToken(user, rememberMe);
 
     // Set refresh token as an HTTP-only cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: rememberMe
-        ? parseInt(process.env.JWT_REFRESH_COOKIE_MAX_AGE_REMEMBER!, 10)
-        : parseInt(process.env.JWT_REFRESH_COOKIE_MAX_AGE!, 10),
-    });
+    // res.cookie('refreshToken', refreshToken, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production',
+    //   sameSite: 'strict',
+    //   maxAge: rememberMe
+    //     ? parseInt(process.env.JWT_REFRESH_COOKIE_MAX_AGE_REMEMBER!, 10)
+    //     : parseInt(process.env.JWT_REFRESH_COOKIE_MAX_AGE!, 10),
+    // });
 
     // Respond with the access token and user details
     res.status(200).json({
@@ -65,7 +65,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         accessToken,
         user: {
           id: user.id,
-          fullName: user.fullName,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
