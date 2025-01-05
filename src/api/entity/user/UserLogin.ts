@@ -6,18 +6,10 @@ import {
   BeforeUpdate,
   Column,
   CreateDateColumn,
-  Entity, 
-  OneToMany,
-  OneToOne,
+  Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OrderItemBooking } from '../orderManagement/customer/OrderItemBooking';
-import { OrderItemProduct } from '../orderManagement/customer/OrderItemProduct';
-import { ProvidedService } from '../orderManagement/serviceProvider/service/ProvidedService';
-import { PersonalDetails } from '../profile/personal/PersonalDetails';
-import { BusinessDetails } from '../profile/business/BusinessDetails';
-import { PrimaryRoleMapping } from './PrimaryRoleMapping';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -25,17 +17,14 @@ export class UserLogin extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true })
-  mobileNumber!: string;
+  @Column({ type: 'varchar' })
+  fullName!: string;
+
+  @Column({ type: 'varchar', unique: true })
+  email!: string;
 
   @Column({ type: 'varchar', length: 255 })
   password!: string;
-
-  // @Column({ type: 'text' })
-  // primaryRoleId !: string;
-
-  @Column({ type: 'enum', enum: ['Individual', 'Business'] })
-  userType !: 'Individual' | 'Business';
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -78,23 +67,5 @@ export class UserLogin extends BaseEntity {
   static async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
     return await bcrypt.compare(password, hashedPassword);
   }
-
-  @OneToMany(() => ProvidedService, providedService => providedService.users)
-  providedServices !: ProvidedService[];
-
-  @OneToMany(() => OrderItemBooking, item => item.user)
-  orderItemBookings !: OrderItemBooking[];
-
-  @OneToMany(() => OrderItemProduct, item => item.user)
-  orderItemProducts !: OrderItemProduct[];
-
-  @OneToOne(() => PersonalDetails, (details) => details.user, { cascade: true })
-  personalDetails!: PersonalDetails;
-
-  @OneToOne(() => BusinessDetails, (details) => details.user, { cascade: true })
-  businessDetails!: BusinessDetails;
-
-  @OneToMany(() => PrimaryRoleMapping, prm => prm.user, { cascade: true })
-  primaryRoles !: PrimaryRoleMapping[];
 
 }
