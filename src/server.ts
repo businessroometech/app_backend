@@ -16,6 +16,7 @@ const app: Express = express();
 
 import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
 import { UserLogin } from './api/entity/user/UserLogin';
+import { UserPost } from './api/entity/UserPost';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -26,9 +27,9 @@ const AppDataSource = new DataSource({
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [
-    UserLogin,
+    UserLogin, UserPost
   ],
-  synchronize: false,
+  synchronize: true,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 
