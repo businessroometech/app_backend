@@ -67,6 +67,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
         message: 'User ID is required.',
       });
     }
+
     const userRepository = AppDataSource.getRepository(UserLogin);
     const user = await userRepository.findOne({
       where: { id: userId },
@@ -87,44 +88,58 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
+    
+    // Fetch user posts
     const userPosts = await userPostRepository.find({
       where: { userId },
     });
+    
+    // Check if posts exist
     if (!userPosts || userPosts.length === 0) {
       return res.status(404).json({ message: 'No posts found for this user.' });
     }
+    
     const postIds = userPosts.map((post) => post.Id);
     const comments = await commentRepository.find({
       where: { postId: In(postIds) },
     });
-
+    
     const likes = await likeRepository.find({
       where: { postId: In(postIds) },
     });
+    
     const mediaKeysWithUrls = await Promise.all(
       userPosts.map(async (post) => ({
         postId: post.Id,
-        mediaUrls: await Promise.all(
-          post.mediaKeys.map((key) => generatePresignedUrl(key))
-        ),
+        mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
       }))
     );
-    const formattedPosts = userPosts.map((post) => ({
-      post: {
-        userId: post.userId,
-        title: post.title,
-        content: post.content,
-        hashtags: post.hashtags,
-        mediaKeys: mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [],
-        likeCount: likes.filter((like) => like.postId === post.id).length || 0,
-        commentCount: comments.filter((comment) => comment.postId === post.id).length || 0,
-      },
-      userDetails: {
-        firstName: user?.firstName || '', // Ensure `user` is defined
-        lastName: user?.lastName || '',
-        timestamp: formatTimestamp(post.createdAt),
-      },
-    }));
+    
+    const formattedPosts = userPosts.map((post) => {
+      const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
+      const likeCount = likes.filter((like) => like.postId === post.Id).length;
+      const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
+      const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === userId);
+    
+      return {
+        post: {
+          Id: post.Id,
+          userId: post.userId,
+          title: post.title,
+          content: post.content,
+          hashtags: post.hashtags,
+          mediaKeys: mediaUrls,
+          likeCount,
+          commentCount,
+          likeStatus, // true or false based on whether the user has liked the post
+        },
+        userDetails: {
+          firstName: user?.firstName || '',
+          lastName: user?.lastName || '',
+          timestamp: formatTimestamp(post.createdAt),
+        },
+      };
+    });
     return res.status(200).json({
       message: 'User posts retrieved successfully.',
       data: formattedPosts,
@@ -165,11 +180,6 @@ export const UpdateUserPost = async (req: Request, res: Response): Promise<Respo
     userPost!.title = title;
     userPost!.content = content;
     userPost!.hashtags = hashtags;
-    userPost!.mentionId = mentionId;
-    userPost!.mediaIds = mediaIds;
-    userPost!.likeIds = likeIds;
-    userPost!.commentIds = commentIds;
-    userPost!.shareIds = shareIds;
 
     await userPost!.save();
 
@@ -216,24 +226,25 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
   }
 };
 
-// get all post for public view
+// Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { userId } = req.body;
 
+    // Validate the userId
     if (!userId) {
       return res.status(400).json({
         message: 'User ID is required.',
       });
     }
 
-    // Get the PersonalDetails repository
-    const userRepository = AppDataSource.getRepository(PersonalDetails);
+    // Get the UserLogin repository
+    const userRepository = AppDataSource.getRepository(UserLogin);
 
     // Check if the user exists
     const user = await userRepository.findOne({
-      where: { userId },
-      select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', 'occupation'],
+      where: { id: userId },
+      select: ['firstName', 'lastName'],
     });
 
     if (!user) {
@@ -242,43 +253,74 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       });
     }
 
-    const posts = await UserPost.find({
+    // Get all posts
+    const userPostRepository = AppDataSource.getRepository(UserPost);
+    const commentRepository = AppDataSource.getRepository(Comment);
+    const likeRepository = AppDataSource.getRepository(Like);
+
+    const posts = await userPostRepository.find({
       order: {
         updatedAt: 'DESC',
         createdAt: 'DESC',
       },
-      select: [
-        'Id',
-        'userId',
-        'title',
-        'content',
-        'hashtags',
-        'mentionId',
-        'mediaIds',
-        'likeIds',
-        'commentIds',
-        'shareIds',
-        'createdAt',
-        'updatedAt',
-      ],
+      select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys'],
     });
 
-    // Format the posts with user details
-    const formattedPosts = posts.map((post) => ({
-      ...post,
-      userDetails: {
-        profilePictureUploadId: user.profilePictureUploadId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        bio: user.bio,
-        occupation: user.occupation,
-      },
-      timestamp: formatTimestamp(post.createdAt),
-      likeCount: post.likeIds?.length || 0,
-      commentCount: post.commentIds?.length || 0,
-      shareCount: post.shareIds?.length || 0,
-    }));
+    if (!posts || posts.length === 0) {
+      return res.status(404).json({
+        message: 'No posts found.',
+      });
+    }
 
+    const postIds = posts.map((post) => post.Id);
+
+    // Fetch comments and likes for the posts
+    const comments = await commentRepository.find({
+      where: { postId: In(postIds) },
+    });
+
+    const likes = await likeRepository.find({
+      where: { postId: In(postIds) },
+    });
+
+    // Generate media URLs for posts
+    const mediaKeysWithUrls = await Promise.all(
+      posts.map(async (post) => ({
+        postId: post.Id,
+        mediaUrls: post.mediaKeys
+          ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key)))
+          : [],
+      }))
+    );
+
+    // Format the posts with user details, likes, and comments
+    const formattedPosts = posts.map((post) => {
+      const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
+      const likeCount = likes.filter((like) => like.postId === post.Id).length;
+      const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
+      const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === userId);
+
+      return {
+        post: {
+          Id: post.Id,
+          userId: post.userId,
+          title: post.title,
+          content: post.content,
+          hashtags: post.hashtags,
+          mediaKeys: mediaUrls,
+          likeCount,
+          commentCount,
+          likeStatus, // true or false based on whether the user has liked the post
+        },
+        userDetails: {
+          firstName: user?.firstName || '',
+          lastName: user?.lastName || '',
+          timestamp: formatTimestamp(post.createdAt),
+        },
+      };
+    });
+
+    // Return the formatted posts
     return res.status(200).json({
       message: 'User posts retrieved successfully.',
       data: formattedPosts,
@@ -291,3 +333,4 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     });
   }
 };
+
