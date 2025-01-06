@@ -22,9 +22,11 @@ const generateUrlForUploading = (bucketName: any, key: string, expDate: any, typ
 
 export const generateUploadUrl = async (req: Request, res: Response) => {
     try {
-        const { bucketName, key, expDate, contentType } = req.body;
+        const { key, expDate, contentType } = req.body;
 
-        if (!bucketName || !key || !expDate || !contentType) {
+        let bucketName = process.env.AWS_BUCKET;
+
+        if ( !key || !expDate || !contentType) {
             return res
                 .status(400)
                 .json({ status: 'error', message: 'Please provide bucketName, key, expDate, and contentType.' });
@@ -38,9 +40,9 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
     }
 };
 
-export const generatePresignedUrl = async (key: string, bucket: string) => {
+export const generatePresignedUrl = async (key: string) => {
     const params: GetObjectCommandInput = {
-        Bucket: bucket,
+        Bucket: process.env.AWS_BUCKET,
         Key: key,
     };
 
@@ -50,14 +52,14 @@ export const generatePresignedUrl = async (key: string, bucket: string) => {
 
 export const getDocumentFromBucket = async (req: Request, res: Response) => {
     try {
-        const {key, bucket } = req.body;
+        const {key} = req.body;
 
-        if ((!key || !bucket)) {
+        if ((!key)) {
             res.status(400).json({ status: 'error', message: 'Provide both key and bucket.' });
             return;
         }
 
-        let presignedUrl = await generatePresignedUrl(bucket, key);
+        let presignedUrl = await generatePresignedUrl(key);
 
         return res.status(200).json({
             status: 'success',
