@@ -7,9 +7,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
@@ -71,4 +73,6 @@ export class UserLogin extends BaseEntity {
     return await bcrypt.compare(password, hashedPassword);
   }
 
+  @OneToOne(() => PersonalDetails, (details) => details.user, { cascade: true })
+  personalDetails!: PersonalDetails;
 }

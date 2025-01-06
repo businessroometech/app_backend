@@ -10,7 +10,7 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
-import userPost from '../src/api/routes/userPost/userPost';
+import userPost from '../src/api/routes/userPost/UserPost';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
