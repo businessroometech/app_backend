@@ -10,12 +10,21 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
+
+import businessbuyer from './api/routes/BusinessBuyer/BusinessBuyerRoute';
+import BusinessSeller from './api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
+import entrepreneurRouter from './api/routes/Entrepreneur/EntrepreneurRoutes';
+import InvestorRouter from './api/routes/InvestorRoute/InvestorRoute';
+import userPost from './api/routes/userPost/UserPost';
+
 import userPost from '../src/api/routes/userPost/UserPost';
+
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
 import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+
 import { UserLogin } from './api/entity/user/UserLogin';
 import { UserPost } from './api/entity/UserPost';
 import { PersonalDetails } from './api/entity/personal/PersonalDetails';
@@ -76,6 +85,10 @@ app.use('/api/v1/auth', authRouter);
 
 app.use('/api/v1/post', userPost);
 
+app.use('/investor', InvestorRouter);
+app.use('/entrepreneur', entrepreneurRouter);
+app.use('/businessSeller', BusinessSeller);
+app.use('/businessbuyer', businessbuyer);
 // testing api route
 app.get('/', (req, res) => {
   res.send('Hello World');
@@ -84,4 +97,4 @@ app.get('/', (req, res) => {
 // Error handlers
 app.use(errorHandler());
 
-export { app, logger, AppDataSource };
+export { app, AppDataSource, logger };

@@ -6,18 +6,18 @@ import { createInvestor, deleteInvestor,getAllInvestors, getInvestorById, update
 const router = express.Router();
 
 //create
-router.post('/investors/create', createInvestor);
+router.post('/create', createInvestor);
 
 // Get all 
-router.get('/investors/getall', getAllInvestors);
+router.get('/getall', getAllInvestors);
 
 // Get investor by ID
-router.get('/investors/:id', getInvestorById);
+router.get('/:id', getInvestorById);
 
 // Update  investor by ID
-router.put('/investors/update/:id', updateInvestor);
+router.put('/update/:id', updateInvestor);
 
 // Delete investor by ID
-router.delete('/investors/delete/:id', deleteInvestor);
+router.delete('/delete/:id', deleteInvestor);
 
 export default router;
