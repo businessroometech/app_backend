@@ -10,6 +10,7 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
+import businessbuyer from './api/routes/BusinessBuyer/BusinessBuyerRoute';
 import BusinessSeller from './api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
 import entrepreneurRouter from './api/routes/Entrepreneur/EntrepreneurRoutes';
 import InvestorRouter from './api/routes/InvestorRoute/InvestorRoute';
@@ -79,6 +80,7 @@ app.use('/api/v1/post', userPost);
 app.use('/investor', InvestorRouter);
 app.use('/entrepreneur', entrepreneurRouter);
 app.use('/businessSeller', BusinessSeller);
+app.use('/businessbuyer', businessbuyer);
 // testing api route
 app.get('/', (req, res) => {
   res.send('Hello World');
