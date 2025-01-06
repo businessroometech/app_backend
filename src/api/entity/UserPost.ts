@@ -23,7 +23,7 @@ export class UserPost extends BaseEntity {
   @Column({ type: 'text' })
   content!: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   hashtags?: string;
 
   @Column({ type: 'simple-array', nullable: true })

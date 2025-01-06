@@ -10,11 +10,16 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
+
 import businessbuyer from './api/routes/BusinessBuyer/BusinessBuyerRoute';
 import BusinessSeller from './api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
 import entrepreneurRouter from './api/routes/Entrepreneur/EntrepreneurRoutes';
 import InvestorRouter from './api/routes/InvestorRoute/InvestorRoute';
 import userPost from './api/routes/userPost/UserPost';
+
+import userPost from '../src/api/routes/userPost/UserPost';
+
+
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
