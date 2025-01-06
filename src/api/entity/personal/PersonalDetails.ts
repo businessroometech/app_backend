@@ -25,11 +25,11 @@ export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
-  sectorId!: string;
+  @Column({ type: 'varchar', length: 255 })
+  occupation!: string;
 
   @Column({ type: 'uuid' })
-  userId!: string;
+  userId!: string;  
 
   @Column({ type: 'uuid' })
   profilePictureUploadId!: string;
