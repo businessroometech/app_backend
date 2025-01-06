@@ -1,15 +1,15 @@
 import { randomBytes } from 'crypto';
 import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
   BaseEntity,
-  CreateDateColumn,
-  UpdateDateColumn,
   BeforeInsert,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'UserPost' }) 
+@Entity({ name: 'UserPost' })
 export class UserPost extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   Id!: string;
@@ -17,22 +17,22 @@ export class UserPost extends BaseEntity {
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'varchar', length: 255 , nullable: true})
+  @Column({ type: 'varchar', length: 255, nullable: true })
   title!: string;
 
   @Column({ type: 'text' })
   content!: string;
 
-  @Column({ type: 'varchar', nullable: true }) 
+  @Column({ type: 'varchar', nullable: true })
   hashtags?: string;
 
-  @Column({ type: 'simple-array', nullable: true }) 
+  @Column({ type: 'simple-array', nullable: true })
   mentionId?: string[];
 
-  @Column({ type: 'simple-array', nullable: true }) 
+  @Column({ type: 'simple-array', nullable: true })
   mediaIds?: string[];
 
-  @Column({ type: 'simple-array', nullable: true }) 
+  @Column({ type: 'simple-array', nullable: true })
   likeIds?: number[];
 
   @Column({ type: 'simple-array', nullable: true })
