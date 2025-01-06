@@ -19,6 +19,9 @@ import { DataSource } from 'typeorm'; // Import DataSource/ Import your environm
 import { UserLogin } from './api/entity/user/UserLogin';
 import { UserPost } from './api/entity/UserPost';
 import { PersonalDetails } from './api/entity/personal/PersonalDetails';
+import { Like } from './api/entity/posts/Like';
+import { Comment } from './api/entity/posts/Comment';
+import { NestedComment } from './api/entity/posts/NestedComment';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -29,7 +32,7 @@ const AppDataSource = new DataSource({
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [
-    UserLogin, UserPost, PersonalDetails
+    UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
