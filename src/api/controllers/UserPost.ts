@@ -3,7 +3,10 @@ import { UserPost } from '../entity/UserPost';
 import { AppDataSource } from '@/server';
 import { UserLogin } from '../entity/user/UserLogin';
 import { PersonalDetails } from '../entity/personal/PersonalDetails';
-
+import { Comment } from '../entity/posts/Comment';
+import { Like } from '../entity/posts/Like';
+import { generatePresignedUrl } from './s3/awsControllers';
+import { In } from 'typeorm';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 const formatTimestamp = (createdAt: Date): string => {
@@ -20,30 +23,19 @@ const formatTimestamp = (createdAt: Date): string => {
   return `${daysAgo} days ago`;
 };
 
-
 // user post and and update post
 export const CreateUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const {
-      userId,
-      title,
-      content,
-      hashtags,
-      mentionId,
-      mediaIds,
-      likeIds,
-      commentIds,
-      shareIds,
-    } = req.body;
+    const { userId, title, content, hashtags, mediaKeys } = req.body;
 
     // Check if the user ID exists in the PersonalDetails repository
-    // const userRepos = AppDataSource.getRepository(PersonalDetails);
-    // const user = await userRepos.findOneBy({ userId });
-    // if (!user) {
-    //   return res.status(400).json({
-    //     message: 'User ID is invalid or does not exist.',
-    //   });
-    // }
+    const userRepos = AppDataSource.getRepository(UserLogin);
+    const user = await userRepos.findOneBy({ id: userId });
+    if (!user) {
+      return res.status(400).json({
+        message: 'User ID is invalid or does not exist.',
+      });
+    }
 
     // Create a new post instance
     const newPost = UserPost.create({
@@ -51,14 +43,9 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       title,
       content,
       hashtags,
-      mentionId,
-      mediaIds, 
-      likeIds,
-      commentIds,
-      shareIds,
+      mediaKeys,
     });
-await newPost.save();
-
+    await newPost.save();
     return res.status(201).json({
       message: 'Post created successfully.',
       data: newPost,
@@ -75,21 +62,20 @@ await newPost.save();
 export const FindUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { userId } = req.body;
-
-    // Validate input
     if (!userId) {
       return res.status(400).json({
         message: 'User ID is required.',
       });
     }
-
-    // Get the PersonalDetails repository
-    const userRepository = AppDataSource.getRepository(PersonalDetails);
-
-    // Check if the user exists
+    const userRepository = AppDataSource.getRepository(UserLogin);
     const user = await userRepository.findOne({
-      where: { userId },
-      select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', "occupation"],
+      where: { id: userId },
+      select: [
+        // 'profilePictureUploadId',
+        'firstName',
+        'lastName',
+        // 'bio', 'occupation'
+      ],
     });
 
     if (!user) {
@@ -98,34 +84,47 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
       });
     }
 
-    // Find the user's posts
     const userPostRepository = AppDataSource.getRepository(UserPost);
+    const commentRepository = AppDataSource.getRepository(Comment);
+    const likeRepository = AppDataSource.getRepository(Like);
     const userPosts = await userPostRepository.find({
       where: { userId },
     });
-
     if (!userPosts || userPosts.length === 0) {
-      return res.status(404).json({
-        message: 'No posts found for this user.',
-      });
+      return res.status(404).json({ message: 'No posts found for this user.' });
     }
+    const postIds = userPosts.map((post) => post.Id);
+    const comments = await commentRepository.find({
+      where: { postId: In(postIds) },
+    });
 
-    // Format the posts with user details
+    const likes = await likeRepository.find({
+      where: { postId: In(postIds) },
+    });
+    const mediaKeysWithUrls = await Promise.all(
+      userPosts.map(async (post) => ({
+        postId: post.Id,
+        mediaUrls: await Promise.all(
+          post.mediaKeys.map((key) => generatePresignedUrl(key))
+        ),
+      }))
+    );
     const formattedPosts = userPosts.map((post) => ({
-      ...post,
-      userDetails: {
-        profilePictureUploadId: user.profilePictureUploadId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        bio: user.bio,
-        occupation: user.occupation,
+      post: {
+        userId: post.userId,
+        title: post.title,
+        content: post.content,
+        hashtags: post.hashtags,
+        mediaKeys: mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [],
+        likeCount: likes.filter((like) => like.postId === post.id).length || 0,
+        commentCount: comments.filter((comment) => comment.postId === post.id).length || 0,
       },
-      timestamp: formatTimestamp(post.createdAt), // Call the utility function for formatting
-      likeCount: post.likeIds?.length || 0,
-      commentCount: post.commentIds?.length || 0,
-      shareCount: post.shareIds?.length || 0,
+      userDetails: {
+        firstName: user?.firstName || '', // Ensure `user` is defined
+        lastName: user?.lastName || '',
+        timestamp: formatTimestamp(post.createdAt),
+      },
     }));
-
     return res.status(200).json({
       message: 'User posts retrieved successfully.',
       data: formattedPosts,
@@ -141,34 +140,23 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
 // find and update user post
 export const UpdateUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const {
-      userId,
-        Id,
-      title,
-      content,
-      hashtags,
-      mentionId,
-      mediaIds,
-      likeIds,
-      commentIds,
-      shareIds,
-    } = req.body;
+    const { userId, Id, title, content, hashtags, mentionId, mediaIds, likeIds, commentIds, shareIds } = req.body;
 
     // Check if the user ID exists in the PersonalDetails repository
-     // Get the PersonalDetails repository
-     const userRepository = AppDataSource.getRepository(PersonalDetails);
+    // Get the PersonalDetails repository
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
 
-     // Check if the user exists
-     const user = await userRepository.findOne({
-       where: { userId },
-       select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', "occupation"],
-     });
- 
-     if (!user) {
-       return res.status(404).json({
-         message: 'User not found. Invalid User ID.',
-       });
-     }
+    // Check if the user exists
+    const user = await userRepository.findOne({
+      where: { userId },
+      select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', 'occupation'],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found. Invalid User ID.',
+      });
+    }
 
     // Find the user post
     const userPost = await UserPost.findOne({ where: { Id } });
@@ -188,7 +176,6 @@ export const UpdateUserPost = async (req: Request, res: Response): Promise<Respo
     return res.status(200).json({
       message: 'User post updated successfully.',
       data: userPost,
-      
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -213,7 +200,7 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
     // }
 
     // Find the user post
-    const userPost = await UserPost.findOne({ where: { Id:PostId } });
+    const userPost = await UserPost.findOne({ where: { Id: PostId } });
 
     // Delete the user post
     await userPost!.remove();
@@ -240,20 +227,20 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       });
     }
 
-     // Get the PersonalDetails repository
-     const userRepository = AppDataSource.getRepository(PersonalDetails);
+    // Get the PersonalDetails repository
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
 
-     // Check if the user exists
-     const user = await userRepository.findOne({
-       where: { userId },
-       select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', "occupation"],
-     });
- 
-     if (!user) {
-       return res.status(404).json({
-         message: 'User not found. Invalid User ID.',
-       });
-     }
+    // Check if the user exists
+    const user = await userRepository.findOne({
+      where: { userId },
+      select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', 'occupation'],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found. Invalid User ID.',
+      });
+    }
 
     const posts = await UserPost.find({
       order: {
@@ -286,7 +273,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         bio: user.bio,
         occupation: user.occupation,
       },
-      timestamp: formatTimestamp(post.createdAt), 
+      timestamp: formatTimestamp(post.createdAt),
       likeCount: post.likeIds?.length || 0,
       commentCount: post.commentIds?.length || 0,
       shareCount: post.shareIds?.length || 0,

@@ -26,20 +26,11 @@ export class UserPost extends BaseEntity {
   @Column({ type: 'simple-array', nullable: true })
   hashtags?: string;
 
-  @Column({ type: 'simple-array', nullable: true })
-  mentionId?: string[];
+  // @Column({ type: 'simple-array', nullable: true })
+  // mentionId?: string[];
 
   @Column({ type: 'simple-array', nullable: true })
-  mediaIds?: string[];
-
-  @Column({ type: 'simple-array', nullable: true })
-  likeIds?: number[];
-
-  @Column({ type: 'simple-array', nullable: true })
-  commentIds?: number[];
-
-  @Column({ type: 'simple-array', nullable: true })
-  shareIds?: number[];
+  mediaKeys?: string[];
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
