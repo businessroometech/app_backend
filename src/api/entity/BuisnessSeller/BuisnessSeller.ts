@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { randomBytes } from 'crypto';
-import { BaseEntity, BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, BeforeInsert, Column, CreateDateColumn,Entity, PrimaryGeneratedColumn ,UpdateDateColumn } from 'typeorm';
 
 @Entity({ name: "BusinessForSale" })
 export class BusinessForSale extends BaseEntity {
@@ -9,7 +9,7 @@ export class BusinessForSale extends BaseEntity {
   id!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  businessType!: string;
+  businessCategory!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
   yearsInOperation!: string;
@@ -48,7 +48,7 @@ export class BusinessForSale extends BaseEntity {
   numberOfEmployees!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  businessStructure!: string;
+  businessdescription!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
   businessOwnershipStatus!: string;
@@ -99,7 +99,20 @@ export class BusinessForSale extends BaseEntity {
   sellingPoints!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  additionalInformation!: string;
+  companylogokey!: string;
+    
+    
+   @UpdateDateColumn({
+      type: 'timestamp',
+      default: () => 'CURRENT_TIMESTAMP(6)',
+      onUpdate: 'CURRENT_TIMESTAMP(6)',
+    })
+    updatedAt!: Date;
+
+   
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
+    createdAt!: Date;
+
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {

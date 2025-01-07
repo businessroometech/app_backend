@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
-import { UserPost } from '../entity/UserPost';
+import { In } from 'typeorm';
+
 import { AppDataSource } from '@/server';
-import { UserLogin } from '../entity/user/UserLogin';
+
 import { PersonalDetails } from '../entity/personal/PersonalDetails';
 import { Comment } from '../entity/posts/Comment';
 import { Like } from '../entity/posts/Like';
+import { UserLogin } from '../entity/user/UserLogin';
+import { UserPost } from '../entity/UserPost';
 import { generatePresignedUrl } from './s3/awsControllers';
-import { In } from 'typeorm';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 const formatTimestamp = (createdAt: Date): string => {
@@ -88,39 +90,39 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
-    
+
     // Fetch user posts
     const userPosts = await userPostRepository.find({
       where: { userId },
     });
-    
+
     // Check if posts exist
     if (!userPosts || userPosts.length === 0) {
       return res.status(404).json({ message: 'No posts found for this user.' });
     }
-    
+
     const postIds = userPosts.map((post) => post.Id);
     const comments = await commentRepository.find({
       where: { postId: In(postIds) },
     });
-    
+
     const likes = await likeRepository.find({
       where: { postId: In(postIds) },
     });
-    
+
     const mediaKeysWithUrls = await Promise.all(
       userPosts.map(async (post) => ({
         postId: post.Id,
         mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
       }))
     );
-    
+
     const formattedPosts = userPosts.map((post) => {
       const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
       const likeCount = likes.filter((like) => like.postId === post.Id).length;
       const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
       const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === userId);
-    
+
       return {
         post: {
           Id: post.Id,
@@ -287,9 +289,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     const mediaKeysWithUrls = await Promise.all(
       posts.map(async (post) => ({
         postId: post.Id,
-        mediaUrls: post.mediaKeys
-          ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key)))
-          : [],
+        mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
       }))
     );
 
@@ -333,4 +333,3 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     });
   }
 };
-

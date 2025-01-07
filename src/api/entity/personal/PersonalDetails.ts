@@ -10,14 +10,15 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
 import { UserLogin } from '../user/UserLogin';
 
 interface Address {
-  addressLine1: string,
-  addressLine2: string,
-  city: string,
-  state: string,
-  pincode: string,
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  pincode: string;
 }
 
 @Entity({ name: 'PersonalDetails' })
@@ -29,7 +30,7 @@ export class PersonalDetails extends BaseEntity {
   occupation!: string;
 
   @Column({ type: 'uuid' })
-  userId!: string;  
+  userId!: string;
 
   @Column({ type: 'uuid' })
   profilePictureUploadId!: string;
@@ -55,23 +56,23 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'text' })
   bio!: string;
 
-  @Column({ type: "varchar", default: "" })
-  gender !: string
+  @Column({ type: 'varchar', default: '' })
+  gender!: string;
 
-  @Column({ type: "varchar", default: "" })
-  preferredLanguage !: string
+  @Column({ type: 'varchar', default: '' })
+  preferredLanguage!: string;
 
-  @Column({ type: "varchar", default: "" })
-  socialMediaProfile !: string
+  @Column({ type: 'varchar', default: '' })
+  socialMediaProfile!: string;
 
-  @Column({ type: "varchar", default: "" })
-  height !: string
+  @Column({ type: 'varchar', default: '' })
+  height!: string;
 
-  @Column({ type: "varchar", default: "" })
-  weight !: string
+  @Column({ type: 'varchar', default: '' })
+  weight!: string;
 
-  @Column({ type: "varchar", default: "" })
-  bodyMeasurement !: string
+  @Column({ type: 'varchar', default: '' })
+  bodyMeasurement!: string;
 
   @Column({ type: 'json' })
   permanentAddress!: Address;
@@ -111,7 +112,7 @@ export class PersonalDetails extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToOne(() => UserLogin, (user:any) => user.personalDetails)
-  @JoinColumn({ name: "userId" })
+  @OneToOne(() => UserLogin, (user: any) => user.personalDetails)
+  @JoinColumn({ name: 'userId' })
   user!: UserLogin;
 }

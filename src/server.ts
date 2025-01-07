@@ -1,3 +1,4 @@
+//router error//
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
@@ -7,21 +8,26 @@ import { pino } from 'pino';
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
-import { env } from '@/common/utils/envConfig';
 
+//import { env } from '@/common/utils/envConfig';
 import authRouter from '../src/api/routes/auth/AuthRoutes';
+//import BusinessSellerRouter from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
 import userPost from '../src/api/routes/userPost/UserPost';
+//import investorroutes from './api/routes/InvestorRoute/InvestorRoute';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
 import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+
+import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
+import { Investor } from './api/entity/Investors/Investor';
+import { PersonalDetails } from './api/entity/personal/PersonalDetails';
+import { Comment } from './api/entity/posts/Comment';
+import { Like } from './api/entity/posts/Like';
+import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserLogin } from './api/entity/user/UserLogin';
 import { UserPost } from './api/entity/UserPost';
-import { PersonalDetails } from './api/entity/personal/PersonalDetails';
-import { Like } from './api/entity/posts/Like';
-import { Comment } from './api/entity/posts/Comment';
-import { NestedComment } from './api/entity/posts/NestedComment';
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -31,9 +37,7 @@ const AppDataSource = new DataSource({
   username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
-  entities: [
-    UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment
-  ],
+  entities: [UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment, Investor, BusinessForSale],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
@@ -79,6 +83,7 @@ app.use('/api/v1/auth', authRouter);
 
 app.use('/api/v1/post', userPost);
 
+//app.use('/businessforsale', BusinessSellerRouter);
 // testing api route
 app.get('/', (req, res) => {
   res.send('Hello World');
@@ -87,4 +92,4 @@ app.get('/', (req, res) => {
 // Error handlers
 app.use(errorHandler());
 
-export { app, logger, AppDataSource };
+export { app, AppDataSource, logger };
