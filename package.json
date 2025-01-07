@@ -52,6 +52,7 @@
     "pino-http": "^10.0.0",
     "razorpay": "^2.9.4",
     "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "ts-node": "^10.9.2",

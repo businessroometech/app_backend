@@ -3,6 +3,8 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserLogin } from '../../entity/user/UserLogin';
 import { AppDataSource } from '@/server';
+import { createNotification } from '../notifications/notificationController';
+import { Notifications } from '@/api/entity/notifications/Notifications';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
@@ -16,7 +18,7 @@ const generateAccessToken = (user: { id: string }, rememberMe: boolean = false):
 //   });
 // };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, ): Promise<void> => {
   try {
     const { email, password, rememberMe = false } = req.body;
 
@@ -73,6 +75,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         },
       },
     });
+   
+      const notificationRepos = AppDataSource.getRepository(Notifications);
+          const notification = notificationRepos.create({
+            userId: user.id,
+            message: 'Welcome to our platform!, You have successfully logged in',
+            navigation: '/dashboard',
+          });
+      
+          // Save the notification
+          await notificationRepos.save(notification);
+  
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({

@@ -263,7 +263,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         updatedAt: 'DESC',
         createdAt: 'DESC',
       },
-      select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys'],
+      select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', "createdAt"],
     });
 
     if (!posts || posts.length === 0) {
