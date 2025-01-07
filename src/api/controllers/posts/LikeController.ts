@@ -2,31 +2,24 @@ import { Request, Response } from 'express';
 import { Like } from '../../entity/posts/Like';
 import { AppDataSource } from '@/server';
 
-export const createOrToggleLike = async (req: Request, res: Response) => {
+export const createLike = async (req: Request, res: Response) => {
     try {
-        const { userId, postId } = req.body;
-
-        const likeRepository = AppDataSource.getRepository(Like);
-
+        const { userId, postId, status  } = req.body;
         if (!userId || !postId) {
             return res.status(400).json({ status: "error", message: 'userId and postId are required.' });
         }
-
+        const likeRepository = AppDataSource.getRepository(Like);
         let like = await likeRepository.findOne({ where: { userId, postId } });
 
-        if (!like) {
+        if (like) {
+            like.status = status;
+        } else {
             like = Like.create({
                 userId,
                 postId,
-                status: true,
-                createdBy: "system",
-                updatedBy: "system",
+                status
             });
-        } else {
-            like.status = !like.status;
-            like.updatedBy = userId;
         }
-
         await like.save();
         return res.status(200).json({ status: "success", message: 'Like status updated.', data: { like } });
     } catch (error) {
