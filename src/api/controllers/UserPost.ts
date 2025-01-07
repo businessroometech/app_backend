@@ -61,66 +61,92 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
 // FindUserPost by userId
 export const FindUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId } = req.body;
+    const { userId, page = 1, limit = 5 } = req.body;
+
     if (!userId) {
       return res.status(400).json({
-        message: 'User ID is required.',
+        message: "User ID is required.",
       });
     }
 
     const userRepository = AppDataSource.getRepository(UserLogin);
     const user = await userRepository.findOne({
       where: { id: userId },
-      select: [
-        // 'profilePictureUploadId',
-        'firstName',
-        'lastName',
-        // 'bio', 'occupation'
-      ],
+      select: ["firstName", "lastName"],
     });
 
     if (!user) {
       return res.status(404).json({
-        message: 'User not found. Invalid User ID.',
+        message: "User not found. Invalid User ID.",
       });
     }
 
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
-    
-    // Fetch user posts
-    const userPosts = await userPostRepository.find({
+
+    // Fetch user posts with pagination
+    const [userPosts, totalPosts] = await userPostRepository.findAndCount({
       where: { userId },
+      order: { createdAt: "DESC" },
+      skip: (page - 1) * limit,
+      take: limit,
     });
-    
-    // Check if posts exist
+
     if (!userPosts || userPosts.length === 0) {
-      return res.status(404).json({ message: 'No posts found for this user.' });
+      return res.status(404).json({ message: "No posts found for this user." });
     }
-    
+
     const postIds = userPosts.map((post) => post.Id);
+
+    // Fetch related comments and likes
     const comments = await commentRepository.find({
       where: { postId: In(postIds) },
     });
-    
+
     const likes = await likeRepository.find({
       where: { postId: In(postIds) },
     });
-    
+
+    // Fetch media keys and URLs for posts
     const mediaKeysWithUrls = await Promise.all(
       userPosts.map(async (post) => ({
         postId: post.Id,
         mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
       }))
     );
-    
+
+    // Format comments for each post
+    const postComments = await commentRepository.find({
+      where: { postId: In(postIds) },
+      order: { createdAt: "ASC" },
+      take: 5, // Limit comments per post
+    });
+
+    const formattedComments = await Promise.all(
+      postComments.map(async (comment) => {
+        const commenter = await userRepository.findOne({
+          where: { id: comment.userId },
+          select: ["firstName", "lastName"],
+        });
+
+        return {
+          Id: comment.id,
+          commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`,
+          text: comment.text,
+          timestamp: formatTimestamp(comment.createdAt),
+          postId: comment.postId,
+        };
+      })
+    );
+
+    // Format posts with related data
     const formattedPosts = userPosts.map((post) => {
       const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
       const likeCount = likes.filter((like) => like.postId === post.Id).length;
       const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
       const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === userId);
-    
+
       return {
         post: {
           Id: post.Id,
@@ -131,27 +157,33 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
           mediaKeys: mediaUrls,
           likeCount,
           commentCount,
-          likeStatus, // true or false based on whether the user has liked the post
+          likeStatus,
         },
         userDetails: {
-          firstName: user?.firstName || '',
-          lastName: user?.lastName || '',
+          firstName: user.firstName,
+          lastName: user.lastName,
           timestamp: formatTimestamp(post.createdAt),
         },
+        comments: formattedComments.filter((comment) => comment.postId === post.Id),
       };
     });
+
     return res.status(200).json({
-      message: 'User posts retrieved successfully.',
-      data: formattedPosts,
+      message: "User posts retrieved successfully.",
+      data: {
+        posts: formattedPosts,
+        totalPosts,
+        currentPage: page,
+        totalPages: Math.ceil(totalPosts / limit),
+      },
     });
   } catch (error: any) {
     return res.status(500).json({
-      message: 'Internal server error. Could not retrieve user posts.',
+      message: "Internal server error. Could not retrieve user posts.",
       error: error.message,
     });
   }
 };
-
 // find and update user post
 export const UpdateUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
