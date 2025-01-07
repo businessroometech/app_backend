@@ -9,7 +9,7 @@ import { generatePresignedUrl } from './s3/awsControllers';
 import { In } from 'typeorm';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
-const formatTimestamp = (createdAt: Date): string => {
+export const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
   const createdTime = new Date(createdAt).getTime();
   const secondsAgo = Math.floor((now - createdTime) / 1000);
