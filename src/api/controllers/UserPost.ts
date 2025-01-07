@@ -294,31 +294,69 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     );
 
     // Format the posts with user details, likes, and comments
-    const formattedPosts = posts.map((post) => {
-      const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
-      const likeCount = likes.filter((like) => like.postId === post.Id).length;
-      const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
-      const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === userId);
-
-      return {
-        post: {
-          Id: post.Id,
-          userId: post.userId,
-          title: post.title,
-          content: post.content,
-          hashtags: post.hashtags,
-          mediaKeys: mediaUrls,
-          likeCount,
-          commentCount,
-          likeStatus, // true or false based on whether the user has liked the post
-        },
-        userDetails: {
-          firstName: user?.firstName || '',
-          lastName: user?.lastName || '',
-          timestamp: formatTimestamp(post.createdAt),
-        },
-      };
-    });
+    
+    const formattedPosts = await Promise.all(
+      posts.map(async (post) => {
+        // Fetch media URLs related to the post
+        const mediaUrls =
+          mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
+    
+        // Calculate like count and comment count
+        const likeCount = likes.filter((like) => like.postId === post.Id).length;
+        const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
+    
+        // Determine if the user has liked the post
+        const likeStatus = likes.some(
+          (like) => like.postId === post.Id && like.userId === userId
+        );
+    
+        // Fetch top 5 comments for the post
+        const postComments = await commentRepository.find({
+          where: { postId: post.Id },
+          order: { createdAt: 'ASC' },
+          take: 5,
+        });
+    
+        // Format the comments
+        const formattedComments = await Promise.all(
+          postComments.map(async (comment) => {
+            const commenter = await userRepository.findOne({
+              where: { id: comment.userId },
+              select: ['firstName', 'lastName'],
+            });
+    
+            return {
+              Id: comment.id,
+              commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
+              text: comment.text,
+              timestamp: formatTimestamp(comment.createdAt),
+            };
+          })
+        );
+    
+        // Return the formatted post object
+        return {
+          post: {
+            Id: post.Id,
+            userId: post.userId,
+            title: post.title,
+            content: post.content,
+            hashtags: post.hashtags,
+            mediaKeys: mediaUrls,
+            likeCount,
+            commentCount,
+            likeStatus, 
+          },
+          userDetails: {
+            firstName: user?.firstName || '',
+            lastName: user?.lastName || '',
+            timestamp: formatTimestamp(post.createdAt),
+          },
+          comments: formattedComments,
+          
+        };
+      })
+    );    
 
     // Return the formatted posts
     return res.status(200).json({

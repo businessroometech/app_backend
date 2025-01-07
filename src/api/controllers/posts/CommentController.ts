@@ -34,13 +34,10 @@ export const getComments = async (req: Request, res: Response) => {
 
         const currentPage = page && page > 0 ? page : 1;
         const skip = (currentPage - 1) * limit;
-
         const commentRepository = AppDataSource.getRepository(Comment);
-
         if (!postId) {
             return res.status(400).json({ status: "error", message: 'postId is required.' });
         }
-
         const comments = await commentRepository.find({
             where: { postId },
             order: { createdAt: 'ASC' },

@@ -19,6 +19,5 @@ Router.post('/get-likes', getAllLikesForPost);
 Router.post('/get-comments', getComments);
 Router.post('/get-nested-comments', getNestedComments);
 
-
 export default Router;
 
