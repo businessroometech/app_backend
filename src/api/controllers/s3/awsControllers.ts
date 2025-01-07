@@ -7,7 +7,7 @@ const s3 = new S3Client({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
     },
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: 'eu-north-1',
 });
 
 const generateUrlForUploading = (bucketName: any, key: string, expDate: any, type: string) => {
