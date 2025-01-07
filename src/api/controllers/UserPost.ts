@@ -227,43 +227,28 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
 };
 
 // Get all posts for public view
+
+// Get all posts for public view
+// Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId } = req.body;
+    const { page , limit = 5 } = req.body;
 
-    // Validate the userId
-    if (!userId) {
-      return res.status(400).json({
-        message: 'User ID is required.',
-      });
-    }
-
-    // Get the UserLogin repository
+    // Get the repositories
     const userRepository = AppDataSource.getRepository(UserLogin);
-
-    // Check if the user exists
-    const user = await userRepository.findOne({
-      where: { id: userId },
-      select: ['firstName', 'lastName'],
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        message: 'User not found. Invalid User ID.',
-      });
-    }
-
-    // Get all posts
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
 
+    // Get all posts with pagination
     const posts = await userPostRepository.find({
       order: {
         updatedAt: 'DESC',
         createdAt: 'DESC',
       },
-      select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', "createdAt"],
+      select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
     if (!posts || posts.length === 0) {
@@ -294,29 +279,23 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     );
 
     // Format the posts with user details, likes, and comments
-    
     const formattedPosts = await Promise.all(
       posts.map(async (post) => {
         // Fetch media URLs related to the post
         const mediaUrls =
           mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
-    
+
         // Calculate like count and comment count
         const likeCount = likes.filter((like) => like.postId === post.Id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
-    
-        // Determine if the user has liked the post
-        const likeStatus = likes.some(
-          (like) => like.postId === post.Id && like.userId === userId
-        );
-    
+
         // Fetch top 5 comments for the post
         const postComments = await commentRepository.find({
           where: { postId: post.Id },
           order: { createdAt: 'ASC' },
           take: 5,
         });
-    
+
         // Format the comments
         const formattedComments = await Promise.all(
           postComments.map(async (comment) => {
@@ -324,7 +303,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
               where: { id: comment.userId },
               select: ['firstName', 'lastName'],
             });
-    
+
             return {
               Id: comment.id,
               commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
@@ -333,7 +312,13 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             };
           })
         );
-    
+
+        // Fetch user details for the post creator
+        const user = await userRepository.findOne({
+          where: { id: post.userId },
+          select: ['firstName', 'lastName'],
+        });
+
         // Return the formatted post object
         return {
           post: {
@@ -342,10 +327,9 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             title: post.title,
             content: post.content,
             hashtags: post.hashtags,
-            mediaKeys: mediaUrls,
+            mediaUrls: mediaUrls,
             likeCount,
             commentCount,
-            likeStatus, 
           },
           userDetails: {
             firstName: user?.firstName || '',
@@ -353,10 +337,9 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             timestamp: formatTimestamp(post.createdAt),
           },
           comments: formattedComments,
-          
         };
       })
-    );    
+    );
 
     // Return the formatted posts
     return res.status(200).json({
@@ -371,4 +354,5 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     });
   }
 };
+
 
