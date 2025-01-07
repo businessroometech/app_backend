@@ -320,6 +320,8 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Calculate like count and comment count
         const likeCount = likes.filter((like) => like.postId === post.Id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
+        const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === post.Id);
+
 
         // Fetch top 5 comments for the post
         const postComments = await commentRepository.find({
@@ -362,6 +364,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             mediaUrls: mediaUrls,
             likeCount,
             commentCount,
+            likeStatus,
           },
           userDetails: {
             firstName: user?.firstName || '',
