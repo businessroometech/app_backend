@@ -80,7 +80,7 @@ app.use(
   })
 );
 app.use(helmet());
-app.use(rateLimiter);
+// app.use(rateLimiter);
 
 // Request logging
 app.use(requestLogger);
