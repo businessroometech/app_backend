@@ -10,48 +10,48 @@ import { UserLogin } from "@/api/entity/user/UserLogin";
 
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
-    const { requesterId, receiverId } = req.body;
-  
-    try {
-      const userRepository = AppDataSource.getRepository(PersonalDetails);
-      const connectionRepository = AppDataSource.getRepository(Connection);
-      const requester = await userRepository.findOne({ where: { userId: requesterId } });
-      const receiver = await userRepository.findOne({ where: { userId: receiverId } });
-  
-      if (!requester) {
-        return res.status(404).json({ message: "Requester not found." });
-      }
-      if (!receiver) {
-        return res.status(404).json({ message: "Receiver not found." });
-      }
-      
-      const existingConnection = await connectionRepository.findOne({
-        where: [
-          { requesterId, receiverId },
-          { requesterId: receiverId, receiverId: requesterId },
-        ],
-      });
-  
-      if (existingConnection) {
-        return res.status(400).json({ message: "Connection request already exists." });
-      }  
-      const newConnection = connectionRepository.create({
-        requesterId,
-        receiverId,
-        status: 'pending',
-      });
-  
-      await connectionRepository.save(newConnection);
-  
-      return res.status(201).json({
-        message: "Connection request sent successfully.",
-        connection: newConnection,
-      });
-    } catch (error) {
-      console.error("Error sending connection request:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
+  const { requesterId, receiverId } = req.body;
+
+  try {
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
+    const connectionRepository = AppDataSource.getRepository(Connection);
+    const requester = await userRepository.findOne({ where: { userId: requesterId } });
+    const receiver = await userRepository.findOne({ where: { userId: receiverId } });
+
+    if (!requester) {
+      return res.status(404).json({ message: "Requester not found." });
     }
-  };
+    if (!receiver) {
+      return res.status(404).json({ message: "Receiver not found." });
+    }
+
+    const existingConnection = await connectionRepository.findOne({
+      where: [
+        { requesterId, receiverId },
+        { requesterId: receiverId, receiverId: requesterId },
+      ],
+    });
+
+    if (existingConnection) {
+      return res.status(400).json({ message: "Connection request already exists." });
+    }
+    const newConnection = connectionRepository.create({
+      requesterId,
+      receiverId,
+      status: 'pending',
+    });
+
+    await connectionRepository.save(newConnection);
+
+    return res.status(201).json({
+      message: "Connection request sent successfully.",
+      connection: newConnection,
+    });
+  } catch (error) {
+    console.error("Error sending connection request:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 // Accept or reject a connection request
 export const updateConnectionStatus = async (req: Request, res: Response): Promise<Response> => {
@@ -61,10 +61,10 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
     const connectionRepository = AppDataSource.getRepository(Connection);
 
     const connection = await connectionRepository.findOne({
-        where: [
-          { requesterId: connectionId, receiverId: userId },
-        ],
-      });
+      where: [
+        { requesterId: connectionId, receiverId: userId },
+      ],
+    });
     if (!connection) {
       return res.status(404).json({ message: "Connection not found." });
     }
@@ -93,61 +93,61 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
 
 // Get user's connections
 export const getUserConnections = async (req: Request, res: Response): Promise<Response> => {
-    const { userId } = req.body;
-  
-    try {
-      const connectionRepository = AppDataSource.getRepository(Connection);
-      const connections = await connectionRepository.find({
-        where: [
-          { requesterId: userId, status: "accepted" },
-          { receiverId: userId, status: "accepted" },
-        ],
-      });
-  
-      if (!connections || connections.length === 0) {
-        return res.status(404).json({ message: "No accepted connections found." });
-      }
-  
-      const userRepository = AppDataSource.getRepository(PersonalDetails);
-      const userIds = [
-        ...new Set(connections.map((connection) => connection.requesterId)),
-        ...new Set(connections.map((connection) => connection.receiverId)),
-      ];
-  
-      const users = await userRepository.find({
-        where: { userId: In(userIds) },
-        select: ["userId", "firstName", "lastName", "profilePictureUploadId"],
-      });
-  
-      if (!users || users.length === 0) {
-        return res.status(404).json({ message: "No users found." });
-      }
-  
-      const result = connections.map((connection) => {
-        const user = users.find(
-          (user) =>
-            user.userId === connection.requesterId ||
-            user.userId === connection.receiverId
-        );
-  
-        return {
-          userId: user?.userId,
-          firstName: user?.firstName,
-          lastName: user?.lastName,
-          profilePictureUrl: user?.profilePictureUploadId
-            ?  generatePresignedUrl(user.profilePictureUploadId)
-            : null,
-          meeted: formatTimestamp(connection.updatedAt),
-        };
-      });
-  
-      return res.status(200).json({ connections: result });
-    } catch (error: any) {
-      console.error("Error fetching user connections:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
+  const { userId } = req.body;
+
+  try {
+    const connectionRepository = AppDataSource.getRepository(Connection);
+    const connections = await connectionRepository.find({
+      where: [
+        { requesterId: userId, status: "accepted" },
+        { receiverId: userId, status: "accepted" },
+      ],
+    });
+
+    if (!connections || connections.length === 0) {
+      return res.status(404).json({ message: "No accepted connections found." });
     }
-  };
-  
+
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
+    const userIds = [
+      ...new Set(connections.map((connection) => connection.requesterId)),
+      ...new Set(connections.map((connection) => connection.receiverId)),
+    ];
+
+    const users = await userRepository.find({
+      where: { userId: In(userIds) },
+      select: ["userId", "firstName", "lastName", "profilePictureUploadId"],
+    });
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "No users found." });
+    }
+
+    const result = connections.map((connection) => {
+      const user = users.find(
+        (user) =>
+          user.userId === connection.requesterId ||
+          user.userId === connection.receiverId
+      );
+
+      return {
+        userId: user?.userId,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        profilePictureUrl: user?.profilePictureUploadId
+          ? generatePresignedUrl(user.profilePictureUploadId)
+          : null,
+        meeted: formatTimestamp(connection.updatedAt),
+      };
+    });
+
+    return res.status(200).json({ connections: result });
+  } catch (error: any) {
+    console.error("Error fetching user connections:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Remove a connection
 export const removeConnection = async (req: Request, res: Response): Promise<Response> => {
   const { connectionId } = req.params;
@@ -186,7 +186,7 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
     const connectionRepository = AppDataSource.getRepository(Connection);
 
     const user = await userRepository.findOne({
-      where: {  userId },
+      where: { userId },
       select: ["id", "firstName", "lastName", "occupation"],
     });
 
@@ -199,7 +199,7 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
 
     // Fetch current user's connections
     const userConnections = await connectionRepository.find({
-      where: { receiverId:userId },
+      where: { receiverId: userId },
       select: ["requesterId"],
     });
 
@@ -216,7 +216,7 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
             .orWhere(
               "user.id IN (SELECT c.connected_user_id FROM connection c WHERE c.user_id IN (:...connectedUserIds))",
               { connectedUserIds }
-            ); 
+            );
         })
       )
       .take(limit)
@@ -224,11 +224,20 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
       .getMany();
 
     // Format response
+    // const suggestions = potentialConnections.map((connection) => ({
+    //   id: connection.id,
+    //   name: `${connection.firstName} ${connection.lastName}`,
+    //   sharedSkills: connection.occupation.filter((skill: string) => user.occupation.includes(skill)),
+    // }));
+
     const suggestions = potentialConnections.map((connection) => ({
       id: connection.id,
       name: `${connection.firstName} ${connection.lastName}`,
-      sharedSkills: connection.occupation.filter((skill) => user.occupation.includes(skill)),
+      sharedSkills: connection.occupation
+        .split(",") // Assuming skills are comma-separated
+        .filter((skill: string) => user.occupation.includes(skill)),
     }));
+
 
     return res.status(200).json({
       success: true,

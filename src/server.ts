@@ -10,7 +10,7 @@ import { env } from '@/common/utils/envConfig';
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import userPost from '../src/api/routes/userPost/UserPost';
 import notifications from '../src/api/routes/notification/Notifications';
-import connectionRouter from '../src/api/routes/connection/connection'
+import connectionRouter from '../src/api/routes/connection/Connection'
 
 import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
 import { UserLogin } from './api/entity/user/UserLogin';
