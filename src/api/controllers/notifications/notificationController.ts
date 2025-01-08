@@ -54,7 +54,7 @@ export const createNotification = async (req: Request, res: Response) => {
 export const markAsRead = async (req: Request, res: Response) => {
   const { notificationId } = req.body;
 
-  try {
+  try { 
     const notificationRepository = AppDataSource.getRepository(Notifications);
     const notification = await notificationRepository.findOneBy({ id : notificationId});
     if (!notification) {

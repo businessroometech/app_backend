@@ -10,6 +10,7 @@ import { env } from '@/common/utils/envConfig';
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import userPost from '../src/api/routes/userPost/UserPost';
 import notifications from '../src/api/routes/notification/Notifications';
+import connectionRouter from '../src/api/routes/connection/connection'
 
 import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
 import { UserLogin } from './api/entity/user/UserLogin';
@@ -21,6 +22,7 @@ import { NestedComment } from './api/entity/posts/NestedComment';
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { Notifications } from './api/entity/notifications/Notifications';
+import { Connection } from './api/entity/connection/Connections';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -40,7 +42,7 @@ const AppDataSource = new DataSource({
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [
-    UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment, Notifications
+    UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment, Notifications, Connection
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
@@ -90,6 +92,7 @@ app.use('/api/v1/auth', authRouter);
 
 app.use('/api/v1/post', userPost);
 app.use('/api/v1/notifications', notifications);
+app.use('/api/v1/connection', connectionRouter )
 
 // testing api route
 app.get('/', (req, res) => {
