@@ -18,7 +18,7 @@ router.post('/create', createBusinessForSale);
 router.get('/getall', getAllBusinessesForSale);
 
 
-router.get('/detai;/:id', getBusinessForSaleById);
+router.get('/detail/:id', getBusinessForSaleById);
 
 
 router.put('/update/:id', updateBusinessForSale);

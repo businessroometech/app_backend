@@ -1,4 +1,3 @@
-//router error//
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
@@ -11,7 +10,7 @@ import requestLogger from '@/common/middleware/requestLogger';
 
 //import { env } from '@/common/utils/envConfig';
 import authRouter from '../src/api/routes/auth/AuthRoutes';
-//import BusinessSellerRouter from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
+import BusinessSellerRouter from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
 import userPost from '../src/api/routes/userPost/UserPost';
 //import investorroutes from './api/routes/InvestorRoute/InvestorRoute';
 
@@ -32,11 +31,11 @@ import { UserPost } from './api/entity/UserPost';
 // Create a DataSource instance
 const AppDataSource = new DataSource({
   type: 'mysql',
-  host: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_HOST : process.env.DEV_AWS_HOST,
+  host: 'localhost', //process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_HOST : process.env.DEV_AWS_HOST,
   port: 3306,
-  username: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
-  password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
-  database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
+  username: 'root', //process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_USERNAME : process.env.DEV_AWS_USERNAME,
+  password: 'ajaygaur01', //process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
+  database: 'seller', //process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment, Investor, BusinessForSale],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
@@ -83,7 +82,7 @@ app.use('/api/v1/auth', authRouter);
 
 app.use('/api/v1/post', userPost);
 
-//app.use('/businessforsale', BusinessSellerRouter);
+app.use('/businessforsale', BusinessSellerRouter);
 // testing api route
 app.get('/', (req, res) => {
   res.send('Hello World');

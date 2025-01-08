@@ -4,10 +4,9 @@ import { AppDataSource } from '@/server';
 
 import { BusinessForSale } from '../../entity/BuisnessSeller/BuisnessSeller';
 
-const businessRepository = AppDataSource.getRepository(BusinessForSale);
-
 export const createBusinessForSale = async (req: Request, res: Response) => {
   try {
+    const businessRepository = AppDataSource.getRepository(BusinessForSale);
     const business = businessRepository.create(req.body);
     const results = await businessRepository.save(business);
 
@@ -27,6 +26,7 @@ export const createBusinessForSale = async (req: Request, res: Response) => {
 
 export const getAllBusinessesForSale = async (req: Request, res: Response): Promise<Response> => {
   try {
+    const businessRepository = AppDataSource.getRepository(BusinessForSale);
     const businesses = await businessRepository.find();
 
     return res.status(200).json({
@@ -45,6 +45,7 @@ export const getAllBusinessesForSale = async (req: Request, res: Response): Prom
 
 export const getBusinessForSaleById = async (req: Request, res: Response): Promise<Response> => {
   try {
+    const businessRepository = AppDataSource.getRepository(BusinessForSale);
     const business = await businessRepository.findOne({
       where: { id: req.params.id },
     });
@@ -72,6 +73,7 @@ export const getBusinessForSaleById = async (req: Request, res: Response): Promi
 
 export const updateBusinessForSale = async (req: Request, res: Response): Promise<Response> => {
   try {
+    const businessRepository = AppDataSource.getRepository(BusinessForSale);
     const business = await businessRepository.findOne({
       where: { id: req.params.id },
     });
@@ -102,6 +104,7 @@ export const updateBusinessForSale = async (req: Request, res: Response): Promis
 
 export const deleteBusinessForSale = async (req: Request, res: Response): Promise<Response> => {
   try {
+    const businessRepository = AppDataSource.getRepository(BusinessForSale);
     const result = await businessRepository.delete(req.params.id);
 
     if (result.affected === 0) {
