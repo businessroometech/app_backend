@@ -117,3 +117,45 @@ export const createOrUpdateUserProfile = async (
     });
   }
 };
+
+
+// get user profile 
+export const getUserProfile = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { userId } = req.params;
+
+    // Validate if the user exists
+    const userRepository = AppDataSource.getRepository(UserLogin);
+    const user = await userRepository.findOneBy({ id: userId });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User ID is invalid or does not exist.",
+      });
+    }
+
+    // Check if personal details exist for the user
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const personalDetails = await personalDetailsRepository.findOneBy({ userId });
+
+    if (!personalDetails) {
+      return res.status(404).json({
+        message: "User profile not found.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "User profile fetched successfully.",
+      data: personalDetails,
+    });
+  } catch (error: any) {
+    console.error("Error fetching user profile:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};

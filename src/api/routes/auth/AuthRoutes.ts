@@ -5,7 +5,7 @@ import { logout } from '../../controllers/auth/Logout';
 import { signup } from '../../controllers/auth/Signup';
 import { authenticate } from '../../middlewares/auth/Authenticate';
 import { generateUploadUrl, getDocumentFromBucket } from "../../controllers/s3/awsControllers";
-import { createOrUpdateUserProfile } from '@/api/controllers/profile/UserProfile';
+import { createOrUpdateUserProfile, getUserProfile } from '@/api/controllers/profile/UserProfile';
 
 const Router = express.Router();
 
@@ -17,6 +17,8 @@ Router.post('/generate-upload-url', generateUploadUrl);
 Router.post('/document-retrival', getDocumentFromBucket);
 
 Router.post('/update-or-create-Profile', createOrUpdateUserProfile)
+Router.post('/get-user-Profile', getUserProfile)
+
 
 export default Router;
 
