@@ -48,7 +48,7 @@ export const getAllBusinessesForSale = async (req: Request, res: Response) => {
 export const getBusinessForSaleById = async (req: Request, res: Response) => {
     try {
         const business = await businessRepository.findOne({
-            where: { Id: req.params.id }
+            where: { id: req.params.id }
         });
 
         if (!business) {
@@ -75,7 +75,7 @@ export const getBusinessForSaleById = async (req: Request, res: Response) => {
 export const updateBusinessForSale = async (req: Request, res: Response) => {
     try {
         const business = await businessRepository.findOne({
-            where: { Id: req.params.id }
+            where: { id: req.params.id }
         });
 
         if (!business) {
