@@ -35,8 +35,6 @@ export class BusinessForSale extends BaseEntity {
   @Column({ type: 'boolean', nullable: true })
   hasOutstandingDebts!: boolean;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  financialRisks!: string;
 
   @Column({ type: 'boolean', nullable: true })
   isProfitable!: boolean;
@@ -75,16 +73,8 @@ export class BusinessForSale extends BaseEntity {
   offersSupportAfterSale!: boolean;
 
   @Column({ type: 'boolean', nullable: true })
-  employeesAfterSale!: boolean;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  typeOfBuyerLookingFor!: string;
-
-  @Column({ type: 'boolean', nullable: true })
   hadBusinessValuation!: boolean;
 
-  @Column({ type: 'boolean', nullable: true })
-  openToNegotiation!: boolean;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
   desiredTimelineForSale!: string;
@@ -92,14 +82,9 @@ export class BusinessForSale extends BaseEntity {
   @Column({ type: 'boolean', nullable: true })
   openToSellerFinancing!: boolean;
 
-  @Column({ type: 'boolean', nullable: true })
-  willingToStayInvolved!: boolean;
-
   @Column({ type: 'varchar', length: 200, nullable: true })
   sellingPoints!: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  additionalInformation!: string;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {

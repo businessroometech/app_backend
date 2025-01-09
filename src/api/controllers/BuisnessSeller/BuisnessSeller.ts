@@ -6,10 +6,11 @@ import { AppDataSource } from '@/server';
 
 import { BusinessForSale } from '../../entity/BuisnessSeller/BuisnessSeller';
 
-const businessRepository = AppDataSource.getRepository(BusinessForSale);
+
 
 export const createBusinessForSale = async (req: Request, res: Response) => {
     try {
+        const businessRepository = AppDataSource.getRepository(BusinessForSale);
         const business = businessRepository.create(req.body);
         const results = await businessRepository.save(business);
         
@@ -29,6 +30,7 @@ export const createBusinessForSale = async (req: Request, res: Response) => {
 
 export const getAllBusinessesForSale = async (req: Request, res: Response) => {
     try {
+        const businessRepository = AppDataSource.getRepository(BusinessForSale);
         const businesses = await businessRepository.find();
         
         return res.status(200).json({
@@ -47,8 +49,9 @@ export const getAllBusinessesForSale = async (req: Request, res: Response) => {
 
 export const getBusinessForSaleById = async (req: Request, res: Response) => {
     try {
+        const businessRepository = AppDataSource.getRepository(BusinessForSale);
         const business = await businessRepository.findOne({
-            where: { Id: req.params.id }
+            where: { id: req.params.id }
         });
 
         if (!business) {
@@ -74,8 +77,9 @@ export const getBusinessForSaleById = async (req: Request, res: Response) => {
 
 export const updateBusinessForSale = async (req: Request, res: Response) => {
     try {
+        const businessRepository = AppDataSource.getRepository(BusinessForSale);
         const business = await businessRepository.findOne({
-            where: { Id: req.params.id }
+            where: { id: req.params.id }
         });
 
         if (!business) {
@@ -104,6 +108,7 @@ export const updateBusinessForSale = async (req: Request, res: Response) => {
 
 export const deleteBusinessForSale = async (req: Request, res: Response) => {
     try {
+        const businessRepository = AppDataSource.getRepository(BusinessForSale);
         const result = await businessRepository.delete(req.params.id);
 
         if (result.affected === 0) {
