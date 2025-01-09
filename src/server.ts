@@ -23,6 +23,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { Notifications } from './api/entity/notifications/Notifications';
 import { Connection } from './api/entity/connection/Connections';
+import { CommentLike } from './api/entity/posts/CommentLike';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -42,7 +43,7 @@ const AppDataSource = new DataSource({
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [
-    UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment, Notifications, Connection
+    UserLogin, UserPost, PersonalDetails, Comment, Like, NestedComment, Notifications, Connection, CommentLike
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
