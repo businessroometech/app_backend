@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
 import { UserLogin } from "@/api/entity/user/UserLogin";
 import { AppDataSource } from "@/server";
+import { generatePresignedUrl } from "../s3/awsControllers";
 
 export const createOrUpdateUserProfile = async (
   req: Request,
@@ -147,9 +148,12 @@ export const getUserProfile = async (
       });
     }
 
+    const profileimgurl = await generatePresignedUrl(personalDetails?.profilePictureUploadId);
+    const coverimurl= await generatePresignedUrl(personalDetails?.bgPictureUploadId);
+
     return res.status(200).json({
       message: "User profile fetched successfully.",
-      data: personalDetails,
+      data: {personalDetails, profileimgurl, coverimurl},
     });
   } catch (error: any) {
     console.error("Error fetching user profile:", error);

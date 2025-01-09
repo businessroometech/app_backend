@@ -5,63 +5,63 @@ import { UserLogin } from "@/api/entity/user/UserLogin";
 
 
 export const createNotification = async (req: Request, res: Response) => {
-    const { userId, message, navigation } = req.body;
-  
-    // Validate required fields
-    if (!userId || !message || !navigation) {
-      return res.status(400).json({
+  const { userId, message, navigation } = req.body;
+
+  // Validate required fields
+  if (!userId || !message || !navigation) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields: userId, message, or navigation.",
+    });
+  }
+
+  try {
+    const userRepos = AppDataSource.getRepository(UserLogin);
+
+    // Check if user exists
+    const user = await userRepos.findOneBy({ id: userId });
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: "Missing required fields: userId, message, or navigation.",
+        message: "User ID is invalid or does not exist.",
       });
     }
-  
-    try {
-      const userRepos = AppDataSource.getRepository(UserLogin);
-  
-      // Check if user exists
-      const user = await userRepos.findOneBy({ id: userId });
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User ID is invalid or does not exist.",
-        });
-      }
-  
-      // Use the Notifications repository to create the notification
-      const notificationRepos = AppDataSource.getRepository(Notifications);
-      const notification = notificationRepos.create({
-        userId,
-        message,
-        navigation,
-      });
-  
-      // Save the notification
-      await notificationRepos.save(notification);
-  
-      return res.status(201).json({
-        success: true,
-        notification,
-      });
-    } catch (error) {
-      console.error("Error creating notification:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error.",
-      });
-    }
-  };
+
+    // Use the Notifications repository to create the notification
+    const notificationRepos = AppDataSource.getRepository(Notifications);
+    const notification = notificationRepos.create({
+      userId,
+      message,
+      navigation,
+    });
+
+    // Save the notification
+    await notificationRepos.save(notification);
+
+    return res.status(201).json({
+      success: true,
+      notification,
+    });
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};
 
 export const markAsRead = async (req: Request, res: Response) => {
   const { notificationId } = req.body;
 
-  try { 
+  try {
     const notificationRepository = AppDataSource.getRepository(Notifications);
-    const notification = await notificationRepository.findOneBy({ id : notificationId});
+    const notification = await notificationRepository.findOneBy({ id: notificationId });
     if (!notification) {
       return res.status(404).json({ success: false, message: "Notification not found" });
     }
     notification.isRead = true;
-    await notification.save();
+    await notificationRepository.save(notification);
     return res.status(200).json({ success: true, notification });
   } catch (error) {
     console.error("Error marking notification as read:", error);

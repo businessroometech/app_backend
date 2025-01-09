@@ -264,7 +264,7 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
 // Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { page , limit = 5 } = req.body;
+    const { userId, page, limit = 5 } = req.body;
 
     // Get the repositories
     const userRepository = AppDataSource.getRepository(UserLogin);
@@ -310,6 +310,11 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       }))
     );
 
+    const getLikeStatus = async (postId: string) => {
+      const like = await likeRepository.findOne({ where: { userId, postId } });
+      return like?.status;
+    }
+
     // Format the posts with user details, likes, and comments
     const formattedPosts = await Promise.all(
       posts.map(async (post) => {
@@ -320,7 +325,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Calculate like count and comment count
         const likeCount = likes.filter((like) => like.postId === post.Id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
-        const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === post.Id);
+        const likeStatus = await getLikeStatus(post.Id);
 
 
         // Fetch top 5 comments for the post
