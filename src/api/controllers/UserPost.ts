@@ -325,7 +325,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Calculate like count and comment count
         const likeCount = likes.filter((like) => like.postId === post.Id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
-        const likeStatus = getLikeStatus(post.Id);
+        const likeStatus = await getLikeStatus(post.Id);
 
 
         // Fetch top 5 comments for the post
