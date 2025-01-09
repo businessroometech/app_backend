@@ -15,14 +15,15 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       lastName,
       emailAddress,
       password,
+      country,
       createdBy = 'system',
       updatedBy = 'system',
     } = req.body;
 
-    if (!firstName || !lastName || !emailAddress || !password) {
+    if (!firstName || !lastName || !emailAddress || !password || !country) {
       res.status(400).json({
         status: 'error',
-        message: 'All fields are required: first name, last name, email address, and password.',
+        message: 'All fields are required: first name, last name, email address, country and password.',
       });
       return;
     }
@@ -77,6 +78,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       lastName,
       email: emailAddress,
       password,
+      country,
       createdBy,
       updatedBy,
     });
@@ -94,6 +96,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
           firstName: newUser.firstName,
           lastName: newUser.lastName,
           email: newUser.email,
+          country: newUser.country,
           createdAt: newUser.createdAt,
           updatedAt: newUser.updatedAt,
         },

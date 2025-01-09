@@ -18,7 +18,7 @@ const generateAccessToken = (user: { id: string }, rememberMe: boolean = false):
 //   });
 // };
 
-export const login = async (req: Request, res: Response, ): Promise<void> => {
+export const login = async (req: Request, res: Response,): Promise<void> => {
   try {
     const { email, password, rememberMe = false } = req.body;
 
@@ -70,22 +70,23 @@ export const login = async (req: Request, res: Response, ): Promise<void> => {
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
+          country: user.country,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },
       },
     });
-   
-      const notificationRepos = AppDataSource.getRepository(Notifications);
-          const notification = notificationRepos.create({
-            userId: user.id,
-            message: 'Welcome to our platform!, You have successfully logged in',
-            navigation: '/dashboard',
-          });
-      
-          // Save the notification
-          await notificationRepos.save(notification);
-  
+
+    const notificationRepos = AppDataSource.getRepository(Notifications);
+    const notification = notificationRepos.create({
+      userId: user.id,
+      message: 'Welcome to our platform!, You have successfully logged in',
+      navigation: '/dashboard',
+    });
+
+    // Save the notification
+    await notificationRepos.save(notification);
+
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
