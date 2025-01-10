@@ -6,10 +6,11 @@ import { AppDataSource } from '@/server';
 
 import { Entrepreneur } from '../../entity/Entrepreneur/EntrepreneurProfile';
 
-const entrepreneurRepository = AppDataSource.getRepository(Entrepreneur);
+
 
 export const createEntrepreneur = async (req: Request, res: Response) => {
     try {
+        const entrepreneurRepository = AppDataSource.getRepository(Entrepreneur);
         const entrepreneur = entrepreneurRepository.create(req.body);
         const results = await entrepreneurRepository.save(entrepreneur);
         
@@ -29,6 +30,7 @@ export const createEntrepreneur = async (req: Request, res: Response) => {
 
 export const getAllEntrepreneurs = async (req: Request, res: Response) => {
     try {
+        const entrepreneurRepository = AppDataSource.getRepository(Entrepreneur);
         const entrepreneurs = await entrepreneurRepository.find();
         
         return res.status(200).json({
@@ -47,6 +49,7 @@ export const getAllEntrepreneurs = async (req: Request, res: Response) => {
 
 export const getEntrepreneurById = async (req: Request, res: Response) => {
     try {
+        const entrepreneurRepository = AppDataSource.getRepository(Entrepreneur);
         const entrepreneur = await entrepreneurRepository.findOne({
             where: { id: req.params.id }
         });
@@ -74,6 +77,7 @@ export const getEntrepreneurById = async (req: Request, res: Response) => {
 
 export const updateEntrepreneur = async (req: Request, res: Response) => {
     try {
+        const entrepreneurRepository = AppDataSource.getRepository(Entrepreneur);
         const entrepreneur = await entrepreneurRepository.findOne({
             where: { id: req.params.id }
         });
@@ -104,6 +108,7 @@ export const updateEntrepreneur = async (req: Request, res: Response) => {
 
 export const deleteEntrepreneur = async (req: Request, res: Response) => {
     try {
+        const entrepreneurRepository = AppDataSource.getRepository(Entrepreneur);
         const result = await entrepreneurRepository.delete(req.params.id);
 
         if (result.affected === 0) {

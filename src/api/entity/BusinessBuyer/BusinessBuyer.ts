@@ -1,60 +1,48 @@
 /* eslint-disable prettier/prettier */
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-
+import { randomBytes } from 'crypto';
+import { BeforeInsert,Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity({ name: "BusinessBuyer" })
 export class BusinessBuyer {
 
   @PrimaryGeneratedColumn("uuid")
-  Id!: string;
+  id!: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  businessType!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  BudgetForPurchasingBusiness!: string;
+  businessLocation!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  FinancingInPlace!: string;
+  businessModel!: string;
+
+  @Column({ type: 'decimal', nullable: true })
+  budget!: number;
+
+  @Column({ type: 'decimal', nullable: true })
+  renovationInvestment!: number;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  timeline!: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  growthOrStableCashFlow!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  PreferredMethodOfPayment!: string;
+  supportAfterPurchase!: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  OpenToRenovationInvestment!: string;
+  @Column({ type: 'boolean', nullable: true })
+  ndaAgreement!: boolean;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  PreviousBusinessOwnershipExperience!: string;
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  additionalInfo!: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  ProfessionalBackgroundOrExpertise!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  SpecificSkillsOrQualifications!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  InvolvementLevel!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  MainGoalsInPurchasingBusiness!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  TimelineForPurchasingBusiness!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  LongTermBusinessGoalsAfterAcquisition!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  InterestedInGrowthOrStableCashFlow!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  DealBreakersInPurchasingBusiness!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  TeamOrStaffRequirementsOrPreferences!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  InterestedInSupportOrTraining!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  WillingToSignNDA!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  AdditionalBusinessBuyingPreferences!: string;
+   @BeforeInsert()
+      async hashPasswordBeforeInsert() {
+        this.id = this.generateUUID();
+      }
+    
+      private generateUUID() {
+        return randomBytes(16).toString('hex');
+      }
 }

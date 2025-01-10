@@ -6,10 +6,11 @@ import { AppDataSource } from '@/server';
 
 import { Investor } from '../../entity/Investors/Investor';
 
-const investorRepository = AppDataSource.getRepository(Investor);
+
 
 export const createInvestor = async (req: Request, res: Response) => {
     try {
+        const investorRepository = AppDataSource.getRepository(Investor);
         const investor = investorRepository.create(req.body);
         const results = await investorRepository.save(investor);
         
@@ -29,6 +30,7 @@ export const createInvestor = async (req: Request, res: Response) => {
 
 export const getAllInvestors = async (req: Request, res: Response) => {
     try {
+        const investorRepository = AppDataSource.getRepository(Investor);
         const investors = await investorRepository.find();
         
         return res.status(200).json({
@@ -47,8 +49,9 @@ export const getAllInvestors = async (req: Request, res: Response) => {
 
 export const getInvestorById = async (req: Request, res: Response) => {
     try {
+        const investorRepository = AppDataSource.getRepository(Investor);
         const investor = await investorRepository.findOne({
-            where: { Id: req.params.id }
+            where: { id: req.params.id }
         });
 
         if (!investor) {
@@ -74,8 +77,9 @@ export const getInvestorById = async (req: Request, res: Response) => {
 
 export const updateInvestor = async (req: Request, res: Response) => {
     try {
+        const investorRepository = AppDataSource.getRepository(Investor);
         const investor = await investorRepository.findOne({
-            where: { Id: req.params.id }
+            where: { id: req.params.id }
         });
 
         if (!investor) {
@@ -104,6 +108,7 @@ export const updateInvestor = async (req: Request, res: Response) => {
 
 export const deleteInvestor = async (req: Request, res: Response) => {
     try {
+        const investorRepository = AppDataSource.getRepository(Investor);
         const result = await investorRepository.delete(req.params.id);
 
         if (result.affected === 0) {

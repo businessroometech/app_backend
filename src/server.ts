@@ -13,13 +13,18 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
+import BusinessBuyerRoute from '../src/api/routes/BusinessBuyer/BusinessBuyerRoute';
 import BuisnessSeller from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
 import connectionRouter from '../src/api/routes/connection/connection';
+import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoutes';
+import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
 import { Connection } from './api/entity/connection/Connections';
+import { Entrepreneur } from './api/entity/Entrepreneur/EntrepreneurProfile';
+import { Investor } from './api/entity/Investors/Investor';
 import { Notifications } from './api/entity/notifications/Notifications';
 import { PersonalDetails } from './api/entity/personal/PersonalDetails';
 import { Comment } from './api/entity/posts/Comment';
@@ -54,8 +59,11 @@ const AppDataSource = new DataSource({
     Notifications,
     Connection,
     BusinessForSale,
+    BusinessBuyer,
+    Investor,
+    Entrepreneur,
   ],
-  synchronize: false,
+  synchronize: true,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 
@@ -104,7 +112,12 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/post', userPost);
 app.use('/api/v1/notifications', notifications);
 app.use('/api/v1/connection', connectionRouter);
+
 app.use('/businessseller', BuisnessSeller);
+app.use('/investor', InvestorRoute);
+app.use('/businessbuyer', BusinessBuyerRoute);
+app.use('/entrepreneur', EntrepreneurRoutes);
+
 // testing api route
 app.get('/', (req, res) => {
   res.send('Hello World');

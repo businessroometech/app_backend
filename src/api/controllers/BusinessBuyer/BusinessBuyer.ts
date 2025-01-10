@@ -6,10 +6,11 @@ import { AppDataSource } from '@/server';
 
 import { BusinessBuyer } from '../../entity/BusinessBuyer/BusinessBuyer';
 
-const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
+
 
 export const createBusinessBuyer = async (req: Request, res: Response) => {
   try {
+    const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
     const businessBuyer = businessBuyerRepository.create(req.body);
     const results = await businessBuyerRepository.save(businessBuyer);
 
@@ -29,6 +30,7 @@ export const createBusinessBuyer = async (req: Request, res: Response) => {
 
 export const getAllBusinessBuyers = async (req: Request, res: Response) => {
   try {
+    const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
     const businessBuyers = await businessBuyerRepository.find();
 
     return res.status(200).json({
@@ -47,8 +49,9 @@ export const getAllBusinessBuyers = async (req: Request, res: Response) => {
 
 export const getBusinessBuyerById = async (req: Request, res: Response) => {
   try {
+    const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
     const businessBuyer = await businessBuyerRepository.findOne({
-      where: { Id: req.params.id },
+      where: { id: req.params.id },
     });
 
     if (!businessBuyer) {
@@ -74,8 +77,9 @@ export const getBusinessBuyerById = async (req: Request, res: Response) => {
 
 export const updateBusinessBuyer = async (req: Request, res: Response) => {
   try {
+    const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
     const businessBuyer = await businessBuyerRepository.findOne({
-      where: { Id: req.params.id },
+      where: { id: req.params.id },
     });
 
     if (!businessBuyer) {
@@ -104,6 +108,7 @@ export const updateBusinessBuyer = async (req: Request, res: Response) => {
 
 export const deleteBusinessBuyer = async (req: Request, res: Response) => {
   try {
+    const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
     const result = await businessBuyerRepository.delete(req.params.id);
 
     if (result.affected === 0) {
