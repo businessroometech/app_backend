@@ -32,6 +32,9 @@ export const createOrUpdateUserProfile = async (
       panNumberUploadId,
     } = req.body;
 
+    console.log("req.body", req.body);
+    
+
     // Validate if the user exists
     const userRepository = AppDataSource.getRepository(UserLogin);
     const user = await userRepository.findOneBy({ id: userId });
@@ -126,7 +129,7 @@ export const getUserProfile = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.body;
 
     // Validate if the user exists
     const userRepository = AppDataSource.getRepository(UserLogin);
