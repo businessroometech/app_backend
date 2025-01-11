@@ -16,6 +16,7 @@ import { BusinessForSale } from '../BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from '../BusinessBuyer/BusinessBuyer';
 import { Entrepreneur } from '../Entrepreneur/EntrepreneurProfile';
 import { Investor } from '../Investors/Investor';
+import { Role } from '../Role/Role';
 import { UserLogin } from '../user/UserLogin';
 
 interface Address {
