@@ -65,15 +65,7 @@ export const login = async (req: Request, res: Response,): Promise<void> => {
       message: 'Logged in successfully.',
       data: {
         accessToken,
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.emailAddress,
-          country: user.country,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
+        user
       },
     });
 

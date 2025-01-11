@@ -5,7 +5,7 @@ import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
 import { request } from "node:http";
 import { formatTimestamp } from "../UserPost";
 import { generatePresignedUrl } from "../s3/awsControllers";
-import { Brackets, In } from "typeorm";
+import { Brackets, In, Not } from "typeorm";
 
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
@@ -169,36 +169,85 @@ export const removeConnection = async (req: Request, res: Response): Promise<Res
   }
 };
 
+export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { userId, page = 1, limit = 5 } = req.body;
 
-// export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
-//   try {
-//     const { userId, page = 1, limit = 5 } = req.body;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required.",
+      });
+    }
 
-//     if (!userId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "User ID is required.",
-//       });
-//     }
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
+    const connectionRepository = AppDataSource.getRepository(Connection);
 
-//     const userRepository = AppDataSource.getRepository(PersonalDetails);
-//     const connectionRepository = AppDataSource.getRepository(Connection);
-//     const userRoleRepos = AppDataSource.getRepository(Role)
+    // Check if the user exists
+    const user = await userRepository.findOne({
+      where: { id: userId },
+      select: ["id", "firstName", "lastName", "occupation"],
+    });
 
-//     const user = await userRepository.findOne({
-//       where: { userId },
-//       select: ["id", "firstName", "lastName", "occupation"],
-//     });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
 
-//     const userRole = await userRoleRepos.findOne({
-//       where: { userId },
-//       select: ["id", "firstName", "lastName", "occupation"],
-//     });
+    // Fetch all connections of the user (both sent and received)
+    const connections = await connectionRepository.find({
+      where: [
+        { requesterId: userId },
+        { receiverId: userId },
+      ],
+      select: ["requesterId", "receiverId"],
+    });
 
+    // Extract all connected user IDs
+    const connectedUserIds = new Set([
+      ...connections.map((connection) => connection.requesterId),
+      ...connections.map((connection) => connection.receiverId),
+    ]);
 
+    // Add the current user ID to the exclusion list
+    connectedUserIds.add(userId);
 
+    // Fetch suggested users (users not already connected)
+    const [suggestedUsers, total] = await userRepository.findAndCount({
+      where: {
+        id: In([...connectedUserIds.values()].map((id) => ({ id: Not(id) }))),
+      },
+      select: ["id", "firstName", "lastName", "occupation", "profilePictureUploadId"],
+      take: limit,
+      skip: (page - 1) * limit,
+    });
 
+    // Format the suggested users
+    const result = suggestedUsers.map((suggestedUser) => ({
+      id: suggestedUser.id,
+      firstName: suggestedUser.firstName,
+      lastName: suggestedUser.lastName,
+      occupation: suggestedUser.occupation,
+      profilePictureUrl: suggestedUser.profilePictureUploadId
+        ? generatePresignedUrl(suggestedUser.profilePictureUploadId)
+        : null,
+    }));
 
-
-   
-// };
+    return res.status(200).json({
+      success: true,
+      message: "Suggested users fetched successfully.",
+      total,
+      page,
+      limit,
+      data: result,
+    });
+  } catch (error: any) {
+    console.error("Error fetching connection suggestions:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
