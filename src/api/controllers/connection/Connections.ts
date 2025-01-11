@@ -169,6 +169,35 @@ export const removeConnection = async (req: Request, res: Response): Promise<Res
   }
 };
 
+export const unsendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
+  const { requesterId, receiverId } = req.body;
+  try {
+    const connectionRepository = AppDataSource.getRepository(Connection);
+    const connection = await connectionRepository.findOne({
+      where: { requesterId, receiverId, status: "pending" },
+    });
+
+    if (!connection) {
+      return res.status(404).json({
+        message: "Connection request not found or already processed.",
+      });
+    }
+
+    await connectionRepository.remove(connection);
+
+    return res.status(200).json({
+      message: "Connection request unsent successfully.",
+    });
+  } catch (error: any) {
+    console.error("Error unsending connection request:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+
 export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { userId, page = 1, limit = 5 } = req.body;
@@ -251,3 +280,6 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
     });
   }
 };
+
+
+

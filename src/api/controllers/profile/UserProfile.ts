@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
 import { AppDataSource } from "@/server";
 import { generatePresignedUrl } from "../s3/awsControllers";
+import { Connection } from "@/api/entity/connection/Connections";
 
 export const UpdateUserProfile = async (req: Request, res: Response) => {
   try {
@@ -114,6 +115,15 @@ export const getUserProfile = async (
       ? await generatePresignedUrl(personalDetails.bgPictureUploadId)
       : null;
 
+          // Fetch the number of connections
+    const connectionRepository = AppDataSource.getRepository(Connection);
+    const connectionsCount = await connectionRepository.count({
+      where: [
+        { requesterId: userId, status: "accepted" },
+        { receiverId: userId, status: "accepted" },
+      ],
+    });
+
     // Return the user's profile data
     return res.status(200).json({
       message: "User profile fetched successfully.",
@@ -121,6 +131,7 @@ export const getUserProfile = async (
         personalDetails,
         profileImgUrl,
         coverImgUrl,
+        connectionsCount
       },
     });
   } catch (error: any) {
