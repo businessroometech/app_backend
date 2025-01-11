@@ -1,6 +1,8 @@
 import { randomBytes } from 'crypto';
 import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { OneToOne } from 'typeorm';
 
+import { PersonalDetails } from '../personal/PersonalDetails';
 @Entity({ name: 'Investor' })
 export class Investor {
   @PrimaryGeneratedColumn('uuid')
@@ -74,7 +76,10 @@ export class Investor {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   expectedInvolvement!: string;
-
+  /*
+  @OneToOne(() => PersonalDetails, (personalDetails) => personalDetails.investor)
+  personalDetails!: PersonalDetails;
+*/
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();

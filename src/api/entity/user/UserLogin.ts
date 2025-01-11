@@ -11,11 +11,11 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
 import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'UserLogin' })
 export class UserLogin extends BaseEntity {
-
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -31,8 +31,8 @@ export class UserLogin extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   password!: string;
 
-  @Column({ type: "varchar", default: "" })
-  country !: string;
+  @Column({ type: 'varchar', default: '' })
+  country!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

@@ -1,7 +1,9 @@
 /* eslint-disable prettier/prettier */
 import { randomBytes } from 'crypto';
 import { BaseEntity, BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { OneToOne } from 'typeorm';
 
+import { PersonalDetails } from '../personal/PersonalDetails';
 @Entity({ name: "BusinessForSale" })
 export class BusinessForSale extends BaseEntity {
 
@@ -79,6 +81,10 @@ export class BusinessForSale extends BaseEntity {
 
   @Column({ type: 'boolean', nullable: true })
   openToSellerFinancing!: boolean;
+/*
+  @OneToOne(() => PersonalDetails, (personalDetails) => personalDetails.businessForSale)
+  personalDetails!: PersonalDetails;
+*/
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   sellingPoints!: string;

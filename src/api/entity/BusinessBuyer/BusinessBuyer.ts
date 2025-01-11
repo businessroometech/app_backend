@@ -1,6 +1,10 @@
 /* eslint-disable prettier/prettier */
 import { randomBytes } from 'crypto';
 import { BeforeInsert,Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { OneToOne } from 'typeorm';
+
+import { PersonalDetails } from '../personal/PersonalDetails';
+
 @Entity({ name: "BusinessBuyer" })
 export class BusinessBuyer {
 
@@ -36,6 +40,12 @@ export class BusinessBuyer {
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   additionalInfo!: string;
+
+/*
+  @OneToOne(() => PersonalDetails, (personalDetails) => personalDetails.businessBuyer)
+  personalDetails!: PersonalDetails;
+*/
+
 
    @BeforeInsert()
       async hashPasswordBeforeInsert() {
