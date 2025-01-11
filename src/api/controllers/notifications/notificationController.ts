@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "@/server";
 import { Notifications } from "@/api/entity/notifications/Notifications";
-import { UserLogin } from "@/api/entity/user/UserLogin";
+import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
 
 
 export const createNotification = async (req: Request, res: Response) => {
@@ -16,7 +16,7 @@ export const createNotification = async (req: Request, res: Response) => {
   }
 
   try {
-    const userRepos = AppDataSource.getRepository(UserLogin);
+    const userRepos = AppDataSource.getRepository(PersonalDetails);
 
     // Check if user exists
     const user = await userRepos.findOneBy({ id: userId });

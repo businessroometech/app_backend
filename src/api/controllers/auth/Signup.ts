@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { UserLogin } from '../../entity/user/UserLogin';
 import { AppDataSource } from '@/server';
 import validator from 'validator';
+import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   const queryRunner = AppDataSource.createQueryRunner();
@@ -16,6 +16,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       emailAddress,
       password,
       country,
+      userRole,
       createdBy = 'system',
       updatedBy = 'system',
     } = req.body;
@@ -59,10 +60,9 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const userLoginRepository = queryRunner.manager.getRepository(UserLogin);
-
+    const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
     const existingUser = await userLoginRepository.findOne({
-      where: { email: emailAddress },
+      where: { emailAddress },
     });
 
     if (existingUser) {
@@ -76,12 +76,15 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const newUser = userLoginRepository.create({
       firstName,
       lastName,
-      email: emailAddress,
+      emailAddress,
       password,
       country,
+      userRole,
       createdBy,
       updatedBy,
     });
+
+
 
     await userLoginRepository.save(newUser);
 
@@ -95,8 +98,9 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
           id: newUser.id,
           firstName: newUser.firstName,
           lastName: newUser.lastName,
-          email: newUser.email,
+          emailAddress: newUser.emailAddress,
           country: newUser.country,
+          userRole:newUser.userRole,
           createdAt: newUser.createdAt,
           updatedAt: newUser.updatedAt,
         },

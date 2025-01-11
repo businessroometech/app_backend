@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { UserLogin } from '../../entity/user/UserLogin';
 import { AppDataSource } from '@/server';
 import { createNotification } from '../notifications/notificationController';
 import { Notifications } from '@/api/entity/notifications/Notifications';
+import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 
 const generateAccessToken = (user: { id: string }, rememberMe: boolean = false): string => {
   return jwt.sign({ id: user.id }, process.env.ACCESS_SECRET_KEY!, {
@@ -31,13 +31,13 @@ export const login = async (req: Request, res: Response,): Promise<void> => {
       return;
     }
 
-    const userLoginRepository = AppDataSource.getRepository(UserLogin);
+    const userLoginRepository = AppDataSource.getRepository(PersonalDetails);
 
     // Find the user by email
-    const user: UserLogin | null = await userLoginRepository.findOne({ where: { email } });
+    const user: PersonalDetails | null = await userLoginRepository.findOne({ where: { emailAddress:email } });
 
     // Check if user exists and password is valid
-    if (!user || !(await UserLogin.validatePassword(password, user.password))) {
+    if (!user || !(await PersonalDetails.validatePassword(password, user.password))) {
       res.status(401).json({
         status: 'error',
         message: 'Invalid email or password.',
@@ -69,7 +69,7 @@ export const login = async (req: Request, res: Response,): Promise<void> => {
           id: user.id,
           firstName: user.firstName,
           lastName: user.lastName,
-          email: user.email,
+          email: user.emailAddress,
           country: user.country,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,

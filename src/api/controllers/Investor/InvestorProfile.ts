@@ -1,11 +1,6 @@
-/* eslint-disable prettier/prettier */
-
 import { Request, Response } from 'express';
-
 import { AppDataSource } from '@/server';
-
 import { Investor } from '../../entity/Investors/Investor';
-
 
 
 export const createInvestor = async (req: Request, res: Response) => {

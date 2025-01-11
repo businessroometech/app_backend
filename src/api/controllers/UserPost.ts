@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { UserPost } from '../entity/UserPost';
 import { AppDataSource } from '@/server';
-import { UserLogin } from '../entity/user/UserLogin';
 import { PersonalDetails } from '../entity/personal/PersonalDetails';
 import { Comment } from '../entity/posts/Comment';
 import { Like } from '../entity/posts/Like';
@@ -29,7 +28,7 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
     const { userId, title, content, hashtags, mediaKeys } = req.body;
 
     // Check if the user ID exists in the PersonalDetails repository
-    const userRepos = AppDataSource.getRepository(UserLogin);
+    const userRepos = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepos.findOneBy({ id: userId });
     if (!user) {
       return res.status(400).json({
@@ -69,7 +68,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
       });
     }
 
-    const userRepository = AppDataSource.getRepository(UserLogin);
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOne({
       where: { id: userId },
       select: ["firstName", "lastName"],
@@ -195,7 +194,7 @@ export const UpdateUserPost = async (req: Request, res: Response): Promise<Respo
 
     // Check if the user exists
     const user = await userRepository.findOne({
-      where: { userId },
+      where: {id: userId },
       select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', 'occupation'],
     });
 
@@ -267,7 +266,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     const { userId, page, limit = 5 } = req.body;
 
     // Get the repositories
-    const userRepository = AppDataSource.getRepository(UserLogin);
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);

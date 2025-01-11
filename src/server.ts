@@ -15,7 +15,7 @@ import { env } from '@/common/utils/envConfig';
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import BusinessBuyerRoute from '../src/api/routes/BusinessBuyer/BusinessBuyerRoute';
 import BuisnessSeller from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
-import connectionRouter from '../src/api/routes/connection/connection';
+import connectionRouter from '../src/api/routes/connection/Connection';
 import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoutes';
 import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
@@ -30,10 +30,7 @@ import { PersonalDetails } from './api/entity/personal/PersonalDetails';
 import { Comment } from './api/entity/posts/Comment';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
-import { UserLogin } from './api/entity/user/UserLogin';
 import { UserPost } from './api/entity/UserPost';
-import { Role } from './api/entity/Role/Role';
-
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -51,7 +48,6 @@ const AppDataSource = new DataSource({
   password: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_PASSWORD : process.env.DEV_AWS_PASSWORD,
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [
-    UserLogin,
     UserPost,
     PersonalDetails,
     Comment,

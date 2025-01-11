@@ -3,7 +3,7 @@ import { Comment } from '../../entity/posts/Comment'; // Adjust the import path 
 import { AppDataSource } from '@/server';
 import { NestedComment } from '@/api/entity/posts/NestedComment';
 import { formatTimestamp } from '../UserPost';
-import { UserLogin } from '@/api/entity/user/UserLogin';
+import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 
 export const createComment = async (req: Request, res: Response) => {
     try {
@@ -53,7 +53,7 @@ export const getComments = async (req: Request, res: Response) => {
       // Format the comments
       const formattedComments = await Promise.all(
         comments.map(async (comment) => {
-          const userRepository = AppDataSource.getRepository(UserLogin); // Ensure repository is initialized
+          const userRepository = AppDataSource.getRepository(PersonalDetails); // Ensure repository is initialized
           const commenter = await userRepository.findOne({
             where: { id: comment.userId },
             select: ["firstName", "lastName"],

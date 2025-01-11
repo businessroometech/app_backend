@@ -6,8 +6,6 @@ import { request } from "node:http";
 import { formatTimestamp } from "../UserPost";
 import { generatePresignedUrl } from "../s3/awsControllers";
 import { Brackets, In } from "typeorm";
-import { UserLogin } from "@/api/entity/user/UserLogin";
-import { Role } from "@/api/entity/Role/Role";
 
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
@@ -16,8 +14,8 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
   try {
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
-    const requester = await userRepository.findOne({ where: { userId: requesterId } });
-    const receiver = await userRepository.findOne({ where: { userId: receiverId } });
+    const requester = await userRepository.findOne({ where: { id: requesterId } });
+    const receiver = await userRepository.findOne({ where: { id: receiverId } });
 
     if (!requester) {
       return res.status(404).json({ message: "Requester not found." });
@@ -116,8 +114,8 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
     ];
 
     const users = await userRepository.find({
-      where: { userId: In(userIds) },
-      select: ["userId", "firstName", "lastName", "profilePictureUploadId"],
+      where: { id: In(userIds) },
+      select: ["id", "firstName", "lastName", "profilePictureUploadId"],
     });
 
     if (!users || users.length === 0) {
@@ -127,12 +125,12 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
     const result = connections.map((connection) => {
       const user = users.find(
         (user) =>
-          user.userId === connection.requesterId ||
-          user.userId === connection.receiverId
+          user.id === connection.requesterId ||
+          user.id === connection.receiverId
       );
 
       return {
-        userId: user?.userId,
+        userId: user?.id,
         firstName: user?.firstName,
         lastName: user?.lastName,
         profilePictureUrl: user?.profilePictureUploadId

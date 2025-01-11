@@ -1,4 +1,4 @@
-import { ConnectionsSuggestionController, getUserConnections, removeConnection, sendConnectionRequest, updateConnectionStatus } from '@/api/controllers/connection/Connections';
+import {  getUserConnections, removeConnection, sendConnectionRequest, updateConnectionStatus } from '@/api/controllers/connection/Connections';
 import express from 'express';
 
 const Router = express.Router();

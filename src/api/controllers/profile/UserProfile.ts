@@ -1,13 +1,9 @@
 import { Request, Response } from "express";
 import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
-import { UserLogin } from "@/api/entity/user/UserLogin";
 import { AppDataSource } from "@/server";
 import { generatePresignedUrl } from "../s3/awsControllers";
 
-export const createOrUpdateUserProfile = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const UpdateUserProfile = async (req: Request, res: Response) => {
   try {
     const {
       occupation,
@@ -25,18 +21,14 @@ export const createOrUpdateUserProfile = async (
       socialMediaProfile,
       height,
       weight,
-      bodyMeasurement,
       permanentAddress,
       currentAddress,
       aadharNumberUploadId,
       panNumberUploadId,
+      userRole
     } = req.body;
 
-    console.log("req.body", req.body);
-    
-
-    // Validate if the user exists
-    const userRepository = AppDataSource.getRepository(UserLogin);
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
 
     if (!user) {
@@ -45,34 +37,32 @@ export const createOrUpdateUserProfile = async (
       });
     }
 
-    // Check if personal details already exist for the user
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-    let personalDetails = await personalDetailsRepository.findOneBy({ userId });
+    let personalDetails = await personalDetailsRepository.findOneBy({ id: userId });
 
     if (personalDetails) {
-      // Update existing personal details
-      Object.assign(personalDetails, {
-        occupation,
-        profilePictureUploadId,
-        bgPictureUploadId,
-        firstName,
-        lastName,
-        dob,
-        mobileNumber,
-        emailAddress,
-        bio,
-        gender,
-        preferredLanguage,
-        socialMediaProfile,
-        height,
-        weight,
-        bodyMeasurement,
-        permanentAddress,
-        currentAddress,
-        aadharNumberUploadId,
-        panNumberUploadId,
-        updatedBy: "system", // Or fetch this value dynamically if required
-      });
+      // Only update fields that are provided in the request body
+      if (occupation !== undefined) personalDetails.occupation = occupation;
+      if (profilePictureUploadId !== undefined) personalDetails.profilePictureUploadId = profilePictureUploadId;
+      if (bgPictureUploadId !== undefined) personalDetails.bgPictureUploadId = bgPictureUploadId;
+      if (firstName !== undefined) personalDetails.firstName = firstName;
+      if (lastName !== undefined) personalDetails.lastName = lastName;
+      if (dob !== undefined) personalDetails.dob = dob;
+      if (mobileNumber !== undefined) personalDetails.mobileNumber = mobileNumber;
+      if (emailAddress !== undefined) personalDetails.emailAddress = emailAddress;
+      if (bio !== undefined) personalDetails.bio = bio;
+      if (gender !== undefined) personalDetails.gender = gender;
+      if (preferredLanguage !== undefined) personalDetails.preferredLanguage = preferredLanguage;
+      if (socialMediaProfile !== undefined) personalDetails.socialMediaProfile = socialMediaProfile;
+      if (height !== undefined) personalDetails.height = height;
+      if (weight !== undefined) personalDetails.weight = weight;
+      if (permanentAddress !== undefined) personalDetails.permanentAddress = permanentAddress;
+      if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
+      if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
+      if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
+      if (userRole !== undefined) personalDetails.userRole = userRole;
+
+      personalDetails.updatedBy = "system"; 
 
       await personalDetailsRepository.save(personalDetails);
 
@@ -81,40 +71,8 @@ export const createOrUpdateUserProfile = async (
         data: personalDetails,
       });
     }
-
-    // Create new personal details if none exist
-    const newPersonalDetails = personalDetailsRepository.create({
-      occupation,
-      userId,
-      profilePictureUploadId,
-      bgPictureUploadId,
-      firstName,
-      lastName,
-      dob,
-      mobileNumber,
-      emailAddress,
-      bio,
-      gender,
-      preferredLanguage,
-      socialMediaProfile,
-      height,
-      weight,
-      bodyMeasurement,
-      permanentAddress,
-      currentAddress,
-      aadharNumberUploadId,
-      panNumberUploadId,
-      createdBy: "system", // Or fetch this value dynamically if required
-    });
-
-    await personalDetailsRepository.save(newPersonalDetails);
-
-    return res.status(201).json({
-      message: "User profile created successfully.",
-      data: newPersonalDetails,
-    });
   } catch (error: any) {
-    console.error("Error creating/updating user profile:", error);
+    console.error("Error updating user profile:", error);
     return res.status(500).json({
       message: "Internal Server Error",
       error: error.message,
@@ -132,7 +90,7 @@ export const getUserProfile = async (
     const { userId } = req.body;
 
     // Validate if the user exists
-    const userRepository = AppDataSource.getRepository(UserLogin);
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
 
     if (!user) {
@@ -143,7 +101,7 @@ export const getUserProfile = async (
 
     // Check if personal details exist for the user
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-    const personalDetails = await personalDetailsRepository.findOneBy({ userId });
+    const personalDetails = await personalDetailsRepository.findOneBy({ id:userId });
 
     if (!personalDetails) {
       return res.status(404).json({

@@ -9,7 +9,6 @@ import {
   UpdateDateColumn,
   BeforeInsert,
 } from 'typeorm';
-import { UserLogin } from '@/api/entity/user/UserLogin';
 import { randomBytes } from 'crypto';
 import { PersonalDetails } from '../personal/PersonalDetails';
 
@@ -54,6 +53,6 @@ export class Connection {
   }
 
   @OneToOne(() => PersonalDetails, (user: any) => user.personalDetails)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'id' })
   user!: PersonalDetails;
 }

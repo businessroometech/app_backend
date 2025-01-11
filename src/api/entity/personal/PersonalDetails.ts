@@ -1,16 +1,15 @@
+import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import {
   BaseEntity,
   BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserLogin } from '../user/UserLogin';
 
 interface Address {
   addressLine1: string;
@@ -25,12 +24,15 @@ export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
-  userId!: string;
-  
   @Column({ type: 'varchar', length: 255 })
   occupation!: string;
-  
+
+  @Column({ type: 'varchar', length: 255 })
+  password!: string;
+
+  @Column({ type: 'varchar', default: '' })
+  country!: string;
+
   @Column({ type: 'uuid' })
   profilePictureUploadId!: string;
 
@@ -82,8 +84,11 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'uuid' })
   panNumberUploadId!: string;
 
-  @Column({ type: 'varchar' , default:"Others"})
-  userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | "Investor";
+  @Column({
+    type: 'varchar',
+    default: 'Others',
+  })
+  userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor' | 'Others';
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -91,7 +96,11 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'varchar', default: 'system' })
   updatedBy!: string;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+    precision: 6,
+  })
   createdAt!: Date;
 
   @UpdateDateColumn({
@@ -103,15 +112,27 @@ export class PersonalDetails extends BaseEntity {
   updatedAt!: Date;
 
   @BeforeInsert()
-  async beforeInsert() {
+  async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
+    this.password = await bcrypt.hash(this.password, 10);
   }
 
-  private generateUUID() {
+  @BeforeUpdate()
+  async updateTimestamp() {
+    if (this.password) {
+      this.password = await bcrypt.hash(this.password, 10);
+    }
+  }
+
+  private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToOne(() => UserLogin, (user: any) => user.personalDetails)
-  @JoinColumn({ name: 'userId' })
-  user!: UserLogin;
+  static async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+  }
+
+  static async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
+    return await bcrypt.compare(password, hashedPassword);
+  }
 }
