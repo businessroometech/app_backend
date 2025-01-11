@@ -63,7 +63,7 @@ const AppDataSource = new DataSource({
     BusinessBuyer,
     Investor,
     Entrepreneur,
-    Role,
+    Role
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
@@ -107,7 +107,6 @@ app.use(helmet());
 app.use(requestLogger);
 
 // Routes mounting
-
 app.use(express.json());
 app.use('/api/v1/auth', authRouter);
 
