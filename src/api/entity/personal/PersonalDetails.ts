@@ -92,8 +92,9 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'uuid' })
   panNumberUploadId!: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  roleType!: string;
+  @ManyToOne(() => Role, (role) => role.personalDetails)
+  @JoinColumn({ name: 'roleId' })
+  role!: Role;
 
   @Column({ type: 'uuid', nullable: true })
   roleId!: string;
