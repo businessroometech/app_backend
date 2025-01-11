@@ -56,7 +56,6 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (socialMediaProfile !== undefined) personalDetails.socialMediaProfile = socialMediaProfile;
       if (height !== undefined) personalDetails.height = height;
       if (weight !== undefined) personalDetails.weight = weight;
-      if (bodyMeasurement !== undefined) personalDetails.bodyMeasurement = bodyMeasurement;
       if (permanentAddress !== undefined) personalDetails.permanentAddress = permanentAddress;
       if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
       if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
