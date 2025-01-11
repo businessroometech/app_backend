@@ -4,12 +4,9 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
-  OneToOne,
-  JoinColumn,
   UpdateDateColumn,
-  BeforeInsert,
+  JoinColumn,
 } from 'typeorm';
-import { randomBytes } from 'crypto';
 import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity('connections')
@@ -17,42 +14,32 @@ export class Connection {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
-  requesterId!: string;
+  @ManyToOne(() => PersonalDetails, (personalDetails) => personalDetails.sentRequests, {
+    nullable: false,
+    eager: true,
+  })
+  @JoinColumn({ name: 'requesterId' })
+  requester!: PersonalDetails;
 
   @Column({ type: 'uuid' })
-  receiverId!: string;
+  requesterId!: string; // Explicitly map the foreign key column
+
+  @ManyToOne(() => PersonalDetails, (personalDetails) => personalDetails.receivedRequests, {
+    nullable: false,
+    eager: true,
+  })
+  @JoinColumn({ name: 'receiverId' })
+  receiver!: PersonalDetails;
+
+  @Column({ type: 'uuid' })
+  receiverId!: string; // Explicitly map the foreign key column
 
   @Column({ type: 'enum', enum: ['pending', 'accepted', 'rejected'], default: 'pending' })
   status!: 'pending' | 'accepted' | 'rejected';
 
-  @Column({ type: 'varchar', default: 'system' })
-  createdBy!: string;
-
-  @Column({ type: 'varchar', default: 'system' })
-  updatedBy!: string;
-
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
   createdAt!: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-    onUpdate: 'CURRENT_TIMESTAMP(6)',
-    precision: 6,
-  })
+  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', onUpdate: 'CURRENT_TIMESTAMP(6)' })
   updatedAt!: Date;
-
-  @BeforeInsert()
-  async beforeInsert() {
-    this.id = this.generateUUID();
-  }
-
-  private generateUUID() {
-    return randomBytes(16).toString('hex');
-  }
-
-  @OneToOne(() => PersonalDetails, (user: any) => user.personalDetails)
-  @JoinColumn({ name: 'id' })
-  user!: PersonalDetails;
 }

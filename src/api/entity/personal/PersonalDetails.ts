@@ -7,9 +7,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Connection } from '../connection/Connections';
 
 interface Address {
   addressLine1: string;
@@ -135,4 +137,10 @@ export class PersonalDetails extends BaseEntity {
   static async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
     return await bcrypt.compare(password, hashedPassword);
   }
+
+  @OneToMany(() => Connection, (connection) => connection.requester)
+  sentRequests!: Connection[];
+
+  @OneToMany(() => Connection, (connection) => connection.receiver)
+  receivedRequests!: Connection[];
 }
