@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-import { PersonalDetails } from '../personal/PersonalDetails'; 
+// import { PersonalDetails } from '../personal/PersonalDetails'; 
 
 @Entity({ name: 'Role' })
 export class Role extends BaseEntity {
@@ -19,6 +19,6 @@ export class Role extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
   BusinessBuyer!: string;
 
-  @OneToMany(() => PersonalDetails, (personalDetails) => personalDetails.role)
-  personalDetails!: PersonalDetails[];
+  // @OneToMany(() => PersonalDetails, (personalDetails) => personalDetails.role)
+  // personalDetails!: PersonalDetails[];
 }

@@ -6,17 +6,10 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
-import { BusinessForSale } from '../BuisnessSeller/BuisnessSeller';
-import { BusinessBuyer } from '../BusinessBuyer/BusinessBuyer';
-import { Entrepreneur } from '../Entrepreneur/EntrepreneurProfile';
-import { Investor } from '../Investors/Investor';
-import { Role } from '../Role/Role';
 import { UserLogin } from '../user/UserLogin';
 
 interface Address {
@@ -32,12 +25,12 @@ export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  occupation!: string;
-
   @Column({ type: 'uuid' })
   userId!: string;
-
+  
+  @Column({ type: 'varchar', length: 255 })
+  occupation!: string;
+  
   @Column({ type: 'uuid' })
   profilePictureUploadId!: string;
 
@@ -77,9 +70,6 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'varchar', default: '' })
   weight!: string;
 
-  @Column({ type: 'varchar', default: '' })
-  bodyMeasurement!: string;
-
   @Column({ type: 'json' })
   permanentAddress!: Address;
 
@@ -92,33 +82,8 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'uuid' })
   panNumberUploadId!: string;
 
-  @ManyToOne(() => Role, (role) => role.personalDetails)
-  @JoinColumn({ name: 'roleId' })
-  role!: Role;
-
-  @Column({ type: 'uuid', nullable: true })
-  roleId!: string;
-  /*
-  @OneToOne(() => Investor, { nullable: true })
-  @JoinColumn({ name: 'roleId' })
-  investor!: Investor;
-
-  @OneToOne(() => Entrepreneur, { nullable: true })
-  @JoinColumn({ name: 'roleId' })
-  entrepreneur!: Entrepreneur;
-
-  @OneToOne(() => BusinessBuyer, { nullable: true })
-  @JoinColumn({ name: 'roleId' })
-  businessBuyer!: BusinessBuyer;
-
-  @OneToOne(() => BusinessForSale, { nullable: true })
-  @JoinColumn({ name: 'roleId' })
-  businessForSale!: BusinessForSale;
-*/
-
-  @ManyToOne(() => Role, (role) => role.personalDetails)
-  @JoinColumn({ name: 'roleId' })
-  role!: Role;
+  @Column({ type: 'varchar' , default:"Others"})
+  userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | "Investor";
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
