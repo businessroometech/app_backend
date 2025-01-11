@@ -21,11 +21,11 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       socialMediaProfile,
       height,
       weight,
+      bodyMeasurement,
       permanentAddress,
       currentAddress,
       aadharNumberUploadId,
       panNumberUploadId,
-      userRole
     } = req.body;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -41,7 +41,7 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
     let personalDetails = await personalDetailsRepository.findOneBy({ id: userId });
 
     if (personalDetails) {
-      // Only update fields that are provided in the request body
+      // Only update fields that are provided in the request body, excluding the password
       if (occupation !== undefined) personalDetails.occupation = occupation;
       if (profilePictureUploadId !== undefined) personalDetails.profilePictureUploadId = profilePictureUploadId;
       if (bgPictureUploadId !== undefined) personalDetails.bgPictureUploadId = bgPictureUploadId;
@@ -56,13 +56,13 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (socialMediaProfile !== undefined) personalDetails.socialMediaProfile = socialMediaProfile;
       if (height !== undefined) personalDetails.height = height;
       if (weight !== undefined) personalDetails.weight = weight;
+      if (bodyMeasurement !== undefined) personalDetails.bodyMeasurement = bodyMeasurement;
       if (permanentAddress !== undefined) personalDetails.permanentAddress = permanentAddress;
       if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
       if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
       if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
-      if (userRole !== undefined) personalDetails.userRole = userRole;
 
-      personalDetails.updatedBy = "system"; 
+      personalDetails.updatedBy = "system"; // Update metadata
 
       await personalDetailsRepository.save(personalDetails);
 
@@ -79,7 +79,6 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 // get user profile 
 export const getUserProfile = async (

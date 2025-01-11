@@ -61,17 +61,17 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
 
     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
-    const existingUser = await userLoginRepository.findOne({
-      where: { emailAddress },
-    });
+    // const existingUser = await userLoginRepository.findOne({
+    //   where: { emailAddress },
+    // });
 
-    if (existingUser) {
-      res.status(400).json({
-        status: 'error',
-        message: 'User with this email already exists.',
-      });
-      return;
-    }
+    // if (existingUser) {
+    //   res.status(400).json({
+    //     status: 'error',
+    //     message: 'User with this email already exists.',
+    //   });
+    //   return;
+    // }
 
     const newUser = userLoginRepository.create({
       firstName,
@@ -83,8 +83,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       createdBy,
       updatedBy,
     });
-
-
 
     await userLoginRepository.save(newUser);
 
