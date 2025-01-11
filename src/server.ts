@@ -32,6 +32,7 @@ import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserLogin } from './api/entity/user/UserLogin';
 import { UserPost } from './api/entity/UserPost';
+import { Role } from './api/entity/Role/Role';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -62,8 +63,9 @@ const AppDataSource = new DataSource({
     BusinessBuyer,
     Investor,
     Entrepreneur,
+    Role,
   ],
-  synchronize: true,
+  synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 

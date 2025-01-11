@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-import { PersonalDetails } from '../personal/PersonalDetails'; // Adjust the path as necessary
+import { PersonalDetails } from '../personal/PersonalDetails'; 
 
 @Entity({ name: 'Role' })
 export class Role extends BaseEntity {
