@@ -354,7 +354,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Fetch user details for the post creator
         const user = await userRepository.findOne({
           where: { id: post.userId },
-          select: ['firstName', 'lastName'],
+         
         });
 
         // Return the formatted post object
@@ -375,6 +375,10 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             firstName: user?.firstName || '',
             lastName: user?.lastName || '',
             timestamp: formatTimestamp(post.createdAt),
+            userRole:user?.userRole,
+            avatar: user?.profilePictureUploadId
+            ? await generatePresignedUrl(user.profilePictureUploadId)
+            : null,
           },
           comments: formattedComments,
         };
