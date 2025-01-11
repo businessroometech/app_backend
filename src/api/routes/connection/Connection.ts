@@ -7,6 +7,6 @@ Router.post('/send-connection-request', sendConnectionRequest);
 Router.post('/update-connection-status', updateConnectionStatus);
 Router.post('/get-connection-status', getUserConnections);
 Router.post('/remove-connection', removeConnection);
-Router.post('/remove-suggest', ConnectionsSuggestionController);
+// Router.post('/remove-suggest', ConnectionsSuggestionController);
 
 export default Router;

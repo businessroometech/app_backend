@@ -7,6 +7,7 @@ import { formatTimestamp } from "../UserPost";
 import { generatePresignedUrl } from "../s3/awsControllers";
 import { Brackets, In } from "typeorm";
 import { UserLogin } from "@/api/entity/user/UserLogin";
+import { Role } from "@/api/entity/Role/Role";
 
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
@@ -171,89 +172,35 @@ export const removeConnection = async (req: Request, res: Response): Promise<Res
 };
 
 
-export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
-  try {
-    const { userId, page = 1, limit = 5 } = req.body;
+// export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
+//   try {
+//     const { userId, page = 1, limit = 5 } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required.",
-      });
-    }
+//     if (!userId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "User ID is required.",
+//       });
+//     }
 
-    const userRepository = AppDataSource.getRepository(PersonalDetails);
-    const connectionRepository = AppDataSource.getRepository(Connection);
+//     const userRepository = AppDataSource.getRepository(PersonalDetails);
+//     const connectionRepository = AppDataSource.getRepository(Connection);
+//     const userRoleRepos = AppDataSource.getRepository(Role)
 
-    const user = await userRepository.findOne({
-      where: { userId },
-      select: ["id", "firstName", "lastName", "occupation"],
-    });
+//     const user = await userRepository.findOne({
+//       where: { userId },
+//       select: ["id", "firstName", "lastName", "occupation"],
+//     });
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found. Invalid User ID.",
-      });
-    }
-
-    // Fetch current user's connections
-    const userConnections = await connectionRepository.find({
-      where: { receiverId: userId },
-      select: ["requesterId"],
-    });
-
-    const connectedUserIds = userConnections.map((connection) => connection.receiverId);
-
-    // Fetch mutual connections or users with similar skills
-    const potentialConnections = await userRepository
-      .createQueryBuilder("user")
-      .where("user.id != :userId", { userId })
-      .andWhere("user.id NOT IN (:...connectedUserIds)", { connectedUserIds })
-      .andWhere(
-        new Brackets((qb) => {
-          qb.where("user.skills && :userSkills", { userSkills: user.occupation || [] }) // Shared skills
-            .orWhere(
-              "user.id IN (SELECT c.connected_user_id FROM connection c WHERE c.user_id IN (:...connectedUserIds))",
-              { connectedUserIds }
-            );
-        })
-      )
-      .take(limit)
-      .skip((page - 1) * limit)
-      .getMany();
-
-    // Format response
-    // const suggestions = potentialConnections.map((connection) => ({
-    //   id: connection.id,
-    //   name: `${connection.firstName} ${connection.lastName}`,
-    //   sharedSkills: connection.occupation.filter((skill: string) => user.occupation.includes(skill)),
-    // }));
-
-    const suggestions = potentialConnections.map((connection) => ({
-      id: connection.id,
-      name: `${connection.firstName} ${connection.lastName}`,
-      sharedSkills: connection.occupation
-        .split(",") // Assuming skills are comma-separated
-        .filter((skill: string) => user.occupation.includes(skill)),
-    }));
+//     const userRole = await userRoleRepos.findOne({
+//       where: { userId },
+//       select: ["id", "firstName", "lastName", "occupation"],
+//     });
 
 
-    return res.status(200).json({
-      success: true,
-      message: "Connection suggestions retrieved successfully.",
-      data: {
-        suggestions,
-        currentPage: page,
-        totalSuggestions: suggestions.length,
-      },
-    });
-  } catch (error: any) {
-    console.error("Error fetching connection suggestions:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error. Could not fetch connection suggestions.",
-      error: error.message,
-    });
-  }
-};
+
+
+
+
+   
+// };
