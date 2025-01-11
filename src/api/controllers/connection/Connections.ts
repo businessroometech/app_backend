@@ -55,7 +55,7 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
 // Accept or reject a connection request
 export const updateConnectionStatus = async (req: Request, res: Response): Promise<Response> => {
   const { userId, connectionId, status } = req.body;
-
+console.log("reqest", req.body)
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
 
@@ -115,7 +115,7 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
 
     const users = await userRepository.find({
       where: { id: In(userIds) },
-      select: ["id", "firstName", "lastName", "profilePictureUploadId"],
+      select: ["id", "firstName", "lastName", "profilePictureUploadId", "userRole"],
     });
 
     if (!users || users.length === 0) {
@@ -133,6 +133,7 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
         userId: user?.id,
         firstName: user?.firstName,
         lastName: user?.lastName,
+        userRole:user?.userRole,
         profilePictureUrl: user?.profilePictureUploadId
           ? generatePresignedUrl(user.profilePictureUploadId)
           : null,
@@ -149,7 +150,7 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
 
 // Remove a connection
 export const removeConnection = async (req: Request, res: Response): Promise<Response> => {
-  const { connectionId } = req.params;
+  const { connectionId } = req.body;
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -168,6 +169,69 @@ export const removeConnection = async (req: Request, res: Response): Promise<Res
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+// get user connection 
+export const getUserConnectionRequests = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body; // Get user ID from request body
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required." });
+    }
+
+    const connectionRepository = AppDataSource.getRepository(Connection);
+
+    // Fetch pending connection requests
+    const connectionRequests = await connectionRepository.find({
+      where: {
+        receiverId: userId,
+        status: "pending",
+      },
+    });
+
+    if (!connectionRequests || connectionRequests.length === 0) {
+      return res.status(404).json({ message: "No connection requests found." });
+    }
+
+    const userIds = [
+      ...new Set(connectionRequests.map((connection) => connection.requesterId)),
+    ];
+
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
+
+    const users = await userRepository.find({
+      where: { id: In(userIds) },
+      select: ["id", "firstName", "lastName", "profilePictureUploadId", "userRole"],
+    });
+
+    // Create a response with connection requests and their respective user details
+    const response = await Promise.all(
+      connectionRequests.map(async (connection) => {
+        const user = users.find((u) => u.id === connection.requesterId);
+        const profilePictureUploadUrl = user?.profilePictureUploadId
+          ? await generatePresignedUrl(user.profilePictureUploadId)
+          : null;
+
+        return {
+          connectionId: connection.id,
+          requesterId: connection.requesterId,
+          receiverId: connection.receiverId,
+          status: connection.status,
+          createdAt: connection.createdAt,
+          updatedAt: connection.updatedAt,
+          requesterDetails: user,
+          profilePictureUploadUrl,
+        };
+      })
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("Error fetching connection requests:", error);
+    return res.status(500).json({ message: "Server error. Please try again later." });
+  }
+};
+
 
 export const unsendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
   const { requesterId, receiverId } = req.body;

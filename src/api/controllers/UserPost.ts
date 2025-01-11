@@ -371,6 +371,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             likeStatus,
           },
           userDetails: {
+            postedId:user?.id,
             firstName: user?.firstName || '',
             lastName: user?.lastName || '',
             timestamp: formatTimestamp(post.createdAt),
