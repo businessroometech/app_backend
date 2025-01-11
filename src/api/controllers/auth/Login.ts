@@ -73,7 +73,7 @@ export const login = async (req: Request, res: Response,): Promise<void> => {
     const notification = notificationRepos.create({
       userId: user.id,
       message: 'Welcome to our platform!, You have successfully logged in',
-      navigation: '/dashboard',
+      navigation: '/',
     });
 
     // Save the notification

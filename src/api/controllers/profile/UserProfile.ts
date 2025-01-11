@@ -87,19 +87,17 @@ export const getUserProfile = async (
   try {
     const { userId } = req.body;
 
-    // Validate if the user exists
-    const userRepository = AppDataSource.getRepository(PersonalDetails);
-    const user = await userRepository.findOneBy({ id: userId });
-
-    if (!user) {
+    if (!userId) {
       return res.status(400).json({
-        message: "User ID is invalid or does not exist.",
+        message: "User ID is required.",
       });
     }
 
-    // Check if personal details exist for the user
+    // Fetch user details from the PersonalDetails repository
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-    const personalDetails = await personalDetailsRepository.findOneBy({ id:userId });
+    const personalDetails = await personalDetailsRepository.findOne({
+      where: { id: userId },
+    });
 
     if (!personalDetails) {
       return res.status(404).json({
@@ -107,12 +105,23 @@ export const getUserProfile = async (
       });
     }
 
-    const profileimgurl = await generatePresignedUrl(personalDetails?.profilePictureUploadId);
-    const coverimurl= await generatePresignedUrl(personalDetails?.bgPictureUploadId);
+    // Generate URLs for profile and cover images
+    const profileImgUrl = personalDetails.profilePictureUploadId
+      ? await generatePresignedUrl(personalDetails.profilePictureUploadId)
+      : null;
 
+    const coverImgUrl = personalDetails.bgPictureUploadId
+      ? await generatePresignedUrl(personalDetails.bgPictureUploadId)
+      : null;
+
+    // Return the user's profile data
     return res.status(200).json({
       message: "User profile fetched successfully.",
-      data: {personalDetails, profileimgurl, coverimurl},
+      data: {
+        personalDetails,
+        profileImgUrl,
+        coverImgUrl,
+      },
     });
   } catch (error: any) {
     console.error("Error fetching user profile:", error);
