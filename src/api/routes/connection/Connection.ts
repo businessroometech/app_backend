@@ -10,5 +10,6 @@ Router.post('/remove-connection', removeConnection);
 Router.post('/remove-suggest', ConnectionsSuggestionController);
 Router.post('/unsend-connection-request', unsendConnectionRequest);
 Router.post('/get-connection-request', getUserConnectionRequests);
+Router.post("/get-connection-suggest", ConnectionsSuggestionController)
 
 export default Router;

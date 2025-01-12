@@ -3,6 +3,8 @@ import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
 import { AppDataSource } from "@/server";
 import { generatePresignedUrl } from "../s3/awsControllers";
 import { Connection } from "@/api/entity/connection/Connections";
+import { UserPost } from "@/api/entity/UserPost";
+import { Like } from "@/api/entity/posts/Like";
 
 export const UpdateUserProfile = async (req: Request, res: Response) => {
   try {
@@ -123,6 +125,11 @@ export const getUserProfile = async (
         { receiverId: userId, status: "accepted" },
       ],
     });
+    const postRepository = AppDataSource.getRepository(UserPost);
+  const userPostsCount = await postRepository.count({ where: { userId } });
+
+  const likeRepository = AppDataSource.getRepository(Like);
+const userLikesCount = await likeRepository.count({ where: { userId } });
 
     // Return the user's profile data
     return res.status(200).json({
@@ -131,7 +138,9 @@ export const getUserProfile = async (
         personalDetails,
         profileImgUrl,
         coverImgUrl,
-        connectionsCount
+        connectionsCount,
+        postsCount:userPostsCount,
+        likeCount:userLikesCount
       },
     });
   } catch (error: any) {

@@ -304,7 +304,6 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
       ...connections.map((connection) => connection.receiverId),
     ]);
 
-    // Add the current user ID to the exclusion list
     connectedUserIds.add(userId);
 
     // Fetch suggested users (users not already connected)
@@ -312,29 +311,28 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
       where: {
         id: In([...connectedUserIds.values()].map((id) => ({ id: Not(id) }))),
       },
-      select: ["id", "firstName", "lastName", "occupation", "profilePictureUploadId"],
       take: limit,
       skip: (page - 1) * limit,
     });
 
     // Format the suggested users
-    const result = suggestedUsers.map((suggestedUser) => ({
+    const result = await suggestedUsers.map((suggestedUser) => ({
       id: suggestedUser.id,
       firstName: suggestedUser.firstName,
       lastName: suggestedUser.lastName,
       occupation: suggestedUser.occupation,
+      userRole: suggestedUser.userRole,
       profilePictureUrl: suggestedUser.profilePictureUploadId
         ? generatePresignedUrl(suggestedUser.profilePictureUploadId)
         : null,
     }));
-
     return res.status(200).json({
       success: true,
       message: "Suggested users fetched successfully.",
+      data: result,
       total,
       page,
       limit,
-      data: result,
     });
   } catch (error: any) {
     console.error("Error fetching connection suggestions:", error);
