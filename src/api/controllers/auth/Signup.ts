@@ -16,6 +16,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       emailAddress,
       password,
       country,
+      dob,
       userRole,
       createdBy = 'system',
       updatedBy = 'system',
@@ -69,6 +70,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       password,
       country,
       userRole,
+      dob,
       createdBy,
       updatedBy,
     });
@@ -81,16 +83,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       status: 'success',
       message: 'Signup completed successfully.',
       data: {
-        user: {
-          id: newUser.id,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          emailAddress: newUser.emailAddress,
-          country: newUser.country,
-          userRole:newUser.userRole,
-          createdAt: newUser.createdAt,
-          updatedAt: newUser.updatedAt,
-        },
+        user:newUser
       },
     });
   } catch (error: any) {
