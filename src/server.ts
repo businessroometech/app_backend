@@ -2,10 +2,11 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
+import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from 'http';
 import { pino } from 'pino';
 import { Server } from 'socket.io';
-import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+import { DataSource } from 'typeorm'; 
 
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
@@ -31,6 +32,7 @@ import { Comment } from './api/entity/posts/Comment';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
+import { setWebSocketServer } from './api/controllers/chat/Message';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -38,6 +40,9 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: '*' },
 });
+
+const wss = new WebSocketServer({ server: httpServer });
+setWebSocketServer(wss);
 
 // Create a DataSource instance
 const AppDataSource = new DataSource({
@@ -59,7 +64,7 @@ const AppDataSource = new DataSource({
     BusinessBuyer,
     Investor,
     Entrepreneur,
-    
+
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
@@ -70,22 +75,52 @@ const AppDataSource = new DataSource({
 
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
-// Initialize the DataSource
+// Initialize WebSocket Server
+wss.on('connection', (socket: WebSocket, req) => {
+  const params = new URLSearchParams(req.url?.split('?')[1]);
+  const userId = params.get('userId'); // Retrieve userId from query parameters
+  (socket as any).userId = userId; // Attach userId to socket
+
+  logger.info(`New WebSocket connection established for userId: ${userId}`);
+
+  // Listen for messages
+  socket.on('message', (message) => {
+    logger.info(`Message received from userId ${userId}: ${message}`);
+
+    // Broadcast message to all connected clients
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  });
+
+  // Handle WebSocket disconnection
+  socket.on('close', () => {
+    logger.info(`WebSocket connection closed for userId: ${userId}`);
+  });
+
+  // Handle errors
+  socket.on('error', (err) => {
+    logger.error(`WebSocket error for userId ${userId}: ${err.message}`);
+  });
+});
+
+// Initialize DataSource and start server
 AppDataSource.initialize()
   .then(() => {
-    console.log('DB connected');
+    logger.info('Database connected successfully.');
 
-    io.on('connection', (socket) => {
-      console.log('New client connected:', socket.id);
-
-      socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-      });
+    // Start HTTP server
+    const PORT = process.env.PORT || 3000;
+    httpServer.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}`);
     });
   })
   .catch((error) => {
-    console.error('Error during Data Source initialization:', error);
+    logger.error('Error during DataSource initialization:', error);
   });
+
 
 // app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(
