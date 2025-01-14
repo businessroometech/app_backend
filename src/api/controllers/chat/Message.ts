@@ -14,21 +14,23 @@ export const setWebSocketServer = (server: WebSocketServer) => {
 
 export const getMessagesUserWise = async (req: Request, res: Response) => {
     try {
-        const { senderId, receiverId } = req.body;
+        const { senderId, receiverId, page, limit } = req.body;
 
         if (!senderId || !receiverId) {
             return res.status(400).json({ message: "SenderId and ReceiverId are required." });
         }
 
-        const messages = await messageRepository.find({
+        const [messages, total] = await messageRepository.findAndCount({
             where: [
                 { senderId, receiverId },
                 { senderId: receiverId, receiverId: senderId }
             ],
             order: { createdAt: "ASC" },
+            skip: (Number(page) - 1) * Number(limit),
+            take: Number(limit),
         });
 
-        res.status(200).json({ messages });
+        res.status(200).json({ status: "success", message: "messages fetched", data: { total, messages, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) } });
     } catch (error) {
         console.error("Error fetching messages:", error);
         res.status(500).json({ message: "Failed to fetch messages.", error });
