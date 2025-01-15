@@ -12,11 +12,11 @@ const generateAccessToken = (user: { id: string }, rememberMe: boolean = false):
   });
 };
 
-// const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false): string => {
-//   return jwt.sign({ id: user.id }, process.env.REFRESH_SECRET_KEY!, {
-//     expiresIn: rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_REMEMBER : process.env.JWT_REFRESH_EXPIRES_IN,
-//   });
-// };
+const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false): string => {
+  return jwt.sign({ id: user.id }, process.env.REFRESH_SECRET_KEY!, {
+    expiresIn: rememberMe ? process.env.JWT_REFRESH_EXPIRES_IN_REMEMBER : process.env.JWT_REFRESH_EXPIRES_IN,
+  });
+};
 
 export const login = async (req: Request, res: Response,): Promise<void> => {
   try {
