@@ -3,7 +3,7 @@ import { AppDataSource } from "@/server"; // Update to your actual DataSource fi
 import { Message } from "@/api/entity/chat/Message";
 import { WebSocketServer } from "ws";
 
-const messageRepository = AppDataSource.getRepository(Message);
+// const messageRepository = AppDataSource.getRepository(Message);
 
 // WebSocket instance (ensure this matches your actual setup)
 let wss: WebSocketServer;
@@ -19,6 +19,7 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
         if (!senderId || !receiverId) {
             return res.status(400).json({ message: "SenderId and ReceiverId are required." });
         }
+        const messageRepository = AppDataSource.getRepository(Message);
 
         const [messages, total] = await messageRepository.findAndCount({
             where: [
@@ -44,6 +45,7 @@ export const sendMessage = async (req: Request, res: Response) => {
         if (!senderId || !receiverId || !content) {
             return res.status(400).json({ message: "SenderId, ReceiverId, and Content are required." });
         }
+        const messageRepository = AppDataSource.getRepository(Message);
 
         const message = messageRepository.create({
             senderId,
@@ -76,6 +78,7 @@ export const markAsRead = async (req: Request, res: Response) => {
         if (!messageId) {
             return res.status(400).json({ message: "MessageId is required." });
         }
+        const messageRepository = AppDataSource.getRepository(Message);
 
         const message = await messageRepository.findOne({ where: { id: messageId } });
 
