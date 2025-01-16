@@ -24,7 +24,6 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       socialMediaProfile,
       height,
       weight,
-      bodyMeasurement,
       permanentAddress,
       currentAddress,
       aadharNumberUploadId,
@@ -63,8 +62,7 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
       if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
       if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
-
-      personalDetails.updatedBy = "system"; // Update metadata
+      personalDetails.updatedBy = "system"; 
 
       await personalDetailsRepository.save(personalDetails);
 
