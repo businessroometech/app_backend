@@ -90,10 +90,7 @@ export class PersonalDetails extends BaseEntity {
     type: 'varchar',
     default: 'Others',
   })
-  userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor' | 'Others';
-
-  @OneToMany(() => ResetPassword, (resetPassword) => resetPassword.user)
-  resetPasswords!: ResetPassword;
+  userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor' ;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -120,13 +117,6 @@ export class PersonalDetails extends BaseEntity {
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
     this.password = await bcrypt.hash(this.password, 10);
-  }
-
-  @BeforeUpdate()
-  async updateTimestamp() {
-    if (this.password) {
-      this.password = await bcrypt.hash(this.password, 10);
-    }
   }
 
   private generateUUID(): string {
