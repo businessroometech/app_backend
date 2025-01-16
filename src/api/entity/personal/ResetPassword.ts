@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
 import { PersonalDetails } from './PersonalDetails';
+import { randomBytes } from 'crypto';
 
 @Entity({name:"ResetPassword"})
 export class ResetPassword {
@@ -8,9 +9,9 @@ export class ResetPassword {
 
   @Column({ type: 'varchar', default: 'system' })
   token!: string;
-
-  @ManyToOne(() => PersonalDetails, (user) => user.id, { onDelete: 'CASCADE' })
-  user!: PersonalDetails;
+  
+  @ManyToOne(() => PersonalDetails, (user) => user.resetPasswords, { onDelete: 'CASCADE' })
+  user!: PersonalDetails; 
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -39,4 +40,13 @@ export class ResetPassword {
     precision: 6,
   })
   updatedAt!: Date;
+ 
+   @BeforeInsert()
+   private async beforeInsert() {
+     this.id = this.generateUUID();
+   }
+ 
+   private generateUUID(): string {
+     return randomBytes(16).toString('hex');
+   }
 }

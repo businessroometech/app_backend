@@ -28,33 +28,41 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       });
       return;
     }
+
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 3600000); 
+
     const resetPassword = resetPasswordRepository.create({
       token,
       expiresAt,
-      user,
+      user: user,
     });
     await resetPasswordRepository.save(resetPassword);
+
     const transporter = nodemailer.createTransport({
-      service: 'gmail', 
+      host: 'mail.businessroom.ai',
+      port: 465,
+      secure: false,
       auth: {
-        user: process.env.EMAIL || "sachinmernstack@gmail.com", 
-        pass: process.env.EMAIL_PASSWORD || "ecxsaylsgcaimeke", 
+        user: 'no-reply@businessroom.ai',
+        pass: 'Business123!@#',
       },
     });
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    // Create reset link
+    const resetLink = `${process.env.FRONTEND_URL || 'https://businessroom.vercel.app'}/reset-password?token=${token}`;
+
+    // Send the email
     await transporter.sendMail({
-      from: process.env.EMAIL || "sachinmernstack@gmail.com",
+      from: 'no-reply@businessroom.ai',
       to: emailAddress,
       subject: 'Password Reset Request',
       html: `
-        <p>Hi ${user.firstName},</p>
-        <p>You requested to reset your password. Click the link below to reset it:</p>
-        <a href="${resetLink}">${resetLink}</a>
-        <p>This link will expire in 1 hour.</p>
-      `,
+          <p>Hi ${user.firstName},</p>
+          <p>You requested to reset your password. Click the link below to reset it:</p>
+          <a href="${resetLink}">${resetLink}</a>
+          <p>This link will expire in 1 hour.</p>
+        `,
     });
 
     res.status(200).json({
