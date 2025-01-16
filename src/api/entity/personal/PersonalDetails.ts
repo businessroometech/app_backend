@@ -12,7 +12,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Connection } from '../connection/Connections';
-import { ResetPassword } from './ResetPassword';
 
 interface Address {
   addressLine1: string;
