@@ -261,75 +261,63 @@ export const unsendConnectionRequest = async (req: Request, res: Response): Prom
   }
 };
 
-
 export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, page = 1, limit = 5 } = req.body;
+    const {userId, page = 1, limit = 5 } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required.",
-      });
-    }
+    const offset = (page - 1) * limit;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
+
+    const [users, total] = await userRepository.findAndCount({
+      skip: offset,
+      take: limit,
+    }); 
+
     const connectionRepository = AppDataSource.getRepository(Connection);
-
-    // Check if the user exists
-    const user = await userRepository.findOne({
-      where: { id: userId },
-      select: ["id", "firstName", "lastName", "occupation"],
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      });
-    }
-
-    // Fetch all connections of the user (both sent and received)
     const connections = await connectionRepository.find({
       where: [
-        { requesterId: userId },
-        { receiverId: userId },
-        
+        {
+          requesterId: userId,
+          status: In(['pending', 'accepted', 'rejected']),
+        },
+        {
+          receiverId: userId,
+          status: In(['pending', 'accepted', 'rejected']),
+        },
       ],
-      select: ["requesterId", "receiverId"],
     });
-
-    // Extract all connected user IDs
-    const connectedUserIds = new Set([
-      ...connections.map((connection) => connection.requesterId),
-      ...connections.map((connection) => connection.receiverId),
-    ]);
-
-    connectedUserIds.add(userId);
-
-    // Fetch suggested users (users not already connected)
-    const [suggestedUsers, total] = await userRepository.findAndCount({
-      where: {
-        id: In([...connectedUserIds.values()].map((id) => ({ id: Not(id) }))),
-      },
-      take: limit,
-      skip: (page - 1) * limit,
-    });
-
-    // Format the suggested users
+    
+    const connectedUserIds = connections.map((connection) => connection.receiverId);
+    
+    const shuffleArray = (array: any[]) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+    
+    const filteredUsers = users.filter(
+      (user) => user.id !== userId && !connectedUserIds.includes(user.id)
+    );
+    
+    const shuffledUsers = shuffleArray(filteredUsers);
+    
     const result = await Promise.all(
-      suggestedUsers.map(async (suggestedUser) => ({
-        id: suggestedUser.id,
-        firstName: suggestedUser.firstName,
-        lastName: suggestedUser.lastName,
-        occupation: suggestedUser.occupation,
-        userRole: suggestedUser.userRole,
-        profilePictureUrl: suggestedUser.profilePictureUploadId
-          ? await generatePresignedUrl(suggestedUser.profilePictureUploadId)
+      shuffledUsers.map(async (user) => ({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        occupation: user.occupation,
+        userRole: user.userRole,
+        profilePictureUrl: user.profilePictureUploadId
+          ? await generatePresignedUrl(user.profilePictureUploadId)
           : null,
       }))
     );
-    
+
+
     return res.status(200).json({
       success: true,
       message: "Suggested users fetched successfully.",

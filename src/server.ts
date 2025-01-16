@@ -62,7 +62,7 @@ const AppDataSource = new DataSource({
     Entrepreneur,    
     ResetPassword
   ],
-  synchronize: true,
+  synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 

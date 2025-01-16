@@ -86,7 +86,7 @@ export const getUserProfile = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const { userId } = req.body;
+    const { userId, profileId } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -123,6 +123,13 @@ export const getUserProfile = async (
         { receiverId: userId, status: "accepted" },
       ],
     });
+    const connectionsStatus = await connectionRepository.count({
+      where: [
+        { requesterId: userId, status: "accepted" },
+        { receiverId: userId, status: "accepted" },
+      ],
+    });
+    
     const postRepository = AppDataSource.getRepository(UserPost);
   const userPostsCount = await postRepository.count({ where: { userId } });
 
