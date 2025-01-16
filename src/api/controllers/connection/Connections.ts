@@ -10,7 +10,6 @@ import { Brackets, In, Not } from "typeorm";
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
   const { requesterId, receiverId } = req.body;
-
   try {
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -289,7 +288,7 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
     });
     
     const connectedUserIds = connections.map((connection) => connection.receiverId);
-    
+
     const shuffleArray = (array: any[]) => {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

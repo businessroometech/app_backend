@@ -123,10 +123,10 @@ export const getUserProfile = async (
         { receiverId: userId, status: "accepted" },
       ],
     });
-    const connectionsStatus = await connectionRepository.count({
+    const connectionsStatus = await connectionRepository.findOne({
       where: [
-        { requesterId: userId, status: "accepted" },
-        { receiverId: userId, status: "accepted" },
+        { requesterId: userId,receiverId:profileId},
+        { receiverId: userId,  requesterId: userId},
       ],
     });
     
@@ -145,7 +145,8 @@ const userLikesCount = await likeRepository.count({ where: { userId } });
         coverImgUrl,
         connectionsCount,
         postsCount:userPostsCount,
-        likeCount:userLikesCount
+        likeCount:userLikesCount,
+        connectionsStatus:connectionsStatus?.status
       },
     });
   } catch (error: any) {
