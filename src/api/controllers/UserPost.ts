@@ -278,8 +278,8 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         createdAt: 'DESC',
       },
       select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
-      // skip: (page - 1) * limit,
-      // take: limit,
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
     if (!posts || posts.length === 0) {
