@@ -88,7 +88,7 @@ export class PersonalDetails extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    default: 'Others',
+    default: '',
   })
   userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor' ;
 
