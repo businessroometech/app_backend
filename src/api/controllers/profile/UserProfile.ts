@@ -125,7 +125,11 @@ export const getUserProfile = async (
     });
     const connectionsStatus = await connectionRepository.findOne({
       where: [
-        { requesterId: userId,receiverId:profileId},
+        { requesterId: userId,receiverId:profileId}
+      ],
+    });
+    const connectionsStatus2 = await connectionRepository.findOne({
+      where: [
         { receiverId: userId,  requesterId: userId},
       ],
     });
@@ -146,7 +150,7 @@ const userLikesCount = await likeRepository.count({ where: { userId } });
         connectionsCount,
         postsCount:userPostsCount,
         likeCount:userLikesCount,
-        connectionsStatus:connectionsStatus?.status
+        connectionsStatus:connectionsStatus?.status ? connectionsStatus?.status : connectionsStatus2?.status 
       },
     });
   } catch (error: any) {
