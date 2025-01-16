@@ -58,10 +58,9 @@ const AppDataSource = new DataSource({
     BusinessForSale,
     BusinessBuyer,
     Investor,
-    Entrepreneur,
-    
+    Entrepreneur,    
   ],
-  synchronize: true,
+  synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 

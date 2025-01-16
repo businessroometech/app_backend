@@ -294,6 +294,7 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
       where: [
         { requesterId: userId },
         { receiverId: userId },
+        
       ],
       select: ["requesterId", "receiverId"],
     });
@@ -316,16 +317,19 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
     });
 
     // Format the suggested users
-    const result = await suggestedUsers.map((suggestedUser) => ({
-      id: suggestedUser.id,
-      firstName: suggestedUser.firstName,
-      lastName: suggestedUser.lastName,
-      occupation: suggestedUser.occupation,
-      userRole: suggestedUser.userRole,
-      profilePictureUrl: suggestedUser.profilePictureUploadId
-        ? generatePresignedUrl(suggestedUser.profilePictureUploadId)
-        : null,
-    }));
+    const result = await Promise.all(
+      suggestedUsers.map(async (suggestedUser) => ({
+        id: suggestedUser.id,
+        firstName: suggestedUser.firstName,
+        lastName: suggestedUser.lastName,
+        occupation: suggestedUser.occupation,
+        userRole: suggestedUser.userRole,
+        profilePictureUrl: suggestedUser.profilePictureUploadId
+          ? await generatePresignedUrl(suggestedUser.profilePictureUploadId)
+          : null,
+      }))
+    );
+    
     return res.status(200).json({
       success: true,
       message: "Suggested users fetched successfully.",

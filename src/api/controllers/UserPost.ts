@@ -339,14 +339,10 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
           postComments.map(async (comment) => {
             const commenter = await userRepository.findOne({
               where: { id: comment.userId },
-              select: ['firstName', 'lastName'],
             });
 
             return {
-              Id: comment.id,
-              commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
-              text: comment.text,
-              timestamp: formatTimestamp(comment.createdAt),
+              commenter
             };
           })
         );
