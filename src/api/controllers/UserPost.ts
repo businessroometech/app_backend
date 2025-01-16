@@ -283,9 +283,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     });
 
     if (!posts || posts.length === 0) {
-      return res.status(404).json({
-        message: 'No posts found.',
-      });
+      return res.status(200).json({ status: "success", message: "No posts found for this user.", data: { posts: [] } });
     }
 
     const postIds = posts.map((post) => post.Id);
