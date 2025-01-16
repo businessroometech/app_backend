@@ -6,16 +6,16 @@ import { signup } from '../../controllers/auth/Signup';
 import { authenticate } from '../../middlewares/auth/Authenticate';
 import { generateUploadUrl, getDocumentFromBucket } from "../../controllers/s3/awsControllers";
 import {  getUserProfile, UpdateUserProfile } from '@/api/controllers/profile/UserProfile';
-import { resetPassword } from '@/api/controllers/auth/ResetPassword';
-import { forgotPassword } from '@/api/controllers/auth/ForgetPassword';
+import { sendResetEmail, resetPassword } from "@/api/controllers/auth/ResetPassword";
 
-const Router = express.Router();
+const Router = express.Router();    
 
 Router.post('/signup', signup);
 Router.post('/login', login);
 Router.post('/logout', authenticate, logout);
-Router.post("/forgot-password", forgotPassword)
-Router.post("/reset-password", resetPassword)
+Router.post('/reset-pass-req', sendResetEmail);
+Router.post('/reset-pass', resetPassword);
+
 
 Router.post('/generate-upload-url', generateUploadUrl);
 Router.post('/document-retrival', getDocumentFromBucket);
