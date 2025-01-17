@@ -146,14 +146,12 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
             user.id === connection.requesterId ||
             user.id === connection.receiverId
         );
-
         const profilePictureUrl = user?.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
-
         const isMutual = userConnectionIds.has(user?.id || "");
-
         return {
+          connectionId: connection.id,
           userId: user?.id,
           firstName: user?.firstName,
           lastName: user?.lastName,
