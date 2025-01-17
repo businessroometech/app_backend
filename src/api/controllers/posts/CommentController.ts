@@ -57,10 +57,11 @@ export const getComments = async (req: Request, res: Response) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ["firstName", "lastName"],
+          select: ["firstName", "lastName", 'id'],
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
+       
         return {
           id: comment.id,
           commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`.trim(),
@@ -68,7 +69,8 @@ export const getComments = async (req: Request, res: Response) => {
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
           likeStatus: commentLike?.status,
-          commenterId: commenter?.id
+          commenterId: commenter?.id,
+
         };
       })
     );
