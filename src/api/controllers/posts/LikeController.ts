@@ -52,26 +52,29 @@ export const createCommentLike = async (req: Request, res: Response) => {
     try {
         const { userId, postId, commentId, status } = req.body;
         if (!userId || !postId || !commentId) {
-            return res.status(400).json({ status: "error", message: 'userId, postId and commentId are required.' });
+            return res.status(400).json({ status: "error", message: 'userId, postId, and commentId are required.' });
         }
+
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
+
         let like = await commentLikeRepository.findOne({ where: { userId, postId, commentId } });
 
         if (like) {
             like.status = status;
         } else {
-            like = CommentLike.create({
+            like = commentLikeRepository.create({
                 userId,
                 postId,
                 commentId,
-                status
+                status,
             });
         }
-        await like.save();
-        return res.status(200).json({ status: "success", message: 'commment Like status updated.', data: { like } });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
+
+        await commentLikeRepository.save(like);
+        return res.status(200).json({ status: "success", message: 'Comment Like status updated.', data: { like } });
+    } catch (error: any) {
+        console.error('Error details:', error);
+        return res.status(500).json({ status: "error", message: 'Internal Server Error', error: error.message });
     }
 };
 
