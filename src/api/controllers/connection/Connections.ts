@@ -121,26 +121,31 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
       return res.status(404).json({ message: "No users found." });
     }
 
-    const result = connections.map((connection) => {
-      const user = users.find(
-        (user) =>
-          user.id === connection.requesterId ||
-          user.id === connection.receiverId
-      );
-
-      return {
-        userId: user?.id,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        userRole:user?.userRole,
-        profilePictureUrl: user?.profilePictureUploadId
-          ? generatePresignedUrl(user.profilePictureUploadId)
-          : null,
-        meeted: formatTimestamp(connection.updatedAt),
-      };
-    });
-
+    const result = await Promise.all(
+      connections.map(async (connection) => {
+        const user = users.find(
+          (user) =>
+            user.id === connection.requesterId ||
+            user.id === connection.receiverId
+        );
+    
+        const profilePictureUrl = user?.profilePictureUploadId
+          ? await generatePresignedUrl(user.profilePictureUploadId)
+          : null;
+    
+        return {
+          userId: user?.id,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          userRole: user?.userRole,
+          profilePictureUrl: profilePictureUrl,
+          meeted: formatTimestamp(connection.updatedAt),
+        };
+      })
+    );
+    
     return res.status(200).json({ connections: result });
+    
   } catch (error: any) {
     console.error("Error fetching user connections:", error);
     return res.status(500).json({ message: "Internal Server Error" });
