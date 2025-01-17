@@ -67,7 +67,8 @@ export const getComments = async (req: Request, res: Response) => {
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
-          likeStatus: commentLike?.status
+          likeStatus: commentLike?.status,
+          commenterId: commenter?.id
         };
       })
     );
