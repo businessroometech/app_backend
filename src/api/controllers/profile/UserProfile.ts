@@ -147,7 +147,7 @@ const userLikesCount = await likeRepository.count({ where: { userId } });
         connectionsCount,
         postsCount:userPostsCount,
         likeCount:userLikesCount,
-        connectionsStatus:connectionsStatus[0].status || connectionsStatus[1].status
+        connectionsStatus:userId===profileId? "" : connectionsStatus[0].status 
       },
     });
   } catch (error: any) {
