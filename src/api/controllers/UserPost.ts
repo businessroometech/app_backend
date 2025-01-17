@@ -260,7 +260,6 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
 // Get all posts for public view
 
 // Get all posts for public view
-// Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { userId, page, limit = 5 } = req.body;

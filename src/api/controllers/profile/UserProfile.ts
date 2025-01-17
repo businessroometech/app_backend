@@ -123,16 +123,13 @@ export const getUserProfile = async (
         { receiverId: userId, status: "accepted" },
       ],
     });
-    const connectionsStatus = await connectionRepository.findOne({
+    const connectionsStatus = await connectionRepository.find({
       where: [
-        { requesterId: userId,receiverId:profileId}
+        { requesterId: userId,receiverId:profileId},
+        { receiverId: userId,  requesterId: profileId},
       ],
     });
-    const connectionsStatus2 = await connectionRepository.findOne({
-      where: [
-        { receiverId: userId,  requesterId: userId},
-      ],
-    });
+ 
     
     const postRepository = AppDataSource.getRepository(UserPost);
   const userPostsCount = await postRepository.count({ where: { userId } });
@@ -150,7 +147,7 @@ const userLikesCount = await likeRepository.count({ where: { userId } });
         connectionsCount,
         postsCount:userPostsCount,
         likeCount:userLikesCount,
-        connectionsStatus:connectionsStatus?.status ? connectionsStatus?.status : connectionsStatus2?.status 
+        connectionsStatus:connectionsStatus[0].status || connectionsStatus[1].status
       },
     });
   } catch (error: any) {

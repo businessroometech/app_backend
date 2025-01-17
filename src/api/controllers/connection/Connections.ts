@@ -110,12 +110,14 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
     const userIds = [
       ...new Set(connections.map((connection) => connection.requesterId)),
       ...new Set(connections.map((connection) => connection.receiverId)),
-    ];
+    ].filter((id) => id !== userId);
 
     const users = await userRepository.find({
       where: { id: In(userIds) },
       select: ["id", "firstName", "lastName", "profilePictureUploadId", "userRole"],
     });
+
+
 
     if (!users || users.length === 0) {
       return res.status(404).json({ message: "No users found." });
@@ -138,7 +140,7 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
     );
 
     const result = await Promise.all(
-      connections.map(async (connection) => {
+      connections.map(async (connection) => { 
         const user = users.find(
           (user) =>
             user.id === connection.requesterId ||
