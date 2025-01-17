@@ -4,6 +4,7 @@ import { AppDataSource } from '@/server';
 import { NestedComment } from '@/api/entity/posts/NestedComment';
 import { formatTimestamp } from '../UserPost';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
+import { CommentLike } from '@/api/entity/posts/CommentLike';
 
 export const createComment = async (req: Request, res: Response) => {
   try {
@@ -31,7 +32,7 @@ export const createComment = async (req: Request, res: Response) => {
 };
 export const getComments = async (req: Request, res: Response) => {
   try {
-    const { postId, page = 1, limit = 5 } = req.body;
+    const { userId, postId, page = 1, limit = 5 } = req.body;
 
     if (!postId) {
       return res.status(400).json({ status: "error", message: "postId is required." });
@@ -53,17 +54,20 @@ export const getComments = async (req: Request, res: Response) => {
     // Format the comments
     const formattedComments = await Promise.all(
       comments.map(async (comment) => {
-        const userRepository = AppDataSource.getRepository(PersonalDetails); // Ensure repository is initialized
+        const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
           select: ["firstName", "lastName"],
         });
+        const commentLikeRepository = AppDataSource.getRepository(CommentLike);
+        const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
         return {
           id: comment.id,
           commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`.trim(),
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
+          likeStatus: commentLike?.status
         };
       })
     );
