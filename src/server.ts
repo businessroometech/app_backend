@@ -31,6 +31,7 @@ import { Comment } from './api/entity/posts/Comment';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
+import { CommentLike } from './api/entity/posts/CommentLike';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -51,6 +52,7 @@ const AppDataSource = new DataSource({
     UserPost,
     PersonalDetails,
     Comment,
+    CommentLike,
     Like,
     NestedComment,
     Notifications,
