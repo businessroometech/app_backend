@@ -89,16 +89,16 @@ console.log("reqest", req.body)
   }
 };
 
-// Get user's connections
+// Get user's connections and mutual connections
 export const getUserConnections = async (req: Request, res: Response): Promise<Response> => {
-  const { userId } = req.body;
+  const { profileId, userId } = req.body;
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connections = await connectionRepository.find({
       where: [
-        { requesterId: userId, status: "accepted" },
-        { receiverId: userId, status: "accepted" },
+        { requesterId: profileId, status: "accepted" },
+        { receiverId: profileId, status: "accepted" },
       ],
     });
 
@@ -121,6 +121,22 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
       return res.status(404).json({ message: "No users found." });
     }
 
+    // Fetch all connections of the requesting user to check for mutual connections
+    const userConnections = await connectionRepository.find({
+      where: [
+        { requesterId: userId, status: "accepted" },
+        { receiverId: userId, status: "accepted" },
+      ],
+    });
+
+    const userConnectionIds = new Set(
+      userConnections.map((connection) =>
+        connection.requesterId === userId
+          ? connection.receiverId
+          : connection.requesterId
+      )
+    );
+
     const result = await Promise.all(
       connections.map(async (connection) => {
         const user = users.find(
@@ -128,11 +144,13 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
             user.id === connection.requesterId ||
             user.id === connection.receiverId
         );
-    
+
         const profilePictureUrl = user?.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
-    
+
+        const isMutual = userConnectionIds.has(user?.id || "");
+
         return {
           userId: user?.id,
           firstName: user?.firstName,
@@ -140,17 +158,18 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
           userRole: user?.userRole,
           profilePictureUrl: profilePictureUrl,
           meeted: formatTimestamp(connection.updatedAt),
+          mutual: isMutual, // Add mutual status
         };
       })
     );
-    
+
     return res.status(200).json({ connections: result });
-    
   } catch (error: any) {
     console.error("Error fetching user connections:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 // Remove a connection
 export const removeConnection = async (req: Request, res: Response): Promise<Response> => {
