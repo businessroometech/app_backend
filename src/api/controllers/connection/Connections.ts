@@ -110,7 +110,7 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
     const userIds = [
       ...new Set(connections.map((connection) => connection.requesterId)),
       ...new Set(connections.map((connection) => connection.receiverId)),
-    ].filter((id) => id !== userId);
+    ].filter((id) => id !== profileId);
 
     const users = await userRepository.find({
       where: { id: In(userIds) },
