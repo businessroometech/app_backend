@@ -123,13 +123,8 @@ export const getUserProfile = async (
         { receiverId: userId, status: "accepted" },
       ],
     });
-    const connectionsStatus = await connectionRepository.find({
-      where: [
-        { requesterId: userId,receiverId:profileId},
-        { receiverId: userId,  requesterId: profileId},
-      ],
-    });
- 
+
+    
     
     const postRepository = AppDataSource.getRepository(UserPost);
   const userPostsCount = await postRepository.count({ where: { userId } });
@@ -137,19 +132,31 @@ export const getUserProfile = async (
   const likeRepository = AppDataSource.getRepository(Like);
 const userLikesCount = await likeRepository.count({ where: { userId } });
 
-    // Return the user's profile data
-    return res.status(200).json({
-      message: "User profile fetched successfully.",
-      data: {
-        personalDetails,
-        profileImgUrl,
-        coverImgUrl,
-        connectionsCount,
-        postsCount:userPostsCount,
-        likeCount:userLikesCount,
-        connectionsStatus:userId===profileId? "" : connectionsStatus[0].status 
-      },
-    });
+const connectionsStatus = await connectionRepository.find({
+  where: [
+    { requesterId: userId, receiverId: profileId },
+    { receiverId: userId, requesterId: profileId },
+  ],
+});
+
+if (!connectionsStatus || connectionsStatus.length === 0) {
+  connectionsStatus === null;
+}
+
+// Return the user's profile data
+return res.status(200).json({
+  message: "User profile fetched successfully.",
+  data: {
+    personalDetails,
+    profileImgUrl,
+    coverImgUrl,
+    connectionsCount,
+    postsCount: userPostsCount,
+    likeCount: userLikesCount,
+    connectionsStatus: connectionsStatus.length > 0 ? connectionsStatus[0].status : "",
+  },
+});
+
   } catch (error: any) {
     console.error("Error fetching user profile:", error);
     return res.status(500).json({
