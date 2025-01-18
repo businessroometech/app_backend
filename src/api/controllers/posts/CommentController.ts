@@ -61,7 +61,7 @@ export const getComments = async (req: Request, res: Response) => {
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
-       
+
         return {
           id: comment.id,
           commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`.trim(),
@@ -140,9 +140,29 @@ export const getNestedComments = async (req: Request, res: Response) => {
       order: { createdAt: 'ASC' },
     });
 
+    const formattedNestedComments = await Promise.all(
+      nestedComments.map(async (comment) => {
+        const userRepository = AppDataSource.getRepository(PersonalDetails);
+        const commenter = await userRepository.findOne({
+          where: { id: comment.userId },
+          select: ["firstName", "lastName", 'id'],
+        });
+
+        return {
+          id: comment.id,
+          commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`.trim(),
+          text: comment.text,
+          timestamp: formatTimestamp(comment.createdAt),
+          postId: comment.postId,
+          commentId: comment.commentId,
+          commenterId: commenter?.id,
+        };
+      })
+    );
+
     return res
       .status(200)
-      .json({ status: "success", message: 'Nested comments fetched successfully.', data: { nestedComments } });
+      .json({ status: "success", message: 'Nested comments fetched successfully.', data: { nestedComments: formattedNestedComments } });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
