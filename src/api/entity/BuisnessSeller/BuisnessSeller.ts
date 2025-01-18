@@ -1,93 +1,88 @@
 /* eslint-disable prettier/prettier */
 import { randomBytes } from 'crypto';
-import { BaseEntity, BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { OneToOne } from 'typeorm';
+import { BaseEntity, BeforeInsert, Column, Entity, PrimaryColumn } from 'typeorm';
 
-import { PersonalDetails } from '../personal/PersonalDetails';
 @Entity({ name: "BusinessForSale" })
 export class BusinessForSale extends BaseEntity {
 
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryColumn("uuid")
   id!: string;
 
+  @Column({ type: 'varchar', length: 100})
+  UserId!: string;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
+  businessName!: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
   businessType!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  yearsInOperation!: string;
+  businessStage!: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  primaryBusinessModel!: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  industry!: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  reasonForSale!: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  location!: string;
 
-  @Column({ type: 'decimal', nullable: true })
-  askingPrice!: number;
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  revenue!: string;
 
-  @Column({ type: 'decimal', nullable: true })
-  annualRevenue!: number;
-
-  @Column({ type: 'decimal', nullable: true })
-  annualProfit!: number;
-
-  @Column({ type: 'decimal', nullable: true })
-  assetValue!: number;
-
-  @Column({ type: 'boolean', nullable: true })
-  hasOutstandingDebts!: boolean;
-
-  @Column({ type: 'boolean', nullable: true })
-  isProfitable!: boolean;
-
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  keyProductsOrServices!: string;
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  profit!: string;
 
   @Column({ type: 'int', nullable: true })
   numberOfEmployees!: number;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  businessStructure!: string;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  businessOwnershipStatus!: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  leaseTerm!: string;
-
-  @Column({ type: 'boolean', nullable: true })
-  hasIntellectualProperty!: boolean;
-
-  @Column({ type: 'boolean', nullable: true })
-  hasContracts!: boolean;
-
-  @Column({ type: 'boolean', nullable: true })
-  hasLegalIssues!: boolean;
-
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  ownershipStructure!: string;
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  ownershipPercentage!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  keyOperations!: string;
+  reasonForSelling!: string;
 
-  @Column({ type: 'boolean', nullable: true })
-  offersSupportAfterSale!: boolean;
-
-  @Column({ type: 'boolean', nullable: true })
-  hadBusinessValuation!: boolean;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  desiredTimelineForSale!: string;
-
-  @Column({ type: 'boolean', nullable: true })
-  openToSellerFinancing!: boolean;
-/*
-  @OneToOne(() => PersonalDetails, (personalDetails) => personalDetails.businessForSale)
-  personalDetails!: PersonalDetails;
-*/
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  askingPrice!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  sellingPoints!: string;
+  intellectualProperty!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  assetsForSale!: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  liabilities!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  financialHistory!: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  salesForecast!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  marketingStrategy!: string;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  competition!: string;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  exitStrategy!: string;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  legalIssues!: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  expectedTimeline!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  additionalInformation!: string;
+
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  businessLogo!: string;
+
+ 
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
