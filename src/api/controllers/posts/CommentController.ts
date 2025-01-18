@@ -127,7 +127,7 @@ export const createNestedComment = async (req: Request, res: Response) => {
 
 export const getNestedComments = async (req: Request, res: Response) => {
   try {
-    const { commentId } = req.params;
+    const { commentId } = req.body;
 
     if (!commentId) {
       return res.status(400).json({ status: "success", message: 'commentId is required.' });
