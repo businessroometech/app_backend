@@ -3,13 +3,13 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 
 @Entity('Notifications')
 export class Notifications {
-  
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
-  
 
-    @Column({ type: 'uuid' })
-    userId!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+
+  @Column({ type: 'uuid' })
+  userId!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   message!: string;

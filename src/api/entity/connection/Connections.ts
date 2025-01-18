@@ -22,7 +22,7 @@ export class Connection {
   requester!: PersonalDetails;
 
   @Column({ type: 'uuid' })
-  requesterId!: string; // Explicitly map the foreign key column
+  requesterId!: string; 
 
   @ManyToOne(() => PersonalDetails, (personalDetails) => personalDetails.receivedRequests, {
     nullable: false,
@@ -32,7 +32,7 @@ export class Connection {
   receiver!: PersonalDetails;
 
   @Column({ type: 'uuid' })
-  receiverId!: string; // Explicitly map the foreign key column
+  receiverId!: string; 
 
   @Column({ type: 'enum', enum: ['pending', 'accepted', 'rejected'], default: 'pending' })
   status!: 'pending' | 'accepted' | 'rejected';

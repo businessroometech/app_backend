@@ -93,7 +93,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     });
 
     if (!userPosts || userPosts.length === 0) {
-      return res.status(404).json({ message: "No posts found for this user." });
+      return res.status(200).json({ status: "success", message: "No posts found for this user.", data: { posts: [] } });
     }
 
     const postIds = userPosts.map((post) => post.Id);
@@ -194,7 +194,7 @@ export const UpdateUserPost = async (req: Request, res: Response): Promise<Respo
 
     // Check if the user exists
     const user = await userRepository.findOne({
-      where: {id: userId },
+      where: { id: userId },
       select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', 'occupation'],
     });
 
@@ -260,7 +260,6 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
 // Get all posts for public view
 
 // Get all posts for public view
-// Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { userId, page, limit = 5 } = req.body;
@@ -278,14 +277,12 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         createdAt: 'DESC',
       },
       select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
-      // skip: (page - 1) * limit,
-      // take: limit,
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
     if (!posts || posts.length === 0) {
-      return res.status(404).json({
-        message: 'No posts found.',
-      });
+      return res.status(200).json({ status: "success", message: "No posts found for this user.", data: { posts: [] } });
     }
 
     const postIds = posts.map((post) => post.Id);
@@ -339,14 +336,10 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
           postComments.map(async (comment) => {
             const commenter = await userRepository.findOne({
               where: { id: comment.userId },
-              select: ['firstName', 'lastName'],
             });
 
             return {
-              Id: comment.id,
-              commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
-              text: comment.text,
-              timestamp: formatTimestamp(comment.createdAt),
+              commenter
             };
           })
         );
@@ -354,7 +347,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Fetch user details for the post creator
         const user = await userRepository.findOne({
           where: { id: post.userId },
-         
+
         });
 
         // Return the formatted post object
@@ -371,14 +364,14 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             likeStatus,
           },
           userDetails: {
-            postedId:user?.id,
+            postedId: user?.id,
             firstName: user?.firstName || '',
             lastName: user?.lastName || '',
             timestamp: formatTimestamp(post.createdAt),
-            userRole:user?.userRole,
+            userRole: user?.userRole,
             avatar: user?.profilePictureUploadId
-            ? await generatePresignedUrl(user.profilePictureUploadId)
-            : null,
+              ? await generatePresignedUrl(user.profilePictureUploadId)
+              : null,
           },
           comments: formattedComments,
         };
