@@ -28,10 +28,10 @@ import { Investor } from './api/entity/Investors/Investor';
 import { Notifications } from './api/entity/notifications/Notifications';
 import { PersonalDetails } from './api/entity/personal/PersonalDetails';
 import { Comment } from './api/entity/posts/Comment';
+import { CommentLike } from './api/entity/posts/CommentLike';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
-import { CommentLike } from './api/entity/posts/CommentLike';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -60,7 +60,7 @@ const AppDataSource = new DataSource({
     BusinessForSale,
     BusinessBuyer,
     Investor,
-    Entrepreneur,    
+    Entrepreneur,
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
