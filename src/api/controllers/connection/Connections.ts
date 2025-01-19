@@ -358,5 +358,38 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
   }
 };
 
+export class ConnectionController {
+  static async fetchUserConnectionsStatus(req: Request, res: Response) {
+    const { requesterId, status } = req.body;
 
+    try {
+      if (!requesterId || !status) {
+        return res.status(400).json({ message: 'Both requesterId and status are required.' });
+      }
+      const validStatuses = ['pending', 'accepted', 'rejected'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: `Invalid status. Valid values are: ${validStatuses.join(', ')}` });
+      }
+
+      // Fetch connections from the database
+      const connectionRepository = AppDataSource.getRepository(Connection);
+      const connections = await connectionRepository.find({
+        where: { requesterId, status },
+        relations: ['receiver'], 
+      });
+
+
+      if (connections.length < 1) {
+        return res.status(404).json({ message: 'No connections found.' });
+      }
+      return res.status(200).json(connections);
+    } catch (error:any) {
+      console.error('Error fetching user connections status:', error);
+      return res.status(500).json({
+        message: 'An error occurred while fetching connections.',
+        error: error.message,
+      });
+    }
+  }
+}
 
