@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '@/server';
 import validator from 'validator';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
+import nodemailer from 'nodemailer';
+import jwt from 'jsonwebtoken';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   const queryRunner = AppDataSource.createQueryRunner();
@@ -77,13 +79,19 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     await userLoginRepository.save(newUser);
 
+    // Generate a verification token
+    const verificationToken = jwt.sign({ userId: newUser.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
+
+    // Send verification email
+    await sendVerificationEmail(newUser.emailAddress, verificationToken);
+
     await queryRunner.commitTransaction();
 
     res.status(201).json({
       status: 'success',
-      message: 'Signup completed successfully.',
+      message: 'Signup completed successfully. Please verify your email.',
       data: {
-        user:newUser
+        user: newUser,
       },
     });
   } catch (error: any) {
@@ -108,6 +116,169 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     await queryRunner.release();
   }
 };
+
+// Send the verification email
+const sendVerificationEmail = async (email: string, verificationToken: string) => {
+  try {
+    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173/auth/sign-in'}?token=${verificationToken}`;
+
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: "ashutoshnegi196@gmail.com",
+       pass: "ctcbnmvlouaildzd"
+     },
+   });
+
+   // Email content
+   const mailOptions = {
+       from: 'ashutoshnegi196@gmail.com',
+      to: email,
+      subject: 'Verify Your Email Address',
+      html: `
+       
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #e3f2fd; /* Light sky-blue background */
+      font-family: Arial, sans-serif;
+      color: #333333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 4px solid #007bff; /* Border color matching logo */
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background-color: #007bff; /* Primary blue */
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 120px;
+    }
+    .content {
+      padding: 30px;
+      text-align: center;
+    }
+    .content h1 {
+      font-size: 24px;
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+    .content p {
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    .verify-button {
+      display: inline-block;
+      margin: 20px 0;
+      padding: 12px 20px;
+      background-color: #007bff;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 16px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .verify-button:hover {
+      background-color: #0056b3;
+     
+    }
+    .timer {
+      margin: 20px 0;
+      font-size: 18px;
+      color: #ff0000;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      background: #f1f1f1;
+      font-size: 14px;
+      color: #777777;
+    }
+    .footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://businessroom-test-bucket.s3.eu-north-1.amazonaws.com/posts/6ba58706c40cc59ea8c56a316d19d466/1737328121539.image/png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIASFIXCQIX37GASBKD%2F20250119%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250119T230845Z&X-Amz-Expires=3600&X-Amz-Signature=c1f4749ac77f824a339981216964bde63baf76163758ece159efe54f431cf91c&X-Amz-SignedHeaders=host&x-id=GetObject" alt="BusinessRoom Logo">
+    </div>
+    <div class="content">
+      <h1>Welcome to BusinessRoom!</h1>
+      <p>Hi,</p>
+      <p>Thank you for signing up. Please verify your email by clicking the link below:</p>
+      <a href="${verificationLink}" class="verify-button">Verify Email</a>
+      <p class="timer" id="timer">This link will expire in 1 hour.</p>
+      <p>If you did not sign up, please ignore this email.</p>
+      <p>Thank you,</p>
+      <p>The BusinessRoom Team</p>
+    </div>
+    <div class="footer">
+      <p>&copy; <span id="year"></span> BusinessRoom. All rights reserved.</p>
+
+<script>
+  // Dynamically set the current year
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+      <p>
+        <a href="https://businessroom.ai">Visit our website</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Timer script to show the countdown
+    function startTimer(duration, display) {
+      let timer = duration, minutes, seconds;
+      const interval = setInterval(function () {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.textContent = "This link will expire in " + minutes + ":" + seconds;
+
+        if (--timer < 0) {
+          clearInterval(interval);
+          display.textContent = "This link has expired.";
+        }
+      }, 1000);
+    }
+
+    window.onload = function () {
+      const oneHour = 60 * 60; // 1 hour in seconds
+      const display = document.getElementById("timer");
+      startTimer(oneHour, display);
+    };
+  </script>
+</body>
+</html>
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+  }
+};
+
 
 // import { Request, Response } from 'express';
 // import { UserLogin } from '../../entity/user/UserLogin';
