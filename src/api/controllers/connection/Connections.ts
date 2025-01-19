@@ -170,7 +170,6 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
   }
 };
 
-
 // Remove a connection
 export const removeConnection = async (req: Request, res: Response): Promise<Response> => {
   const { connectionId } = req.body;

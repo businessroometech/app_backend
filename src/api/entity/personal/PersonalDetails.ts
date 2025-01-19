@@ -93,8 +93,12 @@ export class PersonalDetails extends BaseEntity {
   })
   userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor';
 
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
+
+  @Column({ type: 'int', default: 0 })
+  active!: number;
 
   @Column({ type: 'varchar', default: 'system' })
   updatedBy!: string;
