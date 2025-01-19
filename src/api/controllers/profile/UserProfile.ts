@@ -24,7 +24,6 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       socialMediaProfile,
       height,
       weight,
-      bodyMeasurement,
       permanentAddress,
       currentAddress,
       aadharNumberUploadId,
@@ -63,8 +62,7 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
       if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
       if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
-
-      personalDetails.updatedBy = "system"; // Update metadata
+      personalDetails.updatedBy = "system"; 
 
       await personalDetailsRepository.save(personalDetails);
 
@@ -88,7 +86,7 @@ export const getUserProfile = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const { userId } = req.body;
+    const { userId, profileId } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -125,24 +123,40 @@ export const getUserProfile = async (
         { receiverId: userId, status: "accepted" },
       ],
     });
+
+    
+    
     const postRepository = AppDataSource.getRepository(UserPost);
   const userPostsCount = await postRepository.count({ where: { userId } });
 
   const likeRepository = AppDataSource.getRepository(Like);
 const userLikesCount = await likeRepository.count({ where: { userId } });
 
-    // Return the user's profile data
-    return res.status(200).json({
-      message: "User profile fetched successfully.",
-      data: {
-        personalDetails,
-        profileImgUrl,
-        coverImgUrl,
-        connectionsCount,
-        postsCount:userPostsCount,
-        likeCount:userLikesCount
-      },
-    });
+const connectionsStatus = await connectionRepository.find({
+  where: [
+    { requesterId: userId, receiverId: profileId },
+    { receiverId: userId, requesterId: profileId },
+  ],
+});
+
+if (!connectionsStatus || connectionsStatus.length === 0) {
+  connectionsStatus === null;
+}
+
+// Return the user's profile data
+return res.status(200).json({
+  message: "User profile fetched successfully.",
+  data: {
+    personalDetails,
+    profileImgUrl,
+    coverImgUrl,
+    connectionsCount,
+    postsCount: userPostsCount,
+    likeCount: userLikesCount,
+    connectionsStatus: connectionsStatus.length > 0 ? connectionsStatus[0].status : "",
+  },
+});
+
   } catch (error: any) {
     console.error("Error fetching user profile:", error);
     return res.status(500).json({

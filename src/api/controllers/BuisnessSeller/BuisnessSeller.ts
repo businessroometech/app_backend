@@ -47,11 +47,42 @@ export const getAllBusinessesForSale = async (req: Request, res: Response) => {
     }
 };
 
-export const getBusinessForSaleById = async (req: Request, res: Response) => {
+
+
+export const getBusinessForSaleByUniqueId = async (req: Request, res: Response) => {
     try {
         const businessRepository = AppDataSource.getRepository(BusinessForSale);
         const business = await businessRepository.findOne({
             where: { id: req.params.id }
+        });
+
+        if (!business) {
+            return res.status(404).json({
+                success: false,
+                message: 'Business not found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: business
+        });
+    } catch (error) {
+        console.error('Error fetching business for sale:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch business for sale',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+};
+
+
+export const getBusinessForSaleById = async (req: Request, res: Response) => {
+    try {
+        const businessRepository = AppDataSource.getRepository(BusinessForSale);
+        const business = await businessRepository.find({
+            where: { UserId: req.params.UserId }
         });
 
         if (!business) {

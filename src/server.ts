@@ -28,6 +28,7 @@ import { Investor } from './api/entity/Investors/Investor';
 import { Notifications } from './api/entity/notifications/Notifications';
 import { PersonalDetails } from './api/entity/personal/PersonalDetails';
 import { Comment } from './api/entity/posts/Comment';
+import { CommentLike } from './api/entity/posts/CommentLike';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
@@ -51,6 +52,7 @@ const AppDataSource = new DataSource({
     UserPost,
     PersonalDetails,
     Comment,
+    CommentLike,
     Like,
     NestedComment,
     Notifications,
@@ -59,7 +61,6 @@ const AppDataSource = new DataSource({
     BusinessBuyer,
     Investor,
     Entrepreneur,
-    
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
