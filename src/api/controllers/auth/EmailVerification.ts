@@ -21,13 +21,8 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
     if (user.active === -1) {
       return res.status(400).json({ success: false, message: 'User blocked to use this plateform!' });
     }
-
-    // Generate a verification token
     const verificationToken = jwt.sign({ userId: user.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
-
     const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173/auth/sign-in'}?token=${verificationToken}`;
-
-    // Configure nodemailer
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
