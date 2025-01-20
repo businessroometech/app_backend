@@ -18,6 +18,9 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
     if (user.active === 1) {
       return res.status(400).json({ success: false, message: 'User is already verified' });
     }
+    if (user.active === -1) {
+      return res.status(400).json({ success: false, message: 'User blocked to use this plateform!' });
+    }
 
     // Generate a verification token
     const verificationToken = jwt.sign({ userId: user.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
@@ -187,43 +190,63 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
   }
 };
 
-export const verifyEmail = async (req: Request, res: Response) => {
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.query;
 
     if (!token) {
-      return res.status(400).json({ success: false, message: 'Verification token is required' });
+      res.status(400).json({
+        status: 'error',
+        message: 'Verification token is missing.',
+      });
+      return;
     }
 
-    let payload: any;
+    // Verify the token
+    const decoded: any = jwt.verify(token as string, process.env.ACCESS_SECRET_KEY!);
+    const userId = decoded?.userId;
 
-    try {
-      payload = jwt.verify(token as string, process.env.ACCESS_SECRET_KEY!);
-    } catch (err) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    if (!userId) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Invalid or expired token.',
+      });
+      return;
     }
 
-    const { userId } = payload;
-
-    const personalDetailsRepo = AppDataSource.getRepository(PersonalDetails);
-
-    const user = await personalDetailsRepo.findOne({ where: { id: userId } });
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
+    const user = await userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      res.status(404).json({
+        status: 'error',
+        message: 'User not found.',
+      });
+      return;
     }
 
     if (user.active === 1) {
-      return res.status(400).json({ success: false, message: 'User is already verified' });
+      res.status(400).json({
+        status: 'error',
+        message: 'Email is already verified.',
+      });
+      return;
     }
 
-    // Update user's active status
     user.active = 1;
-    await personalDetailsRepo.save(user);
+    await userRepository.save(user);
 
-    res.status(200).json({ success: true, message: 'Email verified successfully. You can now log in.' });
+    res.status(200).json({
+      status: 'success',
+      message: 'Email successfully verified. You can now log in.',
+    });
   } catch (error) {
-    console.error('Error verifying email:', error);
-    res.status(500).json({ success: false, message: 'Failed to verify email' });
+    console.error('Verification error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong! Please try again later.',
+    });
   }
 };
+
+
