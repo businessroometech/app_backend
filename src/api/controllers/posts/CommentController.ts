@@ -5,6 +5,8 @@ import { NestedComment } from '@/api/entity/posts/NestedComment';
 import { formatTimestamp } from '../UserPost';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { CommentLike } from '@/api/entity/posts/CommentLike';
+import { Notifications } from '@/api/entity/notifications/Notifications';
+import { UserPost } from '@/api/entity/UserPost';
 
 export const createComment = async (req: Request, res: Response) => {
   try {
@@ -23,6 +25,39 @@ export const createComment = async (req: Request, res: Response) => {
     });
 
     await comment.save();
+
+     // Get the post and user information
+     const postRepo = AppDataSource.getRepository(UserPost);
+     const userPost = await postRepo.findOne({ where: { Id: postId } });
+     
+     if (!userPost) {
+       return res.status(404).json({
+         status: "error",
+         message: 'Post not found.',
+       });
+     }
+ 
+     const personalRepo = AppDataSource.getRepository(PersonalDetails);
+     const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
+     const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+ 
+     if (!userInfo || !commenterInfo) {
+       return res.status(404).json({
+         status: "error",
+         message: 'User information not found.',
+       });
+     }
+ 
+     // Create a notification
+     const notificationRepo = AppDataSource.getRepository(Notifications);
+     const notification = notificationRepo.create({
+       userId: userInfo.id,
+       message: `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
+       navigation: `/feed/home#${postId}`,
+     });
+     // Save the notification
+     await notificationRepo.save(notification);
+ 
 
     return res.status(201).json({ status: "success", message: 'Comment created successfully.', data: { comment } });
   } catch (error) {
@@ -147,6 +182,16 @@ export const getNestedComments = async (req: Request, res: Response) => {
           where: { id: comment.userId },
           select: ["firstName", "lastName", 'id'],
         });
+
+         // Create a notification
+     const notificationRepos = AppDataSource.getRepository(Notifications);
+     const notification = notificationRepos.create({
+       userId:  comment.userId ,
+       message: ` ${commenter?.firstName} ${commenter?.lastName} replied your comment`,
+       navigation: `/feed/home#${comment.id}`,
+     }); 
+     await notificationRepos.save(notification);
+
 
         return {
           id: comment.id,

@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { Like } from '../../entity/posts/Like';
 import { AppDataSource } from '@/server';
 import { CommentLike } from '@/api/entity/posts/CommentLike';
+import { Notifications } from '@/api/entity/notifications/Notifications';
+import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
+import { UserPost } from '@/api/entity/UserPost';
 
 export const createLike = async (req: Request, res: Response) => {
     try {
@@ -22,6 +25,42 @@ export const createLike = async (req: Request, res: Response) => {
             });
         }
         await like.save();
+
+         // Get the post and user information
+    const postRepo = AppDataSource.getRepository(UserPost);
+    const userPost = await postRepo.findOne({ where: { Id: postId } });
+    
+    if (!userPost) {
+      return res.status(404).json({
+        status: "error",
+        message: 'Post not found.',
+      });
+    }
+
+    const personalRepo = AppDataSource.getRepository(PersonalDetails);
+    const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
+    const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+
+    if (!userInfo || !commenterInfo) {
+      return res.status(404).json({
+        status: "error",
+        message: 'User information not found.',
+      });
+    }
+
+    // Create a notification
+    const notificationRepo = AppDataSource.getRepository(Notifications);
+    const notification = notificationRepo.create({
+      userId: userInfo.id,
+      message: `${commenterInfo.firstName} ${commenterInfo.lastName} Like your post`,
+      navigation: `/feed/home#${postId}`,
+    });
+
+    // Save the notification
+    await notificationRepo.save(notification);
+
+
+
         return res.status(200).json({ status: "success", message: 'Like status updated.', data: { like } });
     } catch (error) {
         console.error(error);
@@ -71,6 +110,41 @@ export const createCommentLike = async (req: Request, res: Response) => {
         }
 
         await commentLikeRepository.save(like);
+
+            // Get the post and user information
+    const postRepo = AppDataSource.getRepository(UserPost);
+    const userPost = await postRepo.findOne({ where: { Id: postId } });
+    
+    if (!userPost) {
+      return res.status(404).json({
+        status: "error",
+        message: 'Post not found.',
+      });
+    }
+
+    const personalRepo = AppDataSource.getRepository(PersonalDetails);
+    const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
+    const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+
+    if (!userInfo || !commenterInfo) {
+      return res.status(404).json({
+        status: "error",
+        message: 'User information not found.',
+      });
+    }
+
+    // Create a notification
+    const notificationRepo = AppDataSource.getRepository(Notifications);
+    const notification = notificationRepo.create({
+      userId: userInfo.id,
+      message: `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
+      navigation: `/feed/home#${postId}`,
+    });
+
+    // Save the notification
+    await notificationRepo.save(notification);
+
+
         return res.status(200).json({ status: "success", message: 'Comment Like status updated.', data: { like } });
     } catch (error: any) {
         console.error('Error details:', error);

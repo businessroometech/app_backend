@@ -163,7 +163,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const notificationRepos = AppDataSource.getRepository(Notifications);
     const notification = notificationRepos.create({
       userId: user.id,
-      message: 'Welcome to our platform! You have successfully logged in.',
+      message: 'Welcome to Businessroom! You have successfully logged in.',
       navigation: '/',
     });
 

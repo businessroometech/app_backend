@@ -6,6 +6,7 @@ import { request } from "node:http";
 import { formatTimestamp } from "../UserPost";
 import { generatePresignedUrl } from "../s3/awsControllers";
 import { Brackets, In, Not } from "typeorm";
+import { Notifications } from "@/api/entity/notifications/Notifications";
 
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
@@ -41,10 +42,23 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
 
     await connectionRepository.save(newConnection);
 
+     // Create a notification
+            const notificationRepos = AppDataSource.getRepository(Notifications);
+            const notification = notificationRepos.create({
+              userId: receiverId,
+              message: `${receiver.firstName} ${receiver.lastName} recive a connection request: ${requester.firstName} ${requester.lastName} `,
+              navigation: '/AccountClone',
+            });
+        
+            await notificationRepos.save(notification);
+    
+
     return res.status(201).json({
       message: "Connection request sent successfully.",
       connection: newConnection,
     });
+
+    
   } catch (error) {
     console.error("Error sending connection request:", error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -54,7 +68,7 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
 // Accept or reject a connection request
 export const updateConnectionStatus = async (req: Request, res: Response): Promise<Response> => {
   const { userId, connectionId, status } = req.body;
-console.log("reqest", req.body)
+
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
 
@@ -81,6 +95,17 @@ console.log("reqest", req.body)
 
     connection.status = status as "accepted" | "rejected";
     const data = await connectionRepository.save(connection);
+
+    // Create a notification
+    const notificationRepos = AppDataSource.getRepository(Notifications);
+    const notification = notificationRepos.create({
+      userId: connection.requester.id,
+      message: `${connection.receiver.firstName} ${connection.receiver.lastName} connection request aproved: ${connection.requester.firstName} ${connection.requester.lastName} `,
+      navigation: '/AccountClone',
+    });
+
+    await notificationRepos.save(notification);
+
 
     return res.status(200).json({ message: `Connection ${status} successfully.`, data });
   } catch (error: any) {
@@ -163,6 +188,8 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
       })
     );
 
+    
+
     return res.status(200).json({ connections: result });
   } catch (error: any) {
     console.error("Error fetching user connections:", error);
@@ -233,6 +260,16 @@ export const getUserConnectionRequests = async (req: Request, res: Response) => 
         const profilePictureUploadUrl = user?.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
+
+          
+ // Create a notification
+ const notificationRepos = AppDataSource.getRepository(Notifications);
+ const notification = notificationRepos.create({
+   userId: userId,
+   message: `recived connection request: ${connection.requester.firstName} ${connection.requester.lastName} `,
+   navigation: '/AccountClone',
+ }); 
+ await notificationRepos.save(notification);
 
         return {
           connectionId: connection.id,

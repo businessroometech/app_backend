@@ -7,7 +7,6 @@ export class Notifications {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-
   @Column({ type: 'uuid' })
   userId!: string;
 

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { AppDataSource } from '@/server';
+import { Notifications } from '@/api/entity/notifications/Notifications';
 
 export const sendVerificationEmail = async (req: Request, res: Response) => {
   try {
@@ -240,6 +241,18 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
       status: 'success',
       message: 'Email successfully verified. You can now log in.',
     });
+
+     // Create a login notification
+        const notificationRepos = AppDataSource.getRepository(Notifications);
+        const notification = notificationRepos.create({
+          userId: user.id,
+          message: 'Email successfully verified',
+          navigation: '/',
+        });
+    
+        await notificationRepos.save(notification);
+
+
   } catch (error) {
     console.error('Verification error:', error);
     res.status(500).json({
