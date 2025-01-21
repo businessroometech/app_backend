@@ -15,67 +15,92 @@ export class BusinessForSale extends BaseEntity {
   businessName!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
+  businessLocation!: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
   businessType!: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  businessStage!: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  operatingYears!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  industry!: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  location!: string;
+  businessDescription!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  revenue!: string;
+  businessModel!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  profit!: string;
+  reasonForSelling!: string;
 
   @Column({ type: 'int', nullable: true })
-  numberOfEmployees!: number;
+  customerBaseType!: number;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  ownershipPercentage!: string;
+  hasContracts!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  reasonForSelling!: string;
+  hasLegalIssues!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   askingPrice!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  intellectualProperty!: string;
+  annualRevenue!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  assetsForSale!: string;
+  annualProfit!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  liabilities!: string;
+  assetValue!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  financialHistory!: string;
+  hasDebts!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  salesForecast!: string;
+  isProfitable!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  marketingStrategy!: string;
+  productsServices!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  competition!: string;
+  numberOfEmployees!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  exitStrategy!: string;
+  businessStructure!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  legalIssues!: string;
+  propertyStatus!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  expectedTimeline!: string;
+  leaseTerm!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  hasIntellectualProperty!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  ownershipStructure!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  operationSystems!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  offerTraining!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  hasValuation!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  desiredTimeline!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  sellerFinancing!: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  keySellingPoints!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   additionalInformation!: string;
+
 
 
   @Column({ type: 'varchar', length: 500, nullable: true })
