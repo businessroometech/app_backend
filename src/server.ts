@@ -53,7 +53,6 @@ const AppDataSource = new DataSource({
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [
     UserPost,
-    PersonalDetails,
     Comment,
     CommentLike,
     Like,
@@ -64,6 +63,7 @@ const AppDataSource = new DataSource({
     BusinessBuyer,
     Investor,
     Entrepreneur,
+    PersonalDetails,
   ],
   synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
