@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🚀 Express TypeScript Boilerplate 2024
  
 [![Build Express Application](https://github.com/edwinhern/express-typescript-2024/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/edwinhern/express-typescript-2024/actions/workflows/build.yml) 
@@ -102,3 +103,6 @@ Developed to streamline backend development, this boilerplate is your solution f
 We'd love to hear your feedback and suggestions for further improvements. Feel free to contribute and join us in making backend development cleaner and faster!
 
 🎉 Happy coding!
+=======
+# businessroom_backend
+>>>>>>> f8a872fef23459b8bc14293d6724d0751bfe21ae
