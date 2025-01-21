@@ -97,8 +97,6 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
-  @Column({ type: 'int', default: 0 })
-  active!: number;
 
   @Column({ type: 'varchar', default: 'system' })
   updatedBy!: string;
@@ -117,6 +115,9 @@ export class PersonalDetails extends BaseEntity {
     precision: 6,
   })
   updatedAt!: Date;
+
+  @Column({ type: 'int', default: 0 })
+  active!: number;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
