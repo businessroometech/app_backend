@@ -116,8 +116,8 @@ export class PersonalDetails extends BaseEntity {
   })
   updatedAt!: Date;
 
-  @Column({ type: 'int', default: 0 })
-  active!: number;
+  // @Column({ type: 'int', default: 0 })
+  // active!: number;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
