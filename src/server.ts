@@ -20,6 +20,7 @@ import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoute
 import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
+import { SocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
 import { Connection } from './api/entity/connection/Connections';
@@ -32,8 +33,7 @@ import { CommentLike } from './api/entity/posts/CommentLike';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
-import { SocketNotification } from './api/controllers/notifications/SocketNotificationController';
-import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting'; 
+import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -85,9 +85,7 @@ AppDataSource.initialize()
       socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
       });
-      
     });
-    
   })
   .catch((error) => {
     console.error('Error during Data Source initialization:', error);
@@ -111,7 +109,6 @@ app.use(requestLogger);
 // Initialize SocketNotification
 SocketNotification.initialize(io);
 
-
 // Routes mounting
 app.use(express.json());
 app.use('/api/v1/auth', authRouter);
@@ -126,8 +123,6 @@ app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
 
 app.use('/api/v1/socket-notifications', SocketNotificationRouting); // Add new notification route
-
-
 
 // testing api route
 app.get('/', (req, res) => {
