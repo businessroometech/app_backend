@@ -7,7 +7,7 @@ import { authenticate } from '../../middlewares/auth/Authenticate';
 import { generateUploadUrl, getDocumentFromBucket } from "../../controllers/s3/awsControllers";
 import {  getUserProfile, UpdateUserProfile } from '@/api/controllers/profile/UserProfile';
 import { sendResetEmail, resetPassword } from "@/api/controllers/auth/ResetPassword";
-import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
+// import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 
 const Router = express.Router();    
 
@@ -17,8 +17,8 @@ Router.post('/logout', authenticate, logout);
 Router.post('/reset-pass-req', sendResetEmail);
 Router.post('/reset-pass', resetPassword);
 
-Router.post('/send-verify-email', sendVerificationEmail);
-Router.post('/verify-email', verifyEmail);
+// Router.post('/send-verify-email', sendVerificationEmail);
+// Router.post('/verify-email', verifyEmail);
 
 
 
