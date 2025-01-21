@@ -20,6 +20,7 @@ import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoute
 import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
+import chatRouter from '../src/api/routes/chat/MessageRoutes';
 import { SocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
@@ -107,7 +108,7 @@ app.use(helmet());
 app.use(requestLogger);
 
 // Initialize SocketNotification
-SocketNotification.initialize(io);
+SocketNotification.initialize(io);                                           
 
 // Routes mounting
 app.use(express.json());
@@ -116,6 +117,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/post', userPost);
 app.use('/api/v1/notifications', notifications);
 app.use('/api/v1/connection', connectionRouter);
+app.use('/api/v1/chat', chatRouter);
 
 app.use('/businessseller', BuisnessSeller);
 app.use('/investor', InvestorRoute);
