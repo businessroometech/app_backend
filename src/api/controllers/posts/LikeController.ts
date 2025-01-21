@@ -50,16 +50,12 @@ export const createLike = async (req: Request, res: Response) => {
 
     // Create a notification
     const notificationRepo = AppDataSource.getRepository(Notifications);
-    const notification = notificationRepo.create({
+    let notification = notificationRepo.create({
       userId: userInfo.id,
       message: `${commenterInfo.firstName} ${commenterInfo.lastName} Like your post`,
       navigation: `/feed/home#${postId}`,
     });
-
-    // Save the notification
-    await notificationRepo.save(notification);
-
-
+    notification =  await notificationRepo.save(notification);
 
         return res.status(200).json({ status: "success", message: 'Like status updated.', data: { like } });
     } catch (error) {

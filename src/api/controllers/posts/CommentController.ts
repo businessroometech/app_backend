@@ -50,15 +50,14 @@ export const createComment = async (req: Request, res: Response) => {
  
      // Create a notification
      const notificationRepo = AppDataSource.getRepository(Notifications);
-     const notification = notificationRepo.create({
+     let notification = notificationRepo.create({
        userId: userInfo.id,
        message: `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
        navigation: `/feed/home#${postId}`,
      });
      // Save the notification
-     await notificationRepo.save(notification);
+     notification = await notificationRepo.save(notification);
  
-
     return res.status(201).json({ status: "success", message: 'Comment created successfully.', data: { comment } });
   } catch (error) {
     console.error(error);
@@ -185,13 +184,12 @@ export const getNestedComments = async (req: Request, res: Response) => {
 
          // Create a notification
      const notificationRepos = AppDataSource.getRepository(Notifications);
-     const notification = notificationRepos.create({
+     let notification = notificationRepos.create({
        userId:  comment.userId ,
        message: ` ${commenter?.firstName} ${commenter?.lastName} replied your comment`,
        navigation: `/feed/home#${comment.id}`,
      }); 
-     await notificationRepos.save(notification);
-
+     notification = await notificationRepos.save(notification);
 
         return {
           id: comment.id,
