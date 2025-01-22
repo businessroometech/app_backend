@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getSocketInstance } from '../../../server'; // Import your socket instance
+import { getSocketInstance } from '../../../socket'; // Import your socket instance
 import { AppDataSource } from '../../../server'; // Import your data source
 import { Message } from '@/api/entity/chat/Message';
 

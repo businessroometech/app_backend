@@ -2,10 +2,8 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
-import { createServer } from 'http';
 import { pino } from 'pino';
-import { Server } from 'socket.io';
-import { DataSource } from 'typeorm';
+import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
 
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
@@ -36,20 +34,13 @@ import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import { Message } from './api/entity/chat/Message';
+import { initializeSocket } from './socket'; // Import socket initialization logic
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
-const httpServer = createServer(app);
-
-// Initialize Socket.IO and export instance
-const io = new Server(httpServer, {
-  cors: { origin: '*' },
-});
-export const getSocketInstance = () => io;
-
 // Create a DataSource instance
-export const AppDataSource = new DataSource({
+const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_HOST : process.env.DEV_AWS_HOST,
   port: 3306,
@@ -69,7 +60,7 @@ export const AppDataSource = new DataSource({
     Investor,
     Entrepreneur,
     PersonalDetails,
-    Message,
+    Message
   ],
   synchronize: false,
 });
@@ -78,27 +69,12 @@ export const AppDataSource = new DataSource({
 AppDataSource.initialize()
   .then(() => {
     console.log('DB connected');
-
-    io.on('connection', (socket) => {
-      console.log('New client connected:', socket.id);
-
-      // Join a room for a specific user (based on user ID)
-      socket.on('joinRoom', (userId) => {
-        socket.join(userId);
-        console.log(`User ${userId} joined their room`);
-      });
-
-      // Disconnect event
-      socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-      });
-    });
   })
   .catch((error) => {
     console.error('Error during Data Source initialization:', error);
   });
 
-// Middleware and configurations
+// Middleware setup
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -111,10 +87,6 @@ app.use(helmet());
 app.use(rateLimiter);
 app.use(requestLogger);
 app.use(express.json());
-app.use(cookieParser());
-
-// Initialize SocketNotification
-SocketNotification.initialize(io);
 
 // Routes mounting
 app.use('/api/v1/auth', authRouter);
@@ -128,7 +100,7 @@ app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
 app.use('/api/v1/socket-notifications', SocketNotificationRouting);
 
-// Testing API route
+// Test route
 app.get('/', (req, res) => {
   res.send('woooohoooooooooooo');
 });
@@ -136,14 +108,10 @@ app.get('/', (req, res) => {
 // Error handlers
 app.use(errorHandler());
 
-// Export the app and logger
-export { app, logger };
+// Initialize socket and server
+const httpServer = initializeSocket(app);
 
-// Start the server
-const PORT = env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
+export { app, AppDataSource, logger, httpServer };
 
 
 // import cookieParser from 'cookie-parser';
