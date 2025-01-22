@@ -4,7 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  BeforeInsert
+  BeforeInsert,
 } from 'typeorm';
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 
@@ -20,7 +20,7 @@ export class Message {
   receiverId!: string;
 
   @Column({ type: 'text' })
-  content!: string; // Encrypted content will be stored in this field
+  content!: string; // Encrypted content will be stored here
 
   @Column({ type: 'simple-array' })
   documentKeys!: string[];
@@ -40,8 +40,11 @@ export class Message {
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', onUpdate: 'CURRENT_TIMESTAMP(6)' })
   updatedAt!: Date;
 
-  // Encryption configuration
-  private static encryptionKey = randomBytes(32); // Replace with a securely stored key
+  // Static encryption configuration
+  private static encryptionKey = Buffer.from(
+    process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef',
+    'hex'
+  ); // Replace with a securely stored key (256 bits)
   private static ivLength = 16;
 
   private static encrypt(text: string): string {
@@ -52,19 +55,28 @@ export class Message {
     return `${iv.toString('hex')}:${encrypted}`;
   }
 
-  @BeforeInsert()
-  private encryptContentOnInsert() {
-    if (this.content) {
-      this.content = Message.encrypt(this.content); 
+  private static decrypt(encryptedText: string): string {
+    if (!encryptedText || !encryptedText.includes(':')) {
+      throw new Error("Invalid encrypted text format.");
     }
-  }
-
-  public decryptMessage(encryptedText: string): string {
+  
     const [ivHex, encryptedData] = encryptedText.split(':');
     const iv = Buffer.from(ivHex, 'hex');
-    const decipher = createDecipheriv('aes-256-cbc', Message.encryptionKey, iv);
+    const decipher = createDecipheriv('aes-256-cbc', this.encryptionKey, iv);
+  
     let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;
+  }
+
+  // @BeforeInsert()
+  // private encryptContentOnInsert() {
+  //   if (this.content) {
+  //     this.content = Message.encrypt(this.content);
+  //   }
+  // }
+
+  public decryptMessage(): string {
+    return Message.decrypt(this.content);
   }
 }
