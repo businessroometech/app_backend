@@ -7,7 +7,7 @@ let io: Server;
 export const initializeSocket = (app: Express) => {
   const httpServer = createServer(app);
   io = new Server(httpServer, {
-    cors: { origin: '*', credentials: true },
+    cors: { origin: '*', credentials: true, methods: ['GET', 'POST'] },
   });
 
   io.on('connection', (socket) => {
