@@ -61,7 +61,7 @@ class SocketNotification {
   
     // Method to get notifications for a specific user
     public static getNotification = async (req: Request, res: Response) => {
-      const { userId } = req.body;
+      const { userId } = req.query;
   
       if (!userId) {
         return res.status(400).json({ error: 'userId is required' });

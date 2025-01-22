@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import { createServer } from 'http';
 import { pino } from 'pino';
 import { Server } from 'socket.io';
-import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+import { DataSource } from 'typeorm'; // Import DataSource / Import your environment variables
 
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
@@ -40,7 +40,11 @@ const app: Express = express();
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: '*' },
+  cors: {
+    origin: ['http://localhost:5173'], 
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 });
 
 // Create a DataSource instance
@@ -65,7 +69,7 @@ const AppDataSource = new DataSource({
     Entrepreneur,
     PersonalDetails,
   ],
-  synchronize: false,
+  synchronize: false, 
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 
@@ -91,19 +95,25 @@ AppDataSource.initialize()
     console.error('Error during Data Source initialization:', error);
   });
 
-// app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+// Enable CORS and allow all origins
 app.use(
   cors({
-    origin: function (origin, callback) {
-      callback(null, true); // Allow all origins
+    origin: (origin, callback) => {
+      // Allow all origins in development; restrict in production
+      if (process.env.NODE_ENV === 'development' || origin === 'http://localhost:5173') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     },
     credentials: true,
+    methods: ['GET', 'POST'],
   })
 );
-app.use(helmet());
-// app.use(rateLimiter);
 
-// Request logging
+app.use(helmet());
+
+// Request logging middleware
 app.use(requestLogger);
 
 // Initialize SocketNotification
@@ -112,19 +122,16 @@ SocketNotification.initialize(io);
 // Routes mounting
 app.use(express.json());
 app.use('/api/v1/auth', authRouter);
-
 app.use('/api/v1/post', userPost);
 app.use('/api/v1/notifications', notifications);
 app.use('/api/v1/connection', connectionRouter);
-
 app.use('/businessseller', BuisnessSeller);
 app.use('/investor', InvestorRoute);
 app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
-
 app.use('/api/v1/socket-notifications', SocketNotificationRouting); // Add new notification route
 
-// testing api route
+// Testing API route
 app.get('/', (req, res) => {
   res.send('Hello World');
 });
