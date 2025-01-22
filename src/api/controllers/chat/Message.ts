@@ -1,16 +1,34 @@
-import { Request, Response } from "express";
-import { AppDataSource } from "@/server"; // Update to your actual DataSource file
-import { Message } from "@/api/entity/chat/Message";
-import { WebSocketServer } from "ws";
+import { Request, Response } from 'express';
+import { getSocketInstance } from '../../../server'; // Import your socket instance
+import { AppDataSource } from '../../../server'; // Import your data source
+import { Message } from '@/api/entity/chat/Message';
 
-// const messageRepository = AppDataSource.getRepository(Message);
+export const sendMessage = async (req: Request, res: Response) => {
+  try {
+    const { senderId, receiverId, content, documentKeys } = req.body;
 
-// WebSocket instance (ensure this matches your actual setup)
-let wss: WebSocketServer;
+    const messageRepository = AppDataSource.getRepository(Message);
 
-export const setWebSocketServer = (server: WebSocketServer) => {
-    wss = server;
+    const message = messageRepository.create({
+      senderId,
+      receiverId,
+      content,
+      documentKeys,
+    });
+
+    await messageRepository.save(message);
+
+    // Emit to the recipient's room
+    const io = getSocketInstance();
+    io.to(receiverId).emit('newMessage', message);
+
+    return res.status(201).json({ success: true, message });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return res.status(500).json({ success: false, message: 'Error sending message' });
+  }
 };
+
 
 export const getMessagesUserWise = async (req: Request, res: Response) => {
     try {
@@ -31,6 +49,12 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
             take: Number(limit),
         });
 
+         // Decrypt messages
+    // const decryptedMessages = messages.map((msg) => ({
+    //     ...msg,
+    //     content: new Message().decryptMessage(msg.content),
+    //   }));
+
         res.status(200).json({ status: "success", message: "messages fetched", data: { total, messages, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / Number(limit)) } });
     } catch (error) {
         console.error("Error fetching messages:", error);
@@ -38,67 +62,27 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
     }
 };
 
-export const sendMessage = async (req: Request, res: Response) => {
+export const markMessageAsRead = async (req: Request, res: Response) => {
     try {
-        const { senderId, receiverId, content, documentKeys = [] } = req.body;
-
-        if (!senderId || !receiverId || !content) {
-            return res.status(400).json({ message: "SenderId, ReceiverId, and Content are required." });
-        }
-        const messageRepository = AppDataSource.getRepository(Message);
-
-        const message = messageRepository.create({
-            senderId,
-            receiverId,
-            content,
-            documentKeys,
-            isRead: false,
-        });
-
-        const savedMessage = await messageRepository.save(message);
-
-        // Broadcast message to receiver via WebSocket
-        wss.clients.forEach((client: any) => {
-            if (client.readyState === client.OPEN && client.userId === receiverId) {
-                client.send(JSON.stringify({ type: "NEW_MESSAGE", message: savedMessage }));
-            }
-        });
-
-        res.status(201).json({ message: "Message sent successfully.", data: savedMessage });
+      const { messageIds } = req.body;
+  
+      const messageRepository = AppDataSource.getRepository(Message);
+  
+      await messageRepository
+        .createQueryBuilder()
+        .update(Message)
+        .set({ isRead: true })
+        .whereInIds(messageIds)
+        .execute();
+  
+      // Emit event to notify about read messages
+      const io = getSocketInstance();
+      io.emit('messageRead', { messageIds });
+  
+      return res.status(200).json({ success: true, message: 'Messages marked as read' });
     } catch (error) {
-        console.error("Error sending message:", error);
-        res.status(500).json({ message: "Failed to send message.", error });
+      console.error('Error marking messages as read:', error);
+      return res.status(500).json({ success: false, message: 'Error marking messages as read' });
     }
-};
-
-export const markAsRead = async (req: Request, res: Response) => {
-    try {
-        const { messageId } = req.body;
-
-        if (!messageId) {
-            return res.status(400).json({ message: "MessageId is required." });
-        }
-        const messageRepository = AppDataSource.getRepository(Message);
-
-        const message = await messageRepository.findOne({ where: { id: messageId } });
-
-        if (!message) {
-            return res.status(404).json({ message: "Message not found." });
-        }
-
-        message.isRead = true;
-        const updatedMessage = await messageRepository.save(message);
-
-        // Notify sender via WebSocket
-        wss.clients.forEach((client: any) => {
-            if (client.readyState === client.OPEN && client.userId === message.senderId) {
-                client.send(JSON.stringify({ type: "MESSAGE_READ", messageId }));
-            }
-        });
-
-        res.status(200).json({ message: "Message marked as read.", data: updatedMessage });
-    } catch (error) {
-        console.error("Error marking message as read:", error);
-        res.status(500).json({ message: "Failed to mark message as read.", error });
-    }
-};
+  };
+  
