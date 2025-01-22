@@ -54,7 +54,7 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
         { senderId, receiverId },
         { senderId: receiverId, receiverId: senderId },
       ],
-      order: { createdAt: "DESC" },
+      order: { createdAt: "ASC" },
       skip,
       take: numericLimit,
     });
