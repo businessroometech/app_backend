@@ -3,7 +3,8 @@ import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import { pino } from 'pino';
-import { DataSource } from 'typeorm'; 
+import { DataSource } from 'typeorm';
+import { WebSocketServer } from 'ws';
 
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
@@ -34,7 +35,7 @@ import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import { Message } from './api/entity/chat/Message';
-import { initializeSocket } from './socket'; 
+import { initializeSocket } from './socket';
 import { ProfileVisit } from './api/entity/notifications/ProfileVisit';
 
 const logger = pino({ name: 'server start' });
@@ -63,7 +64,7 @@ const AppDataSource = new DataSource({
     Entrepreneur,
     PersonalDetails,
     Message,
-    ProfileVisit
+    ProfileVisit,
   ],
   synchronize: false,
 });
@@ -87,10 +88,9 @@ app.use(
   })
 );
 app.use(helmet());
-app.use(rateLimiter);
+// app.use(rateLimiter);
 app.use(requestLogger);
 app.use(express.json());
-
 
 // Routes mounting
 app.use('/api/v1/auth', authRouter);
@@ -106,17 +106,33 @@ app.use('/api/v1/socket-notifications', SocketNotificationRouting);
 
 // Test route
 app.get('/', (req, res) => {
-  res.send('woooohoooooooooooo');
+  res.send('Welcome to BusinessRoom AI');
 });
 
 // Error handlers
 app.use(errorHandler());
 
-// Initialize socket and server
+// Initialize HTTP server and WebSocket
 const httpServer = initializeSocket(app);
 
-export { app, AppDataSource, logger, httpServer };
+// Set up WebSocket server
+const wss = new WebSocketServer({ server: httpServer });
 
+wss.on('connection', (ws, req) => {
+  console.log('New WebSocket connection established');
+  ws.on('message', (message) => {
+    console.log(`Received: ${message}`);
+    // Handle messages, e.g., join room, send notifications, etc.
+  });
+  ws.on('close', () => {
+    console.log('WebSocket connection closed');
+  });
+
+  // Example: Send notification to client
+  ws.send(JSON.stringify({ message: 'Welcome to WebSocket notifications!' }));
+});
+
+export { app, AppDataSource, logger, httpServer };
 
 // import cookieParser from 'cookie-parser';
 // import cors from 'cors';
