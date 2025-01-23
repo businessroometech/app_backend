@@ -8,6 +8,8 @@ import { AppDataSource } from '@/server';
 
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
+import { Notifications } from '@/api/entity/notifications/Notifications';
+import { formatTimestamp } from '../UserPost';
 
 export const UpdateUserProfile = async (req: Request, res: Response) => {
   try {
@@ -163,7 +165,6 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
   }
 };
 
-
 export const ProfileVisitController = {
   /**
    * Record a profile visit
@@ -173,7 +174,7 @@ export const ProfileVisitController = {
       const { visitorId, visitedId } = req.body;
 
       if (visitorId === visitedId) {
-        return res.status(400).json({ message: "You cannot visit your own profile." });
+        return res.status(400).json({ message: 'You cannot visit your own profile.' });
       }
 
       const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -182,7 +183,7 @@ export const ProfileVisitController = {
       const visited = await userRepository.findOneBy({ id: visitedId });
 
       if (!visitor || !visited) {
-        return res.status(404).json({ message: "User not found." });
+        return res.status(404).json({ message: 'User not found.' });
       }
 
       const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
@@ -193,126 +194,140 @@ export const ProfileVisitController = {
 
       await profileVisitRepository.save(profileVisit);
 
-      return res.status(201).json({ message: "Profile visit recorded successfully." });
+      // Create a notification
+      const notificationRepos = AppDataSource.getRepository(Notifications);
+      let notification = notificationRepos.create({
+        userId: visitor.id,
+        message: `${visited.firstName} ${visitedId.lastName || ""} visited your profile at ${formatTimestamp(profileVisit.visitedAt)} ago.`,
+        navigation: '/AccountClone',
+      });
+
+     notification =  await notificationRepos.save(notification);
+
+      return res.status(201).json({ message: 'Profile visit recorded successfully.', notification });
     } catch (error: any) {
       console.error('Error recording profile visit:', error);
-      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+      return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
   },
 
   // Method for fetching profile visits
-getMyProfileVisits: async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.body;
+  getMyProfileVisits: async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
 
-    const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
-    const connectionRepository = AppDataSource.getRepository(Connection);
+      const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
+      const connectionRepository = AppDataSource.getRepository(Connection);
 
-    // Aggregate visits and count the number of times each visitor has visited the profile
-    const visits = await profileVisitRepository
-      .createQueryBuilder('profileVisit')
-      .select('profileVisit.visitor', 'visitorId')
-      .addSelect('COUNT(profileVisit.id)', 'visitCount')
-      .where('profileVisit.visited = :userId', { userId })
-      .groupBy('profileVisit.visitor')
-      .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
-      .getRawMany();
+      // Aggregate visits and count the number of times each visitor has visited the profile
+      const visits = await profileVisitRepository
+        .createQueryBuilder('profileVisit')
+        .select('profileVisit.visitor', 'visitorId')
+        .addSelect('COUNT(profileVisit.id)', 'visitCount')
+        .where('profileVisit.visited = :userId', { userId })
+        .groupBy('profileVisit.visitor')
+        .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
+        .getRawMany();
 
-    const visitors = await Promise.all(
-      visits.map(async (visit) => {
-        const visitor = await AppDataSource.getRepository(PersonalDetails).findOne({
-          where: { id: visit.visitorId },
-          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', "createdAt"],
-        });
+      const visitors = await Promise.all(
+        visits.map(async (visit) => {
+          const visitor = await AppDataSource.getRepository(PersonalDetails).findOne({
+            where: { id: visit.visitorId },
+            select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', 'createdAt'],
+          });
 
-        // Fetch the connection status between the current user and the visitor
-        const connection = await connectionRepository
-          .createQueryBuilder('connection')
-          .select('connection.status', 'status')
-          .where('(connection.requesterId = :userId AND connection.receiverId = :visitorId) OR (connection.requesterId = :visitorId AND connection.receiverId = :userId)', { userId, visitorId: visit.visitorId })
-          .getRawOne();
+          // Fetch the connection status between the current user and the visitor
+          const connection = await connectionRepository
+            .createQueryBuilder('connection')
+            .select('connection.status', 'status')
+            .where(
+              '(connection.requesterId = :userId AND connection.receiverId = :visitorId) OR (connection.requesterId = :visitorId AND connection.receiverId = :userId)',
+              { userId, visitorId: visit.visitorId }
+            )
+            .getRawOne();
 
-        const profilePicture = visitor?.profilePictureUploadId
-          ? await generatePresignedUrl(visitor.profilePictureUploadId)
-          : null;
+          const profilePicture = visitor?.profilePictureUploadId
+            ? await generatePresignedUrl(visitor.profilePictureUploadId)
+            : null;
 
-        return {
-          visitor: { ...visitor, profilePicture },
-          visitCount: parseInt(visit.visitCount, 10),
-          connectionStatus: connection?.status || 'none', // Default to 'none' if no connection exists
-        };
-      })
-    );
+          return {
+            visitor: { ...visitor, profilePicture },
+            visitCount: parseInt(visit.visitCount, 10),
+            connectionStatus: connection?.status || 'none', // Default to 'none' if no connection exists
+          };
+        })
+      );
 
-    return res.status(200).json({
-      message: 'Profile visits fetched successfully.',
-      data: visitors,
-    });
-  } catch (error: any) {
-    console.error('Error fetching profile visits:', error);
-    return res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message,
-    });
-  }
-},
+      return res.status(200).json({
+        message: 'Profile visits fetched successfully.',
+        data: visitors,
+      });
+    } catch (error: any) {
+      console.error('Error fetching profile visits:', error);
+      return res.status(500).json({
+        message: 'Internal Server Error',
+        error: error.message,
+      });
+    }
+  },
 
-// Method for fetching profiles the user has visited
-getProfilesIVisited: async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.body;
+  // Method for fetching profiles the user has visited
+  getProfilesIVisited: async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
 
-    const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
-    const connectionRepository = AppDataSource.getRepository(Connection);
+      const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
+      const connectionRepository = AppDataSource.getRepository(Connection);
 
-    // Aggregate visits and count the number of times each profile was visited
-    const visits = await profileVisitRepository
-      .createQueryBuilder('profileVisit')
-      .select('profileVisit.visited', 'visitedId')
-      .addSelect('COUNT(profileVisit.id)', 'visitCount')
-      .where('profileVisit.visitor = :userId', { userId })
-      .groupBy('profileVisit.visited')
-      .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
-      .getRawMany();
+      // Aggregate visits and count the number of times each profile was visited
+      const visits = await profileVisitRepository
+        .createQueryBuilder('profileVisit')
+        .select('profileVisit.visited', 'visitedId')
+        .addSelect('COUNT(profileVisit.id)', 'visitCount')
+        .where('profileVisit.visitor = :userId', { userId })
+        .groupBy('profileVisit.visited')
+        .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
+        .getRawMany();
 
-    const visitedProfiles = await Promise.all(
-      visits.map(async (visit) => {
-        const profile = await AppDataSource.getRepository(PersonalDetails).findOne({
-          where: { id: visit.visitedId },
-          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', "createdAt"],
-        });
+      const visitedProfiles = await Promise.all(
+        visits.map(async (visit) => {
+          const profile = await AppDataSource.getRepository(PersonalDetails).findOne({
+            where: { id: visit.visitedId },
+            select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', 'createdAt'],
+          });
 
-        // Fetch the connection status between the current user and the visited profile
-        const connection = await connectionRepository
-          .createQueryBuilder('connection')
-          .select('connection.status', 'status')
-          .where('(connection.requesterId = :userId AND connection.receiverId = :visitedId) OR (connection.requesterId = :visitedId AND connection.receiverId = :userId)', { userId, visitedId: visit.visitedId })
-          .getRawOne();
+          // Fetch the connection status between the current user and the visited profile
+          const connection = await connectionRepository
+            .createQueryBuilder('connection')
+            .select('connection.status', 'status')
+            .where(
+              '(connection.requesterId = :userId AND connection.receiverId = :visitedId) OR (connection.requesterId = :visitedId AND connection.receiverId = :userId)',
+              { userId, visitedId: visit.visitedId }
+            )
+            .getRawOne();
 
-        const profilePicture = profile?.profilePictureUploadId
-          ? await generatePresignedUrl(profile.profilePictureUploadId)
-          : null;
+          const profilePicture = profile?.profilePictureUploadId
+            ? await generatePresignedUrl(profile.profilePictureUploadId)
+            : null;
 
-        return {
-          profile: { ...profile, profilePicture },
-          visitCount: parseInt(visit.visitCount, 10),
-          connectionStatus: connection?.status || 'none',
-        };
-      })
-    );
+          return {
+            profile: { ...profile, profilePicture },
+            visitCount: parseInt(visit.visitCount, 10),
+            connectionStatus: connection?.status || 'none',
+          };
+        })
+      );
 
-    return res.status(200).json({
-      message: 'Profiles visited fetched successfully.',
-      data: visitedProfiles,
-    });
-  } catch (error: any) {
-    console.error('Error fetching profiles visited:', error);
-    return res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message,
-    });
-  }
-},
-
-  
+      return res.status(200).json({
+        message: 'Profiles visited fetched successfully.',
+        data: visitedProfiles,
+      });
+    } catch (error: any) {
+      console.error('Error fetching profiles visited:', error);
+      return res.status(500).json({
+        message: 'Internal Server Error',
+        error: error.message,
+      });
+    }
+  },
 };

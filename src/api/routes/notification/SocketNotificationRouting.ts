@@ -1,5 +1,5 @@
 import { WebSocketNotification } from '@/api/controllers/notifications/SocketNotificationController';
-import express, { Request, Response } from 'express';
+import express from 'express';
 
 const router = express.Router();
 
