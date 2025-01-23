@@ -222,7 +222,7 @@ getMyProfileVisits: async (req: Request, res: Response) => {
       visits.map(async (visit) => {
         const visitor = await AppDataSource.getRepository(PersonalDetails).findOne({
           where: { id: visit.visitorId },
-          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', "createdAt"],
         });
 
         // Fetch the connection status between the current user and the visitor
@@ -279,7 +279,7 @@ getProfilesIVisited: async (req: Request, res: Response) => {
       visits.map(async (visit) => {
         const profile = await AppDataSource.getRepository(PersonalDetails).findOne({
           where: { id: visit.visitedId },
-          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', "createdAt"],
         });
 
         // Fetch the connection status between the current user and the visited profile
