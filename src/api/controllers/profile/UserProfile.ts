@@ -7,6 +7,7 @@ import { UserPost } from '@/api/entity/UserPost';
 import { AppDataSource } from '@/server';
 
 import { generatePresignedUrl } from '../s3/awsControllers';
+import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
 
 export const UpdateUserProfile = async (req: Request, res: Response) => {
   try {
@@ -160,4 +161,158 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       error: error.message,
     });
   }
+};
+
+
+export const ProfileVisitController = {
+  /**
+   * Record a profile visit
+   */
+  recordVisit: async (req: Request, res: Response) => {
+    try {
+      const { visitorId, visitedId } = req.body;
+
+      if (visitorId === visitedId) {
+        return res.status(400).json({ message: "You cannot visit your own profile." });
+      }
+
+      const userRepository = AppDataSource.getRepository(PersonalDetails);
+
+      const visitor = await userRepository.findOneBy({ id: visitorId });
+      const visited = await userRepository.findOneBy({ id: visitedId });
+
+      if (!visitor || !visited) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
+
+      const profileVisit = new ProfileVisit();
+      profileVisit.visitor = visitor;
+      profileVisit.visited = visited;
+
+      await profileVisitRepository.save(profileVisit);
+
+      return res.status(201).json({ message: "Profile visit recorded successfully." });
+    } catch (error: any) {
+      console.error('Error recording profile visit:', error);
+      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+  },
+
+  // Method for fetching profile visits
+getMyProfileVisits: async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
+    const connectionRepository = AppDataSource.getRepository(Connection);
+
+    // Aggregate visits and count the number of times each visitor has visited the profile
+    const visits = await profileVisitRepository
+      .createQueryBuilder('profileVisit')
+      .select('profileVisit.visitor', 'visitorId')
+      .addSelect('COUNT(profileVisit.id)', 'visitCount')
+      .where('profileVisit.visited = :userId', { userId })
+      .groupBy('profileVisit.visitor')
+      .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
+      .getRawMany();
+
+    const visitors = await Promise.all(
+      visits.map(async (visit) => {
+        const visitor = await AppDataSource.getRepository(PersonalDetails).findOne({
+          where: { id: visit.visitorId },
+          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+        });
+
+        // Fetch the connection status between the current user and the visitor
+        const connection = await connectionRepository
+          .createQueryBuilder('connection')
+          .select('connection.status', 'status')
+          .where('(connection.requesterId = :userId AND connection.receiverId = :visitorId) OR (connection.requesterId = :visitorId AND connection.receiverId = :userId)', { userId, visitorId: visit.visitorId })
+          .getRawOne();
+
+        const profilePicture = visitor?.profilePictureUploadId
+          ? await generatePresignedUrl(visitor.profilePictureUploadId)
+          : null;
+
+        return {
+          visitor: { ...visitor, profilePicture },
+          visitCount: parseInt(visit.visitCount, 10),
+          connectionStatus: connection?.status || 'none', // Default to 'none' if no connection exists
+        };
+      })
+    );
+
+    return res.status(200).json({
+      message: 'Profile visits fetched successfully.',
+      data: visitors,
+    });
+  } catch (error: any) {
+    console.error('Error fetching profile visits:', error);
+    return res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+},
+
+// Method for fetching profiles the user has visited
+getProfilesIVisited: async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
+    const connectionRepository = AppDataSource.getRepository(Connection);
+
+    // Aggregate visits and count the number of times each profile was visited
+    const visits = await profileVisitRepository
+      .createQueryBuilder('profileVisit')
+      .select('profileVisit.visited', 'visitedId')
+      .addSelect('COUNT(profileVisit.id)', 'visitCount')
+      .where('profileVisit.visitor = :userId', { userId })
+      .groupBy('profileVisit.visited')
+      .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
+      .getRawMany();
+
+    const visitedProfiles = await Promise.all(
+      visits.map(async (visit) => {
+        const profile = await AppDataSource.getRepository(PersonalDetails).findOne({
+          where: { id: visit.visitedId },
+          select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+        });
+
+        // Fetch the connection status between the current user and the visited profile
+        const connection = await connectionRepository
+          .createQueryBuilder('connection')
+          .select('connection.status', 'status')
+          .where('(connection.requesterId = :userId AND connection.receiverId = :visitedId) OR (connection.requesterId = :visitedId AND connection.receiverId = :userId)', { userId, visitedId: visit.visitedId })
+          .getRawOne();
+
+        const profilePicture = profile?.profilePictureUploadId
+          ? await generatePresignedUrl(profile.profilePictureUploadId)
+          : null;
+
+        return {
+          profile: { ...profile, profilePicture },
+          visitCount: parseInt(visit.visitCount, 10),
+          connectionStatus: connection?.status || 'none',
+        };
+      })
+    );
+
+    return res.status(200).json({
+      message: 'Profiles visited fetched successfully.',
+      data: visitedProfiles,
+    });
+  } catch (error: any) {
+    console.error('Error fetching profiles visited:', error);
+    return res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+},
+
+  
 };

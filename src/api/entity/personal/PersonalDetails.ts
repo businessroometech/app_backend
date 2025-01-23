@@ -13,6 +13,7 @@ import {
 } from 'typeorm';
 
 import { Connection } from '../connection/Connections';
+import { ProfileVisit } from '../notifications/ProfileVisit';
 
 interface Address {
   addressLine1: string;
@@ -116,8 +117,8 @@ export class PersonalDetails extends BaseEntity {
   })
   updatedAt!: Date;
 
-  @Column({ type: 'int', default: 0 })
-  active!: number;
+  // @Column({ type: 'int', default: 0 })
+  // active!: number;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
@@ -142,4 +143,10 @@ export class PersonalDetails extends BaseEntity {
 
   @OneToMany(() => Connection, (connection) => connection.receiver)
   receivedRequests!: Connection[];
+
+  @OneToMany(() => ProfileVisit, (visit) => visit.visitor)
+  profilesVisited!: ProfileVisit[];
+
+  @OneToMany(() => ProfileVisit, (visit) => visit.visited)
+  profileVisitors!: ProfileVisit[];
 }

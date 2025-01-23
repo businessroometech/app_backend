@@ -30,10 +30,8 @@ class SocketNotification {
       if (!userId || !message) {
         return res.status(400).json({ error: 'userId and message are required' });
       }
-  
       try {
         const userRepos = AppDataSource.getRepository(PersonalDetails);
-  
         const user = await userRepos.findOne({ where: { id: userId } });
         if (!user) {
           return res.status(404).json({
@@ -41,6 +39,7 @@ class SocketNotification {
             message: 'User ID is invalid or does not exist.',
           });
         }
+                
         const notification = new Notifications();
         notification.userId = userId;
         notification.message = message;

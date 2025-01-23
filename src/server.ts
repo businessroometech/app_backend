@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import { createServer } from 'http';
 import { pino } from 'pino';
 import { Server } from 'socket.io';
-import { DataSource } from 'typeorm'; // Import DataSource / Import your environment variables
+import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
 
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
@@ -20,7 +20,6 @@ import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoute
 import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
-import { SocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
 import { Connection } from './api/entity/connection/Connections';
@@ -33,18 +32,16 @@ import { CommentLike } from './api/entity/posts/CommentLike';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
-import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
+import { SocketNotification } from './api/controllers/notifications/SocketNotificationController';
+import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting'; 
+import { ProfileVisit } from './api/entity/notifications/ProfileVisit';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: {
-    origin: ['http://localhost:5173'], 
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
+  cors: { origin: '*' },
 });
 
 // Create a DataSource instance
@@ -57,6 +54,7 @@ const AppDataSource = new DataSource({
   database: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_DB_NAME : process.env.DEV_AWS_DB_NAME,
   entities: [
     UserPost,
+    PersonalDetails,
     Comment,
     CommentLike,
     Like,
@@ -67,9 +65,9 @@ const AppDataSource = new DataSource({
     BusinessBuyer,
     Investor,
     Entrepreneur,
-    PersonalDetails,
+    ProfileVisit
   ],
-  synchronize: false, 
+  synchronize: false,
   // ... other TypeORM configuration options (entities, synchronize, etc.)
 });
 
@@ -89,49 +87,51 @@ AppDataSource.initialize()
       socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
       });
+      
     });
+    
   })
   .catch((error) => {
     console.error('Error during Data Source initialization:', error);
   });
 
-// Enable CORS and allow all origins
+// app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow all origins in development; restrict in production
-      if (process.env.NODE_ENV === 'development' || origin === 'http://localhost:5173') {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
+    origin: function (origin, callback) {
+      callback(null, true); // Allow all origins
     },
     credentials: true,
-    methods: ['GET', 'POST'],
   })
 );
-
 app.use(helmet());
+// app.use(rateLimiter);
 
-// Request logging middleware
+// Request logging
 app.use(requestLogger);
 
 // Initialize SocketNotification
 SocketNotification.initialize(io);
 
+
 // Routes mounting
 app.use(express.json());
 app.use('/api/v1/auth', authRouter);
+
 app.use('/api/v1/post', userPost);
 app.use('/api/v1/notifications', notifications);
 app.use('/api/v1/connection', connectionRouter);
+
 app.use('/businessseller', BuisnessSeller);
 app.use('/investor', InvestorRoute);
 app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
+
 app.use('/api/v1/socket-notifications', SocketNotificationRouting); // Add new notification route
 
-// Testing API route
+
+
+// testing api route
 app.get('/', (req, res) => {
   res.send('Hello World');
 });
