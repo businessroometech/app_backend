@@ -34,7 +34,8 @@ import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import { Message } from './api/entity/chat/Message';
-import { initializeSocket } from './socket'; // Import socket initialization logic
+import { initializeSocket } from './socket'; 
+import { ProfileVisit } from './api/entity/notifications/ProfileVisit';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -61,7 +62,8 @@ const AppDataSource = new DataSource({
     Investor,
     Entrepreneur,
     PersonalDetails,
-    Message
+    Message,
+    ProfileVisit
   ],
   synchronize: false,
 });
