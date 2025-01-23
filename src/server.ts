@@ -3,7 +3,7 @@ import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import { pino } from 'pino';
-import { DataSource } from 'typeorm'; // Import DataSource/ Import your environment variables
+import { DataSource } from 'typeorm'; 
 
 import errorHandler from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
