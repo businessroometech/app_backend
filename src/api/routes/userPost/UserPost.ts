@@ -2,6 +2,7 @@ import express from 'express';
 import { CreateUserPost, DeleteUserPost, FindUserPost, getPosts, UpdateUserPost } from '@/api/controllers/UserPost';
 import { createComment, createNestedComment, getComments, getNestedComments } from '@/api/controllers/posts/CommentController';
 import {  createLike, getAllLikesForPost, createCommentLike, getAllLikesForComment } from '@/api/controllers/posts/LikeController';
+import { createOrUpdateReaction, removeReaction } from '@/api/controllers/posts/ReactionController';
 
 const Router = express.Router();
 
@@ -19,6 +20,9 @@ Router.post('/create-nested-comment', createNestedComment);
 Router.post('/get-likes', getAllLikesForPost);
 Router.post('/get-comments', getComments);
 Router.post('/get-nested-comments', getNestedComments);
+
+Router.post("/create-update-reaction", createOrUpdateReaction)
+Router.post("/remove-reaction", removeReaction)
 
 export default Router;
 

@@ -14,7 +14,7 @@ export const sendMessage = async (req: Request, res: Response) => {
       receiverId,
       content,
       documentKeys,
-    });
+    }); 
 
     await messageRepository.save(message);
 

@@ -14,6 +14,7 @@ import {
 
 import { Connection } from '../connection/Connections';
 import { ProfileVisit } from '../notifications/ProfileVisit';
+import { Reaction } from '../posts/Reaction';
 
 interface Address {
   addressLine1: string;
@@ -149,4 +150,9 @@ export class PersonalDetails extends BaseEntity {
 
   @OneToMany(() => ProfileVisit, (visit) => visit.visited)
   profileVisitors!: ProfileVisit[];
+
+  @OneToMany(() => Reaction, (reaction) => reaction.personalDetails, {
+    cascade: true, // Automatically saves or deletes related reactions
+  })
+  reactions!: Reaction[];
 }

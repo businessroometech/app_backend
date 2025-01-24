@@ -5,9 +5,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Reaction } from './posts/Reaction';
 
 @Entity({ name: 'UserPost' })
 export class UserPost extends BaseEntity {
@@ -56,4 +58,10 @@ export class UserPost extends BaseEntity {
   private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
+
+   // One UserPost can have multiple reactions (One-to-Many)
+   @OneToMany(() => Reaction, (reaction) => reaction.userPost, {
+    cascade: true, 
+  })
+  reactions!: Reaction[];
 }

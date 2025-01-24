@@ -37,6 +37,7 @@ import SocketNotificationRouting from './api/routes/notification/SocketNotificat
 import { Message } from './api/entity/chat/Message';
 import { initializeSocket } from './socket';
 import { ProfileVisit } from './api/entity/notifications/ProfileVisit';
+import { Reaction } from './api/entity/posts/Reaction';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -65,6 +66,7 @@ const AppDataSource = new DataSource({
     PersonalDetails,
     Message,
     ProfileVisit,
+    Reaction
   ],
   synchronize: false,
 });

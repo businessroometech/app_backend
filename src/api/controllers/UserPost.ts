@@ -6,6 +6,7 @@ import { Comment } from '../entity/posts/Comment';
 import { Like } from '../entity/posts/Like';
 import { generatePresignedUrl } from './s3/awsControllers';
 import { In } from 'typeorm';
+import { Reaction } from '../entity/posts/Reaction';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -264,7 +265,7 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
   } catch (error: any) {
     return res.status(500).json({
       message: 'Internal server error. Could not delete user post.',
-      error: error.message,
+      error: error.message, 
     });
   }
 };
@@ -317,6 +318,10 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
           : [],
       }))
     );
+
+    const reactionRepos = AppDataSource.getRepository(Reaction)
+    let reaction = await reactionRepos.findOne({ where: { personalDetails: userId, userPost:postId  } });
+
 
     const getLikeStatus = async (postId: string) => {
       const like = await likeRepository.findOne({ where: { userId, postId } });
