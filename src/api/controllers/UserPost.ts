@@ -282,6 +282,10 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
+    const reactionRepository = AppDataSource.getRepository(Reaction);
+
+    // Get the total number of posts (without pagination)
+    const totalPosts = await userPostRepository.count();
 
     // Get all posts with pagination
     const posts = await userPostRepository.find({
@@ -295,18 +299,26 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     });
 
     if (!posts || posts.length === 0) {
-      return res.status(200).json({ status: "success", message: "No posts found for this user.", data: { posts: [] } });
+      return res.status(200).json({
+        status: "success",
+        message: "No posts found for this user.",
+        data: { posts: [], page, limit, totalPosts }
+      });
     }
 
     const postIds = posts.map((post) => post.Id);
 
-    // Fetch comments and likes for the posts
+    // Fetch comments, likes, and reactions for the posts
     const comments = await commentRepository.find({
       where: { postId: In(postIds) },
     });
 
     const likes = await likeRepository.find({
       where: { postId: In(postIds) },
+    });
+
+    const reactions = await reactionRepository.find({
+      where: { post: { Id: In(postIds) } },
     });
 
     // Generate media URLs for posts
@@ -319,27 +331,31 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       }))
     );
 
-    const reactionRepos = AppDataSource.getRepository(Reaction)
-    let reaction = await reactionRepos.findOne({ where: { personalDetails: userId, userPost:postId  } });
-
-
     const getLikeStatus = async (postId: string) => {
       const like = await likeRepository.findOne({ where: { userId, postId } });
       return like?.status;
-    }
+    };
 
-    // Format the posts with user details, likes, and comments
+    // Format the posts with user details, likes, comments, and reactions
     const formattedPosts = await Promise.all(
       posts.map(async (post) => {
         // Fetch media URLs related to the post
-        const mediaUrls =
-          mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
+        const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
 
         // Calculate like count and comment count
         const likeCount = likes.filter((like) => like.postId === post.Id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
         const likeStatus = await getLikeStatus(post.Id);
 
+        // Fetch reactions for the post
+        const postReactions = reactions.filter((reaction) => reaction.post.Id === post.Id);
+        const totalReactions = postReactions.reduce((acc:any, reaction) => {
+          acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Fetch the user's reaction to the post
+        const userReaction = postReactions.find((reaction) => reaction.user.id === userId)?.reactionType || null;
 
         // Fetch top 5 comments for the post
         const postComments = await commentRepository.find({
@@ -356,7 +372,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             });
 
             return {
-              commenter
+              commenter,
             };
           })
         );
@@ -364,7 +380,6 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Fetch user details for the post creator
         const user = await userRepository.findOne({
           where: { id: post.userId },
-
         });
 
         // Return the formatted post object
@@ -379,6 +394,8 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             likeCount,
             commentCount,
             likeStatus,
+            reactions: totalReactions,
+            userReaction,
           },
           userDetails: {
             postedId: user?.id,
@@ -395,10 +412,15 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       })
     );
 
-    // Return the formatted posts
+    // Return the formatted posts with pagination info
     return res.status(200).json({
       message: 'User posts retrieved successfully.',
-      data: formattedPosts,
+      data: {
+        posts: formattedPosts,
+        page,
+        limit,
+        totalPosts
+      }
     });
   } catch (error: any) {
     // Handle and log errors

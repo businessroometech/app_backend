@@ -27,7 +27,7 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
         }
 
         // Check if the post exists
-        const post = await UserPost.findOne({ where: {  Id: postId } });
+        const post = await UserPost.findOne({ where: { Id: postId } });
         if (!post) {
             return res.status(404).json({
                 status: "error",
@@ -40,8 +40,7 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
 
         // Find if the reaction already exists
         let reaction = await reactionRepository.findOne({
-            where: {   user: { id: userId },
-                 post: { Id: postId }}
+            where: { user: { id: userId }, post: { Id: postId } },
         });
 
         if (reaction) {
@@ -58,7 +57,7 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
         reaction = reactionRepository.create({
             user,
             post,
-            reactionType: reactionType 
+            reactionType: reactionType,
         });
 
         await reactionRepository.save(reaction);
@@ -68,10 +67,10 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
             message: "Reaction created successfully.",
         });
     } catch (error) {
-        console.error(error);
+        console.error("Error occurred while creating or updating reaction:", error);
         return res.status(500).json({
             status: "error",
-            message: "Something went wrong.",
+            message: "Something went wrong while creating/updating reaction.",
             error: (error as Error).message,
         });
     }
@@ -81,13 +80,17 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
 export const removeReaction = async (req: Request, res: Response) => {
     try {
         const { userId, postId } = req.body;
+
+        // Validate required fields
         if (!userId || !postId) {
-            return res.status(400).json({ status: "error", message: 'userId and postId are required.' });
+            return res.status(400).json({ 
+                status: "error", 
+                message: "userId and postId are required." 
+            });
         }
 
-        
         // Check if the post exists
-        const post = await UserPost.findOne({ where: {  Id: postId } });
+        const post = await UserPost.findOne({ where: { Id: postId } });
         if (!post) {
             return res.status(404).json({
                 status: "error",
@@ -95,22 +98,33 @@ export const removeReaction = async (req: Request, res: Response) => {
             });
         }
 
-
-        const reactionRepos = AppDataSource.getRepository(Reaction)
-         let reaction = await reactionRepos.findOne({
-            where: {   user: { id: userId },
-                 post: { Id: postId }}
+        // Find the reaction for the given user and post
+        const reactionRepository = AppDataSource.getRepository(Reaction);
+        const reaction = await reactionRepository.findOne({
+            where: { user: { id: userId }, post: { Id: postId } },
         });
 
         if (!reaction) {
-            return res.status(404).json({ status: "error", message: 'Reaction not found.' });
+            return res.status(404).json({
+                status: "error",
+                message: "Reaction not found.",
+            });
         }
+
+        // Remove the reaction
         await reaction.remove();
 
-        return res.status(200).json({ status: "success", message: 'Reaction removed successfully.' });
+        return res.status(200).json({
+            status: "success",
+            message: "Reaction removed successfully.",
+        });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status: "error", message: 'Something went wrong.', error: (error as Error).message });
+        console.error("Error occurred while removing reaction:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Something went wrong while removing reaction.",
+            error: (error as Error).message,
+        });
     }
 };
