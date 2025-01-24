@@ -77,19 +77,19 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
 
     if (!userId) {
       return res.status(400).json({
-        message: "User ID is required.",
+        message: 'User ID is required.',
       });
     }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOne({
       where: { id: userId },
-      select: ["firstName", "lastName"],
+      select: ['firstName', 'lastName'],
     });
 
     if (!user) {
       return res.status(404).json({
-        message: "User not found. Invalid User ID.",
+        message: 'User not found. Invalid User ID.',
       });
     }
 
@@ -100,13 +100,13 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     // Fetch user posts with pagination
     const [userPosts, totalPosts] = await userPostRepository.findAndCount({
       where: { userId },
-      order: { createdAt: "DESC" },
+      order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
 
     if (!userPosts || userPosts.length === 0) {
-      return res.status(200).json({ status: "success", message: "No posts found for this user.", data: { posts: [] } });
+      return res.status(200).json({ status: 'success', message: 'No posts found for this user.', data: { posts: [] } });
     }
 
     const postIds = userPosts.map((post) => post.Id);
@@ -131,7 +131,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     // Format comments for each post
     const postComments = await commentRepository.find({
       where: { postId: In(postIds) },
-      order: { createdAt: "ASC" },
+      order: { createdAt: 'ASC' },
       take: 5, // Limit comments per post
     });
 
@@ -139,12 +139,12 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
       postComments.map(async (comment) => {
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ["firstName", "lastName"],
+          select: ['firstName', 'lastName'],
         });
 
         return {
           Id: comment.id,
-          commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`,
+          commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
@@ -181,7 +181,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     });
 
     return res.status(200).json({
-      message: "User posts retrieved successfully.",
+      message: 'User posts retrieved successfully.',
       data: {
         posts: formattedPosts,
         totalPosts,
@@ -191,7 +191,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     });
   } catch (error: any) {
     return res.status(500).json({
-      message: "Internal server error. Could not retrieve user posts.",
+      message: 'Internal server error. Could not retrieve user posts.',
       error: error.message,
     });
   }
@@ -265,7 +265,7 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
   } catch (error: any) {
     return res.status(500).json({
       message: 'Internal server error. Could not delete user post.',
-      error: error.message, 
+      error: error.message,
     });
   }
 };
@@ -282,7 +282,6 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
-    const reactionRepository = AppDataSource.getRepository(Reaction);
 
     // Get the total number of posts (without pagination)
     const totalPosts = await userPostRepository.count();
@@ -300,9 +299,9 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
 
     if (!posts || posts.length === 0) {
       return res.status(200).json({
-        status: "success",
-        message: "No posts found for this user.",
-        data: { posts: [], page, limit, totalPosts }
+        status: 'success',
+        message: 'No posts found for this user.',
+        data: { posts: [], page, limit, totalPosts },
       });
     }
 
@@ -317,17 +316,13 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       where: { postId: In(postIds) },
     });
 
-    const reactions = await reactionRepository.find({
-      where: { post: { Id: In(postIds) } },
-    });
+    
 
     // Generate media URLs for posts
     const mediaKeysWithUrls = await Promise.all(
       posts.map(async (post) => ({
         postId: post.Id,
-        mediaUrls: post.mediaKeys
-          ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key)))
-          : [],
+        mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
       }))
     );
 
@@ -347,16 +342,28 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
         const likeStatus = await getLikeStatus(post.Id);
 
-        // Fetch reactions for the post
-        const postReactions = reactions.filter((reaction) => reaction.post.Id === post.Id);
-        const totalReactions = postReactions.reduce((acc:any, reaction) => {
-          acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+
+        const reactionRepository = AppDataSource.getRepository(Reaction);
+
+        // Fetch reactions with related post data
+        const reactions = await reactionRepository.find({
+          where: { post: { Id: In(postIds) } }, 
+          relations: ['post', 'user'], 
+        });
+        
+        const postReactions = reactions.filter((reaction) => reaction.post?.Id === post.Id);
+        
+        const totalReactions = postReactions.reduce((acc: Record<string, number>, reaction) => {
+          if (reaction.reactionType) {
+            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+          }
           return acc;
         }, {});
-
+        
         // Fetch the user's reaction to the post
-        const userReaction = postReactions.find((reaction) => reaction.user.id === userId)?.reactionType || null;
-
+        const userReaction =
+          postReactions.find((reaction) => reaction.user?.id === userId)?.reactionType || null;
+        
         // Fetch top 5 comments for the post
         const postComments = await commentRepository.find({
           where: { postId: post.Id },
@@ -403,9 +410,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             lastName: user?.lastName || '',
             timestamp: formatTimestamp(post.createdAt),
             userRole: user?.userRole,
-            avatar: user?.profilePictureUploadId
-              ? await generatePresignedUrl(user.profilePictureUploadId)
-              : null,
+            avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
           },
           comments: formattedComments,
         };
@@ -419,8 +424,8 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         posts: formattedPosts,
         page,
         limit,
-        totalPosts
-      }
+        totalPosts,
+      },
     });
   } catch (error: any) {
     // Handle and log errors
@@ -430,5 +435,3 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     });
   }
 };
-
-
