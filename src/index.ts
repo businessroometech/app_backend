@@ -5,7 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
-const server = httpServer.listen(env.PORT, () => {
+const server = httpServer.listen(env.PORT, '0.0.0.0', () => {
   const { NODE_ENV, HOST, PORT } = env;
   logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
   logger.info(`Swagger docs available at http://${HOST}:${PORT}`);
