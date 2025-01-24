@@ -20,6 +20,8 @@ import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
 import chatRouter from '../src/api/routes/chat/MessageRoutes';
+import liveRouter from '../src/api/routes/live/LiveRoutes';
+
 import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
@@ -103,7 +105,7 @@ app.use('/investor', InvestorRoute);
 app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
 app.use('/api/v1/socket-notifications', SocketNotificationRouting);
-
+app.use('/api/v1/live', liveRouter);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom AI');
