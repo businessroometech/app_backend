@@ -60,7 +60,7 @@ export class UserPost extends BaseEntity {
   }
 
    // One UserPost can have multiple reactions (One-to-Many)
-   @OneToMany(() => Reaction, (reaction) => reaction.userPost, {
+   @OneToMany(() => Reaction, (reaction) => reaction.id, {
     cascade: true, 
   })
   reactions!: Reaction[];

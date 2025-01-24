@@ -151,7 +151,7 @@ export class PersonalDetails extends BaseEntity {
   @OneToMany(() => ProfileVisit, (visit) => visit.visited)
   profileVisitors!: ProfileVisit[];
 
-  @OneToMany(() => Reaction, (reaction) => reaction.personalDetails, {
+  @OneToMany(() => Reaction, (reaction) => reaction.id, {
     cascade: true, // Automatically saves or deletes related reactions
   })
   reactions!: Reaction[];
