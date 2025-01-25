@@ -20,7 +20,10 @@ import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoute
 import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
-import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
+import chatRouter from '../src/api/routes/chat/MessageRoutes';
+import liveRouter from '../src/api/routes/live/LiveRoutes';
+
+// import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
 import { Message } from './api/entity/chat/Message';
@@ -35,9 +38,8 @@ import { CommentLike } from './api/entity/posts/CommentLike';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
-import { Wishlists } from './api/entity/WishLists/Wishlists';
-import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
-import WishlistsRoutes from './api/routes/Wishlists/WishlistsRoutes';
+// import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
+import { Message } from './api/entity/chat/Message';
 import { initializeSocket } from './socket';
 
 const logger = pino({ name: 'server start' });
@@ -105,8 +107,9 @@ app.use('/businessseller', BuisnessSeller);
 app.use('/investor', InvestorRoute);
 app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
-app.use('/api/v1/socket-notifications', SocketNotificationRouting);
-app.use('/wishlists', WishlistsRoutes);
+app.use('/api/v1/live', liveRouter);
+// app.use('/api/v1/socket-notifications', SocketNotificationRouting);
+
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom AI');
@@ -119,21 +122,21 @@ app.use(errorHandler());
 const httpServer = initializeSocket(app);
 
 // Set up WebSocket server
-const wss = new WebSocketServer({ server: httpServer });
+// const wss = new WebSocketServer({ server: httpServer });
 
-wss.on('connection', (ws, req) => {
-  console.log('New WebSocket connection established');
-  ws.on('message', (message) => {
-    console.log(`Received: ${message}`);
-    // Handle messages, e.g., join room, send notifications, etc.
-  });
-  ws.on('close', () => {
-    console.log('WebSocket connection closed');
-  });
+// wss.on('connection', (ws, req) => {
+//   console.log('New WebSocket connection established');
+//   ws.on('message', (message) => {
+//     console.log(`Received: ${message}`);
+//     // Handle messages, e.g., join room, send notifications, etc.
+//   });
+//   ws.on('close', () => {
+//     console.log('WebSocket connection closed');
+//   });
 
-  // Example: Send notification to client
-  ws.send(JSON.stringify({ message: 'Welcome to WebSocket notifications!' }));
-});
+//   // Example: Send notification to client
+//   ws.send(JSON.stringify({ message: 'Welcome to WebSocket notifications!' }));
+// });
 
 export { app, AppDataSource, httpServer, logger };
 
