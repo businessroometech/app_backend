@@ -111,6 +111,7 @@ app.use('/investor', InvestorRoute);
 app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
 app.use('/api/v1/live', liveRouter);
+app.use('/wishlists', WishlistsRoutes);
 // app.use('/api/v1/socket-notifications', SocketNotificationRouting);
 
 // Test route
