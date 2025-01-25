@@ -20,7 +20,7 @@ import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
 import chatRouter from '../src/api/routes/chat/MessageRoutes';
-import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
+// import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
 import { Connection } from './api/entity/connection/Connections';
@@ -33,7 +33,7 @@ import { CommentLike } from './api/entity/posts/CommentLike';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
-import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
+// import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import { Message } from './api/entity/chat/Message';
 import { initializeSocket } from './socket';
 import { ProfileVisit } from './api/entity/notifications/ProfileVisit';
@@ -102,7 +102,7 @@ app.use('/businessseller', BuisnessSeller);
 app.use('/investor', InvestorRoute);
 app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
-app.use('/api/v1/socket-notifications', SocketNotificationRouting);
+// app.use('/api/v1/socket-notifications', SocketNotificationRouting);
 
 // Test route
 app.get('/', (req, res) => {
@@ -116,21 +116,21 @@ app.use(errorHandler());
 const httpServer = initializeSocket(app);
 
 // Set up WebSocket server
-const wss = new WebSocketServer({ server: httpServer });
+// const wss = new WebSocketServer({ server: httpServer });
 
-wss.on('connection', (ws, req) => {
-  console.log('New WebSocket connection established');
-  ws.on('message', (message) => {
-    console.log(`Received: ${message}`);
-    // Handle messages, e.g., join room, send notifications, etc.
-  });
-  ws.on('close', () => {
-    console.log('WebSocket connection closed');
-  });
+// wss.on('connection', (ws, req) => {
+//   console.log('New WebSocket connection established');
+//   ws.on('message', (message) => {
+//     console.log(`Received: ${message}`);
+//     // Handle messages, e.g., join room, send notifications, etc.
+//   });
+//   ws.on('close', () => {
+//     console.log('WebSocket connection closed');
+//   });
 
-  // Example: Send notification to client
-  ws.send(JSON.stringify({ message: 'Welcome to WebSocket notifications!' }));
-});
+//   // Example: Send notification to client
+//   ws.send(JSON.stringify({ message: 'Welcome to WebSocket notifications!' }));
+// });
 
 export { app, AppDataSource, logger, httpServer };
 
