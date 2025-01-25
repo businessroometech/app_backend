@@ -5,16 +5,18 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Reaction } from './posts/Reaction';
+import { Mention } from './posts/Mention';
 
 @Entity({ name: 'UserPost' })
 export class UserPost extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  Id!: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
   userId!: string;
@@ -26,10 +28,7 @@ export class UserPost extends BaseEntity {
   content!: string;
 
   @Column({ type: 'simple-array', nullable: true })
-  hashtags?: string;
-
-  // @Column({ type: 'simple-array', nullable: true })
-  // mentionId?: string[];
+  hashtags?: string[];
 
   @Column({ type: 'simple-array', nullable: true })
   mediaKeys?: string[];
@@ -52,16 +51,18 @@ export class UserPost extends BaseEntity {
 
   @BeforeInsert()
   private async beforeInsert() {
-    this.Id = this.generateUUID();
+    this.id = this.generateUUID();
   }
 
   private generateUUID(): string {
     return randomBytes(16).toString('hex');
   }
 
-   // One UserPost can have multiple reactions (One-to-Many)
-   @OneToMany(() => Reaction, (reaction) => reaction.id, {
-    cascade: true, 
+  @OneToMany(() => Reaction, (reaction) => reaction.post, {
+    cascade: true,
   })
   reactions!: Reaction[];
+
+  @ManyToMany(() => Mention, (mention) => mention.posts)
+  mentions!: Mention[];
 }

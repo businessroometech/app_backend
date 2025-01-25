@@ -109,7 +109,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
       return res.status(200).json({ status: 'success', message: 'No posts found for this user.', data: { posts: [] } });
     }
 
-    const postIds = userPosts.map((post) => post.Id);
+    const postIds = userPosts.map((post) => post.id);
 
     // Fetch related comments and likes
     const comments = await commentRepository.find({
@@ -123,7 +123,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     // Fetch media keys and URLs for posts
     const mediaKeysWithUrls = await Promise.all(
       userPosts.map(async (post) => ({
-        postId: post.Id,
+        postId: post.id,
         mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
       }))
     );
@@ -154,14 +154,14 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
 
     // Format posts with related data
     const formattedPosts = userPosts.map((post) => {
-      const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
-      const likeCount = likes.filter((like) => like.postId === post.Id).length;
-      const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
-      const likeStatus = likes.some((like) => like.postId === post.Id && like.userId === userId);
+      const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
+      const likeCount = likes.filter((like) => like.postId === post.id).length;
+      const commentCount = comments.filter((comment) => comment.postId === post.id).length;
+      const likeStatus = likes.some((like) => like.postId === post.id && like.userId === userId);
 
       return {
         post: {
-          Id: post.Id,
+          Id: post.id,
           userId: post.userId,
           title: post.title,
           content: post.content,
@@ -176,7 +176,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
           lastName: user.lastName,
           timestamp: formatTimestamp(post.createdAt),
         },
-        comments: formattedComments.filter((comment) => comment.postId === post.Id),
+        comments: formattedComments.filter((comment) => comment.postId === post.id),
       };
     });
 
@@ -254,7 +254,7 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
     // }
 
     // Find the user post
-    const userPost = await UserPost.findOne({ where: { Id: PostId } });
+    const userPost = await UserPost.findOne({ where: { id: PostId } });
 
     // Delete the user post
     await userPost!.remove();
@@ -292,7 +292,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         updatedAt: 'DESC',
         createdAt: 'DESC',
       },
-      select: ['Id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
+      select: ['id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -305,7 +305,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       });
     }
 
-    const postIds = posts.map((post) => post.Id);
+    const postIds = posts.map((post) => post.id);
 
     // Fetch comments, likes, and reactions for the posts
     const comments = await commentRepository.find({
@@ -321,7 +321,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     // Generate media URLs for posts
     const mediaKeysWithUrls = await Promise.all(
       posts.map(async (post) => ({
-        postId: post.Id,
+        postId: post.id,
         mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
       }))
     );
@@ -335,23 +335,23 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     const formattedPosts = await Promise.all(
       posts.map(async (post) => {
         // Fetch media URLs related to the post
-        const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.Id)?.mediaUrls || [];
+        const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
 
         // Calculate like count and comment count
-        const likeCount = likes.filter((like) => like.postId === post.Id).length;
-        const commentCount = comments.filter((comment) => comment.postId === post.Id).length;
-        const likeStatus = await getLikeStatus(post.Id);
+        const likeCount = likes.filter((like) => like.postId === post.id).length;
+        const commentCount = comments.filter((comment) => comment.postId === post.id).length;
+        const likeStatus = await getLikeStatus(post.id);
 
 
         const reactionRepository = AppDataSource.getRepository(Reaction);
 
         // Fetch reactions with related post data
         const reactions = await reactionRepository.find({
-          where: { post: { Id: In(postIds) } }, 
+          where: { post: { id: In(postIds) } }, 
           relations: ['post', 'user'], 
         });
         
-        const postReactions = reactions.filter((reaction) => reaction.post?.Id === post.Id);
+        const postReactions = reactions.filter((reaction) => reaction.post?.id === post.id);
         
         const totalReactions = postReactions.reduce((acc: Record<string, number>, reaction) => {
           if (reaction.reactionType) {
@@ -366,7 +366,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         
         // Fetch top 5 comments for the post
         const postComments = await commentRepository.find({
-          where: { postId: post.Id },
+          where: { postId: post.id },
           order: { createdAt: 'ASC' },
           take: 5,
         });
@@ -392,7 +392,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Return the formatted post object
         return {
           post: {
-            Id: post.Id,
+            Id: post.id,
             userId: post.userId,
             title: post.title,
             content: post.content,

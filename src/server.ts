@@ -44,6 +44,8 @@ import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
 import { initializeSocket } from './socket';
 import { Reaction } from './api/entity/posts/Reaction';
+import { Mention } from './api/entity/posts/Mention';
+import { Hashtag } from './api/entity/posts/Hashtag';
 // import { Wishlists } from './api/entity/WishLists/Wishlists';
 
 const logger = pino({ name: 'server start' });
@@ -73,7 +75,9 @@ const AppDataSource = new DataSource({
     PersonalDetails,
     Message,
     ProfileVisit,
-    Reaction
+    Reaction,
+    Mention,
+    Hashtag
     // Wishlists,
   ],
   synchronize: false,

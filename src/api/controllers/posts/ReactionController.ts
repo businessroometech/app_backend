@@ -27,7 +27,7 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
         }
 
         // Check if the post exists
-        const post = await UserPost.findOne({ where: { Id: postId } });
+        const post = await UserPost.findOne({ where: { id: postId } });
         if (!post) {
             return res.status(404).json({
                 status: "error",
@@ -40,7 +40,7 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
 
         // Find if the reaction already exists
         let reaction = await reactionRepository.findOne({
-            where: { user: { id: userId }, post: { Id: postId } },
+            where: { user: { id: userId }, post: { id: postId } },
         });
 
         if (reaction) {
@@ -90,7 +90,7 @@ export const removeReaction = async (req: Request, res: Response) => {
         }
 
         // Check if the post exists
-        const post = await UserPost.findOne({ where: { Id: postId } });
+        const post = await UserPost.findOne({ where: { id: postId } });
         if (!post) {
             return res.status(404).json({
                 status: "error",

@@ -7,6 +7,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -15,6 +16,7 @@ import {
 import { Connection } from '../connection/Connections';
 import { ProfileVisit } from '../notifications/ProfileVisit';
 import { Reaction } from '../posts/Reaction';
+import { Mention } from '../posts/Mention';
 
 interface Address {
   addressLine1: string;
@@ -152,7 +154,11 @@ export class PersonalDetails extends BaseEntity {
   profileVisitors!: ProfileVisit[];
 
   @OneToMany(() => Reaction, (reaction) => reaction.id, {
-    cascade: true, // Automatically saves or deletes related reactions
+    cascade: true, 
   })
   reactions!: Reaction[];
+
+  @ManyToMany(() => Mention, (mention) => mention.users)
+mentions!: Mention[];
+
 }

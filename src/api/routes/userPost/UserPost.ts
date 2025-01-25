@@ -3,6 +3,7 @@ import { CreateUserPost, DeleteUserPost, FindUserPost, getPosts, UpdateUserPost 
 import { createComment, createNestedComment, getComments, getNestedComments } from '@/api/controllers/posts/CommentController';
 import {  createLike, getAllLikesForPost, createCommentLike, getAllLikesForComment } from '@/api/controllers/posts/LikeController';
 import { createOrUpdateReaction, removeReaction } from '@/api/controllers/posts/ReactionController';
+import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
 
 const Router = express.Router();
 
@@ -23,6 +24,8 @@ Router.post('/get-nested-comments', getNestedComments);
 
 Router.post("/create-update-reaction", createOrUpdateReaction)
 Router.post("/remove-reaction", removeReaction)
+
+Router.post("/mention", suggestUsersByEmail)
 
 export default Router;
 
