@@ -68,7 +68,7 @@ const AppDataSource = new DataSource({
     ProfileVisit,
     Reaction
   ],
-  synchronize: false,
+  synchronize: true,
 });
 
 // Initialize the DataSource
