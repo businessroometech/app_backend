@@ -20,7 +20,8 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     // Emit to the recipient's room
     const io = getSocketInstance();
-    io.to(receiverId).emit('newMessage', message);
+    const roomId = `${senderId}-${receiverId}`;
+    io.to(roomId).emit('newMessage', message);
 
     return res.status(201).json({ success: true, data: { message } });
   } catch (error) {
