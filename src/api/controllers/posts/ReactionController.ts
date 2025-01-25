@@ -101,7 +101,7 @@ export const removeReaction = async (req: Request, res: Response) => {
         // Find the reaction for the given user and post
         const reactionRepository = AppDataSource.getRepository(Reaction);
         const reaction = await reactionRepository.findOne({
-            where: { user: { id: userId }, post: { Id: postId } },
+            where: { user: { id: userId }, post: { id: postId } },
         });
 
         if (!reaction) {

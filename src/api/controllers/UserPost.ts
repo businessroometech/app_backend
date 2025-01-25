@@ -7,6 +7,8 @@ import { Like } from '../entity/posts/Like';
 import { generatePresignedUrl } from './s3/awsControllers';
 import { In } from 'typeorm';
 import { Reaction } from '../entity/posts/Reaction';
+import { createMention } from './posts/Mention';
+import { Mention } from '../entity/posts/Mention';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -49,18 +51,54 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-    // Create a new post instance
-    const newPost = UserPost.create({
+    // Extract mentions from the content (e.g., @username)
+    const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+    const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
+
+    // Validate mentioned users
+    const mentionedUsers = await userRepos.findByIds(mentions);
+    const validMentionedUserIds = mentionedUsers.map((u) => u.id);
+
+    // Check if all mentioned users exist
+    if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
+      return res.status(404).json({
+        message: 'One or more mentioned users do not exist.',
+        invalidMentions: mentions.filter((m) => !validMentionedUserIds.includes(m)),
+      });
+    }
+
+    // Create the post
+    const postRepository = AppDataSource.getRepository(UserPost);
+    const newPost = postRepository.create({
       userId,
       title,
       content,
       hashtags,
       mediaKeys,
     });
-    await newPost.save();
+
+    const savedPost = await postRepository.save(newPost);
+
+    // Create mention entries for valid mentioned users
+    // if (validMentionedUserIds.length > 0) {
+    //   const mentionRepository = AppDataSource.getRepository(Mention);
+
+    //   const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
+    //     mentionRepository.create({
+    //       user: [user.id], 
+    //       postId: [savedPost.id], 
+    //       mentionBy: userId,
+    //       mentionTo: mentionedUserId,
+    //     })
+    //   );
+
+    //   await mentionRepository.save(mentionsToSave);
+    // }
+
     return res.status(201).json({
       message: 'Post created successfully.',
-      data: newPost,
+      data: savedPost,
+      // mentions: validMentionedUserIds,
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -199,7 +237,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
 // find and update user post
 export const UpdateUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, Id, title, content, hashtags, mentionId, mediaIds, likeIds, commentIds, shareIds } = req.body;
+    const { userId, id, title, content, hashtags, mentionId, mediaIds, likeIds, commentIds, shareIds } = req.body;
 
     // Check if the user ID exists in the PersonalDetails repository
     // Get the PersonalDetails repository
@@ -218,7 +256,7 @@ export const UpdateUserPost = async (req: Request, res: Response): Promise<Respo
     }
 
     // Find the user post
-    const userPost = await UserPost.findOne({ where: { Id } });
+    const userPost = await UserPost.findOne({ where: { id } });
 
     // Update the user post
     userPost!.title = title;
