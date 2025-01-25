@@ -29,6 +29,8 @@ import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
 import { Message } from './api/entity/chat/Message';
 // import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import { Message } from './api/entity/chat/Message';
+// import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
+import { Message } from './api/entity/chat/Message';
 import { Connection } from './api/entity/connection/Connections';
 import { Entrepreneur } from './api/entity/Entrepreneur/EntrepreneurProfile';
 import { Investor } from './api/entity/Investors/Investor';
@@ -40,8 +42,7 @@ import { CommentLike } from './api/entity/posts/CommentLike';
 import { Like } from './api/entity/posts/Like';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { UserPost } from './api/entity/UserPost';
-// import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
-import { Message } from './api/entity/chat/Message';
+import { Wishlists } from './api/entity/WishLists/Wishlists';
 import { initializeSocket } from './socket';
 
 const logger = pino({ name: 'server start' });
