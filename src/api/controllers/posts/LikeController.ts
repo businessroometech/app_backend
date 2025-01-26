@@ -5,6 +5,7 @@ import { CommentLike } from '@/api/entity/posts/CommentLike';
 import { Notifications } from '@/api/entity/notifications/Notifications';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { UserPost } from '@/api/entity/UserPost';
+import { WebSocketNotification } from '../notifications/SocketNotificationController';
 
 export const createLike = async (req: Request, res: Response) => {
     try {
@@ -28,7 +29,7 @@ export const createLike = async (req: Request, res: Response) => {
 
          // Get the post and user information
     const postRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await postRepo.findOne({ where: { Id: postId } });
+    const userPost = await postRepo.findOne({ where: { id: postId } });
     
     if (!userPost) {
       return res.status(404).json({
@@ -49,14 +50,20 @@ export const createLike = async (req: Request, res: Response) => {
     }
 
     // Create a notification
-    const notificationRepo = AppDataSource.getRepository(Notifications);
-    let notification = notificationRepo.create({
-      userId: userInfo.id,
-      message: `${commenterInfo.firstName} ${commenterInfo.lastName} Like your post`,
-      navigation: `/feed/home#${postId}`,
-    });
-    notification =  await notificationRepo.save(notification);
+    // const notificationRepo = AppDataSource.getRepository(Notifications);
+    // let notification = notificationRepo.create({
+    //   userId: userInfo.id,
+    //   message: `${commenterInfo.firstName} ${commenterInfo.lastName} Like your post`,
+    //   navigation: `/feed/home#${postId}`,
+    // });
+    // notification =  await notificationRepo.save(notification);
 
+
+    WebSocketNotification.sendLikeNotification(req,{
+        userId: userInfo.id,
+        message: `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
+        mediaUrl: "",
+    } as any);
         return res.status(200).json({ status: "success", message: 'Like status updated.', data: { like } });
     } catch (error) {
         console.error(error);
@@ -109,7 +116,7 @@ export const createCommentLike = async (req: Request, res: Response) => {
 
             // Get the post and user information
     const postRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await postRepo.findOne({ where: { Id: postId } });
+    const userPost = await postRepo.findOne({ where: { id: postId } });
     
     if (!userPost) {
       return res.status(404).json({

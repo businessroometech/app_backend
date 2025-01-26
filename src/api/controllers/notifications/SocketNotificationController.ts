@@ -3,52 +3,52 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { AppDataSource } from '@/server';
 // import WebSocket, { WebSocketServer } from 'ws';
 
-import { getSocketInstance } from '../../../socket'; 
+import { getSocketInstance } from '../../../socket';
 import { Request, Response } from 'express';
 
 class WebSocketNotification {
-//   private static wss: WebSocketServer;
-//   private static clients: Map<string, WebSocket> = new Map();
+  //   private static wss: WebSocketServer;
+  //   private static clients: Map<string, WebSocket> = new Map();
 
-//   // Initialize WebSocket server
-//   public static initialize(port: number) {
-//     this.wss = new WebSocketServer({ port });
-//     console.log(`WebSocket server initialized on port ${port}`);
+  //   // Initialize WebSocket server
+  //   public static initialize(port: number) {
+  //     this.wss = new WebSocketServer({ port });
+  //     console.log(`WebSocket server initialized on port ${port}`);
 
-//     this.wss.on('connection', (ws: WebSocket) => {
-//       console.log('New client connected.');
+  //     this.wss.on('connection', (ws: WebSocket) => {
+  //       console.log('New client connected.');
 
-//       ws.on('message', (data) => {
-//         try {
-//           const parsedData = JSON.parse(data.toString());
-//           if (parsedData.type === 'join') {
-//             const { userId } = parsedData;
-//             console.log(`User joined: ${userId}`);
-//             this.clients.set(userId, ws);
-//           }
-//         } catch (err) {
-//           console.error('Error parsing WebSocket message:', err);
-//         }
-//       });
+  //       ws.on('message', (data) => {
+  //         try {
+  //           const parsedData = JSON.parse(data.toString());
+  //           if (parsedData.type === 'join') {
+  //             const { userId } = parsedData;
+  //             console.log(`User joined: ${userId}`);
+  //             this.clients.set(userId, ws);
+  //           }
+  //         } catch (err) {
+  //           console.error('Error parsing WebSocket message:', err);
+  //         }
+  //       });
 
-//       ws.on('close', () => {
-//         console.log('Client disconnected.');
-//         this.removeClient(ws);
-//       });
+  //       ws.on('close', () => {
+  //         console.log('Client disconnected.');
+  //         this.removeClient(ws);
+  //       });
 
-//       // Welcome message for new connections
-//       ws.send(JSON.stringify({ message: 'Welcome to WebSocket notifications!' }));
-//     });
-//   }
+  //       // Welcome message for new connections
+  //       ws.send(JSON.stringify({ message: 'Welcome to WebSocket notifications!' }));
+  //     });
+  //   }
 
-//   private static removeClient(ws: WebSocket) {
-//     for (const [userId, client] of this.clients.entries()) {
-//       if (client === ws) {
-//         this.clients.delete(userId);
-//         break;
-//       }
-//     }
-//   }
+  //   private static removeClient(ws: WebSocket) {
+  //     for (const [userId, client] of this.clients.entries()) {
+  //       if (client === ws) {
+  //         this.clients.delete(userId);
+  //         break;
+  //       }
+  //     }
+  //   }
 
   // Send notification to a specific user
   public static sendNotification = async (req: Request, res: Response) => {
@@ -66,16 +66,24 @@ class WebSocketNotification {
         return res.status(404).json({ success: false, message: 'User ID is invalid or does not exist.' });
       }
 
-      const notification = new Notifications();
-      notification.userId = userId;
-      notification.message = message;
-      notification.mediaUrl = mediaUrl
-      notification.createdBy = 'Live';
-      await AppDataSource.manager.save(notification);
+      // Create a new notification
+      const notificationRepo = AppDataSource.getRepository(Notifications);
+      const notification = notificationRepo.create({
+        userId,
+        message,
+        mediaUrl: mediaUrl || "",
+        createdBy: "Live",
+      });
 
- const io = getSocketInstance();
-    io.to(userId).emit('newMessage', notification);
-      return res.status(200).json({ message: 'Notification sent successfully' });
+      // Send notification via WebSocket
+      const io = getSocketInstance();
+      const noticeInfo = io.to(userId).emit("notifications", { message, mediaUrl });
+
+      if (noticeInfo) {
+        await notificationRepo.save(notification); // Save notification in the database
+        return res.status(200).json({ success: true, message: "Notification sent successfully" });
+      }
+      
     } catch (error) {
       console.error('Error sending notification:', error);
       return res.status(500).json({ error: 'Error sending notification' });
@@ -122,14 +130,14 @@ class WebSocketNotification {
       const notification = new Notifications();
       notification.userId = userId;
       notification.message = `Your post with ID ${postId} was liked.`;
-      notification.createdBy = 'Like';
+      notification.createdBy = 'Live';
       await AppDataSource.manager.save(notification);
 
-    //   const client = this.clients.get(userId);
-    //   if (client && client.readyState === WebSocket.OPEN) {
-    //     client.send(JSON.stringify({ type: 'receive-notification', message: notification.message }));
-    //     console.log(`Like notification sent to user ${userId}: ${notification.message}`);
-    //   }
+      //   const client = this.clients.get(userId);
+      //   if (client && client.readyState === WebSocket.OPEN) {
+      //     client.send(JSON.stringify({ type: 'receive-notification', message: notification.message }));
+      //     console.log(`Like notification sent to user ${userId}: ${notification.message}`);
+      //   }
 
       return res.status(200).json({ message: 'Like notification sent successfully' });
     } catch (error) {
@@ -139,14 +147,14 @@ class WebSocketNotification {
   };
 
   // Broadcast notification to all connected clients
-//   public static broadcastNotification(message: string) {
-//     this.clients.forEach((client) => {
-//       if (client.readyState === WebSocket.OPEN) {
-//         client.send(JSON.stringify({ type: 'receive-notification', message }));
-//       }
-//     });
-//     console.log(`Broadcast notification: ${message}`);
-//   }
+  //   public static broadcastNotification(message: string) {
+  //     this.clients.forEach((client) => {
+  //       if (client.readyState === WebSocket.OPEN) {
+  //         client.send(JSON.stringify({ type: 'receive-notification', message }));
+  //       }
+  //     });
+  //     console.log(`Broadcast notification: ${message}`);
+  //   }
 }
 
 export { WebSocketNotification };
