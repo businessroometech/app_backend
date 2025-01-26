@@ -112,50 +112,77 @@ export class WebSocketNotification {
     }
   };
 
-  // Send "like" notification to a specific user
-  public static sendLikeNotification = async (req: Request, res: Response) => {
-    const { userId, postId } = req.body;
 
-    if (!userId || !postId) {
-      return res.status(400).json({ error: 'userId and postId are required' });
+  public static markRead = async (req: Request, res: Response) => {
+    const { notificationId } = req.body;
+
+    if (!notificationId ) {
+      return res.status(400).json({ error: "notificationId required" });
     }
 
     try {
-      const userRepos = AppDataSource.getRepository(PersonalDetails);
-      const user = await userRepos.findOne({ where: { id: userId } });
+      const notificationRepo = AppDataSource.getRepository(Notifications);
 
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User ID is invalid or does not exist.' });
+      let  notification = await notificationRepo.findOne({ where: { id: notificationId } });
+
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found or invalid userId" });
       }
 
-      const notification = new Notifications();
-      notification.userId = userId;
-      notification.message = `Your post with ID ${postId} was liked.`;
-      notification.createdBy = 'Live';
-      await AppDataSource.manager.save(notification);
+      // Update the notification as read
+      notification.isRead = true;
+     notification =  await notificationRepo.save(notification);
 
-      //   const client = this.clients.get(userId);
-      //   if (client && client.readyState === WebSocket.OPEN) {
-      //     client.send(JSON.stringify({ type: 'receive-notification', message: notification.message }));
-      //     console.log(`Like notification sent to user ${userId}: ${notification.message}`);
-      //   }
+      // Emit real-time event to update the client
+      const io = getSocketInstance();
+      io.to(notification.userId).emit("notificationUpdated", notification);
 
-      return res.status(200).json({ message: 'Like notification sent successfully' });
+      return res.status(200).json({ success: true, message: "Notification marked as read" });
     } catch (error) {
-      console.error('Error sending like notification:', error);
-      return res.status(500).json({ error: 'Error sending like notification' });
+      console.error("Error marking notification as read:", error);
+      return res.status(500).json({ error: "Error marking notification as read" });
+    }
+  };
+
+  // Mark all notifications as read
+  public static markAllRead = async (req: Request, res: Response) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    try {
+      const notificationRepo = AppDataSource.getRepository(Notifications);
+
+      // Update all unread notifications for the user
+     const notification =  await notificationRepo
+        .createQueryBuilder()
+        .update(Notifications)
+        .set({ isRead: true })
+        .where("userId = :userId AND isRead = false", { userId })
+        .execute();
+
+      // Emit real-time event to update all notifications on the client
+      const io = getSocketInstance();
+      io.to(userId).emit("allNotificationsUpdated", notification);
+
+      return res.status(200).json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      return res.status(500).json({ error: "Error marking all notifications as read" });
     }
   };
 
   // Broadcast notification to all connected clients
-  //   public static broadcastNotification(message: string) {
-  //     this.clients.forEach((client) => {
-  //       if (client.readyState === WebSocket.OPEN) {
-  //         client.send(JSON.stringify({ type: 'receive-notification', message }));
-  //       }
-  //     });
-  //     console.log(`Broadcast notification: ${message}`);
-  //   }
+    public static broadcastNotification(message: string) {
+      // this.clients.forEach((client) => {
+      //   if (client.readyState === WebSocket.OPEN) {
+      //     client.send(JSON.stringify({ type: 'receive-notification', message }));
+      //   }
+      // });
+      console.log(`Broadcast notification: ${message}`);
+    }
 }
 
 
@@ -188,7 +215,7 @@ export class WebSocketNotification {
 
       // Send notification via WebSocket
       const io = getSocketInstance();
-      const noticeInfo = io.to(userId).emit("notifications", { message, mediaUrl });
+      const noticeInfo = io.to(userId).emit("notifications", notification);
 
       if (noticeInfo) {
         await notificationRepo.save(notification); 
