@@ -120,12 +120,6 @@ export class PersonalDetails extends BaseEntity {
   })
   updatedAt!: Date;
 
-  @Column({ type: "boolean", default: false })
-  isOnline !: boolean;
-
-  // @Column({ type: 'int', default: 0 })
-  // active!: number;
-
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();

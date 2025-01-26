@@ -80,7 +80,7 @@ const AppDataSource = new DataSource({
     Hashtag,
     Wishlists,
   ],
-  synchronize: false,
+  synchronize: true,
 });
 
 // Initialize the DataSource
