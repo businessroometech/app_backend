@@ -27,7 +27,6 @@ import WishlistsRoutes from '../src/api/routes/Wishlists/WishlistsRoutes';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
 import { Message } from './api/entity/chat/Message';
-import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 // import { Message } from './api/entity/chat/Message';
 // import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 // import { Message } from './api/entity/chat/Message';
@@ -39,14 +38,15 @@ import { ProfileVisit } from './api/entity/notifications/ProfileVisit';
 import { PersonalDetails } from './api/entity/personal/PersonalDetails';
 import { Comment } from './api/entity/posts/Comment';
 import { CommentLike } from './api/entity/posts/CommentLike';
-import { Like } from './api/entity/posts/Like';
-import { NestedComment } from './api/entity/posts/NestedComment';
-import { UserPost } from './api/entity/UserPost';
-import { initializeSocket } from './socket';
-import { Reaction } from './api/entity/posts/Reaction';
-import { Mention } from './api/entity/posts/Mention';
 import { Hashtag } from './api/entity/posts/Hashtag';
-// import { Wishlists } from './api/entity/WishLists/Wishlists';
+import { Like } from './api/entity/posts/Like';
+import { Mention } from './api/entity/posts/Mention';
+import { NestedComment } from './api/entity/posts/NestedComment';
+import { Reaction } from './api/entity/posts/Reaction';
+import { UserPost } from './api/entity/UserPost';
+import { Wishlists } from './api/entity/WishLists/Wishlists';
+import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
+import { initializeSocket } from './socket';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -78,7 +78,7 @@ const AppDataSource = new DataSource({
     Reaction,
     Mention,
     Hashtag,
-    // Wishlists,
+    Wishlists,
   ],
   synchronize: false,
 });
