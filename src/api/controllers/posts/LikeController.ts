@@ -52,7 +52,7 @@ export const createLike = async (req: Request, res: Response) => {
     }
 
     const media =  commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId:null
-    let notification =  await  sendNotification(userInfo.id, `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,media)
+    let notification =  await  sendNotification(userInfo.id, `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,media, `/feed/home#${postId}`)
     if(userInfo.id ===userId){
         return   res.status(200).json({ status: "success", message: 'Like status updated.', data: { like } });
     }

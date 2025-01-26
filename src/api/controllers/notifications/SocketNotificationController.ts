@@ -162,7 +162,7 @@ export class WebSocketNotification {
 
 
   // Send notification component 
-  export const sendNotification = async (userId:string, message:string, mediakey:any) => {
+  export const sendNotification = async (userId:string, message:string, mediakey:any, navigation:string) => {
     
     if (!userId || !message) {
       return 'userId and message are required' ;
@@ -182,6 +182,7 @@ export class WebSocketNotification {
         userId,
         message,
         mediaUrl: mediaUrl || "",
+        navigation,
         createdBy: "Live",
       });
 
