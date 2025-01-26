@@ -7,7 +7,7 @@ import { authenticate } from '../../middlewares/auth/Authenticate';
 import { generateUploadUrl, getDocumentFromBucket } from "../../controllers/s3/awsControllers";
 import { getUserProfile, ProfileVisitController, UpdateUserProfile } from '@/api/controllers/profile/UserProfile';
 import { sendResetEmail, resetPassword } from "@/api/controllers/auth/ResetPassword";
-import { markOnline } from "@/api/controllers/auth/check";
+import { getOnlineUsers } from "../../../socket";
 // import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 
 const Router = express.Router();
@@ -36,7 +36,7 @@ Router.post('/recored-visit', ProfileVisitController.recordVisit)
 Router.post('/get-profile-visit', ProfileVisitController.getMyProfileVisits)
 Router.post('/get-profile-visited', ProfileVisitController.getProfilesIVisited)
 
-Router.post('/online-users', markOnline);
+Router.post('/online-users', getOnlineUsers);
 
 export default Router;
 
