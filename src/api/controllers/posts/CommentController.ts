@@ -28,7 +28,7 @@ export const createComment = async (req: Request, res: Response) => {
 
      // Get the post and user information
      const postRepo = AppDataSource.getRepository(UserPost);
-     const userPost = await postRepo.findOne({ where: { Id: postId } });
+     const userPost = await postRepo.findOne({ where: { id: postId } });
      
      if (!userPost) {
        return res.status(404).json({
