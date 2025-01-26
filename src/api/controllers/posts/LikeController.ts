@@ -5,7 +5,8 @@ import { CommentLike } from '@/api/entity/posts/CommentLike';
 import { Notifications } from '@/api/entity/notifications/Notifications';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { UserPost } from '@/api/entity/UserPost';
-import { WebSocketNotification } from '../notifications/SocketNotificationController';
+import { sendNotification, WebSocketNotification } from '../notifications/SocketNotificationController';
+import { generatePresignedUrl } from '../s3/awsControllers';
 
 export const createLike = async (req: Request, res: Response) => {
     try {
@@ -38,6 +39,7 @@ export const createLike = async (req: Request, res: Response) => {
       });
     }
 
+    
     const personalRepo = AppDataSource.getRepository(PersonalDetails);
     const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
     const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
@@ -49,22 +51,14 @@ export const createLike = async (req: Request, res: Response) => {
       });
     }
 
-    // Create a notification
-    // const notificationRepo = AppDataSource.getRepository(Notifications);
-    // let notification = notificationRepo.create({
-    //   userId: userInfo.id,
-    //   message: `${commenterInfo.firstName} ${commenterInfo.lastName} Like your post`,
-    //   navigation: `/feed/home#${postId}`,
-    // });
-    // notification =  await notificationRepo.save(notification);
-
-
-    WebSocketNotification.sendLikeNotification(req,{
-        userId: userInfo.id,
-        message: `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
-        mediaUrl: "",
-    } as any);
-        return res.status(200).json({ status: "success", message: 'Like status updated.', data: { like } });
+    const media =  commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId:null
+    let notification =  await  sendNotification(userInfo.id, `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,media)
+    if(userInfo.id ===userId){
+        return   res.status(200).json({ status: "success", message: 'Like status updated.', data: { like } });
+    }
+    if(notification){
+        return res.status(200).json({ status: "success", message: 'Like status updated.', data: { like , notification}})
+    }
     } catch (error) {
         console.error(error);
         return res.status(500).json({ status: "error", message: 'Internal Server Error', error });

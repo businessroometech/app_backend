@@ -5,8 +5,9 @@ import { AppDataSource } from '@/server';
 
 import { getSocketInstance } from '../../../socket';
 import { Request, Response } from 'express';
+import { generatePresignedUrl } from '../s3/awsControllers';
 
-class WebSocketNotification {
+export class WebSocketNotification {
   //   private static wss: WebSocketServer;
   //   private static clients: Map<string, WebSocket> = new Map();
 
@@ -80,7 +81,7 @@ class WebSocketNotification {
       const noticeInfo = io.to(userId).emit("notifications", { message, mediaUrl });
 
       if (noticeInfo) {
-        await notificationRepo.save(notification); // Save notification in the database
+        await notificationRepo.save(notification); 
         return res.status(200).json({ success: true, message: "Notification sent successfully" });
       }
       
@@ -157,4 +158,44 @@ class WebSocketNotification {
   //   }
 }
 
-export { WebSocketNotification };
+
+
+
+  // Send notification component 
+  export const sendNotification = async (userId:string, message:string, mediakey:any) => {
+    
+    if (!userId || !message) {
+      return 'userId and message are required' ;
+    }
+
+    try {
+      const userRepos = AppDataSource.getRepository(PersonalDetails);
+      const user = await userRepos.findOne({ where: { id: userId } });
+
+      if (!user) {
+        return  'User ID is invalid or does not exist.';
+      }
+      const mediaUrl =  mediakey ?  await generatePresignedUrl(mediakey): null
+      // Create a new notification
+      const notificationRepo = AppDataSource.getRepository(Notifications);
+      const notification = notificationRepo.create({
+        userId,
+        message,
+        mediaUrl: mediaUrl || "",
+        createdBy: "Live",
+      });
+
+      // Send notification via WebSocket
+      const io = getSocketInstance();
+      const noticeInfo = io.to(userId).emit("notifications", { message, mediaUrl });
+
+      if (noticeInfo) {
+        await notificationRepo.save(notification); 
+        return  "Notification sent successfully" ;
+      }
+      
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      return 'Error sending notification' ;
+    }
+  };
