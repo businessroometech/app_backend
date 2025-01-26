@@ -19,6 +19,9 @@ export class Notifications {
   @Column({ type: 'boolean', default: false })
   isRead!: boolean;
 
+  @Column({ type: 'char', nullable:true})
+  mediaUrl!: string;
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
