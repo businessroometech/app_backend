@@ -4,6 +4,7 @@ import validator from 'validator';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
+import { sendNotification } from '../notifications/SocketNotificationController';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   const queryRunner = AppDataSource.createQueryRunner();
@@ -64,7 +65,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
 
     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
-  
+
     const newUser = userLoginRepository.create({
       firstName,
       lastName,
@@ -77,7 +78,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       updatedBy,
     });
 
-    await userLoginRepository.save(newUser);
+    const user = await userLoginRepository.save(newUser);
 
     // Generate a verification token
     const verificationToken = jwt.sign({ userId: newUser.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
@@ -86,14 +87,23 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     await sendVerificationEmail(newUser.emailAddress, verificationToken);
 
     await queryRunner.commitTransaction();
+    const media = null;
+    let notification = await sendNotification(
+      user.id,
+     `${firstName} ${lastName}, Welcome! to Businessroom.ai, let's complete your profile`,
+      media,
+      `/settings/account`
+    );
 
-    res.status(201).json({
-      status: 'success',
-      message: 'Signup completed successfully. Please verify your email.',
-      data: {
-        user: newUser,
-      },
-    });
+    if (notification) {
+      res.status(201).json({
+        status: 'success',
+        message: 'Signup completed successfully. Please verify your email.',
+        data: {
+          user: newUser
+        },
+      });
+    }
   } catch (error: any) {
     if (queryRunner.isTransactionActive) {
       await queryRunner.rollbackTransaction();
@@ -127,14 +137,14 @@ const sendVerificationEmail = async (email: string, verificationToken: string) =
       port: 465,
       secure: true,
       auth: {
-        user: "ashutoshnegi196@gmail.com",
-       pass: "ctcbnmvlouaildzd"
-     },
-   });
+        user: 'ashutoshnegi196@gmail.com',
+        pass: 'ctcbnmvlouaildzd',
+      },
+    });
 
-   // Email content
-   const mailOptions = {
-       from: 'ashutoshnegi196@gmail.com',
+    // Email content
+    const mailOptions = {
+      from: 'ashutoshnegi196@gmail.com',
       to: email,
       subject: 'Verify Your Email Address',
       html: `
@@ -278,7 +288,6 @@ const sendVerificationEmail = async (email: string, verificationToken: string) =
     console.error('Error sending verification email:', error);
   }
 };
-
 
 // import { Request, Response } from 'express';
 // import { UserLogin } from '../../entity/user/UserLogin';

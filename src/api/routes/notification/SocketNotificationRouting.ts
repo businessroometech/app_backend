@@ -6,5 +6,7 @@ const router = express.Router();
 // API to trigger notifications
 router.post('/send',WebSocketNotification.sendNotification)
 router.get('/get', WebSocketNotification.getNotification);
+router.post('/mark-read', WebSocketNotification.markRead);
+router.post('/mark-all-read', WebSocketNotification.markAllRead);
 
 export default router;

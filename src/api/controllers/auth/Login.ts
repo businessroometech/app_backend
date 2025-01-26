@@ -160,14 +160,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     // Create a login notification
-    const notificationRepos = AppDataSource.getRepository(Notifications);
-    const notification = notificationRepos.create({
-      userId: user.id,
-      message: 'Welcome to Businessroom! You have successfully logged in.',
-      navigation: '/',
-    });
+    // const notificationRepos = AppDataSource.getRepository(Notifications);
+    // const notification = notificationRepos.create({
+    //   userId: user.id,
+    //   message: 'Welcome to Businessroom! You have successfully logged in.',
+    //   navigation: '/',
+    // });
 
-    await notificationRepos.save(notification);
+    // await notificationRepos.save(notification);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
