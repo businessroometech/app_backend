@@ -1,7 +1,7 @@
 import express from 'express';
 import { CreateUserPost, DeleteUserPost, FindUserPost, getPosts, UpdateUserPost } from '@/api/controllers/UserPost';
 import { createComment, createNestedComment, getComments, getNestedComments, deleteComment, deleteNestedComment } from '@/api/controllers/posts/CommentController';
-import { createLike, getAllLikesForPost, createCommentLike, getAllLikesForComment } from '@/api/controllers/posts/LikeController';
+import { createLike, getAllLikesForPost, createCommentLike, getAllLikesForComment, getUserPostLikeList, getPostCommentersList } from '@/api/controllers/posts/LikeController';
 import { createOrUpdateReaction, removeReaction } from '@/api/controllers/posts/ReactionController';
 import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
 
@@ -21,6 +21,9 @@ Router.post('/create-nested-comment', createNestedComment);
 Router.post('/get-likes', getAllLikesForPost);
 Router.post('/get-comments', getComments);
 Router.post('/get-nested-comments', getNestedComments);
+
+Router.post('/get-post-likes-list', getUserPostLikeList);
+Router.post('/get-post-commenter-list', getPostCommentersList);
 
 Router.delete('/comments', deleteComment);
 Router.delete('/nested-comments', deleteNestedComment);

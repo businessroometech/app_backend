@@ -7,6 +7,8 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification, WebSocketNotification } from '../notifications/SocketNotificationController';
 import { generatePresignedUrl } from '../s3/awsControllers';
+import { In } from 'typeorm';
+import { Comment } from '@/api/entity/posts/Comment';
 
 export const createLike = async (req: Request, res: Response) => {
     try {
@@ -168,3 +170,77 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
     }
 };
+
+// userlike list for post
+export const getUserPostLikeList = async (req: Request, res: Response) => {
+    try {
+        const { postId } = req.body;
+
+        if (!postId) {
+            return res.status(400).json({ status: "error", message: 'postId is required.' });
+        }
+        const likeRepository = AppDataSource.getRepository(Like);
+
+        const likes = await likeRepository.find({ where: { postId } });
+
+        if(!likes){
+            return res.status(404).json({ status: "error", message: 'post not available.' });
+        }
+        if(likes.length === 0){
+            return res.status(404).json({ status: "error", message: 'No likes available for this post.' });
+        }
+
+        const personalRepo = AppDataSource.getRepository(PersonalDetails);
+        let users = await personalRepo.find({ where: { id: In(likes.map(like => like.userId)) } });
+
+        const likers = await Promise.all(
+            users.map(async (user) => ({
+                ...user,
+                likerUrl: user.profilePictureUploadId ? await  generatePresignedUrl(user.profilePictureUploadId) : null,
+            }))
+          );
+
+        return res.status(200).json({ status: "success", message: 'Likes fetched successfully.', data: { likers } });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
+    }
+};
+
+// post commenters list 
+export const getPostCommentersList = async (req: Request, res: Response) => {
+    try {
+        const { postId } = req.body;
+
+        if (!postId) {
+            return res.status(400).json({ status: "error", message: 'postId is required.' });
+        }
+
+        const commentLikeRepository = AppDataSource.getRepository(Comment);
+
+        const comment= await commentLikeRepository.find({ where: { postId } });
+
+        if (!comment) {
+            return res.status(404).json({ status: "error", message: 'Post not available.' });
+        }
+        if (comment.length === 0) {
+            return res.status(404).json({ status: "error", message: 'No comments available for this post.' });
+        }
+
+        const personalRepo = AppDataSource.getRepository(PersonalDetails);
+        let users = await personalRepo.find({ where: { id: In(comment.map(comm => comm.userId)) } });
+
+        const commenters = await Promise.all(
+            users.map(async (user) => ({
+                ...user,
+                commenterUrl: user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
+            }))
+        );
+
+        return res.status(200).json({ status: "success", message: 'Commenters fetched successfully.', data: { commenters } });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
+    }
+};
+

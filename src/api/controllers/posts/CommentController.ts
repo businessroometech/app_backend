@@ -7,21 +7,22 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { CommentLike } from '@/api/entity/posts/CommentLike';
 import { Notifications } from '@/api/entity/notifications/Notifications';
 import { UserPost } from '@/api/entity/UserPost';
+import { sendNotification } from '../notifications/SocketNotificationController';
 
 export const createComment = async (req: Request, res: Response) => {
   try {
     const { userId, postId, text } = req.body;
 
     if (!userId || !postId || !text) {
-      return res.status(400).json({ status: "error", message: 'userId, postId, and text are required.' });
+      return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
 
     const comment = Comment.create({
       userId,
       postId,
       text,
-      createdBy: "system",
-      updatedBy: "system",
+      createdBy: 'system',
+      updatedBy: 'system',
     });
 
     await comment.save();
@@ -32,7 +33,7 @@ export const createComment = async (req: Request, res: Response) => {
 
     if (!userPost) {
       return res.status(404).json({
-        status: "error",
+        status: 'error',
         message: 'Post not found.',
       });
     }
@@ -43,25 +44,35 @@ export const createComment = async (req: Request, res: Response) => {
 
     if (!userInfo || !commenterInfo) {
       return res.status(404).json({
-        status: "error",
+        status: 'error',
         message: 'User information not found.',
       });
     }
 
     // Create a notification
-    const notificationRepo = AppDataSource.getRepository(Notifications);
-    let notification = notificationRepo.create({
-      userId: userInfo.id,
-      message: `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
-      navigation: `/feed/home#${postId}`,
-    });
-    // Save the notification
-    notification = await notificationRepo.save(notification);
+    // const notificationRepo = AppDataSource.getRepository(Notifications);
+    // let notification = notificationRepo.create({
+    //   userId: userInfo.id,
+    //   message: `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
+    //   navigation: `/feed/home#${postId}`,
+    // });
+    // // Save the notification
+    // notification = await notificationRepo.save(notification);
 
-    return res.status(201).json({ status: "success", message: 'Comment created successfully.', data: { comment } });
+    const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
+    let notification = await sendNotification(
+      userPost.userId,
+      `${commenterInfo.firstName} ${commenterInfo.lastName}, Comment on your post`,
+      media,
+      `/feed/home#${postId}`
+    );
+
+    if (notification) {
+      return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
+    }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
 
@@ -88,13 +99,12 @@ export const deleteComment = async (req: Request, res: Response) => {
   }
 };
 
-
 export const getComments = async (req: Request, res: Response) => {
   try {
     const { userId, postId, page = 1, limit = 5 } = req.body;
 
     if (!postId) {
-      return res.status(400).json({ status: "error", message: "postId is required." });
+      return res.status(400).json({ status: 'error', message: 'postId is required.' });
     }
 
     const currentPage = Math.max(Number(page), 1);
@@ -105,7 +115,7 @@ export const getComments = async (req: Request, res: Response) => {
 
     const comments = await commentRepository.find({
       where: { postId },
-      order: { createdAt: "ASC" },
+      order: { createdAt: 'ASC' },
       take: itemsPerPage,
       skip,
     });
@@ -116,27 +126,26 @@ export const getComments = async (req: Request, res: Response) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ["firstName", "lastName", 'id'],
+          select: ['firstName', 'lastName', 'id'],
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
 
         return {
           id: comment.id,
-          commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`.trim(),
+          commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
           likeStatus: commentLike?.status,
           commenterId: commenter?.id,
-
         };
       })
     );
 
     return res.status(200).json({
-      status: "success",
-      message: "Comments fetched successfully.",
+      status: 'success',
+      message: 'Comments fetched successfully.',
       data: {
         comments: formattedComments,
         pagination: {
@@ -147,10 +156,10 @@ export const getComments = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Error fetching comments:", error);
+    console.error('Error fetching comments:', error);
     return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
+      status: 'error',
+      message: 'Internal Server Error',
       error: error.message,
     });
   }
@@ -161,7 +170,7 @@ export const createNestedComment = async (req: Request, res: Response) => {
     const { userId, postId, commentId, text, createdBy } = req.body;
 
     if (!userId || !postId || !text) {
-      return res.status(400).json({ status: "error", message: 'userId, postId, and text are required.' });
+      return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
 
     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
@@ -175,12 +184,24 @@ export const createNestedComment = async (req: Request, res: Response) => {
       updatedBy: createdBy || 'system',
     });
 
-    await nestedCommentRepo.save(comment);
+  const user =   await nestedCommentRepo.save(comment);
 
-    return res.status(201).json({ status: "success", message: 'Comment created successfully.', data: { comment } });
+  const userRepo = AppDataSource.getRepository(PersonalDetails);
+  const finduser = await userRepo.findOne({where: {id: user.id}});
+    const media = finduser ? (finduser.profilePictureUploadId? finduser.profilePictureUploadId :null) : null;
+    let notification = await sendNotification(
+      commentId.userId,
+      finduser? `${finduser.firstName} ${finduser.lastName}, Comment on your post`: 'New Comment on your post',
+      media,
+      `/feed/home#${postId}`
+    );
+
+    if (notification) {
+    return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
+    }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
 
@@ -212,7 +233,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
     const { commentId } = req.body;
 
     if (!commentId) {
-      return res.status(400).json({ status: "success", message: 'commentId is required.' });
+      return res.status(400).json({ status: 'success', message: 'commentId is required.' });
     }
 
     const nestedCommentRepository = AppDataSource.getRepository(NestedComment);
@@ -227,21 +248,21 @@ export const getNestedComments = async (req: Request, res: Response) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ["firstName", "lastName", 'id'],
+          select: ['firstName', 'lastName', 'id'],
         });
 
-        // Create a notification
-        const notificationRepos = AppDataSource.getRepository(Notifications);
-        let notification = notificationRepos.create({
-          userId: comment.userId,
-          message: ` ${commenter?.firstName} ${commenter?.lastName} replied your comment`,
-          navigation: `/feed/home#${comment.id}`,
-        });
-        notification = await notificationRepos.save(notification);
+        // // Create a notification
+        // const notificationRepos = AppDataSource.getRepository(Notifications);
+        // let notification = notificationRepos.create({
+        //   userId: comment.userId,
+        //   message: ` ${commenter?.firstName} ${commenter?.lastName} replied your comment`,
+        //   navigation: `/feed/home#${comment.id}`,
+        // });
+        // notification = await notificationRepos.save(notification);
 
         return {
           id: comment.id,
-          commenterName: `${commenter?.firstName || ""} ${commenter?.lastName || ""}`.trim(),
+          commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
@@ -250,13 +271,17 @@ export const getNestedComments = async (req: Request, res: Response) => {
         };
       })
     );
+    
 
     return res
       .status(200)
-      .json({ status: "success", message: 'Nested comments fetched successfully.', data: { nestedComments: formattedNestedComments } });
+      .json({
+        status: 'success',
+        message: 'Nested comments fetched successfully.',
+        data: { nestedComments: formattedNestedComments },
+      });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
-
