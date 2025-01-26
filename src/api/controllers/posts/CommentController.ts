@@ -26,44 +26,69 @@ export const createComment = async (req: Request, res: Response) => {
 
     await comment.save();
 
-     // Get the post and user information
-     const postRepo = AppDataSource.getRepository(UserPost);
-     const userPost = await postRepo.findOne({ where: { id: postId } });
-     
-     if (!userPost) {
-       return res.status(404).json({
-         status: "error",
-         message: 'Post not found.',
-       });
-     }
- 
-     const personalRepo = AppDataSource.getRepository(PersonalDetails);
-     const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
-     const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
- 
-     if (!userInfo || !commenterInfo) {
-       return res.status(404).json({
-         status: "error",
-         message: 'User information not found.',
-       });
-     }
- 
-     // Create a notification
-     const notificationRepo = AppDataSource.getRepository(Notifications);
-     let notification = notificationRepo.create({
-       userId: userInfo.id,
-       message: `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
-       navigation: `/feed/home#${postId}`,
-     });
-     // Save the notification
-     notification = await notificationRepo.save(notification);
- 
+    // Get the post and user information
+    const postRepo = AppDataSource.getRepository(UserPost);
+    const userPost = await postRepo.findOne({ where: { id: postId } });
+
+    if (!userPost) {
+      return res.status(404).json({
+        status: "error",
+        message: 'Post not found.',
+      });
+    }
+
+    const personalRepo = AppDataSource.getRepository(PersonalDetails);
+    const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
+    const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+
+    if (!userInfo || !commenterInfo) {
+      return res.status(404).json({
+        status: "error",
+        message: 'User information not found.',
+      });
+    }
+
+    // Create a notification
+    const notificationRepo = AppDataSource.getRepository(Notifications);
+    let notification = notificationRepo.create({
+      userId: userInfo.id,
+      message: `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
+      navigation: `/feed/home#${postId}`,
+    });
+    // Save the notification
+    notification = await notificationRepo.save(notification);
+
     return res.status(201).json({ status: "success", message: 'Comment created successfully.', data: { comment } });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: "error", message: 'Internal Server Error', error });
   }
 };
+
+export const deleteComment = async (req: Request, res: Response) => {
+  const { commentId } = req.body;
+
+  if (!commentId) {
+    return res.status(400).json({ error: 'Comment ID is required' });
+  }
+
+  try {
+    const comment = await Comment.findOne({ where: { id: commentId } });
+
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    await comment.remove();
+
+    return res.status(200).json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return res.status(500).json({ error: 'An error occurred while deleting the comment' });
+  }
+};
+
+
 export const getComments = async (req: Request, res: Response) => {
   try {
     const { userId, postId, page = 1, limit = 5 } = req.body;
@@ -159,6 +184,29 @@ export const createNestedComment = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteNestedComment = async (req: Request, res: Response) => {
+  const { nestedCommentId } = req.body;
+
+  if (!nestedCommentId) {
+    return res.status(400).json({ error: 'Nested Comment ID is required' });
+  }
+
+  try {
+    const nestedComment = await NestedComment.findOne({ where: { id: nestedCommentId } });
+
+    if (!nestedComment) {
+      return res.status(404).json({ error: 'Nested Comment not found' });
+    }
+
+    await nestedComment.remove();
+
+    return res.status(200).json({ message: 'Nested Comment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting nested comment:', error);
+    return res.status(500).json({ error: 'An error occurred while deleting the nested comment' });
+  }
+};
+
 export const getNestedComments = async (req: Request, res: Response) => {
   try {
     const { commentId } = req.body;
@@ -182,14 +230,14 @@ export const getNestedComments = async (req: Request, res: Response) => {
           select: ["firstName", "lastName", 'id'],
         });
 
-         // Create a notification
-     const notificationRepos = AppDataSource.getRepository(Notifications);
-     let notification = notificationRepos.create({
-       userId:  comment.userId ,
-       message: ` ${commenter?.firstName} ${commenter?.lastName} replied your comment`,
-       navigation: `/feed/home#${comment.id}`,
-     }); 
-     notification = await notificationRepos.save(notification);
+        // Create a notification
+        const notificationRepos = AppDataSource.getRepository(Notifications);
+        let notification = notificationRepos.create({
+          userId: comment.userId,
+          message: ` ${commenter?.firstName} ${commenter?.lastName} replied your comment`,
+          navigation: `/feed/home#${comment.id}`,
+        });
+        notification = await notificationRepos.save(notification);
 
         return {
           id: comment.id,
