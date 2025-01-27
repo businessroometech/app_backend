@@ -9,6 +9,7 @@ import { In } from 'typeorm';
 import { Reaction } from '../entity/posts/Reaction';
 import { createMention } from './posts/Mention';
 import { Mention } from '../entity/posts/Mention';
+import { broadcastMessage, getSocketInstance } from '@/socket';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -97,6 +98,12 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
 
     //   await mentionRepository.save(mentionsToSave);
     // }
+
+    
+     // Broadcast the "post sent" event
+     const io = getSocketInstance();
+     io.emit('postSent', { success: true, postId: savedPost.id });
+ 
 
     return res.status(201).json({
       message: 'Post created successfully.',
@@ -476,3 +483,5 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     });
   }
 };
+
+// get new post socket show in real time true or false
