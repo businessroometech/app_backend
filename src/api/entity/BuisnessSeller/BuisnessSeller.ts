@@ -11,6 +11,12 @@ export class BusinessForSale extends BaseEntity {
   @Column({ type: 'varchar', length: 100})
   UserId!: string;
 
+    
+  @Column("json")
+  OwnerDetails!: any[];
+                               
+
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   businessName!: string;
 
