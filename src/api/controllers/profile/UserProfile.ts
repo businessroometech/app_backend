@@ -193,14 +193,14 @@ export const ProfileVisitController = {
 
       await profileVisitRepository.save(profileVisit);
 
-      const notification = await sendNotification(
+     if(visited.id!==visitor.id) { await sendNotification(
         visited.id,
         `${visitor.firstName} ${visitor.lastName} viewed your profile.`,
         visitor.profilePictureUploadId,
         `/profile/feed/${visitor.id}`
-      );
+      );}
 
-      return res.status(201).json({ message: 'Profile visit recorded successfully.', notification });
+      return res.status(201).json({ message: 'Profile visit recorded successfully.' });
     } catch (error: any) {
       console.error('Error recording profile visit:', error);
       return res.status(500).json({ message: 'Internal Server Error', error: error.message });

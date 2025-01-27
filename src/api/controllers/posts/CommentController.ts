@@ -75,16 +75,17 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
     // notification = await notificationRepo.save(notification);
 
     const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
-    let notification = await sendNotification(
+    if( userPost.userId!==commenterInfo.id){
+      await sendNotification(
       userPost.userId,
       `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
       media,
       `/feed/home#${commentId}`
-    );
+    )}
 
-    if (notification) {
+    
       return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
-    }
+    
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
@@ -219,16 +220,18 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
   const userRepo = AppDataSource.getRepository(PersonalDetails);
   const finduser = await userRepo.findOne({where: {id: user.id}});
     const media = finduser ? (finduser.profilePictureUploadId? finduser.profilePictureUploadId :null) : null;
-    let notification = await sendNotification(
+
+   if(commentId.userId!==finduser?.id) {
+    await sendNotification(
       commentId.userId,
       finduser? `${finduser.firstName} ${finduser.lastName} commented on your post`: 'New Comment on your post',
       media,
       `/feed/home#${commentId}`
-    );
+    );}
 
-    if (notification) {
+    
     return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
-    }
+    
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });

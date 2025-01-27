@@ -133,12 +133,12 @@ export const createCommentLike = async (req: Request, res: Response) => {
     }
 
     // Create a notification
-     await sendNotification(
+    if(commenterInfo.id!==userInfo.id){ await sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
         commenterInfo.profilePictureUploadId,
         `/feed/home#${userPost.id}`
-      );
+      );}
 
         return res.status(200).json({ status: "success", message: 'Comment Like status updated.', data: { like } });
     } catch (error: any) {
