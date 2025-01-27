@@ -255,3 +255,27 @@ export class WebSocketNotification {
       return 'Error sending notification' ;
     }
   };
+
+  // delete notification component
+  export const deleteNotification = async (userId:string) => {
+    if (!userId ) {
+      return "notificationId required" ;
+    }
+    try {
+      const notificationRepo = AppDataSource.getRepository(Notifications);
+      let  notification = await notificationRepo.findOne({ where: { userId } });
+      if (!notification) {
+        return "Notification not found or invalid userId" ;
+      }
+      notification.isRead = true;
+     notification =  await notificationRepo.save(notification);
+
+      // Emit real-time event to update the client
+      const io = getSocketInstance();
+      io.to(notification.userId).emit("notificationUpdated", notification);
+      return "Notification marked as read" ;
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      return "Error marking notification as read" ;
+    }
+  };
