@@ -135,7 +135,7 @@ export const createCommentLike = async (req: Request, res: Response) => {
     }
 
     // Create a notification
-    if (commenterInfo.id !== userInfo.id) {
+    if (commenterInfo.id !== userInfo.id && status === true) {
       await sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
