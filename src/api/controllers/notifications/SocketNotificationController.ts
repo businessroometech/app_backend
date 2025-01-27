@@ -50,6 +50,34 @@ export class WebSocketNotification {
   //       }
   //     }
   //   }
+//  notification count 
+  public static getNotificationCount = async (req: Request, res: Response) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    try {
+      
+      const notificationRepo = AppDataSource.getRepository(Notifications);
+
+      // Find unread notifications for the user
+      const unreadCount = await notificationRepo.count({
+        where: {
+          userId: String(userId),
+          isRead: false,
+        },
+      });
+      return res.status(200).json({
+        success: true,
+        unreadCount,
+      });
+    } catch (error) {
+      console.error('Error retrieving notification count:', error);
+      return res.status(500).json({ error: 'Error retrieving notification count' });
+    }
+  };
 
   // Send notification to a specific user
   public static sendNotification = async (req: Request, res: Response) => {

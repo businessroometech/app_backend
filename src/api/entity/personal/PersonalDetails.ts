@@ -120,7 +120,7 @@ export class PersonalDetails extends BaseEntity {
   })
   updatedAt!: Date;
 
-  // @Column({ type: 'int', default: 0 })
+  // @Column({ type: 'int', default: 0 , nullable: true})
   // active!: number;
 
   @BeforeInsert()

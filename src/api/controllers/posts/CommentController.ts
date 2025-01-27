@@ -9,12 +9,27 @@ import { Notifications } from '@/api/entity/notifications/Notifications';
 import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
 
-export const createComment = async (req: Request, res: Response) => {
+export const createOrUpdateComment = async (req: Request, res: Response) => {
   try {
-    const { userId, postId, text } = req.body;
+    const { userId, postId, text, commentId } = req.body;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
+    }
+
+    if (commentId) {
+      const comment = await Comment.findOne({ where: { id: commentId } });
+
+      if (!comment) {
+        return res.status(404).json({ status: 'error', message: 'Comment not found.' });
+      }
+
+      comment.text = text;
+      comment.updatedBy = 'system';
+
+      await comment.save();
+
+      return res.status(200).json({ status: 'success', message: 'Comment updated successfully.', data: { comment } });
     }
 
     const comment = Comment.create({
@@ -62,9 +77,9 @@ export const createComment = async (req: Request, res: Response) => {
     const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
     let notification = await sendNotification(
       userPost.userId,
-      `${commenterInfo.firstName} ${commenterInfo.lastName}, Comment on your post`,
+      `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
       media,
-      `/feed/home#${postId}`
+      `/feed/home#${commentId}`
     );
 
     if (notification) {
@@ -165,12 +180,27 @@ export const getComments = async (req: Request, res: Response) => {
   }
 };
 
-export const createNestedComment = async (req: Request, res: Response) => {
+export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
   try {
-    const { userId, postId, commentId, text, createdBy } = req.body;
+    const { userId, postId, commentId, text, createdBy, nestedCommentId } = req.body;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
+    }
+
+    if (nestedCommentId) {
+      const nestedComment = await NestedComment.findOne({ where: { id: nestedCommentId } });
+
+      if (!nestedComment) {
+        return res.status(404).json({ status: 'error', message: 'Nested Comment not found.' });
+      }
+
+      nestedComment.text = text;
+      nestedComment.updatedBy = createdBy || 'system';
+
+      await nestedComment.save();
+
+      return res.status(200).json({ status: 'success', message: 'Nested Comment updated successfully.', data: { nestedComment } });
     }
 
     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
@@ -191,9 +221,9 @@ export const createNestedComment = async (req: Request, res: Response) => {
     const media = finduser ? (finduser.profilePictureUploadId? finduser.profilePictureUploadId :null) : null;
     let notification = await sendNotification(
       commentId.userId,
-      finduser? `${finduser.firstName} ${finduser.lastName}, Comment on your post`: 'New Comment on your post',
+      finduser? `${finduser.firstName} ${finduser.lastName} commented on your post`: 'New Comment on your post',
       media,
-      `/feed/home#${postId}`
+      `/feed/home#${commentId}`
     );
 
     if (notification) {

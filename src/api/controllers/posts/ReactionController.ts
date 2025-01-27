@@ -3,6 +3,7 @@ import { Reaction } from '@/api/entity/posts/Reaction';
 import { UserPost } from '@/api/entity/UserPost';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { AppDataSource } from '@/server';
+import { sendNotification } from '../notifications/SocketNotificationController';
 
 // Create or Update Reaction
 export const createOrUpdateReaction = async (req: Request, res: Response) => {
@@ -61,6 +62,13 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
         });
 
         await reactionRepository.save(reaction);
+
+        const notification = await sendNotification(
+            reaction.user.id,
+            `${reaction.user.firstName} ${reaction.user.lastName} reacted on your post.`,
+            reaction.user.profilePictureUploadId,
+            `/`
+          );
 
         return res.status(201).json({
             status: "success",

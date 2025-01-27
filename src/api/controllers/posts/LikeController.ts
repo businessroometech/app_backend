@@ -5,7 +5,7 @@ import { CommentLike } from '@/api/entity/posts/CommentLike';
 import { Notifications } from '@/api/entity/notifications/Notifications';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { UserPost } from '@/api/entity/UserPost';
-import { sendNotification, WebSocketNotification } from '../notifications/SocketNotificationController';
+import { sendNotification } from '../notifications/SocketNotificationController';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { In } from 'typeorm';
 import { Comment } from '@/api/entity/posts/Comment';
@@ -133,16 +133,12 @@ export const createCommentLike = async (req: Request, res: Response) => {
     }
 
     // Create a notification
-    const notificationRepo = AppDataSource.getRepository(Notifications);
-    const notification = notificationRepo.create({
-      userId: userInfo.id,
-      message: `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
-      navigation: `/feed/home#${postId}`,
-    });
-
-    // Save the notification
-    await notificationRepo.save(notification);
-
+     await sendNotification(
+        userInfo.id,
+        `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
+        commenterInfo.profilePictureUploadId,
+        `/feed/home#${userPost.id}`
+      );
 
         return res.status(200).json({ status: "success", message: 'Comment Like status updated.', data: { like } });
     } catch (error: any) {
