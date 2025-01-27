@@ -40,7 +40,7 @@ export const formatTimestamp = (createdAt: Date): string => {
 // user post and and update post
 export const CreateUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, title, content, hashtags, mediaKeys } = req.body;
+    const { userId, title, content, hashtags, mediaKeys, repostedFrom, repostText } = req.body;
 
     // Check if the user ID exists in the PersonalDetails repository
     const userRepos = AppDataSource.getRepository(PersonalDetails);
@@ -75,6 +75,9 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       content,
       hashtags,
       mediaKeys,
+      repostedFrom,
+      repostText,
+      isRepost: repostedFrom !== null ? true : false
     });
 
     const savedPost = await postRepository.save(newPost);
@@ -354,7 +357,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       where: { postId: In(postIds) },
     });
 
-    
+
 
     // Generate media URLs for posts
     const mediaKeysWithUrls = await Promise.all(
@@ -385,23 +388,23 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
 
         // Fetch reactions with related post data
         const reactions = await reactionRepository.find({
-          where: { post: { id: In(postIds) } }, 
-          relations: ['post', 'user'], 
+          where: { post: { id: In(postIds) } },
+          relations: ['post', 'user'],
         });
-        
+
         const postReactions = reactions.filter((reaction) => reaction.post?.id === post.id);
-        
+
         const totalReactions = postReactions.reduce((acc: Record<string, number>, reaction) => {
           if (reaction.reactionType) {
             acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
           }
           return acc;
         }, {});
-        
+
         // Fetch the user's reaction to the post
         const userReaction =
           postReactions.find((reaction) => reaction.user?.id === userId)?.reactionType || null;
-        
+
         // Fetch top 5 comments for the post
         const postComments = await commentRepository.find({
           where: { postId: post.id },

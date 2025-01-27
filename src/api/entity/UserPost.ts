@@ -49,6 +49,15 @@ export class UserPost extends BaseEntity {
   })
   updatedAt!: Date;
 
+  @Column({ type: "boolean", default: false })
+  isRepost !: boolean;
+
+  @Column({ type: "uuid", default: null })
+  repostedFrom !: string;
+
+  @Column({ type: "text" , default: null})
+  repostText !: string;
+
   @BeforeInsert()
   private async beforeInsert() {
     this.id = this.generateUUID();

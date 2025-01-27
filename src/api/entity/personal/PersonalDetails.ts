@@ -154,11 +154,11 @@ export class PersonalDetails extends BaseEntity {
   profileVisitors!: ProfileVisit[];
 
   @OneToMany(() => Reaction, (reaction) => reaction.id, {
-    cascade: true, 
+    cascade: true,
   })
   reactions!: Reaction[];
 
   @ManyToMany(() => Mention, (mention) => mention.users)
-mentions!: Mention[];
+  mentions!: Mention[];
 
 }
