@@ -20,9 +20,21 @@ export const initializeSocket = (app: Express) => {
       console.log(`User ${userId} joined their room`);
     });
 
-    socket.on("userOnline", (userId) => {
+    socket.on('userOnline', (userId) => {
       onlineUsers[userId] = socket.id;
       console.log(`User ${userId} is online`);
+    });
+
+    // Broadcast message to all clients
+    socket.on('broadcastMessage', (message) => {
+      console.log('Broadcasting message:', message);
+      io.emit('receiveBroadcast', { message });
+    });
+
+    // Broadcast message to a specific room
+    socket.on('broadcastToRoom', ({ roomId, message }) => {
+      console.log(`Broadcasting to room ${roomId}:`, message);
+      socket.to(roomId).emit('receiveRoomBroadcast', { roomId, message });
     });
 
     socket.on('disconnect', () => {
@@ -39,13 +51,24 @@ export const initializeSocket = (app: Express) => {
 };
 
 export const getOnlineUsers = async (req: Request, res: Response) => {
-    res.status(200).json({ 
-      status: "success",
-      message: "active users fetched",
-      data: {
-        onlineUsers
-      }
-    })
+  res.status(200).json({
+    status: 'success',
+    message: 'active users fetched',
+    data: {
+      onlineUsers,
+    },
+  });
+};
+
+export const broadcastMessage = (req: Request, res: Response) => {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  io.emit('receiveBroadcast', { message });
+  return res.status(200).json({ status: 'success', message: 'Broadcast sent' });
 };
 
 export const getSocketInstance = () => io;
