@@ -35,7 +35,7 @@ export const createLike = async (req: Request, res: Response) => {
     const userPost = await postRepo.findOne({ where: { id: postId } });
 
     if (!userPost) {
-      return res.status(404).json({
+      return res.status(204).json({
         status: 'error',
         message: 'Post not found.',
       });
@@ -186,7 +186,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
       return res.status(404).json({ status: 'error', message: 'post not available.' });
     }
     if (likes.length === 0) {
-      return res.status(404).json({ status: 'error', message: 'No likes available for this post.' });
+      return res.status(204).json({ status: 'success', message: 'No likes available for this post.' });
     }
 
     const personalRepo = AppDataSource.getRepository(PersonalDetails);
@@ -223,7 +223,7 @@ export const getPostCommentersList = async (req: Request, res: Response) => {
       return res.status(404).json({ status: 'error', message: 'Post not available.' });
     }
     if (comment.length === 0) {
-      return res.status(404).json({ status: 'error', message: 'No comments available for this post.' });
+      return res.status(204).json({ status: 'success', message: 'No comments available for this post.' });
     }
 
     const personalRepo = AppDataSource.getRepository(PersonalDetails);
