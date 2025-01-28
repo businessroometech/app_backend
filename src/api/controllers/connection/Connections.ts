@@ -7,6 +7,7 @@ import { formatTimestamp } from '../UserPost';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Brackets, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';
+import { getSocketInstance } from '@/socket';
 
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
@@ -39,6 +40,9 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
       receiverId,
       status: 'pending',
     });
+
+    const io = getSocketInstance();
+    io.to(receiverId).emit('connect', receiverId);
 
     await connectionRepository.save(newConnection);
 

@@ -221,7 +221,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
   const finduser = await userRepo.findOne({where: {id: user.id}});
     const media = finduser ? (finduser.profilePictureUploadId? finduser.profilePictureUploadId :null) : null;
 
-   if(commentId.userId!==finduser?.id) {
+   if(commentId.userId!==userId) {
     await sendNotification(
       commentId.userId,
       finduser? `${finduser.firstName} ${finduser.lastName} commented on your post`: 'New Comment on your post',
