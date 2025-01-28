@@ -40,18 +40,14 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
       receiverId,
       status: 'pending',
     });
-
-    const io = getSocketInstance();
-    io.to(receiverId).emit('Connection', receiverId);
-
     await connectionRepository.save(newConnection);
 
     // Create a notification
    await sendNotification(
-      receiverId,
-      `Received a connection request by ${requester.firstName} ${requester.lastName}`,
-      requester.profilePictureUploadId,
-      `/profile/feed/${requesterId}`
+      requesterId,
+      `Received a connection request by ${receiverId.firstName} ${receiverId.lastName}`,
+      receiverId.profilePictureUploadId,
+      `/profile/feed/${receiverId}`
     );
 
     return res.status(201).json({
