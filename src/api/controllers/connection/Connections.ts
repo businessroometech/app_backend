@@ -221,7 +221,7 @@ export const getUserConnectionRequests = async (req: Request, res: Response) => 
     });
 
     if (!connectionRequests || connectionRequests.length === 0) {
-      return res.status(404).json({ message: 'No connection requests found.' });
+      return res.status(204).json({ message: 'No connection requests found.' });
     }
 
     const userIds = [...new Set(connectionRequests.map((connection) => connection.requesterId))];

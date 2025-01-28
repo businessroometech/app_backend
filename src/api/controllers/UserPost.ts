@@ -52,7 +52,6 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-    // Extract mentions from the content (e.g., @username)
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
@@ -104,7 +103,6 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
      const io = getSocketInstance();
      io.emit('postSent', { success: true, postId: savedPost.id });
  
-
     return res.status(201).json({
       message: 'Post created successfully.',
       data: savedPost,
