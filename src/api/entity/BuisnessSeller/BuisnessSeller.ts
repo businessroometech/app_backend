@@ -14,8 +14,9 @@ export class BusinessForSale extends BaseEntity {
     
   @Column("json")
   OwnerDetails!: any[];
-                               
-
+       
+  @Column({ type: "text" , nullable: true })
+  OwnerImage! : string
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   businessName!: string;
