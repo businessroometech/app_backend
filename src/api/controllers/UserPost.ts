@@ -341,7 +341,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         updatedAt: 'DESC',
         createdAt: 'DESC',
       },
-      select: ['id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
+      // select: ['id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
       skip: (page - 1) * limit,
       take: limit,
     });
