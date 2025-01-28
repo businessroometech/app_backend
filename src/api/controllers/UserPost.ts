@@ -52,7 +52,6 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-    // Extract mentions from the content (e.g., @username)
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
@@ -99,11 +98,10 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
     //   await mentionRepository.save(mentionsToSave);
     // }
 
-    
-     // Broadcast the "post sent" event
-     const io = getSocketInstance();
-     io.emit('postSent', { success: true, postId: savedPost.id });
- 
+
+    // Broadcast the "post sent" event
+    const io = getSocketInstance();
+    io.emit('postSent', { success: true, postId: savedPost.id });
 
     return res.status(201).json({
       message: 'Post created successfully.',
@@ -218,6 +216,9 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
           likeCount,
           commentCount,
           likeStatus,
+          isRepost: post.isRepost,
+          repostedFrom: post.repostedFrom,
+          repostText: post.repostText
         },
         userDetails: {
           firstName: user.firstName,
@@ -451,6 +452,9 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             likeStatus,
             reactions: totalReactions,
             userReaction,
+            isRepost: post.isRepost,
+            repostedFrom: post.repostedFrom,
+            repostText: post.repostText
           },
           userDetails: {
             postedId: user?.id,
