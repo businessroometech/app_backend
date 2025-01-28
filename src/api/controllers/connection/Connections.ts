@@ -42,7 +42,7 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     });
 
     const io = getSocketInstance();
-    io.to(receiverId).emit('connect', receiverId);
+    io.to(receiverId).emit('Connection', receiverId);
 
     await connectionRepository.save(newConnection);
 
