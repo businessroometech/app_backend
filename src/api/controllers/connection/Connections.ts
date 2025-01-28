@@ -7,6 +7,7 @@ import { formatTimestamp } from '../UserPost';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Brackets, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';
+import { getSocketInstance } from '@/socket';
 
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
@@ -39,15 +40,14 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
       receiverId,
       status: 'pending',
     });
-
     await connectionRepository.save(newConnection);
 
     // Create a notification
    await sendNotification(
-      receiverId,
-      `Received a connection request by ${requester.firstName} ${requester.lastName}`,
-      requester.profilePictureUploadId,
-      `/profile/feed/${requesterId}`
+      requesterId,
+      `Received a connection request by ${receiverId.firstName} ${receiverId.lastName}`,
+      receiverId.profilePictureUploadId,
+      `/profile/feed/${receiverId}`
     );
 
     return res.status(201).json({

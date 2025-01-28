@@ -63,13 +63,12 @@ export const createOrUpdateReaction = async (req: Request, res: Response) => {
 
         await reactionRepository.save(reaction);
 
-        const notification = await sendNotification(
+       await sendNotification(
             reaction.user.id,
             `${reaction.user.firstName} ${reaction.user.lastName} reacted on your post.`,
             reaction.user.profilePictureUploadId,
             `/`
           );
-
         return res.status(201).json({
             status: "success",
             message: "Reaction created successfully.",
