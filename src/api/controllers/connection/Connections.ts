@@ -243,7 +243,7 @@ export const getUserConnectionRequests = async (req: Request, res: Response) => 
       
         // Create a notification
      await sendNotification(
-      connection.requester.id,
+      connection.receiver.id,
       `Received connection request from ${connection.requester.firstName} ${connection.requester.lastName}`,
      connection.requester.profilePictureUploadId,
       `/profile/feed/${connection.receiver.id}`

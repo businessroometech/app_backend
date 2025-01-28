@@ -268,11 +268,11 @@ export class WebSocketNotification {
         return "Notification not found or invalid userId" ;
       }
       notification.isRead = true;
-     notification =  await notificationRepo.save(notification);
+   await notificationRepo.save(notification);
 
       // Emit real-time event to update the client
-      const io = getSocketInstance();
-      io.to(notification.userId).emit("notificationUpdated", notification);
+      // const io = getSocketInstance();
+      // io.to(userId).emit('notifications', savedNotification);
       return "Notification marked as read" ;
     } catch (error) {
       console.error("Error marking notification as read:", error);
