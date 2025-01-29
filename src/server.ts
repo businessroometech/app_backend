@@ -107,18 +107,18 @@ app.use(requestLogger);
 app.use(express.json());
 
 // Routes mounting
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/post', userPost);
-app.use('/api/v1/notifications', notifications);
-app.use('/api/v1/connection', connectionRouter);
-app.use('/api/v1/chat', chatRouter);
+app.use('/v1/auth', authRouter);
+app.use('/v1/post', userPost);
+app.use('/v1/notifications', notifications);
+app.use('/v1/connection', connectionRouter);
+app.use('/v1/chat', chatRouter);
 app.use('/businessseller', BuisnessSeller);
 app.use('/investor', InvestorRoute);
 app.use('/businessbuyer', BusinessBuyerRoute);
 app.use('/entrepreneur', EntrepreneurRoutes);
 app.use('/api/v1/live', liveRouter);
-app.use('/wishlists', WishlistsRoutes);
-app.use('/api/v1/socket-notifications', SocketNotificationRouting);
+app.use('/v1/wishlists', WishlistsRoutes);
+app.use('/v1/socket-notifications', SocketNotificationRouting);
 
 // Test route
 app.get('/', (req, res) => {
