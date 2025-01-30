@@ -122,7 +122,7 @@ app.use('/v1/socket-notifications', SocketNotificationRouting);
 
 // Test route
 app.get('/', (req, res) => {
-  res.send('Welcome to BusinessRoom :)');
+  res.send('Welcome to BusinessRoom');
 });
 
 // Error handlers
