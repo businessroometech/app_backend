@@ -47,6 +47,7 @@ import { UserPost } from './api/entity/UserPost';
 import { Wishlists } from './api/entity/WishLists/Wishlists';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import { initializeSocket } from './socket';
+import { ActiveUser } from './api/entity/chat/ActiveUser';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -79,6 +80,7 @@ const AppDataSource = new DataSource({
     Mention,
     Hashtag,
     Wishlists,
+    ActiveUser
   ],
   synchronize: false,
 });
@@ -107,22 +109,22 @@ app.use(requestLogger);
 app.use(express.json());
 
 // Routes mounting
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/post', userPost);
-app.use('/api/v1/notifications', notifications);
-app.use('/api/v1/connection', connectionRouter);
-app.use('/api/v1/chat', chatRouter);
-app.use('/businessseller', BuisnessSeller);
-app.use('/investor', InvestorRoute);
-app.use('/businessbuyer', BusinessBuyerRoute);
-app.use('/entrepreneur', EntrepreneurRoutes);
-app.use('/api/v1/live', liveRouter);
-app.use('/wishlists', WishlistsRoutes);
-app.use('/api/v1/socket-notifications', SocketNotificationRouting);
+app.use('/v1/auth', authRouter);
+app.use('/v1/post', userPost);
+app.use('/v1/notifications', notifications);
+app.use('/v1/connection', connectionRouter);
+app.use('/v1/chat', chatRouter);
+app.use('/v1/businessseller', BuisnessSeller);
+app.use('/v1/investor', InvestorRoute);
+app.use('/v1/businessbuyer', BusinessBuyerRoute);
+app.use('/v1/entrepreneur', EntrepreneurRoutes);
+app.use('/v1/live', liveRouter);
+app.use('/v1/wishlists', WishlistsRoutes);
+app.use('/v1/socket-notifications', SocketNotificationRouting);
 
 // Test route
 app.get('/', (req, res) => {
-  res.send('Welcome to BusinessRoom AI');
+  res.send('Welcome to BusinessRoom');
 });
 
 // Error handlers

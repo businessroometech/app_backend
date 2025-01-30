@@ -5,11 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   BeforeInsert,
+  BaseEntity,
 } from 'typeorm';
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 
 @Entity({ name: "Message" })
-export class Message {
+export class Message extends BaseEntity{
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
