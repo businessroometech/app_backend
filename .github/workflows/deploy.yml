@@ -36,7 +36,7 @@ jobs:
 
           # SSH into the EC2 instance and deploy the app
           ssh -i private_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
-            cd /app_backend
+            cd /home/ubuntu/app_backend
             git pull origin main  
             npm install          
             npm run build         
