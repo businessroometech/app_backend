@@ -240,14 +240,6 @@ export const getUserConnectionRequests = async (req: Request, res: Response) => 
         const profilePictureUploadUrl = user?.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
-      
-        // Create a notification
-     await sendNotification(
-      connection.receiver.id,
-      `Received connection request from ${connection.requester.firstName} ${connection.requester.lastName}`,
-     connection.requester.profilePictureUploadId,
-      `/profile/feed/${connection.receiver.id}`
-    );
    
         return {
           connectionId: connection.id,
