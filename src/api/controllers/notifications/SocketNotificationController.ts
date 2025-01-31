@@ -133,13 +133,20 @@ export class WebSocketNotification {
         where: { userId: userId as string },
         order: { createdAt: 'DESC' },
       });
- 
-      return res.status(200).json({ notifications });
+  
+      // Format timestamps before sending response
+      const formattedNotifications = notifications.map((notification) => ({
+        ...notification,
+        created: formatTimestamp(new Date(notification.createdAt)), 
+      }));
+  
+      return res.status(200).json({ notifications: formattedNotifications });
     } catch (error) {
       console.error('Error fetching notifications:', error);
       return res.status(500).json({ error: 'Error fetching notifications' });
     }
   }
+  
 
   public static markRead = async (req: Request, res: Response) => {
     const { notificationId } = req.body;
@@ -239,6 +246,7 @@ export class WebSocketNotification {
         mediaUrl: mediaUrl || "",
         navigation,
         createdBy: "Live",
+        createdAt: new Date()
       });
 
       // Send notification via WebSocket

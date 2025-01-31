@@ -16,24 +16,17 @@ export const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
   const createdTime = new Date(createdAt).getTime();
   const secondsAgo = Math.floor((now - createdTime) / 1000);
-
   if (secondsAgo < 60) return `just now`;
-
   const minutesAgo = Math.floor(secondsAgo / 60);
   if (minutesAgo < 60) return `${minutesAgo}m`;
-
   const hoursAgo = Math.floor(minutesAgo / 60);
   if (hoursAgo < 24) return `${hoursAgo}h`;
-
   const daysAgo = Math.floor(hoursAgo / 24);
   if (daysAgo < 7) return `${daysAgo}d`;
-
   const weeksAgo = Math.floor(daysAgo / 7);
   if (weeksAgo < 52) return `${weeksAgo}w`;
-
   const monthsAgo = Math.floor(weeksAgo / 4);
   if (monthsAgo < 12) return `${monthsAgo}mo`;
-
   const yearsAgo = Math.floor(monthsAgo / 12);
   return `${yearsAgo}y`;
 };

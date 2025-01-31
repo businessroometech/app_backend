@@ -35,7 +35,7 @@ export const createLike = async (req: Request, res: Response) => {
     const userPost = await postRepo.findOne({ where: { id: postId } });
 
     if (!userPost) {
-      return res.status(204).json({
+      return res.status(404).json({
         status: 'error',
         message: 'Post not found.',
       });
@@ -53,8 +53,11 @@ export const createLike = async (req: Request, res: Response) => {
     }
 
     const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
+
+    let notifications = null;
+
     if (userInfo.id !== userId && status === true) {
-      await sendNotification(
+      notifications =  sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
         media,
@@ -62,7 +65,7 @@ export const createLike = async (req: Request, res: Response) => {
       );
     }
 
-    return res.status(200).json({ status: 'success', message: 'Like status updated.', data: { like } });
+    return res.status(200).json({ status: 'success', message: 'Like status updated.', data: { like, notifications } });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
@@ -136,7 +139,7 @@ export const createCommentLike = async (req: Request, res: Response) => {
 
     // Create a notification
     if (commenterInfo.id !== userInfo.id && status === true) {
-      await sendNotification(
+       sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
         commenterInfo.profilePictureUploadId,
