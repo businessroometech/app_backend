@@ -132,7 +132,7 @@ export class WebSocketNotification {
         where: { userId: String(userId) },
         order: { createdAt: 'DESC' },
       });
-
+ 
       return res.status(200).json({ notifications });
     } catch (error) {
       console.error('Error fetching notifications:', error);
