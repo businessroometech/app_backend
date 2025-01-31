@@ -92,7 +92,7 @@ export const DeleteEverything = async (req: Request, res: Response) => {
             success: true,
             message: "All records have been deleted from Wishlists.",
         });
-    } catch (error) {
+    } catch (error:any) {
         console.error("Error while deleting records:", error);
         return res.status(500).json({
             success: false,
