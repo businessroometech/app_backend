@@ -225,7 +225,7 @@ export const ProfileVisitController = {
           visitedId,
           `${visitor.firstName} ${visitor.lastName} viewed your profile.`,
           visitor.profilePictureUploadId,
-          `/profile/feed/${visitor.id}`
+          `/profile/feed/${visitor?.id}`
         );
       }
 
