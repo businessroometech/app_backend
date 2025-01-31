@@ -6,6 +6,7 @@ import { AppDataSource } from '@/server';
 import { getSocketInstance } from '../../../socket';
 import { Request, Response } from 'express';
 import { generatePresignedUrl } from '../s3/awsControllers';
+import { formatTimestamp } from '../UserPost';
 
 export class WebSocketNotification {
   //   private static wss: WebSocketServer;
@@ -120,16 +121,16 @@ export class WebSocketNotification {
   };
 
   // Get notifications for a specific user
-  public static getNotification = async (req: Request, res: Response) => {
+  public static async getNotification(req: Request, res: Response): Promise<Response> {
     const { userId } = req.query;
-
+  
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
-
+  
     try {
       const notifications = await AppDataSource.manager.find(Notifications, {
-        where: { userId: String(userId) },
+        where: { userId: userId as string },
         order: { createdAt: 'DESC' },
       });
  
@@ -138,8 +139,7 @@ export class WebSocketNotification {
       console.error('Error fetching notifications:', error);
       return res.status(500).json({ error: 'Error fetching notifications' });
     }
-  };
-
+  }
 
   public static markRead = async (req: Request, res: Response) => {
     const { notificationId } = req.body;

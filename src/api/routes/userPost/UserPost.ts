@@ -32,6 +32,7 @@ Router.post("/create-update-reaction", createOrUpdateReaction)
 Router.post("/remove-reaction", removeReaction)
 
 Router.post("/mention", suggestUsersByEmail)
+Router.post("/get-all-likes-for-comment", getAllLikesForComment)
 
 export default Router;
 
