@@ -346,18 +346,16 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
     const { userId, searchQuery } = req.body;
 
     if (!userId) {
-      return res.status(400).json({
-        message: 'User ID is required.',
-      });
+      return res.status(400).json({ message: 'User ID is required.' });
     }
 
     if (!searchQuery) {
-      return res.status(400).json({
-        message: 'Search query is required.',
-      });
+      return res.status(400).json({ message: 'Search query is required.' });
     }
 
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    
+    // Search for users matching the query
     const searchResults = await personalDetailsRepository.find({
       where: [
         { firstName: ILike(`%${searchQuery}%`) },
@@ -366,28 +364,41 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
       ],
     });
 
-    if (!searchResults || searchResults.length === 0) {
-      return res.status(204).json({
-        message: 'No results found.',
-      });
+    if (searchResults.length === 0) {
+      return res.status(204).json({ message: 'No results found.' });
     }
 
-    const searchResultsWithProfileImg = await Promise.all(
+    const connectionRepository = AppDataSource.getRepository(Connection);
+    const searchResult = await Promise.all(
       searchResults.map(async (result) => {
+        // Fetch mutual connection count
+        const mutualConnectionCount = await connectionRepository.count({
+          where: [
+            { requesterId: userId, receiverId: result.id, status: 'accepted' },
+            { requesterId: result.id, receiverId: userId, status: 'accepted' },
+          ],
+        });
+
+        // Get profile image URL
         const profileImgUrl = result.profilePictureUploadId
           ? await generatePresignedUrl(result.profilePictureUploadId)
           : null;
 
         return {
-          ...result,
+          id: result.id,
+          firstName: result.firstName,
+          lastName: result.lastName,
+          emailAddress: result.emailAddress,
+          userRole: result.userRole,
           profileImgUrl,
+          mutualConnectionCount, 
         };
       })
     );
 
     return res.status(200).json({
       message: 'Search results fetched successfully.',
-      data: searchResultsWithProfileImg,
+      data: searchResult,
     });
   } catch (error: any) {
     console.error('Error searching user profile:', error);
