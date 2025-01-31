@@ -166,8 +166,8 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
           lastName: user?.lastName,
           userRole: user?.userRole,
           profilePictureUrl: profilePictureUrl,
-          meeted: formatTimestamp(connection.updatedAt),
-          mutual: isMutual, // Add mutual status
+          meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
+          mutual: isMutual, 
         };
       })
     );

@@ -11,6 +11,32 @@ import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { Like } from '@/api/entity/posts/Like';
 
+const formatTimestamp = (createdAt: Date): string => {
+  const now = Date.now();
+  const createdTime = new Date(createdAt).getTime();
+  const secondsAgo = Math.floor((now - createdTime) / 1000);
+
+  if (secondsAgo < 60) return `just now`;
+
+  const minutesAgo = Math.floor(secondsAgo / 60);
+  if (minutesAgo < 60) return `${minutesAgo}m`;
+
+  const hoursAgo = Math.floor(minutesAgo / 60);
+  if (hoursAgo < 24) return `${hoursAgo}h`;
+
+  const daysAgo = Math.floor(hoursAgo / 24);
+  if (daysAgo < 7) return `${daysAgo}d`;
+
+  const weeksAgo = Math.floor(daysAgo / 7);
+  if (weeksAgo < 52) return `${weeksAgo}w`;
+
+  const monthsAgo = Math.floor(weeksAgo / 4);
+  if (monthsAgo < 12) return `${monthsAgo}mo`;
+
+  const yearsAgo = Math.floor(monthsAgo / 12);
+  return `${yearsAgo}y`;
+};
+
 export const UpdateUserProfile = async (req: Request, res: Response) => {
   try {
     const {
@@ -194,13 +220,14 @@ export const ProfileVisitController = {
 
       await profileVisitRepository.save(profileVisit);
 
-     if(visited?.id!==visitor?.id) { 
-      await sendNotification(
-        visitedId,
-        `${visitor.firstName} ${visitor.lastName} viewed your profile.`,
-        visitor.profilePictureUploadId,
-        `/profile/feed/${visitor.id}`
-      );}
+      if (visited?.id !== visitor?.id) {
+        await sendNotification(
+          visitedId,
+          `${visitor.firstName} ${visitor.lastName} viewed your profile.`,
+          visitor.profilePictureUploadId,
+          `/profile/feed/${visitor.id}`
+        );
+      }
 
       return res.status(201).json({ message: 'Profile visit recorded successfully.' });
     } catch (error: any) {
@@ -220,6 +247,8 @@ export const ProfileVisitController = {
       const visits = await profileVisitRepository
         .createQueryBuilder('profileVisit')
         .select('profileVisit.visitor', 'visitorId')
+        .addSelect('profileVisit.createdAt', 'createdAt')
+        .addSelect('profileVisit.updatedAt', 'updatedAt')
         .addSelect('COUNT(profileVisit.id)', 'visitCount')
         .where('profileVisit.visited = :userId AND profileVisit.visitedAt >= :oneWeekAgo', { userId, oneWeekAgo })
         .groupBy('profileVisit.visitor')
@@ -232,7 +261,7 @@ export const ProfileVisitController = {
         visits.map(async (visit) => {
           const visitor = await AppDataSource.getRepository(PersonalDetails).findOne({
             where: { id: visit.visitorId },
-            select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', 'createdAt'],
+            select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole', 'createdAt', 'updatedAt'],
           });
 
           // Fetch the connection status between the current user and the visitor
@@ -249,8 +278,9 @@ export const ProfileVisitController = {
             ? await generatePresignedUrl(visitor.profilePictureUploadId)
             : null;
 
+          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt); // format timestamp not work
           return {
-            visitor: { ...visitor, profilePicture },
+            visitor: { ...visitor, profilePicture, visitedAt },
             visitCount: parseInt(visit.visitCount, 10),
             connectionStatus: connection?.status || 'none',
           };
@@ -287,6 +317,8 @@ export const ProfileVisitController = {
       const visits = await profileVisitRepository
         .createQueryBuilder('profileVisit')
         .select('profileVisit.visited', 'visitedId')
+        .addSelect('profileVisit.createdAt', 'createdAt')
+        .addSelect('profileVisit.updatedAt', 'updatedAt')
         .addSelect('COUNT(profileVisit.id)', 'visitCount')
         .where('profileVisit.visitor = :userId AND profileVisit.visitedAt >= :oneWeekAgo', { userId, oneWeekAgo })
         .groupBy('profileVisit.visited')
@@ -315,9 +347,9 @@ export const ProfileVisitController = {
           const profilePicture = profile?.profilePictureUploadId
             ? await generatePresignedUrl(profile.profilePictureUploadId)
             : null;
-
+          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt); 
           return {
-            profile: { ...profile, profilePicture },
+            profile: { ...profile, profilePicture, visitedAt },
             visitCount: parseInt(visit.visitCount, 10),
             connectionStatus: connection?.status || 'none',
           };
@@ -339,7 +371,6 @@ export const ProfileVisitController = {
   },
 };
 
-
 // search user profile
 export const searchUserProfile = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -354,7 +385,7 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
     }
 
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-    
+
     // Search for users matching the query
     const searchResults = await personalDetailsRepository.find({
       where: [
@@ -370,30 +401,32 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
 
     const connectionRepository = AppDataSource.getRepository(Connection);
     const searchResult = await Promise.all(
-      searchResults.filter(result => result.id !== userId).map(async (result) => { 
-        // Fetch mutual connection count
-        const mutualConnectionCount = await connectionRepository.count({
-          where: [
-            { requesterId: userId, receiverId: result.id, status: 'accepted' },
-            { requesterId: result.id, receiverId: userId, status: 'accepted' },
-          ],
-        });
+      searchResults
+        .filter((result) => result.id !== userId)
+        .map(async (result) => {
+          // Fetch mutual connection count
+          const mutualConnectionCount = await connectionRepository.count({
+            where: [
+              { requesterId: userId, receiverId: result.id, status: 'accepted' },
+              { requesterId: result.id, receiverId: userId, status: 'accepted' },
+            ],
+          });
 
-        // Get profile image URL
-        const profileImgUrl = result.profilePictureUploadId
-          ? await generatePresignedUrl(result.profilePictureUploadId)
-          : null;
+          // Get profile image URL
+          const profileImgUrl = result.profilePictureUploadId
+            ? await generatePresignedUrl(result.profilePictureUploadId)
+            : null;
 
-        return {
-          id: result.id,
-          firstName: result.firstName,
-          lastName: result.lastName,
-          emailAddress: result.emailAddress,
-          userRole: result.userRole,
-          profileImgUrl,
-          mutualConnectionCount, 
-        };
-      })
+          return {
+            id: result.id,
+            firstName: result.firstName,
+            lastName: result.lastName,
+            emailAddress: result.emailAddress,
+            userRole: result.userRole,
+            profileImgUrl,
+            mutualConnectionCount,
+          };
+        })
     );
 
     return res.status(200).json({
