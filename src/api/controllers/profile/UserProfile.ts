@@ -370,7 +370,7 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
 
     const connectionRepository = AppDataSource.getRepository(Connection);
     const searchResult = await Promise.all(
-      searchResults.map(async (result) => {
+      searchResults.filter(result => result.id !== userId).map(async (result) => { 
         // Fetch mutual connection count
         const mutualConnectionCount = await connectionRepository.count({
           where: [
