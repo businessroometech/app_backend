@@ -461,6 +461,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             content: post.content,
             hashtags: post.hashtags,
             mediaUrls: mediaUrls,
+            mediaKeys: post.mediaKeys,
             likeCount,
             commentCount,
             likeStatus,
