@@ -47,6 +47,7 @@ import { UserPost } from './api/entity/UserPost';
 import { Wishlists } from './api/entity/WishLists/Wishlists';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import { initializeSocket } from './socket';
+import { ActiveUser } from './api/entity/chat/ActiveUser';
 
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -79,6 +80,7 @@ const AppDataSource = new DataSource({
     Mention,
     Hashtag,
     Wishlists,
+    ActiveUser
   ],
   synchronize: false,
 });
@@ -122,7 +124,7 @@ app.use('/v1/socket-notifications', SocketNotificationRouting);
 
 // Test route
 app.get('/', (req, res) => {
-  res.send('Welcome to BusinessRoom AI');
+  res.send('Welcome to BusinessRoom');
 });
 
 // Error handlers

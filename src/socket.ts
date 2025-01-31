@@ -1,16 +1,35 @@
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { Express, Request, Response } from 'express';
+import { AppDataSource } from './server';
+import { ActiveUser } from './api/entity/chat/ActiveUser';
 
 let io: Server;
-
-let onlineUsers: any = {};
 
 export const initializeSocket = (app: Express) => {
   const httpServer = createServer(app);
   io = new Server(httpServer, {
     cors: { origin: '*', credentials: true, methods: ['GET', 'POST'] },
   });
+
+  const toggleActive = async (isActive: boolean, userId: string) => {
+    const activeUserRepo = AppDataSource.getRepository(ActiveUser);
+
+    const isUser = await activeUserRepo.findOne({ where: { userId } });
+
+    if (isUser) {
+      isUser.isActive = isActive;
+      await isUser.save();
+    }
+    else {
+      const isUser = activeUserRepo.create({
+        userId,
+        isActive
+      });
+
+      await isUser.save();
+    }
+  }
 
   io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
@@ -21,7 +40,7 @@ export const initializeSocket = (app: Express) => {
     });
 
     socket.on('userOnline', (userId) => {
-      onlineUsers[userId] = socket.id;
+      toggleActive(true, userId);
       console.log(`User ${userId} is online`);
     });
 
@@ -37,28 +56,24 @@ export const initializeSocket = (app: Express) => {
       socket.to(roomId).emit('receiveRoomBroadcast', { roomId, message });
     });
 
-    socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
-      const userId = Object.keys(onlineUsers).find((key) => onlineUsers[key] === socket.id);
-      if (userId) {
-        delete onlineUsers[userId];
-        console.log(`User ${userId} is offline`);
-      }
+    socket.on('disconnect', (userId) => {
+      toggleActive(false, userId);
+      console.log('Client disconnected with userId: ', userId);
     });
   });
 
   return httpServer;
 };
 
-export const getOnlineUsers = async (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'active users fetched',
-    data: {
-      onlineUsers,
-    },
-  });
-};
+export const getOnlineUsers = async (res: Response, req: Request) => {
+  try {
+    const activeUserRepo = AppDataSource.getRepository(ActiveUser);
+    const users = await activeUserRepo.find({ where: { isActive: true } });
+    res.status(200).json({ status: "success", message: "Fetched active users", data: { activeUsers: users } });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: "Error fetching users" });
+  }
+}
 
 export const broadcastMessage = (req: Request, res: Response) => {
   const { message } = req.body;
