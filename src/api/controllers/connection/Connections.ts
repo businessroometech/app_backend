@@ -43,11 +43,11 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     await connectionRepository.save(newConnection);
 
     // Create a notification
-   await sendNotification(
-      requesterId,
-      `Received a connection request by ${receiver?.firstName} ${receiver?.lastName}`,
-      receiver.profilePictureUploadId,
-      `/profile/feed/${receiverId}`
+    sendNotification(
+      receiverId,
+      `Received a connection request by ${requester?.firstName} ${requester?.lastName}`,
+      requester.profilePictureUploadId,
+      `/profile/feed/${requesterId}`
     );
 
     return res.status(201).json({
