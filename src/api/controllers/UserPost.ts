@@ -45,19 +45,19 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-    if(!content ||  !mediaKeys) {
-      return res.status(400).json({
-        message: 'Content or media are required.',
-      });
-    }
+    // if(!content ||  !mediaKeys) {
+    //   return res.status(400).json({
+    //     message: 'Content or media are required.',
+    //   });
+    // }
 
-    if(content){
-      if(content.trim() === '' ){
-        return res.status(400).json({
-          message: 'Content cannot be empty.',
-        });
-      }
-    }
+    // if(content){
+    //   if(content.trim() === '' ){
+    //     return res.status(400).json({
+    //       message: 'Content cannot be empty.',
+    //     });
+    //   }
+    // }
 
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
