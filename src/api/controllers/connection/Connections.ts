@@ -45,8 +45,8 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     // Create a notification
    await sendNotification(
       requesterId,
-      `Received a connection request by ${receiverId.firstName} ${receiverId.lastName}`,
-      receiverId.profilePictureUploadId,
+      `Received a connection request by ${receiver?.firstName} ${receiver?.lastName}`,
+      receiver.profilePictureUploadId,
       `/profile/feed/${receiverId}`
     );
 
@@ -92,7 +92,7 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
     // Create a notification
     const notification = await sendNotification(
       connection.requester.id,
-      `${connection.receiver.firstName} ${connection.receiver.lastName} approved your connection request`,
+      `${connection.receiver.firstName} ${connection.receiver.lastName} ${data?.status } your connection request`,
       connection.receiver.profilePictureUploadId,
       `/profile/feed/${connection.receiver.id}`
     );

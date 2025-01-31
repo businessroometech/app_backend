@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 
 import { Connection } from '@/api/entity/connection/Connections';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
-import { Like } from '@/api/entity/posts/Like';
+import { ILike } from 'typeorm';
 import { UserPost } from '@/api/entity/UserPost';
 import { AppDataSource } from '@/server';
 
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
 import { sendNotification } from '../notifications/SocketNotificationController';
+import { Like } from '@/api/entity/posts/Like';
 
 export const UpdateUserProfile = async (req: Request, res: Response) => {
   try {
@@ -193,8 +194,9 @@ export const ProfileVisitController = {
 
       await profileVisitRepository.save(profileVisit);
 
-     if(visited.id!==visitor.id) { await sendNotification(
-        visited.id,
+     if(visited?.id!==visitor?.id) { 
+      await sendNotification(
+        visitedId,
         `${visitor.firstName} ${visitor.lastName} viewed your profile.`,
         visitor.profilePictureUploadId,
         `/profile/feed/${visitor.id}`
@@ -211,15 +213,10 @@ export const ProfileVisitController = {
   getMyProfileVisits: async (req: Request, res: Response) => {
     try {
       const { userId, page = 1, limit = 10 } = req.body;
-
       const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
       const connectionRepository = AppDataSource.getRepository(Connection);
-
-      // Calculate the date one week ago
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-      // Aggregate visits and count the number of times each visitor has visited the profile
       const visits = await profileVisitRepository
         .createQueryBuilder('profileVisit')
         .select('profileVisit.visitor', 'visitorId')
@@ -340,4 +337,63 @@ export const ProfileVisitController = {
       });
     }
   },
+};
+
+
+// search user profile
+export const searchUserProfile = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { userId, searchQuery } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        message: 'User ID is required.',
+      });
+    }
+
+    if (!searchQuery) {
+      return res.status(400).json({
+        message: 'Search query is required.',
+      });
+    }
+
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const searchResults = await personalDetailsRepository.find({
+      where: [
+        { firstName: ILike(`%${searchQuery}%`) },
+        { lastName: ILike(`%${searchQuery}%`) },
+        { emailAddress: ILike(`%${searchQuery}%`) },
+      ],
+    });
+
+    if (!searchResults || searchResults.length === 0) {
+      return res.status(204).json({
+        message: 'No results found.',
+      });
+    }
+
+    const searchResultsWithProfileImg = await Promise.all(
+      searchResults.map(async (result) => {
+        const profileImgUrl = result.profilePictureUploadId
+          ? await generatePresignedUrl(result.profilePictureUploadId)
+          : null;
+
+        return {
+          ...result,
+          profileImgUrl,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      message: 'Search results fetched successfully.',
+      data: searchResultsWithProfileImg,
+    });
+  } catch (error: any) {
+    console.error('Error searching user profile:', error);
+    return res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
 };
