@@ -14,7 +14,7 @@ export const sendMessage = async (req: Request, res: Response) => {
       receiverId,
       content,
       documentKeys,
-    }); 
+    });
 
     await messageRepository.save(message);
 
@@ -77,6 +77,37 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
         page: numericPage,
         limit: numericLimit,
         totalPages: Math.ceil(total / numericLimit),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ message: "Failed to fetch messages.", error });
+  }
+};
+
+export const getAllUnreadMessages = async (req: Request, res: Response) => {
+  try {
+    const { receiverId } = req.body;
+
+    if (!receiverId) {
+      return res.status(400).json({ message: "SenderId and ReceiverId are required." });
+    }
+
+    const messageRepository = AppDataSource.getRepository(Message);
+
+    const result = await messageRepository
+      .createQueryBuilder('message')
+      .select('message.senderId', 'senderId')
+      .addSelect('COUNT(message.id)', 'messageCount')
+      .where('message.receiverId = :receiverId', { receiverId })
+      .groupBy('message.senderId')
+      .getRawMany();
+
+    res.status(200).json({
+      status: "success",
+      message: "Messages fetched successfully",
+      data: {
+        result,
       },
     });
   } catch (error) {
@@ -164,3 +195,4 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: 'Error marking messages as read' });
   }
 };
+
