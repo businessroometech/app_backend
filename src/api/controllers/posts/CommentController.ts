@@ -153,7 +153,7 @@ export const getComments = async (req: Request, res: Response) => {
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
-          likeStatus: commentLike?.status,
+          likeStatus: commentLike?.status?commentLike.status:false,
           commenterId: commenter?.id,
         };
       })
