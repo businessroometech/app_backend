@@ -44,6 +44,12 @@ export const initializeSocket = (app: Express) => {
       console.log(`User ${userId} is online`);
     });
 
+    socket.on('userOffline', (userId) => {
+      toggleActive(false, userId);
+      console.log(`User ${userId} is online`);
+    });
+
+
     // Broadcast message to all clients
     socket.on('broadcastMessage', (message) => {
       console.log('Broadcasting message:', message);
@@ -56,9 +62,8 @@ export const initializeSocket = (app: Express) => {
       socket.to(roomId).emit('receiveRoomBroadcast', { roomId, message });
     });
 
-    socket.on('disconnect', (userId) => {
-      toggleActive(false, userId);
-      console.log('Client disconnected with userId: ', userId);
+    socket.on('disconnect', () => {
+      console.log('Client disconnected');
     });
   });
 

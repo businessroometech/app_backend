@@ -197,7 +197,7 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
   }
 };
 
-export const getOnlineUsers = async (res: Response, req: Request) => {
+export const getOnlineUsers = async (req: Request, res: Response) => {
   try {
     const activeUserRepo = AppDataSource.getRepository(ActiveUser);
     const users = await activeUserRepo.find({ where: { isActive: true } });
