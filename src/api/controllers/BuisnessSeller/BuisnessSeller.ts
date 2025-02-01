@@ -77,25 +77,31 @@ export const getBusinessForSaleByUniqueId = async (req: Request, res: Response) 
 };
 
 export const getBusinessForSaleById = async (req: Request, res: Response) => {
-  try {
-    const businessRepository = AppDataSource.getRepository(BusinessForSale);
-    const business = await businessRepository.find({
-      where: { UserId: req.params.UserId },
-    });
-
-    if (!business) {
-      return res.status(404).json({
-        success: false,
-        message: 'Business not found',
-      });
-    }
-    const logourl = business?.businessLogo ? await generatePresignedUrl(business.businessLogo) : null;
-    const businessData = { ...business, logourl };
-
-    return res.status(200).json({
-      success: true,
-      data: businessData,
-    });
+    try {
+        const businessRepository = AppDataSource.getRepository(BusinessForSale);
+        const businesses = await businessRepository.find({
+            where: { UserId: req.params.UserId },
+        });
+    
+        if (!businesses || businesses.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Business not found',
+            });
+        }
+    
+        const businessesData = await Promise.all(
+            businesses.map(async (business) => ({
+                ...business,
+                logourl: business.businessLogo ? await generatePresignedUrl(business.businessLogo) : null,
+            }))
+        );
+    
+        return res.status(200).json({
+            success: true,
+            data: businessesData,
+        });
+    
   } catch (error) {
     console.error('Error fetching business for sale:', error);
     return res.status(500).json({
