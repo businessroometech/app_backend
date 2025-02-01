@@ -65,16 +65,6 @@ export const initializeSocket = (app: Express) => {
   return httpServer;
 };
 
-export const getOnlineUsers = async (res: Response, req: Request) => {
-  try {
-    const activeUserRepo = AppDataSource.getRepository(ActiveUser);
-    const users = await activeUserRepo.find({ where: { isActive: true } });
-    res.status(200).json({ status: "success", message: "Fetched active users", data: { activeUsers: users } });
-  } catch (error) {
-    res.status(500).json({ status: "error", message: "Error fetching users" });
-  }
-}
-
 export const broadcastMessage = (req: Request, res: Response) => {
   const { message } = req.body;
 
