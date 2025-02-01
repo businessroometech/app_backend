@@ -183,7 +183,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     }
     const likeRepository = AppDataSource.getRepository(Like);
 
-    const likes = await likeRepository.find({ where: { postId } });
+    const likes = await likeRepository.find({ where: { postId , status:true} });
 
     if (!likes) {
       return res.status(404).json({ status: 'error', message: 'post not available.' });
