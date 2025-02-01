@@ -44,6 +44,12 @@ export const initializeSocket = (app: Express) => {
       console.log(`User ${userId} is online`);
     });
 
+    socket.on('userOffline', (userId) => {
+      toggleActive(false, userId);
+      console.log(`User ${userId} is online`);
+    });
+
+
     // Broadcast message to all clients
     socket.on('broadcastMessage', (message) => {
       console.log('Broadcasting message:', message);
@@ -56,24 +62,13 @@ export const initializeSocket = (app: Express) => {
       socket.to(roomId).emit('receiveRoomBroadcast', { roomId, message });
     });
 
-    socket.on('disconnect', (userId) => {
-      toggleActive(false, userId);
-      console.log('Client disconnected with userId: ', userId);
+    socket.on('disconnect', () => {
+      console.log('Client disconnected');
     });
   });
 
   return httpServer;
 };
-
-export const getOnlineUsers = async (res: Response, req: Request) => {
-  try {
-    const activeUserRepo = AppDataSource.getRepository(ActiveUser);
-    const users = await activeUserRepo.find({ where: { isActive: true } });
-    res.status(200).json({ status: "success", message: "Fetched active users", data: { activeUsers: users } });
-  } catch (error) {
-    res.status(500).json({ status: "error", message: "Error fetching users" });
-  }
-}
 
 export const broadcastMessage = (req: Request, res: Response) => {
   const { message } = req.body;

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { getSocketInstance } from '../../../socket'; // Import your socket instance
 import { AppDataSource } from '../../../server'; // Import your data source
 import { Message } from '@/api/entity/chat/Message';
+import { ActiveUser } from '@/api/entity/chat/ActiveUser';
 
 export const sendMessage = async (req: Request, res: Response) => {
   try {
@@ -196,3 +197,12 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
   }
 };
 
+export const getOnlineUsers = async (req: Request, res: Response) => {
+  try {
+    const activeUserRepo = AppDataSource.getRepository(ActiveUser);
+    const users = await activeUserRepo.find({ where: { isActive: true } });
+    return res.status(200).json({ status: "success", message: "Fetched active users", data: { activeUsers: users } });
+  } catch (error) {
+    return res.status(500).json({ status: "error", message: "Error fetching users" });
+  }
+}
