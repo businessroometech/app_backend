@@ -327,8 +327,6 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
 };
 
 // Get all posts for public view
-
-// Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { userId, page, limit = 5 } = req.body;
@@ -397,8 +395,6 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
         const likeStatus = await getLikeStatus(post.id);
-
-
         const reactionRepository = AppDataSource.getRepository(Reaction);
 
         // Fetch reactions with related post data
@@ -457,7 +453,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             mediaKeys: post.mediaKeys,
             likeCount,
             commentCount,
-            likeStatus,
+            likeStatus: likeStatus?likeStatus : false,
             reactions: totalReactions,
             userReaction,
             isRepost: post.isRepost,
