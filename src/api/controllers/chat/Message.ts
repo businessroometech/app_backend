@@ -91,7 +91,7 @@ export const getAllUnreadMessages = async (req: Request, res: Response) => {
     const { receiverId } = req.body;
 
     if (!receiverId) {
-      return res.status(400).json({ message: "SenderId and ReceiverId are required." });
+      return res.status(400).json({ message: "ReceiverId are required." });
     }
 
     const messageRepository = AppDataSource.getRepository(Message);
@@ -101,7 +101,7 @@ export const getAllUnreadMessages = async (req: Request, res: Response) => {
       .select('message.senderId', 'senderId')
       .addSelect('COUNT(message.id)', 'messageCount')
       .where('message.receiverId = :receiverId', { receiverId })
-      .where('message.isRead = :isRead', { isRead: false })
+      .andWhere('message.isRead = :isRead', { isRead: false })
       .groupBy('message.senderId')
       .getRawMany();
 
