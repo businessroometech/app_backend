@@ -15,8 +15,8 @@ import {
 
 import { Connection } from '../connection/Connections';
 import { ProfileVisit } from '../notifications/ProfileVisit';
-import { Reaction } from '../posts/Reaction';
 import { Mention } from '../posts/Mention';
+import { Reaction } from '../posts/Reaction';
 
 interface Address {
   addressLine1: string;
@@ -97,10 +97,8 @@ export class PersonalDetails extends BaseEntity {
   })
   userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor';
 
-
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
-
 
   @Column({ type: 'varchar', default: 'system' })
   updatedBy!: string;
@@ -160,5 +158,4 @@ export class PersonalDetails extends BaseEntity {
 
   @ManyToMany(() => Mention, (mention) => mention.users)
   mentions!: Mention[];
-
 }
