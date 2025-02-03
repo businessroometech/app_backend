@@ -13,7 +13,7 @@ entrepreneurRouter.post('/create', createEntrepreneur);
 entrepreneurRouter.get('/getall', getAllEntrepreneurs);
 
 // Route to get an entrepreneur detail by ID
-entrepreneurRouter.get('/detail/:id', getEntrepreneurById);
+entrepreneurRouter.get('/detail/:UserId', getEntrepreneurById);
 
 // Route to update 
 entrepreneurRouter.put('/update/:id', updateEntrepreneur);

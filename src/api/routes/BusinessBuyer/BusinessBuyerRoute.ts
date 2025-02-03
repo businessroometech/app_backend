@@ -14,7 +14,7 @@ const router = Router();
 
 router.post('/create', createBusinessBuyer);
 router.get('/getall', getAllBusinessBuyers);
-router.get('/get/:id', getBusinessBuyerById);
+router.get('/get/:UserId', getBusinessBuyerById);
 router.put('/update/:id', updateBusinessBuyer);
 router.delete('/delete/:id', deleteBusinessBuyer);
 

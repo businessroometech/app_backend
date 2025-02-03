@@ -13,6 +13,9 @@ export class Entrepreneur {
   @Column({ type: 'varchar', length: 200, nullable: true })
   businessName!: string;
 
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  UserId!: string;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   businessLocationCountry!: string;
 

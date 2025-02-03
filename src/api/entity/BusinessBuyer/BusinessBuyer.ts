@@ -11,6 +11,9 @@ export class BusinessBuyer {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
+  @Column({type: "varchar" ,  })
+  UserId! : string
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   businessType!: string;
 
