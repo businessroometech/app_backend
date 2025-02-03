@@ -130,6 +130,21 @@ export class PersonalDetails extends BaseEntity {
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
     this.password = await bcrypt.hash(this.password, 10);
+
+    if (!this.userName && this.emailAddress) {
+      let baseUserName = this.emailAddress.split('@')[0]; 
+      baseUserName = baseUserName.replace(/[^a-zA-Z0-9]/g, ''); 
+      
+      let userName = baseUserName;
+      let exists = await PersonalDetails.findOne({ where: { userName } });
+
+      while (exists) {
+        userName = `${baseUserName}${Math.floor(1000 + Math.random() * 9000)}`;
+        exists = await PersonalDetails.findOne({ where: { userName } });
+      }
+
+      this.userName = userName;
+    }
   }
 
   private generateUUID(): string {
@@ -161,7 +176,7 @@ export class PersonalDetails extends BaseEntity {
   })
   reactions!: Reaction[];
 
-  @ManyToMany(() => Mention, (mention) => mention.users)
+  @ManyToMany(() => Mention, (mention) => mention.user)
   mentions!: Mention[];
 
 }

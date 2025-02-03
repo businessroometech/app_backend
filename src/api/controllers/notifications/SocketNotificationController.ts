@@ -129,10 +129,9 @@ export class WebSocketNotification {
     }
   
     try {
-      const notifications = await AppDataSource.manager.find(Notifications, {
-        where: { userId: userId as string },
-        order: { createdAt: 'DESC' },
-      });
+      const notificationRepo =  AppDataSource.getRepository(Notifications)
+      const notifications = await notificationRepo.find({ where: { userId: String(userId) },
+        order: { createdAt: 'DESC' },});
   
       // Format timestamps before sending response
       const formattedNotifications = notifications.map((notification) => ({
