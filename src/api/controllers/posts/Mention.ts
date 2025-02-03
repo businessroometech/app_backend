@@ -9,7 +9,7 @@ import { Connection } from '@/api/entity/connection/Connections';
 
 
 export const suggestUsersByEmail = async (req: Request, res: Response): Promise<Response> => {
-  try {
+  try { 
     const { query, userId } = req.body; 
 
     // Validate input
@@ -45,13 +45,13 @@ export const suggestUsersByEmail = async (req: Request, res: Response): Promise<
 
     // Extract connected user IDs
     const connectedUserIds = new Set([
-      userId, // Include the current user
+      userId, 
       ...connections.map((conn) => (conn.requesterId === userId ? conn.receiverId : conn.requesterId)),
     ]);
     
     const suggestions = await Promise.all(
       users
-        .filter(user => connectedUserIds.has(user.id)) // Ensure user is in connections
+        .filter(user => connectedUserIds.has(user.id)) 
         .map(async (user) => ({
           id: user.id,
           emailAddress: user.emailAddress,

@@ -184,13 +184,13 @@ export const getComments = async (req: Request, res: Response) => {
 export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
   try {
     const { userId, postId, commentId, text, createdBy, nestedCommentId } = req.body;
-
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
+    const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
 
     if (nestedCommentId) {
-      const nestedComment = await NestedComment.findOne({ where: { id: nestedCommentId } });
+      const nestedComment = await nestedCommentRepo.findOne({ where: { id: nestedCommentId } });
 
       if (!nestedComment) {
         return res.status(404).json({ status: 'error', message: 'Nested Comment not found.' });
@@ -204,8 +204,13 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
       return res.status(200).json({ status: 'success', message: 'Nested Comment updated successfully.', data: { nestedComment } });
     }
 
-    const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
+    // Fetch the parent comment details
+    const parentCommentRepo = AppDataSource.getRepository(Comment);
+    const parentComment = await parentCommentRepo.findOne({ where: { id: commentId } });
 
+    if (!parentComment) {
+      return res.status(404).json({ status: 'error', message: 'Parent comment not found.' });
+    }
     const comment = nestedCommentRepo.create({
       userId,
       postId,
@@ -215,28 +220,31 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
       updatedBy: createdBy || 'system',
     });
 
-  const user =   await nestedCommentRepo.save(comment);
+    const savedComment = await nestedCommentRepo.save(comment);
 
-  const userRepo = AppDataSource.getRepository(PersonalDetails);
-  const finduser = await userRepo.findOne({where: {id: user.id}});
-    const media = finduser ? (finduser.profilePictureUploadId? finduser.profilePictureUploadId :null) : null;
+    // Fetch user details
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+    const findUser = await userRepo.findOne({ where: { id: userId } });
+    const media = findUser?.profilePictureUploadId || null;
 
-   if(commentId.userId!==userId) {
-     await sendNotification(
-      commentId.userId,
-      finduser? `${finduser.firstName} ${finduser.lastName} commented on your post`: 'New Comment on your post',
-      media,
-      `/feed/home#${commentId}`
-    );}
+    // Send notification 
+    if (parentComment.userId !== userId) {
+      await sendNotification(
+        parentComment.userId, 
+        findUser ? `${findUser.firstName} ${findUser.lastName} replied to your comment` : 'New reply to your comment',
+        media,
+        `/feed/home#${commentId}`
+      );
+    }
 
-    
-    return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
-    
+    return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { savedComment } });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
+
 
 export const deleteNestedComment = async (req: Request, res: Response) => {
   const { nestedCommentId } = req.body;

@@ -103,7 +103,7 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
   } catch (error: any) {
     console.error('Error updating connection status:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
-  }
+  } 
 };
 
 // Get user's connections and mutual connections
