@@ -110,7 +110,7 @@ export class BusinessForSale extends BaseEntity {
 
 
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: 'text', nullable: true })
   businessLogo!: string;
 
  

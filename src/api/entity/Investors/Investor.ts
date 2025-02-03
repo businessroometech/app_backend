@@ -1,15 +1,13 @@
 import { randomBytes } from 'crypto';
 import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { OneToOne } from 'typeorm';
 
-import { PersonalDetails } from '../personal/PersonalDetails';
 @Entity({ name: 'Investor' })
 export class Investor {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  investorName!: string;
+  @Column({ type: 'varchar', length: 100 })
+  UserId!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   isAccredited!: string;
@@ -20,11 +18,11 @@ export class Investor {
   @Column({ type: 'varchar', length: 100, nullable: true })
   investorType!: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
-  interestedStartups!: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  startupType!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  preferredStage!: string;
+  startupStage!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
   regionPreference!: string;
@@ -57,19 +55,19 @@ export class Investor {
   investmentExperience!: string;
 
   @Column({ type: 'int', nullable: true })
-  numberOfStartups!: number;
+  startupsInvested!: number;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
   successStories!: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  decisionProcess!: string;
+  decisionMakingProcess!: string;
 
   @Column({ type: 'simple-array', nullable: true })
   evaluationCriteria!: string[];
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  exitStrategyPreference!: string;
+  exitStrategy!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   fundraisingStage!: string;
