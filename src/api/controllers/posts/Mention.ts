@@ -7,33 +7,42 @@ import { Mention } from '@/api/entity/posts/Mention';
 import { UserPost } from '@/api/entity/UserPost';
 import { Connection } from '@/api/entity/connection/Connections';
 
-
 export const suggestUsersByEmail = async (req: Request, res: Response): Promise<Response> => {
   try { 
     const { query, userId } = req.body; 
 
     // Validate input
-    if (!query || typeof query !== 'string' || !userId) {
+    if (!userId) {
       return res.status(400).json({
         status: 'error',
-        message: 'Query and userId parameters are required and must be valid.',
+        message: 'UserId parameter is required.',
       });
     }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepo = AppDataSource.getRepository(Connection);
 
-    // Fetch users based on search query
-    const users = await userRepository.find({
-      where: [
-        { emailAddress: Like(`%${query}%`) },
-        { firstName: Like(`%${query}%`) },
-        { lastName: Like(`%${query}%`) },
-        { userName: Like(`%${query}%`) },
-      ],
-      select: ['id', 'emailAddress', 'firstName', 'lastName', 'profilePictureUploadId', "userRole", "userName"],
-      take: 10,
-    });
+    let users;
+
+    if (!query || typeof query !== 'string') {
+      // If query is empty, fetch all users (limit 10)
+      users = await userRepository.find({
+        select: ['id', 'emailAddress', 'firstName', 'lastName', 'profilePictureUploadId', "userRole", "userName"],
+     
+      });
+    } else {
+      // Fetch users based on search query
+      users = await userRepository.find({
+        where: [
+          { emailAddress: Like(`%${query}%`) },
+          { firstName: Like(`%${query}%`) },
+          { lastName: Like(`%${query}%`) },
+          { userName: Like(`%${query}%`) },
+        ],
+        select: ['id', 'emailAddress', 'firstName', 'lastName', 'profilePictureUploadId', "userRole", "userName"],
+    
+      });
+    }
 
     // Fetch user's connections where status is 'accepted'
     const connections = await connectionRepo.find({
@@ -76,6 +85,7 @@ export const suggestUsersByEmail = async (req: Request, res: Response): Promise<
     });
   }
 };
+
 
 
 // export const createMention = async (req: Request, res: Response): Promise<Response> => {
