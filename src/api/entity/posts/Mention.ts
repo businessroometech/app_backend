@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -17,7 +18,8 @@ export class Mention extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToOne(() => PersonalDetails, (user) => user.mentions, { nullable: false })
+  @ManyToOne(() => PersonalDetails, (user) => user.mentions, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
   user!: PersonalDetails;
 
   @ManyToOne(() => UserPost, (post) => post.mentions, { nullable: false })

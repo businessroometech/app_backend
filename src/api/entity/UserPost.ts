@@ -72,6 +72,9 @@ export class UserPost extends BaseEntity {
   })
   reactions!: Reaction[];
 
-  @ManyToMany(() => Mention, (mention) => mention.posts)
+  @OneToMany(() => Mention, (mention) => mention.post, {
+    cascade: true, 
+  })
   mentions!: Mention[];
+  
 }

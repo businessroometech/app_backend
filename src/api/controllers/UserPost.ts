@@ -36,45 +36,27 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
   try {
     const { userId, title, content, hashtags, mediaKeys, repostedFrom, repostText } = req.body;
 
-    // Check if the user ID exists in the PersonalDetails repository
-    const userRepos = AppDataSource.getRepository(PersonalDetails);
-    const user = await userRepos.findOneBy({ id: userId });
+    // Validate if the user exists
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
+    const user = await userRepository.findOneBy({ id: userId });
 
     if (!user) {
-      return res.status(400).json({
-        message: 'User ID is invalid or does not exist.',
-      });
+      return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
     }
-
-    // // Ensure content or media is provided
-    // if (!content || !mediaKeys) {
-    //   return res.status(400).json({
-    //     message: 'Content or media are required.',
-    //   });
-    // }
-
-    // // Ensure content is not empty if mediaKeys are provided
-    // if (!mediaKeys && content.trim() === '') {
-    //   return res.status(400).json({
-    //     message: 'Content cannot be empty.',
-    //   });
-    // }
 
     // Extract mentions from content
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
-    // Validate mentioned users
-    const mentionedUsers = await userRepos.find({
-      where: { userName: In(mentions) },
-    });
+    // Fetch valid mentioned users
+    const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
     const validMentionedUserIds = mentionedUsers.map((u) => u.id);
 
-    // Check if all mentioned users exist
+    // Validate if all mentioned users exist
     if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
       return res.status(404).json({
         message: 'One or more mentioned users do not exist.',
-        invalidMentions: mentions.filter((m) => !validMentionedUserIds.includes(m)),
+        invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
       });
     }
 
@@ -88,37 +70,37 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       mediaKeys,
       repostedFrom,
       repostText,
-      isRepost: repostedFrom !== null,
+      isRepost: Boolean(repostedFrom),
     });
 
     const savedPost = await postRepository.save(newPost);
 
-    // Create mention entries for valid mentioned users
+    let mention = null;
     if (validMentionedUserIds.length > 0) {
       const mentionRepository = AppDataSource.getRepository(Mention);
 
       const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
         mentionRepository.create({
-          user: [user.id],
-          postId: [savedPost.id],
+          user: user,
+          post: savedPost,
           mentionBy: userId,
           mentionTo: mentionedUserId,
         })
       );
 
-      await mentionRepository.save(mentionsToSave);
+      mention = await mentionRepository.save(mentionsToSave);
 
       // Send mention notifications
       for (const mentionedUser of mentionedUsers) {
-        if(mentionedUser.id !== userId) {
-        await sendNotification(
-          mentionedUser.id,
-          `${user.firstName} ${user.lastName} mentioned you in a post`,
-          user.profilePictureUploadId,
-          `/feed/home#${savedPost.id}`
-        );
+        if (mentionedUser.id !== userId) {
+          await sendNotification(
+            mentionedUser.id,
+            `${user.firstName} ${user.lastName} mentioned you in a post`,
+            user.profilePictureUploadId,
+            `/feed/home#${savedPost.id}`
+          );
+        }
       }
-    }
     }
 
     // Broadcast the "post sent" event via WebSocket
@@ -128,7 +110,9 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
     return res.status(201).json({
       message: 'Post created successfully.',
       data: savedPost,
+      mention,
     });
+
   } catch (error: any) {
     return res.status(500).json({
       message: 'Internal server error. Could not create post.',
@@ -312,26 +296,27 @@ export const UpdateUserPost = async (req: Request, res: Response): Promise<Respo
 // find and delete user post
 export const DeleteUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { PostId } = req.body;
+    const { PostId, userId } = req.body;
 
-    // Check if the user ID exists in the PersonalDetails repository
-    // const userRepos = AppDataSource.getRepository(PersonalDetails);
-    // const user = await userRepos.findOneBy({ userId });
-    // if (!user) {
-    //   return res.status(400).json({
-    //     message: 'User ID is invalid or does not exist.',
-    //   });
-    // }
+    const userRepos = AppDataSource.getRepository(PersonalDetails);
+    const user = await userRepos.findOneBy({ id: userId });
+    if (!user) {
+      return res.status(400).json({ message: 'User Id is invalid or does not exist.' });
+    }
 
-    // Find the user post
-    const userPost = await UserPost.findOne({ where: { id: PostId } });
-
-    // Delete the user post
-    await userPost!.remove();
-
-    return res.status(200).json({
-      message: 'User post deleted successfully.',
+    const userPostRepo = AppDataSource.getRepository(UserPost);
+    const userPost = await userPostRepo.findOne({ 
+      where: { id: PostId,  userId } , 
     });
+
+    if (!userPost) {
+      return res.status(404).json({ message: 'Post not found. Invalid Post Id.' });
+    }
+
+    await userPostRepo.delete(PostId); // Correct way to delete
+
+    return res.status(200).json({ message: 'User post deleted successfully.' });
+
   } catch (error: any) {
     return res.status(500).json({
       message: 'Internal server error. Could not delete user post.',
@@ -339,6 +324,7 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
     });
   }
 };
+
 
 // Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {

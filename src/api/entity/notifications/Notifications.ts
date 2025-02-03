@@ -19,7 +19,7 @@ export class Notifications {
   @Column({ type: 'boolean', default: false })
   isRead!: boolean;
 
-  @Column({ type: 'text', nullable: true }) 
+  @Column({ type: 'longtext', nullable: true }) 
   mediaUrl!: string;
 
   @Column({ type: 'varchar', default: 'system' })

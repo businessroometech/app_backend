@@ -82,7 +82,7 @@ const AppDataSource = new DataSource({
     Wishlists,
     ActiveUser
   ],
-  synchronize: false,
+  synchronize: true,
 });
 
 // Initialize the DataSource
