@@ -12,7 +12,7 @@ router.post('/create', createInvestor);
 router.get('/getall', getAllInvestors);
 
 // Get investor by ID
-router.get('/:id', getInvestorById);
+router.get('/get/:UserId', getInvestorById);
 
 // Update  investor by ID
 router.put('/update/:id', updateInvestor);

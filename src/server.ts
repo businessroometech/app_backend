@@ -26,6 +26,7 @@ import WishlistsRoutes from '../src/api/routes/Wishlists/WishlistsRoutes';
 // import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
+import { ActiveUser } from './api/entity/chat/ActiveUser';
 import { Message } from './api/entity/chat/Message';
 // import { Message } from './api/entity/chat/Message';
 // import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
@@ -43,12 +44,12 @@ import { Like } from './api/entity/posts/Like';
 import { Mention } from './api/entity/posts/Mention';
 import { NestedComment } from './api/entity/posts/NestedComment';
 import { Reaction } from './api/entity/posts/Reaction';
+import { SubRole } from './api/entity/SubRole/Subrole';
 import { UserPost } from './api/entity/UserPost';
 import { Wishlists } from './api/entity/WishLists/Wishlists';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
+import SubRoleRoutes from './api/routes/SubRole/SubRoleRoutes';
 import { initializeSocket } from './socket';
-import { ActiveUser } from './api/entity/chat/ActiveUser';
-
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -80,7 +81,8 @@ const AppDataSource = new DataSource({
     Mention,
     Hashtag,
     Wishlists,
-    ActiveUser
+    ActiveUser,
+    SubRole,
   ],
   synchronize: false,
 });
@@ -121,7 +123,7 @@ app.use('/v1/entrepreneur', EntrepreneurRoutes);
 app.use('/v1/live', liveRouter);
 app.use('/v1/wishlists', WishlistsRoutes);
 app.use('/v1/socket-notifications', SocketNotificationRouting);
-
+app.use('/v1/subrole', SubRoleRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');

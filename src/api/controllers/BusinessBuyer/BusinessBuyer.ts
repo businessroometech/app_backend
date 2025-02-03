@@ -51,7 +51,7 @@ export const getBusinessBuyerById = async (req: Request, res: Response) => {
   try {
     const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
     const businessBuyer = await businessBuyerRepository.findOne({
-      where: { id: req.params.id },
+      where: { UserId: req.params.UserId },
     });
 
     if (!businessBuyer) {

@@ -125,7 +125,7 @@ export const updateBusinessForSale = async (req: Request, res: Response) => {
         message: 'Business not found',
       });
     }
-
+    
     businessRepository.merge(business, req.body);
     const results = await businessRepository.save(business);
 
