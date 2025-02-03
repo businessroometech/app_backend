@@ -57,7 +57,7 @@ export const createLike = async (req: Request, res: Response) => {
     let notifications = null;
 
     if (userInfo.id !== userId && status === true) {
-      notifications =  sendNotification(
+      notifications = await sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
         media,

@@ -7,9 +7,9 @@ import { Like } from '../entity/posts/Like';
 import { generatePresignedUrl } from './s3/awsControllers';
 import { In } from 'typeorm';
 import { Reaction } from '../entity/posts/Reaction';
-import { createMention } from './posts/Mention';
 import { Mention } from '../entity/posts/Mention';
 import { broadcastMessage, getSocketInstance } from '@/socket';
+import { sendNotification } from './notifications/SocketNotificationController';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -39,31 +39,35 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
     // Check if the user ID exists in the PersonalDetails repository
     const userRepos = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepos.findOneBy({ id: userId });
+
     if (!user) {
       return res.status(400).json({
         message: 'User ID is invalid or does not exist.',
       });
     }
 
-    // if(!content ||  !mediaKeys) {
+    // // Ensure content or media is provided
+    // if (!content || !mediaKeys) {
     //   return res.status(400).json({
     //     message: 'Content or media are required.',
     //   });
     // }
 
-    // if(content){
-    //   if(content.trim() === '' ){
-    //     return res.status(400).json({
-    //       message: 'Content cannot be empty.',
-    //     });
-    //   }
+    // // Ensure content is not empty if mediaKeys are provided
+    // if (!mediaKeys && content.trim() === '') {
+    //   return res.status(400).json({
+    //     message: 'Content cannot be empty.',
+    //   });
     // }
 
+    // Extract mentions from content
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
     // Validate mentioned users
-    const mentionedUsers = await userRepos.findByIds(mentions);
+    const mentionedUsers = await userRepos.find({
+      where: { userName: In(mentions) },
+    });
     const validMentionedUserIds = mentionedUsers.map((u) => u.id);
 
     // Check if all mentioned users exist
@@ -84,36 +88,46 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       mediaKeys,
       repostedFrom,
       repostText,
-      isRepost: repostedFrom !== null ? true : false
+      isRepost: repostedFrom !== null,
     });
 
     const savedPost = await postRepository.save(newPost);
 
     // Create mention entries for valid mentioned users
-    // if (validMentionedUserIds.length > 0) {
-    //   const mentionRepository = AppDataSource.getRepository(Mention);
+    if (validMentionedUserIds.length > 0) {
+      const mentionRepository = AppDataSource.getRepository(Mention);
 
-    //   const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
-    //     mentionRepository.create({
-    //       user: [user.id], 
-    //       postId: [savedPost.id], 
-    //       mentionBy: userId,
-    //       mentionTo: mentionedUserId,
-    //     })
-    //   );
+      const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
+        mentionRepository.create({
+          user: [user.id],
+          postId: [savedPost.id],
+          mentionBy: userId,
+          mentionTo: mentionedUserId,
+        })
+      );
 
-    //   await mentionRepository.save(mentionsToSave);
-    // }
+      await mentionRepository.save(mentionsToSave);
 
+      // Send mention notifications
+      for (const mentionedUser of mentionedUsers) {
+        if(mentionedUser.id !== userId) {
+        await sendNotification(
+          mentionedUser.id,
+          `${user.firstName} ${user.lastName} mentioned you in a post`,
+          user.profilePictureUploadId,
+          `/feed/home#${savedPost.id}`
+        );
+      }
+    }
+    }
 
-    // Broadcast the "post sent" event
+    // Broadcast the "post sent" event via WebSocket
     const io = getSocketInstance();
     io.emit('postSent', { success: true, postId: savedPost.id });
 
     return res.status(201).json({
       message: 'Post created successfully.',
       data: savedPost,
-      // mentions: validMentionedUserIds,
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -225,7 +239,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
           likeStatus,
           isRepost: post.isRepost,
           repostedFrom: post.repostedFrom,
-          repostText: post.repostText
+          repostText: post.repostText,
         },
         userDetails: {
           firstName: user.firstName,
@@ -370,8 +384,6 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       where: { postId: In(postIds) },
     });
 
-
-
     // Generate media URLs for posts
     const mediaKeysWithUrls = await Promise.all(
       posts.map(async (post) => ({
@@ -413,8 +425,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         }, {});
 
         // Fetch the user's reaction to the post
-        const userReaction =
-          postReactions.find((reaction) => reaction.user?.id === userId)?.reactionType || null;
+        const userReaction = postReactions.find((reaction) => reaction.user?.id === userId)?.reactionType || null;
 
         // Fetch top 5 comments for the post
         const postComments = await commentRepository.find({
@@ -453,12 +464,12 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             mediaKeys: post.mediaKeys,
             likeCount,
             commentCount,
-            likeStatus: likeStatus?likeStatus : false,
+            likeStatus: likeStatus ? likeStatus : false,
             reactions: totalReactions,
             userReaction,
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
-            repostText: post.repostText
+            repostText: post.repostText,
           },
           userDetails: {
             postedId: user?.id,

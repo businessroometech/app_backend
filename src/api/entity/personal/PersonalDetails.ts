@@ -30,6 +30,9 @@ interface Address {
 export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+  
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  userName!: string; 
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   occupation!: string;
