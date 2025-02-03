@@ -220,11 +220,11 @@ export const ProfileVisitController = {
 
       await profileVisitRepository.save(profileVisit);
 
-      if (visited?.id !== visitor?.id) {
+      if (visited.id !== visitor.id) {
         await sendNotification(
           visitedId,
           `${visitor.firstName} ${visitor.lastName} viewed your profile.`,
-          visitor.profilePictureUploadId,
+          visitor?.profilePictureUploadId,
           `/profile/feed/${visitor?.id}`
         );
       }
@@ -275,7 +275,7 @@ export const ProfileVisitController = {
             .getRawOne();
 
           const profilePicture = visitor?.profilePictureUploadId
-            ? await generatePresignedUrl(visitor.profilePictureUploadId)
+            ? await generatePresignedUrl(visitor?.profilePictureUploadId)
             : null;
 
           const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt); // format timestamp not work

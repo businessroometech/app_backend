@@ -1,38 +1,27 @@
-import { randomBytes } from 'crypto';
 import {
   BaseEntity,
   BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
-  JoinTable,
-  ManyToMany,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { PersonalDetails } from '../personal/PersonalDetails';
 import { UserPost } from '../UserPost';
+import { randomBytes } from 'crypto';
 
 @Entity({ name: 'Mention' })
 export class Mention extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToMany(() => PersonalDetails, (user) => user.mentions)
-  @JoinTable({
-    name: 'mention_user',
-    joinColumn: { name: 'mentionId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'userId', referencedColumnName: 'id' },
-  })
-  users!: PersonalDetails[];
+  @ManyToOne(() => PersonalDetails, (user) => user.mentions, { nullable: false })
+  user!: PersonalDetails;
 
-  @ManyToMany(() => UserPost, (post) => post.mentions)
-  @JoinTable({
-    name: 'mention_post',
-    joinColumn: { name: 'mentionId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'postId', referencedColumnName: 'id' },
-  })
-  posts!: UserPost[];
+  @ManyToOne(() => UserPost, (post) => post.mentions, { nullable: false })
+  post!: UserPost;
 
   @Column({ type: 'varchar' })
   mentionBy!: string;
