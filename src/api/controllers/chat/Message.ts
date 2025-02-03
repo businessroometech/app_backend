@@ -91,7 +91,7 @@ export const getAllUnreadMessages = async (req: Request, res: Response) => {
     const { receiverId } = req.body;
 
     if (!receiverId) {
-      return res.status(400).json({ message: "SenderId and ReceiverId are required." });
+      return res.status(400).json({ message: "ReceiverId are required." });
     }
 
     const messageRepository = AppDataSource.getRepository(Message);
@@ -101,6 +101,7 @@ export const getAllUnreadMessages = async (req: Request, res: Response) => {
       .select('message.senderId', 'senderId')
       .addSelect('COUNT(message.id)', 'messageCount')
       .where('message.receiverId = :receiverId', { receiverId })
+      .andWhere('message.isRead = :isRead', { isRead: false })
       .groupBy('message.senderId')
       .getRawMany();
 
@@ -117,65 +118,9 @@ export const getAllUnreadMessages = async (req: Request, res: Response) => {
   }
 };
 
-
-// export const getMessagesUserWise = async (req: Request, res: Response) => {
-//   try {
-//     const { senderId, receiverId, page = 1, limit = 10 } = req.body;
-
-//     // Validate senderId and receiverId
-//     if (!senderId || !receiverId) {
-//       return res.status(400).json({ message: "SenderId and ReceiverId are required." });
-//     }
-
-//     // Ensure page and limit are numbers
-//     const numericPage = Number(page);
-//     const numericLimit = Number(limit);
-
-//     if (isNaN(numericPage) || isNaN(numericLimit) || numericPage <= 0 || numericLimit <= 0) {
-//       return res.status(400).json({ message: "Page and limit must be positive numbers." });
-//     }
-
-//     const skip = (numericPage - 1) * numericLimit;
-
-//     const messageRepository = AppDataSource.getRepository(Message);
-
-//     const [messages, total] = await messageRepository.findAndCount({
-//       where: [
-//         { senderId, receiverId },
-//         { senderId: receiverId, receiverId: senderId }
-//       ],
-//       order: { createdAt: "ASC" },
-//       skip,
-//       take: numericLimit,
-//     });
-
-//     // Decrypt messages
-//     const decryptedMessages = messages.map((msg) => ({
-//       ...msg,
-//       content: new Message().decryptMessage(),
-//     }));
-
-//     res.status(200).json({
-//       status: "success",
-//       message: "Messages fetched successfully",
-//       data: {
-//         total,
-//         messages: decryptedMessages,
-//         page: numericPage,
-//         limit: numericLimit,
-//         totalPages: Math.ceil(total / numericLimit),
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error fetching messages:", error);
-//     res.status(500).json({ message: "Failed to fetch messages.", error });
-//   }
-// };
-
-
 export const markMessageAsRead = async (req: Request, res: Response) => {
   try {
-    const { messageIds } = req.body;
+    const { receiverId, senderId } = req.body;
 
     const messageRepository = AppDataSource.getRepository(Message);
 
@@ -183,12 +128,12 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
       .createQueryBuilder()
       .update(Message)
       .set({ isRead: true })
-      .whereInIds(messageIds)
+      .where("receiverId = :receiverId AND senderId = :senderId", { receiverId, senderId })
       .execute();
 
     // Emit event to notify about read messages
     const io = getSocketInstance();
-    io.emit('messageRead', { messageIds });
+    io.emit('messageRead');
 
     return res.status(200).json({ success: true, message: 'Messages marked as read' });
   } catch (error) {
