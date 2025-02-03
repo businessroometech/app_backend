@@ -57,7 +57,7 @@ export const createLike = async (req: Request, res: Response) => {
     let notifications = null;
 
     if (userInfo.id !== userId && status === true) {
-      notifications =  sendNotification(
+      notifications = await sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
         media,
@@ -139,7 +139,7 @@ export const createCommentLike = async (req: Request, res: Response) => {
 
     // Create a notification
     if (commenterInfo.id !== userInfo.id && status === true) {
-       sendNotification(
+      await sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
         commenterInfo.profilePictureUploadId,
@@ -183,7 +183,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     }
     const likeRepository = AppDataSource.getRepository(Like);
 
-    const likes = await likeRepository.find({ where: { postId } });
+    const likes = await likeRepository.find({ where: { postId , status:true} });
 
     if (!likes) {
       return res.status(404).json({ status: 'error', message: 'post not available.' });

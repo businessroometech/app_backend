@@ -76,7 +76,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
 
     const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
     if( userPost.userId!==commenterInfo.id){
-       sendNotification(
+      await sendNotification(
       userPost.userId,
       `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
       media,
@@ -153,7 +153,7 @@ export const getComments = async (req: Request, res: Response) => {
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
-          likeStatus: commentLike?.status,
+          likeStatus: commentLike?.status?commentLike.status:false,
           commenterId: commenter?.id,
         };
       })
@@ -222,7 +222,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
     const media = finduser ? (finduser.profilePictureUploadId? finduser.profilePictureUploadId :null) : null;
 
    if(commentId.userId!==userId) {
-     sendNotification(
+     await sendNotification(
       commentId.userId,
       finduser? `${finduser.firstName} ${finduser.lastName} commented on your post`: 'New Comment on your post',
       media,

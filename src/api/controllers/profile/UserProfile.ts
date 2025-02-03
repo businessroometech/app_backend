@@ -220,11 +220,11 @@ export const ProfileVisitController = {
 
       await profileVisitRepository.save(profileVisit);
 
-      if (visited?.id !== visitor?.id) {
+      if (visited.id !== visitor.id) {
         await sendNotification(
           visitedId,
           `${visitor.firstName} ${visitor.lastName} viewed your profile.`,
-          visitor.profilePictureUploadId,
+          visitor?.profilePictureUploadId,
           `/profile/feed/${visitor?.id}`
         );
       }
@@ -275,7 +275,7 @@ export const ProfileVisitController = {
             .getRawOne();
 
           const profilePicture = visitor?.profilePictureUploadId
-            ? await generatePresignedUrl(visitor.profilePictureUploadId)
+            ? await generatePresignedUrl(visitor?.profilePictureUploadId)
             : null;
 
           const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt); // format timestamp not work
@@ -435,6 +435,35 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
     });
   } catch (error: any) {
     console.error('Error searching user profile:', error);
+    return res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+};
+
+// find user by userName
+export const findUserByUserName = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { userName } = req.body;
+
+    if (!userName) {
+      return res.status(400).json({ message: 'Username is required.' });
+    }
+
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const user = await personalDetailsRepository.findOne({ where: { userName } });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not available.' });
+    }
+
+    return res.status(200).json({
+      message: 'User found successfully.',
+      data: user,
+    });
+  } catch (error: any) {
+    console.error('Error finding user by username:', error);
     return res.status(500).json({
       message: 'Internal Server Error',
       error: error.message,

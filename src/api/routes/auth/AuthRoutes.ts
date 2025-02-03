@@ -5,9 +5,9 @@ import { logout } from '../../controllers/auth/Logout';
 import { signup } from '../../controllers/auth/Signup';
 import { authenticate } from '../../middlewares/auth/Authenticate';
 import { generateUploadUrl, getDocumentFromBucket } from "../../controllers/s3/awsControllers";
-import { getUserProfile, ProfileVisitController, searchUserProfile, UpdateUserProfile } from '@/api/controllers/profile/UserProfile';
+import { findUserByUserName, getUserProfile, ProfileVisitController, searchUserProfile, UpdateUserProfile } from '@/api/controllers/profile/UserProfile';
 import { sendResetEmail, resetPassword } from "@/api/controllers/auth/ResetPassword";
-import { getOnlineUsers } from '../../../socket';
+import { getOnlineUsers } from '@/api/controllers/chat/Message';
 import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 // import { getOnlineUsers } from "../../../socket";
 // import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
@@ -36,6 +36,7 @@ Router.post('/get-profile-visited', ProfileVisitController.getProfilesIVisited)
 
 Router.post('/online-users', getOnlineUsers);
 Router.post('/get-users', searchUserProfile);
+Router.post('/get-user-userName', findUserByUserName);
 
 export default Router;
 

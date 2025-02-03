@@ -43,11 +43,11 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     await connectionRepository.save(newConnection);
 
     // Create a notification
-    sendNotification(
+   await sendNotification(
       receiverId,
       `Received a connection request by ${requester?.firstName} ${requester?.lastName}`,
-      requester.profilePictureUploadId,
-      `/profile/feed/${requesterId}`
+      requester?.profilePictureUploadId,
+      `/settings/ManageConnections`
     );
 
     return res.status(201).json({
@@ -93,8 +93,8 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
     const notification = await sendNotification(
       connection.requester.id,
       `${connection.receiver.firstName} ${connection.receiver.lastName} ${data?.status } your connection request`,
-      connection.receiver.profilePictureUploadId,
-      `/profile/feed/${connection.receiver.id}`
+      connection?.receiver?.profilePictureUploadId,
+      `/settings/ManageConnections`
     );
     if (notification) {
       return res.status(200).json({ message: `Connection ${status} successfully.`, data });
