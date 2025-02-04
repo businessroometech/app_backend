@@ -45,7 +45,7 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     // Create a notification
    await sendNotification(
       receiverId,
-      `Received a connection request by ${requester?.firstName} ${requester?.lastName}`,
+      `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
       requester?.profilePictureUploadId,
       `/settings/ManageConnections`
     );

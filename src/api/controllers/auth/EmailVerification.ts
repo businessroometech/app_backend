@@ -26,7 +26,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
     // Generate a verification token
     const verificationToken = jwt.sign({ userId: user.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
 
-    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173/auth/sign-in' || 'http://54.177.193.30:5173/auth/sign-in'}?token=${verificationToken}`;
+    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173/auth/sign-in'}?token=${verificationToken}`;
 
     // Configure nodemailer
     const transporter = nodemailer.createTransport({
@@ -38,144 +38,139 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
         pass: 'ctcbnmvlouaildzd',
       },
     });
-
     // Email content
     const mailOptions = {
       from: 'ashutoshnegi196@gmail.com',
       to: email,
-      subject: 'Verify Your Email Address',
+      subject: "Businessroom.ai! Verify Your Email Address",
       html: `
-     
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email Verification</title>
-  <style>
-    body {
+      <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification</title>
+  </head>
+  <body
+    style="
       margin: 0;
       padding: 0;
-      background-color: #e3f2fd; /* Light sky-blue background */
+      background-color: #e3f2fd;
       font-family: Arial, sans-serif;
       color: #333333;
-    }
-    .email-container {
-      max-width: 600px;
-      margin: 50px auto;
-      background: #ffffff;
-      border-radius: 8px;
-      border: 4px solid #007bff; /* Border color matching logo */
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background-color: #007bff; /* Primary blue */
-      padding: 20px;
-      text-align: center;
-    }
-    .header img {
-      max-width: 120px;
-    }
-    .content {
-      padding: 30px;
-      text-align: center;
-    }
-    .content h1 {
-      font-size: 24px;
-      color: #007bff;
-      margin-bottom: 10px;
-    }
-    .content p {
-      line-height: 1.6;
-      font-size: 16px;
-    }
-    .verify-button {
-      display: inline-block;
-      margin: 20px 0;
-      padding: 12px 20px;
-      background-color: #007bff;
-      color: #ffffff;
-      text-decoration: none;
-      font-size: 16px;
-      border-radius: 6px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    .verify-button:hover {
-      background-color: #0056b3;
-    }
-    .timer {
-      margin: 20px 0;
-      font-size: 18px;
-      color: #ff0000;
-    }
-    .footer {
-      text-align: center;
-      padding: 20px;
-      background: #f1f1f1;
-      font-size: 14px;
-      color: #777777;
-    }
-    .footer a {
-      color: #007bff;
-      text-decoration: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <img src="https://businessroom-test-bucket.s3.eu-north-1.amazonaws.com/posts/6ba58706c40cc59ea8c56a316d19d466/1737328121539.image/png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIASFIXCQIX37GASBKD%2F20250119%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250119T230845Z&X-Amz-Expires=3600&X-Amz-Signature=c1f4749ac77f824a339981216964bde63baf76163758ece159efe54f431cf91c&X-Amz-SignedHeaders=host&x-id=GetObject" alt="BusinessRoom Logo">
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: 50px auto;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 4px solid #007bff;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      "
+    >
+      <div style="background-color: #007bff; padding: 20px; text-align: center">
+       <a  href="https://businessroom.ai" style="
+  display: inline-block;
+  width: 50px; /* Adjust size as needed */
+  height: 50px;
+  background-color: #2196F3; /* Info blue */
+  color: white;
+  font-size: 32px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 50px;
+  border-radius: 12px; /* Rounded corners */
+  text-decoration: none;
+  font-family: Arial, sans-serif;
+">b</a>
+      </div>
+      <div style="padding: 30px; text-align: center">
+        <h1 style="font-size: 24px; color: #007bff; margin-bottom: 10px">
+          Welcome to BusinessRoom!
+        </h1>
+        <p>Hi,</p>
+        <p>
+          Thank you for signing up. Please verify your email by clicking the
+          link below:
+        </p>
+        <a
+          href="${verificationLink}"
+          style="
+            display: inline-block;
+            margin: 20px 0;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          "
+          >Verify Email</a
+        >
+        <p
+          id="timer"
+          style="margin: 20px 0; font-size: 18px; color: #ff0000"
+        >
+          This link will expire in 1 hour.
+        </p>
+        <p>If you did not sign up, please ignore this email.</p>
+        <p>Thank you,</p>
+        <p>The BusinessRoom Team</p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          padding: 20px;
+          background: #f1f1f1;
+          font-size: 14px;
+          color: #777777;
+        "
+      >
+        <p>&copy; <span id="year"></span> BusinessRoom. All rights reserved.</p>
+        <p>
+          <a
+            href="https://businessroom.ai"
+            style="color: #007bff; text-decoration: none"
+            >Visit our website</a
+          >
+        </p>
+      </div>
     </div>
-    <div class="content">
-      <h1>Welcome to BusinessRoom!</h1>
-      <p>Hi,</p>
-      <p>Thank you for signing up. Please verify your email by clicking the link below:</p>
-      <a href="${verificationLink}" class="verify-button">Verify Email</a>
-      <p class="timer" id="timer">This link will expire in 1 hour.</p>
-      <p>If you did not sign up, please ignore this email.</p>
-      <p>Thank you,</p>
-      <p>The BusinessRoom Team</p>
-    </div>
-    <div class="footer">
-      <p>&copy; <span id="year"></span> BusinessRoom. All rights reserved.</p>
 
-<script>
-  // Dynamically set the current year
-  document.getElementById("year").textContent = new Date().getFullYear();
-</script>
-      <p>
-        <a href="https://businessroom.ai">Visit our website</a>
-      </p>
-    </div>
-  </div>
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
 
-  <script>
-    // Timer script to show the countdown
-    function startTimer(duration, display) {
-      let timer = duration, minutes, seconds;
-      const interval = setInterval(function () {
-        minutes = parseInt(timer / 60, 10);
-        seconds = parseInt(timer % 60, 10);
+      function startTimer(duration, display) {
+        let timer = duration,
+          minutes,
+          seconds;
+        const interval = setInterval(function () {
+          minutes = parseInt(timer / 60, 10);
+          seconds = parseInt(timer % 60, 10);
 
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
+          minutes = minutes < 10 ? "0" + minutes : minutes;
+          seconds = seconds < 10 ? "0" + seconds : seconds;
 
-        display.textContent = "This link will expire in " + minutes + ":" + seconds;
+          display.textContent =
+            "This link will expire in " + minutes + ":" + seconds;
 
-        if (--timer < 0) {
-          clearInterval(interval);
-          display.textContent = "This link has expired.";
-        }
-      }, 1000);
-    }
+          if (--timer < 0) {
+            clearInterval(interval);
+            display.textContent = "This link has expired.";
+          }
+        }, 1000);
+      }
 
-    window.onload = function () {
-      const oneHour = 60 * 60; // 1 hour in seconds
-      const display = document.getElementById("timer");
-      startTimer(oneHour, display);
-    };
-  </script>
-</body>
+      window.onload = function () {
+        const oneHour = 60 * 60;
+        const display = document.getElementById("timer");
+        startTimer(oneHour, display);
+      };
+    </script>
+  </body>
 </html>
 
       `,
@@ -242,17 +237,15 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
       message: 'Email successfully verified. You can now log in.',
     });
 
-     // Create a login notification
-        const notificationRepos = AppDataSource.getRepository(Notifications);
-        const notification = notificationRepos.create({
-          userId: user.id,
-          message:"Your email has been successfully verified. Welcome to Businessroom.ai!",
-          navigation: '/',
-        });
-    
-        await notificationRepos.save(notification);
+    // Create a login notification
+    const notificationRepos = AppDataSource.getRepository(Notifications);
+    const notification = notificationRepos.create({
+      userId: user.id,
+      message: 'Your email has been successfully verified. Welcome to Businessroom.ai!',
+      navigation: '/',
+    });
 
-
+    await notificationRepos.save(notification);
   } catch (error) {
     console.error('Verification error:', error);
     res.status(500).json({
@@ -261,5 +254,3 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     });
   }
 };
-
-
