@@ -242,7 +242,7 @@ export class WebSocketNotification {
       const notification = notificationRepo.create({
         userId,
         message,
-        mediaUrl : mediakey,
+        mediaUrl : (mediakey!==null || mediakey!==undefined)?mediakey:null,
         navigation,
         createdBy: "Live",
         createdAt: new Date()

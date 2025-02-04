@@ -75,17 +75,16 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
     // notification = await notificationRepo.save(notification);
 
     const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
-    if( userPost.userId!==commenterInfo.id){
+    if (userPost.userId !== commenterInfo.id) {
       await sendNotification(
-      userPost.userId,
-      `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
-      media,
-      `/feed/home#${commentId}`
-    )}
+        userPost.userId,
+        `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
+        media,
+        `/feed/home#${commentId}`
+      );
+    }
 
-    
-      return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
-    
+    return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
@@ -153,7 +152,7 @@ export const getComments = async (req: Request, res: Response) => {
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
-          likeStatus: commentLike?.status?commentLike.status:false,
+          likeStatus: commentLike?.status ? commentLike.status : false,
           commenterId: commenter?.id,
         };
       })
@@ -201,7 +200,9 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
 
       await nestedComment.save();
 
-      return res.status(200).json({ status: 'success', message: 'Nested Comment updated successfully.', data: { nestedComment } });
+      return res
+        .status(200)
+        .json({ status: 'success', message: 'Nested Comment updated successfully.', data: { nestedComment } });
     }
 
     // Fetch the parent comment details
@@ -224,27 +225,29 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
 
     // Fetch user details
     const userRepo = AppDataSource.getRepository(PersonalDetails);
-    const findUser = await userRepo.findOne({ where: { id: userId } });
-    const media = findUser?.profilePictureUploadId || null;
+    const findUser = await userRepo.findOne({ where: { id: savedComment.userId } });
 
-    // Send notification 
-    if (parentComment.userId !== userId) {
-      await sendNotification(
-        parentComment.userId, 
-        findUser ? `${findUser.firstName} ${findUser.lastName} replied to your comment` : 'New reply to your comment',
-        media,
+    let notification = null;
+    // Send notification on comment
+    if (findUser?.id !== parentComment.userId) {
+      notification = await sendNotification(
+        parentComment.userId,
+        `${findUser?.firstName} ${findUser?.lastName} replied to your comment`,
+        findUser?.profilePictureUploadId,
         `/feed/home#${commentId}`
       );
     }
-
-    return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { savedComment } });
-
+    if (notification) {
+      return res
+        .status(201)
+        .json({ status: 'success', message: 'Comment created successfully.', data: { savedComment, notification } });
+    }
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
-
 
 export const deleteNestedComment = async (req: Request, res: Response) => {
   const { nestedCommentId } = req.body;
@@ -312,15 +315,12 @@ export const getNestedComments = async (req: Request, res: Response) => {
         };
       })
     );
-    
 
-    return res
-      .status(200)
-      .json({
-        status: 'success',
-        message: 'Nested comments fetched successfully.',
-        data: { nestedComments: formattedNestedComments },
-      });
+    return res.status(200).json({
+      status: 'success',
+      message: 'Nested comments fetched successfully.',
+      data: { nestedComments: formattedNestedComments },
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
