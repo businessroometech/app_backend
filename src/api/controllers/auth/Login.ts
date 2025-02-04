@@ -128,10 +128,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         return;
       }
 
-      // if (user.active === 0) {
-      //   user.active = 1; // Activate user
-      //   await userLoginRepository.save(user);
-      // }
+      if (user.active === 0) {
+        user.active = 1; // Activate user
+        await userLoginRepository.save(user);
+      }
     } else {
       // Find the user by email for regular login
       user = await userLoginRepository.findOne({ where: { emailAddress: email } });

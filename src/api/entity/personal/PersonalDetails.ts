@@ -30,9 +30,9 @@ interface Address {
 export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-  
+
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
-  userName!: string; 
+  userName!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   occupation!: string;
@@ -121,8 +121,8 @@ export class PersonalDetails extends BaseEntity {
   })
   updatedAt!: Date;
 
-  // @Column({ type: 'int', default: 0 , nullable: true})
-  // active!: number;
+  @Column({ type: 'int', default: 0, nullable: true })
+  active!: number;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
@@ -130,9 +130,9 @@ export class PersonalDetails extends BaseEntity {
     this.password = await bcrypt.hash(this.password, 10);
 
     if (!this.userName && this.emailAddress) {
-      let baseUserName = this.emailAddress.split('@')[0]; 
-      baseUserName = baseUserName.replace(/[^a-zA-Z0-9]/g, ''); 
-      
+      let baseUserName = this.emailAddress.split('@')[0];
+      baseUserName = baseUserName.replace(/[^a-zA-Z0-9]/g, '');
+
       let userName = baseUserName;
       let exists = await PersonalDetails.findOne({ where: { userName } });
 

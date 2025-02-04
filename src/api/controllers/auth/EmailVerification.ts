@@ -16,12 +16,12 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // if (user.active === 1) {
-    //   return res.status(400).json({ success: false, message: 'User is already verified' });
-    // }
-    // if (user.active === -1) {
-    //   return res.status(400).json({ success: false, message: 'User blocked to use this plateform!' });
-    // }
+    if (user.active === 1) {
+      return res.status(400).json({ success: false, message: 'User is already verified' });
+    }
+    if (user.active === -1) {
+      return res.status(400).json({ success: false, message: 'User blocked to use this plateform!' });
+    }
 
     // Generate a verification token
     const verificationToken = jwt.sign({ userId: user.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
@@ -226,15 +226,15 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // if (user.active === 1) {
-    //   res.status(400).json({
-    //     status: 'error',
-    //     message: 'Email is already verified.',
-    //   });
-    //   return;
-    // }
+    if (user.active === 1) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Email is already verified.',
+      });
+      return;
+    }
 
-    // user.active = 1;
+    user.active = 1;
     await userRepository.save(user);
 
     res.status(200).json({
@@ -246,7 +246,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
         const notificationRepos = AppDataSource.getRepository(Notifications);
         const notification = notificationRepos.create({
           userId: user.id,
-          message: 'Email successfully verified',
+          message:"Your email has been successfully verified. Welcome to Businessroom.ai!",
           navigation: '/',
         });
     
