@@ -242,12 +242,11 @@ export class WebSocketNotification {
       const notification = notificationRepo.create({
         userId,
         message,
-        mediaUrl: mediaUrl || "",
+        mediaUrl: (mediaUrl!==null || mediaUrl!==undefined)?mediaUrl:null,
         navigation,
         createdBy: "Live",
         createdAt: new Date()
       });
-
       // Send notification via WebSocket
       const io = getSocketInstance();
       const noticeInfo = io.to(userId).emit("notifications", notification);
@@ -256,7 +255,6 @@ export class WebSocketNotification {
         await notificationRepo.save(notification); 
         return  "Notification sent successfully" ;
       }
-      
     } catch (error) {
       console.error('Error sending notification:', error);
       return 'Error sending notification' ;
