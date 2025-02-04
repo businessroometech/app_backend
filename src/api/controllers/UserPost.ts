@@ -214,7 +214,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
 
         return {
           post: {
-            id: post.id,
+            Id: post.id,
             userId: post.userId,
             title: post.title,
             content: post.content,
@@ -394,8 +394,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
 
     // Format the posts with user details, likes, comments, and reactions
     const formattedPosts = await Promise.all(
-      posts.map(async (post): Promise<any> => {
-        const avatarUrl = user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
+      posts.map(async (post) => {
         // Fetch media URLs related to the post
         const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
 
@@ -472,7 +471,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             firstName: user?.firstName || '',
             lastName: user?.lastName || '',
             timestamp: formatTimestamp(post.createdAt),
-            avatar: avatarUrl,
+            userRole: user?.userRole,
             avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
           },
           comments: formattedComments,

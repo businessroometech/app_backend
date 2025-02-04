@@ -134,11 +134,11 @@ export class WebSocketNotification {
         order: { createdAt: 'DESC' },});
   
       // Format timestamps before sending response
-      const formattedNotifications = notifications.map((notification) => ({
+      const formattedNotifications = await Promise.all(notifications.map(async (notification) => ({
         ...notification,
         created: formatTimestamp(new Date(notification.createdAt)), 
-      }));
-  
+        mediaUrl: notification.mediaUrl ? await generatePresignedUrl(notification.mediaUrl) : null
+      })));
       return res.status(200).json({ notifications: formattedNotifications });
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -236,13 +236,13 @@ export class WebSocketNotification {
       if (!user) {
         return  'User ID is invalid or does not exist.';
       }
-      const mediaUrl =  mediakey ?  await generatePresignedUrl(mediakey): null
+     
       // Create a new notification
       const notificationRepo = AppDataSource.getRepository(Notifications);
       const notification = notificationRepo.create({
         userId,
         message,
-        mediaUrl: (mediaUrl!==null || mediaUrl!==undefined)?mediaUrl:null,
+        mediaUrl : mediakey,
         navigation,
         createdBy: "Live",
         createdAt: new Date()
