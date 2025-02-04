@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AppDataSource } from "@/server";
 import { Notifications } from "@/api/entity/notifications/Notifications";
 import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
+import { generatePresignedUrl } from "../s3/awsControllers";
 
 
 export const createNotification = async (req: Request, res: Response) => {
@@ -71,16 +72,24 @@ export const markAsRead = async (req: Request, res: Response) => {
 
 export const fetchNotifications = async (req: Request, res: Response) => {
   const { userId } = req.body;
+
   try {
     const notificationRepository = AppDataSource.getRepository(Notifications);
-    const notifications = await notificationRepository.find({
+    let notifications = await notificationRepository.find({
       where: { userId },
       order: { createdAt: "DESC" },
     });
 
+    // Generate presigned URLs for media files if they exist
+    for (let notification of notifications) {
+      if (notification.mediaUrl) {
+        notification.mediaUrl = await generatePresignedUrl(notification.mediaUrl);
+      }
+    }
+
     return res.status(200).json({ success: true, notifications });
   } catch (error) {
     console.error("Error fetching notifications:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
