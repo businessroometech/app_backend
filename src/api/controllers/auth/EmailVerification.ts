@@ -48,7 +48,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Email Verification</title>
+    <title>Email Verification || Businessroom AI</title>
   </head>
   <body
     style="
@@ -70,7 +70,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       "
     >
-      <div style="background-color: #007bff; padding: 20px; text-align: center">
+      <div style="background-color: #fff; padding: 20px; text-align: center">
        <a  href="https://businessroom.ai" style="
   display: inline-block;
   width: 50px; /* Adjust size as needed */
@@ -88,7 +88,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
       </div>
       <div style="padding: 30px; text-align: center">
         <h1 style="font-size: 24px; color: #007bff; margin-bottom: 10px">
-          Welcome to BusinessRoom!
+          Welcome to businessroom!
         </h1>
         <p>Hi,</p>
         <p>
@@ -118,7 +118,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
         </p>
         <p>If you did not sign up, please ignore this email.</p>
         <p>Thank you,</p>
-        <p>The BusinessRoom Team</p>
+        <p>Team businessRoom</p>
       </div>
       <div
         style="
@@ -129,7 +129,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
           color: #777777;
         "
       >
-        <p>&copy; <span id="year"></span> BusinessRoom. All rights reserved.</p>
+        <p>&copy; <span id="year"></span> businessroom. All rights reserved.</p>
         <p>
           <a
             href="https://businessroom.ai"
