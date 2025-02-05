@@ -99,8 +99,8 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
       if (zoom !== undefined) personalDetails.zoom = zoom;
       if (rotate !== undefined) personalDetails.rotate = rotate;
-      if (zoomProfile !== undefined) personalDetails.zoom = zoomProfile;
-      if (rotateProfile !== undefined) personalDetails.rotate = rotateProfile;
+      if (zoomProfile !== undefined) personalDetails.zoomProfile = zoomProfile;
+      if (rotateProfile !== undefined) personalDetails.rotateProfile = rotateProfile;
       personalDetails.updatedBy = 'system';
 
       await personalDetailsRepository.save(personalDetails);
