@@ -61,6 +61,8 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       panNumberUploadId,
       zoom,
       rotate,
+      zoomProfile,
+      rotateProfile,
     } = req.body;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -97,6 +99,8 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
       if (zoom !== undefined) personalDetails.zoom = zoom;
       if (rotate !== undefined) personalDetails.rotate = rotate;
+      if (zoomProfile !== undefined) personalDetails.zoom = zoomProfile;
+      if (rotateProfile !== undefined) personalDetails.rotate = rotateProfile;
       personalDetails.updatedBy = 'system';
 
       await personalDetailsRepository.save(personalDetails);
@@ -351,7 +355,7 @@ export const ProfileVisitController = {
           const profilePicture = profile?.profilePictureUploadId
             ? await generatePresignedUrl(profile.profilePictureUploadId)
             : null;
-          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt); 
+          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt);
           return {
             profile: { ...profile, profilePicture, visitedAt },
             visitCount: parseInt(visit.visitCount, 10),
