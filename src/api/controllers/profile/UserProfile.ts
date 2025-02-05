@@ -59,6 +59,8 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       currentAddress,
       aadharNumberUploadId,
       panNumberUploadId,
+      zoom,
+      rotate,
     } = req.body;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -93,6 +95,8 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
       if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
       if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
+      if (zoom !== undefined) personalDetails.zoom = zoom;
+      if (rotate !== undefined) personalDetails.rotate = rotate;
       personalDetails.updatedBy = 'system';
 
       await personalDetailsRepository.save(personalDetails);

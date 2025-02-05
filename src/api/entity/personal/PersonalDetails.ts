@@ -124,6 +124,12 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'int', default: 0, nullable: true })
   active!: number;
 
+  @Column({ type: 'float', nullable: true  })
+  zoom !: number;
+
+  @Column({ type: "float", nullable:  true})
+  rotate !: number;
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
