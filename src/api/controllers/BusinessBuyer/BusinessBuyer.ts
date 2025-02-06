@@ -75,38 +75,71 @@ export const getBusinessBuyerById = async (req: Request, res: Response) => {
   }
 };
 
-export const updateBusinessBuyer = async (req: Request, res: Response) => {
+// export const updateBusinessBuyer = async (req: Request, res: Response) => {
+//   try {
+//     const { UserId } = req.params;
+//     if (!UserId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'UserId parameter is required',
+//       });
+//     }
+
+//     const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
+//     const businessBuyer = await businessBuyerRepository.findOneBy({ UserId });
+
+//     if (!businessBuyer) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Business buyer not found',
+//       });
+//     }
+
+//     businessBuyerRepository.merge(businessBuyer, req.body);
+//     const updatedBusinessBuyer = await businessBuyerRepository.save(businessBuyer);
+
+//     return res.status(200).json({
+//       success: true,
+//       data: updatedBusinessBuyer, // Consider returning only necessary fields
+//     });
+//   } catch (error) {
+//     console.error('Error updating business buyer:', error);
+//     return res.status(500).json({
+//       success: false,
+//       message: 'Failed to update business buyer',
+//       error: error instanceof Error ? error.message : 'Unknown error',
+//     });
+//   }
+// };
+
+
+
+export const  updateBusinessBuyer = async (req: Request, res: Response) => {
   try {
-    const { UserId } = req.params;
-    if (!UserId) {
-      return res.status(400).json({
-        success: false,
-        message: 'UserId parameter is required',
-      });
-    }
+    const businessRepository = AppDataSource.getRepository(BusinessBuyer);
+    const business = await businessRepository.findOne({
+      where: { UserId: req.params.UserId },
+    });
 
-    const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
-    const businessBuyer = await businessBuyerRepository.findOneBy({ UserId });
-
-    if (!businessBuyer) {
+    if (!business) {
       return res.status(404).json({
         success: false,
-        message: 'Business buyer not found',
+        message: 'Business not found',
       });
     }
-
-    businessBuyerRepository.merge(businessBuyer, req.body);
-    const updatedBusinessBuyer = await businessBuyerRepository.save(businessBuyer);
+    
+    businessRepository.merge(business, req.body);
+    const results = await businessRepository.save(business);
 
     return res.status(200).json({
       success: true,
-      data: updatedBusinessBuyer, // Consider returning only necessary fields
+      data: results,
     });
   } catch (error) {
-    console.error('Error updating business buyer:', error);
+    console.error('Error updating business for sale:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to update business buyer',
+      message: 'Failed to update business for sale',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
