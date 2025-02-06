@@ -118,7 +118,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
         </p>
         <p>If you did not sign up, please ignore this email.</p>
         <p>Thank you,</p>
-        <p>Team businessRoom</p>
+        <p>Team businessroom</p>
       </div>
       <div
         style="

@@ -498,4 +498,99 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
   }
 };
 
-// get new post socket show in real time true or false
+// get user post by postId
+export const GetUserPostById = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { postId } = req.body;
+
+    // Validate postId
+    if (!postId) {
+      return res.status(400).json({ message: 'Post ID is required.' });
+    }
+
+    // Fetch the post
+    const postRepository = AppDataSource.getRepository(UserPost);
+    const post = await postRepository.findOne({
+      where: { id: postId }
+    });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found. Invalid Post ID.' });
+    }
+
+    // Fetch related comments and likes
+    const commentRepository = AppDataSource.getRepository(Comment);
+    const likeRepository = AppDataSource.getRepository(Like);
+
+    const [comments, likes] = await Promise.all([
+      commentRepository.find({ where: { postId } }),
+      likeRepository.find({ where: { postId } }),
+    ]);
+
+    // Fetch media URLs for the post
+    const mediaUrls = post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [];
+
+    // Format comments
+    const formattedComments = await Promise.all(
+      comments.map(async (comment) => {
+        const commenter = await AppDataSource.getRepository(PersonalDetails).findOne({
+          where: { id: comment.userId },
+          select: ['firstName', 'lastName'],
+        });
+
+        return {
+          id: comment.id,
+          commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
+          text: comment.text,
+          timestamp: formatTimestamp(comment.createdAt),
+        };
+      })
+    );
+
+    // Fetch profile picture URL
+    const userId = post.userId;
+    const userRepos = AppDataSource.getRepository(PersonalDetails)
+    const user = await userRepos.findOne({where:{id:userId}})
+    const imgUrl = user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
+
+    // Format the post with related data
+    const formattedPost = {
+      post: {
+        Id: post.id,
+        userId: post.userId,
+        title: post.title,
+        content: post.content,
+        hashtags: post.hashtags,
+        mediaUrls,
+        mediaKeys: post.mediaKeys,
+        likeCount: likes.length,
+        commentCount: comments.length,
+        likeStatus: likes.some((like) => like.userId === req.body.userId),
+        isRepost: post.isRepost,
+        repostedFrom: post.repostedFrom,
+        repostText: post.repostText,
+      },
+      userDetails: {
+        postedId: user?.id,
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        timestamp: formatTimestamp(post.createdAt),
+        userRole: user?.userRole,
+        avatar: imgUrl,
+      },
+      comments: formattedComments,
+    };
+
+    return res.status(200).json({
+      message: 'Post retrieved successfully.',
+      data: formattedPost,
+    });
+  } catch (error: any) {
+    console.error('Error retrieving post:', error);
+    return res.status(500).json({
+      message: 'Internal server error. Could not retrieve post.',
+      error: error.message,
+    });
+  }
+};
+
