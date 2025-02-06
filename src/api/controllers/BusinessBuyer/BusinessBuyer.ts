@@ -77,10 +77,16 @@ export const getBusinessBuyerById = async (req: Request, res: Response) => {
 
 export const updateBusinessBuyer = async (req: Request, res: Response) => {
   try {
+    const { UserId } = req.params;
+    if (!UserId) {
+      return res.status(400).json({
+        success: false,
+        message: 'UserId parameter is required',
+      });
+    }
+
     const businessBuyerRepository = AppDataSource.getRepository(BusinessBuyer);
-    const businessBuyer = await businessBuyerRepository.findOne({
-      where: { id: req.params.id },
-    });
+    const businessBuyer = await businessBuyerRepository.findOneBy({ UserId });
 
     if (!businessBuyer) {
       return res.status(404).json({
@@ -90,11 +96,11 @@ export const updateBusinessBuyer = async (req: Request, res: Response) => {
     }
 
     businessBuyerRepository.merge(businessBuyer, req.body);
-    const results = await businessBuyerRepository.save(businessBuyer);
+    const updatedBusinessBuyer = await businessBuyerRepository.save(businessBuyer);
 
     return res.status(200).json({
       success: true,
-      data: results,
+      data: updatedBusinessBuyer, // Consider returning only necessary fields
     });
   } catch (error) {
     console.error('Error updating business buyer:', error);
