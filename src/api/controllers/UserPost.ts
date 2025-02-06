@@ -235,6 +235,8 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
             timestamp: formatTimestamp(post.createdAt),
             userRole: user.userRole,
             avatar: imgUrl,
+            zoomProfile: user.zoomProfile,
+            rotateProfile: user.rotateProfile
           },
           comments: formattedComments.filter((comment) => comment.postId === post.id),
         };
@@ -473,6 +475,8 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             timestamp: formatTimestamp(post.createdAt),
             userRole: user?.userRole,
             avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
+            zoomProfile: user?.zoomProfile,
+            rotateProfile: user?.rotateProfile
           },
           comments: formattedComments,
         };
