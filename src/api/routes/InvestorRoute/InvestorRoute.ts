@@ -21,3 +21,4 @@ router.put('/update/:UserId', UpdateInvestor);
 router.delete('/delete/:id', deleteInvestor);
 
 export default router;
+//..............//
