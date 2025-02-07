@@ -183,13 +183,18 @@ export const getComments = async (req: Request, res: Response) => {
 
 export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
   try {
+    console.log('Received Request:', req.body);
+
     const { userId, postId, commentId, text, createdBy, nestedCommentId } = req.body;
+
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
+
     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
 
     if (nestedCommentId) {
+      console.log('Updating Nested Comment:', nestedCommentId);
       const nestedComment = await nestedCommentRepo.findOne({ where: { id: nestedCommentId } });
 
       if (!nestedComment) {
@@ -199,7 +204,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
       nestedComment.text = text;
       nestedComment.updatedBy = createdBy || 'system';
 
-      await nestedComment.save();
+      await nestedCommentRepo.save(nestedComment); // Fix: Use repository.save()
 
       return res
         .status(200)
@@ -213,6 +218,9 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
     if (!parentComment) {
       return res.status(404).json({ status: 'error', message: 'Parent comment not found.' });
     }
+
+    console.log('Creating new Nested Comment');
+
     const comment = nestedCommentRepo.create({
       userId,
       postId,
@@ -223,32 +231,110 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
     });
 
     const savedComment = await nestedCommentRepo.save(comment);
+    console.log('Saved Comment:', savedComment);
 
     // Fetch user details
     const userRepo = AppDataSource.getRepository(PersonalDetails);
     const findUser = await userRepo.findOne({ where: { id: savedComment.userId } });
 
+    if (!findUser) {
+      console.log('User not found:', savedComment.userId);
+    }
+
     let notification = null;
-    // Send notification on comment
-    if (findUser?.id !== parentComment.userId) {
+
+    // Send notification if the commenter is not the same as the parent comment's author
+    if (findUser && findUser.id !== parentComment.userId) {
       notification = await sendNotification(
         parentComment.userId,
-        `${findUser?.firstName} ${findUser?.lastName} replied to your comment`,
-        findUser?.profilePictureUploadId,
+        `${findUser.firstName} ${findUser.lastName} replied to your comment`,
+        findUser.profilePictureUploadId,
         `/feed/home#${commentId}`
       );
+      console.log('Notification sent:', notification);
     }
-    if (notification) {
-      return res
-        .status(201)
-        .json({ status: 'success', message: 'Comment created successfully.', data: { savedComment, notification } });
-    }
-    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+
+    return res.status(201).json({
+      status: 'success',
+      message: 'Comment created successfully.',
+      data: { savedComment, notification },
+    });
+
   } catch (error) {
-    console.error(error);
+    console.error('Error in createOrUpdateNestedComment:', error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
+
+
+// export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
+//   try {
+//     const { userId, postId, commentId, text, createdBy, nestedCommentId } = req.body;
+//     if (!userId || !postId || !text) {
+//       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
+//     }
+//     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
+
+//     if (nestedCommentId) {
+//       const nestedComment = await nestedCommentRepo.findOne({ where: { id: nestedCommentId } });
+
+//       if (!nestedComment) {
+//         return res.status(404).json({ status: 'error', message: 'Nested Comment not found.' });
+//       }
+
+//       nestedComment.text = text;
+//       nestedComment.updatedBy = createdBy || 'system';
+
+//       await nestedComment.save();
+
+//       return res
+//         .status(200)
+//         .json({ status: 'success', message: 'Nested Comment updated successfully.', data: { nestedComment } });
+//     }
+
+//     // Fetch the parent comment details
+//     const parentCommentRepo = AppDataSource.getRepository(Comment);
+//     const parentComment = await parentCommentRepo.findOne({ where: { id: commentId } });
+
+//     if (!parentComment) {
+//       return res.status(404).json({ status: 'error', message: 'Parent comment not found.' });
+//     }
+//     const comment = nestedCommentRepo.create({
+//       userId,
+//       postId,
+//       commentId,
+//       text,
+//       createdBy: createdBy || 'system',
+//       updatedBy: createdBy || 'system',
+//     });
+
+//     const savedComment = await nestedCommentRepo.save(comment);
+
+//     // Fetch user details
+//     const userRepo = AppDataSource.getRepository(PersonalDetails);
+//     const findUser = await userRepo.findOne({ where: { id: savedComment.userId } });
+
+//     let notification = null;
+//     // Send notification on comment
+//     if (findUser?.id !== parentComment.userId) {
+//       notification = await sendNotification(
+//         parentComment.userId,
+//         `${findUser?.firstName} ${findUser?.lastName} replied to your comment`,
+//         findUser?.profilePictureUploadId,
+//         `/feed/home#${commentId}`
+//       );
+//     }
+//     if (notification) {
+//       return res
+//         .status(201)
+//         .json({ status: 'success', message: 'Comment created successfully.', data: { savedComment, notification } });
+//     }
+//     return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
+//   }
+// };
 
 export const deleteNestedComment = async (req: Request, res: Response) => {
   const { nestedCommentId } = req.body;
