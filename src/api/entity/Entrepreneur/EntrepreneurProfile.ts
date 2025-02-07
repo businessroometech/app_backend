@@ -43,7 +43,7 @@ export class Entrepreneur {
   @Column({ type: 'varchar', length: 100, nullable: true })
   investorType!: string;
 
-  @Column({ type: 'decimal', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   fundingAmount!: number;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
@@ -53,10 +53,10 @@ export class Entrepreneur {
   investmentType!: string;
 
   @Column({ type: 'decimal', nullable: true })
-  businessValuation!: number;
+  businessValuation!: string;
 
   @Column({ type: 'decimal', nullable: true })
-  equityInExchange!: number;
+  equityInExchange!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   exitPlans!: string;
