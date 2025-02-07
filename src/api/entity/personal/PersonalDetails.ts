@@ -17,6 +17,7 @@ import { Connection } from '../connection/Connections';
 import { ProfileVisit } from '../notifications/ProfileVisit';
 import { Mention } from '../posts/Mention';
 import { Reaction } from '../posts/Reaction';
+import { Like } from '../posts/Like';
 
 interface Address {
   addressLine1: string;
@@ -30,9 +31,9 @@ interface Address {
 export class PersonalDetails extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-  
+
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
-  userName!: string; 
+  userName!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   occupation!: string;
@@ -121,13 +122,41 @@ export class PersonalDetails extends BaseEntity {
   })
   updatedAt!: Date;
 
-  // @Column({ type: 'int', default: 0 , nullable: true})
-  // active!: number;
+  @Column({ type: 'int', default: 0, nullable: true })
+  active!: number;
+
+  @Column({ type: 'float', nullable: true })
+  zoom !: number;
+
+  @Column({ type: "float", nullable: true })
+  rotate !: number;
+
+  @Column({ type: 'float', nullable: true })
+  zoomProfile !: number;
+
+  @Column({ type: "float", nullable: true })
+  rotateProfile !: number;
+
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
     this.password = await bcrypt.hash(this.password, 10);
+
+    if (!this.userName && this.emailAddress) {
+      let baseUserName = this.emailAddress.split('@')[0];
+      baseUserName = baseUserName.replace(/[^a-zA-Z0-9]/g, '');
+
+      let userName = baseUserName;
+      let exists = await PersonalDetails.findOne({ where: { userName } });
+
+      while (exists) {
+        userName = `${baseUserName}${Math.floor(1000 + Math.random() * 9000)}`;
+        exists = await PersonalDetails.findOne({ where: { userName } });
+      }
+
+      this.userName = userName;
+    }
   }
 
   private generateUUID(): string {
@@ -159,6 +188,12 @@ export class PersonalDetails extends BaseEntity {
   })
   reactions!: Reaction[];
 
-  @ManyToMany(() => Mention, (mention) => mention.users)
+  @ManyToMany(() => Mention, (mention) => mention.user)
   mentions!: Mention[];
+
+  @OneToMany(() => Like, (like) => like.user)
+  likes!: Like[];
+
+  @OneToMany(() => Like, (like) => like.user)
+  commentLikes!: Like[];
 }

@@ -82,7 +82,7 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
 
     const likeRepository = AppDataSource.getRepository(Like);
 
-    const likes = await likeRepository.find({ where: { postId } });
+    const likes = await likeRepository.find({ where: { postId, status: true }, relations: ['user'] });
 
     return res.status(200).json({ status: 'success', message: 'Likes fetched successfully.', data: { likes } });
   } catch (error) {
@@ -164,7 +164,7 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
 
     const commentLikeRepository = AppDataSource.getRepository(CommentLike);
 
-    const likes = await commentLikeRepository.find({ where: { postId, commentId } });
+    const likes = await commentLikeRepository.find({ where: { postId, commentId, status: true }, relations: ['user'] });
 
     return res.status(200).json({ status: 'success', message: 'Likes fetched successfully.', data: { likes } });
   } catch (error) {
@@ -183,7 +183,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     }
     const likeRepository = AppDataSource.getRepository(Like);
 
-    const likes = await likeRepository.find({ where: { postId , status:true} });
+    const likes = await likeRepository.find({ where: { postId, status: true } });
 
     if (!likes) {
       return res.status(404).json({ status: 'error', message: 'post not available.' });

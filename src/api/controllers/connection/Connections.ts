@@ -45,7 +45,7 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     // Create a notification
    await sendNotification(
       receiverId,
-      `Received a connection request by ${requester?.firstName} ${requester?.lastName}`,
+      `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
       requester?.profilePictureUploadId,
       `/settings/ManageConnections`
     );
@@ -103,7 +103,7 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
   } catch (error: any) {
     console.error('Error updating connection status:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
-  }
+  } 
 };
 
 // Get user's connections and mutual connections
