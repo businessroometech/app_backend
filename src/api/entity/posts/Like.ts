@@ -6,9 +6,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'Like' })
 export class Like extends BaseEntity {
@@ -50,4 +53,9 @@ export class Like extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
+
+  @ManyToOne(() => PersonalDetails, (personalDetails) => personalDetails.likes, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user!: PersonalDetails;
+
 }
