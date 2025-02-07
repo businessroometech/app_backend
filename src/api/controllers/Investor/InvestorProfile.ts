@@ -71,33 +71,37 @@ export const getInvestorById = async (req: Request, res: Response) => {
   }
 };
 
-export const updateInvestor = async (req: Request, res: Response) => {
+export const UpdateInvestor = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const investorRepository = AppDataSource.getRepository(Investor);
-    const investor = await investorRepository.findOne({
-      where: { id: req.params.id },
-    });
+    const { UserId } = req.params;
+    const updateData = req.body;
 
-    if (!investor) {
+    // Get the Investor repository
+    const investorRepository = AppDataSource.getRepository(Investor);
+
+    // Check if the investor profile exists
+    const investorProfile = await investorRepository.findOne({ where: { UserId } });
+
+    if (!investorProfile) {
       return res.status(404).json({
-        success: false,
-        message: 'Investor not found',
+        message: 'Investor not found. Invalid Investor ID.',
       });
     }
 
-    investorRepository.merge(investor, req.body);
-    const results = await investorRepository.save(investor);
+    // Merge the existing data with the new updates
+    const updatedInvestor = { ...investorProfile, ...updateData };
+
+    // Save the updated investor profile
+    await investorRepository.save(updatedInvestor);
 
     return res.status(200).json({
-      success: true,
-      data: results,
+      message: 'Investor updated successfully.',
+      data: updatedInvestor,
     });
-  } catch (error) {
-    console.error('Error updating investor:', error);
+  } catch (error: any) {
     return res.status(500).json({
-      success: false,
-      message: 'Failed to update investor',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Internal server error. Could not update investor.',
+      error: error.message,
     });
   }
 };

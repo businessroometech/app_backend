@@ -114,36 +114,66 @@ export const getBusinessBuyerById = async (req: Request, res: Response) => {
 
 
 
-export const  updateBusinessBuyer = async (req: Request, res: Response) => {
+export const UpdateBusinessBuyer = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const businessRepository = AppDataSource.getRepository(BusinessBuyer);
-    const business = await businessRepository.findOne({
-      where: { UserId: req.params.UserId },
-    });
-
-    if (!business) {
+    const {  
+      businessType, 
+      businessLocation, 
+      businessModel, 
+      budget, 
+      renovationInvestment, 
+      timeline, 
+      growthOrStableCashFlow, 
+      supportAfterPurchase, 
+      ndaAgreement, 
+      additionalInfo 
+    } = req.body;
+const UserId = req.params.UserId
+    // Get the BusinessBuyer repository
+    const buyerRepository = AppDataSource.getRepository(BusinessBuyer);
+    console.log("-----------------" , UserId)
+    // Check if the buyer profile exists
+    const buyerProfile = await buyerRepository.findOne({ where: { UserId } });
+       console.log("-----------------" , buyerProfile)
+    if (!buyerProfile) {
       return res.status(404).json({
-        success: false,
-        message: 'Business not found',
+        message: 'Business buyer not found. Invalid Buyer ID.',
       });
     }
-    
-    businessRepository.merge(business, req.body);
-    const results = await businessRepository.save(business);
+
+    // Update the buyer profile fields
+    buyerProfile.UserId = UserId;
+    buyerProfile.businessType = businessType;
+    buyerProfile.businessLocation = businessLocation;
+    buyerProfile.businessModel = businessModel;
+    buyerProfile.budget = budget;
+    buyerProfile.renovationInvestment = renovationInvestment;
+    buyerProfile.timeline = timeline;
+    buyerProfile.growthOrStableCashFlow = growthOrStableCashFlow;
+    buyerProfile.supportAfterPurchase = supportAfterPurchase;
+    buyerProfile.ndaAgreement = ndaAgreement;
+    buyerProfile.additionalInfo = additionalInfo;
+
+    await buyerRepository.save(buyerProfile);
 
     return res.status(200).json({
-      success: true,
-      data: results,
+      message: 'Business buyer updated successfully.',
+      data: buyerProfile,
     });
-  } catch (error) {
-    console.error('Error updating business for sale:', error);
+  } catch (error: any) {
     return res.status(500).json({
-      success: false,
-      message: 'Failed to update business for sale',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Internal server error. Could not update business buyer.',
+      error: error.message,
     });
   }
 };
+
+
+
+
+
+
+
 
 export const deleteBusinessBuyer = async (req: Request, res: Response) => {
   try {

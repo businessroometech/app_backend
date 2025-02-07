@@ -2,7 +2,7 @@
 
 import { Router } from 'express';
 
-import { createEntrepreneur, deleteEntrepreneur,getAllEntrepreneurs, getEntrepreneurById, updateEntrepreneur } from '../../controllers/entrepreneur/EntrepreneurProfile';
+import { createEntrepreneur, deleteEntrepreneur,getAllEntrepreneurs, getEntrepreneurById, UpdateEntrepreneur, updateEntrepreneur, UpdateInvestor } from '../../controllers/entrepreneur/EntrepreneurProfile';
 
 const entrepreneurRouter = Router();
 
@@ -16,7 +16,7 @@ entrepreneurRouter.get('/getall', getAllEntrepreneurs);
 entrepreneurRouter.get('/detail/:UserId', getEntrepreneurById);
 
 // Route to update 
-entrepreneurRouter.put('/update/:id', updateEntrepreneur);
+entrepreneurRouter.put('/update/:id', UpdateEntrepreneur);
 
 //  delete an entrepreneur 
 entrepreneurRouter.delete('/delete/:id', deleteEntrepreneur);

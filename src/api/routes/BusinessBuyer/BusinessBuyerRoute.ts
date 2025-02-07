@@ -7,7 +7,7 @@ import {
   deleteBusinessBuyer,
   getAllBusinessBuyers,
   getBusinessBuyerById,
-  updateBusinessBuyer,
+  UpdateBusinessBuyer,
 } from '../../controllers/BusinessBuyer/BusinessBuyer';
 
 const router = Router();
@@ -15,7 +15,7 @@ const router = Router();
 router.post('/create', createBusinessBuyer);
 router.get('/getall', getAllBusinessBuyers);
 router.get('/get/:UserId', getBusinessBuyerById);
-router.put('/update/:UserId', updateBusinessBuyer);
+router.put('/update/:UserId', UpdateBusinessBuyer);
 router.delete('/delete/:id', deleteBusinessBuyer);
 
 export default router;

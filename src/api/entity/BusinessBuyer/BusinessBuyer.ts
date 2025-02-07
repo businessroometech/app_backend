@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { BeforeInsert,Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { OneToOne } from 'typeorm';
 
-import { PersonalDetails } from '../personal/PersonalDetails';
+import { PersonalDetails } from '../personal/PersonalDetails'
 
 @Entity({ name: "BusinessBuyer" })
 export class BusinessBuyer {
@@ -24,10 +24,10 @@ export class BusinessBuyer {
   businessModel!: string;
 
   @Column({ type: 'decimal', nullable: true })
-  budget!: number;
+  budget!: string;
 
   @Column({ type: 'decimal', nullable: true })
-  renovationInvestment!: number;
+  renovationInvestment!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   timeline!: string;
@@ -39,7 +39,7 @@ export class BusinessBuyer {
   supportAfterPurchase!: string;
 
   @Column({ type: 'boolean', nullable: true })
-  ndaAgreement!: boolean;
+  ndaAgreement!: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   additionalInfo!: string;
