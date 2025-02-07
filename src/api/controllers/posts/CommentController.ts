@@ -9,6 +9,7 @@ import { Notifications } from '@/api/entity/notifications/Notifications';
 import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { generatePresignedUrl } from '../s3/awsControllers';
+import { Connection } from '@/api/entity/connection/Connections';
 
 export const createOrUpdateComment = async (req: Request, res: Response) => {
   try {
@@ -414,7 +415,6 @@ export const getNestedComments = async (req: Request, res: Response) => {
   }
 };
 
-
 // Get comment like user list
 export const getCommentLikeUserList = async (req: Request, res: Response) => {
   try {
@@ -423,37 +423,59 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
     if (!commentId) {
       return res.status(400).json({ status: 'error', message: 'commentId is required.' });
     }
+
     const commentLikeRepository = AppDataSource.getRepository(CommentLike);
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const connectionRepository = AppDataSource.getRepository(Connection);
 
     const commentLikes = await commentLikeRepository.find({ where: { commentId } });
-
     const totalLikes = await commentLikeRepository.count({ where: { commentId } });
+
     const likeList = await Promise.all(
       commentLikes.map(async (like) => {
         const user = await personalDetailsRepository.findOne({
           where: { id: like.userId },
-          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
+          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId', 'userRole'],
         });
 
         if (user) {
           const userImg = user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
-          return { ...user, profilePicture: userImg };
+          
+          // Check if the user is a mutual connection, but exclude the requesting user
+          let isMutualConnection: boolean | null = null;
+          if (userId !== user.id) {
+            const mutualConnection = await connectionRepository.findOne({
+              where: [
+                { requesterId: userId, receiverId: user.id, status: 'accepted' },
+                { requesterId: user.id, receiverId: userId, status: 'accepted' },
+              ],
+            });
+            isMutualConnection = mutualConnection ? true : false;
+          }
+
+          return {
+            ...user,
+            profilePicture: userImg,
+            isMutualConnection,
+          };
         }
         return null;
       })
     );
+
     const filteredLikeList = likeList.filter(user => user !== null);
 
+    // Check if the given user has liked the comment
     const userLikeStatus = commentLikes.some(commentLike => commentLike.userId === userId);
 
     return res.status(200).json({
       status: 'success',
       message: 'Comment like user list fetched successfully.',
-      data: { likeList: filteredLikeList, userLikeStatus, totalLikes }
+      data: { likeList: filteredLikeList, userLikeStatus, totalLikes },
     });
   } catch (error) {
     console.error('Error fetching comment like user list:', error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
+
