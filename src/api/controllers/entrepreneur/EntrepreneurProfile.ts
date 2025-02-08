@@ -129,25 +129,27 @@ export const UpdateEntrepreneur = async (req: Request, res: Response): Promise<R
 export const deleteEntrepreneur = async (req: Request, res: Response) => {
     try {
         const entrepreneurRepository = AppDataSource.getRepository(Entrepreneur);
-        const result = await entrepreneurRepository.delete(req.params.id);
+        
+        // Delete all entrepreneurs related to the given userId
+        const result = await entrepreneurRepository.delete({ UserId: req.params.UserId });
 
         if (result.affected === 0) {
             return res.status(404).json({
                 success: false,
-                message: 'Entrepreneur not found'
+                message: 'No entrepreneurs found for the given userId',
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Entrepreneur deleted successfully'
+            message: 'All entrepreneurs deleted successfully for the given userId',
         });
     } catch (error) {
-        console.error('Error deleting entrepreneur:', error);
+        console.error('Error deleting entrepreneurs:', error);
         return res.status(500).json({
             success: false,
-            message: 'Failed to delete entrepreneur',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            message: 'Failed to delete entrepreneurs',
+            error: error instanceof Error ? error.message : 'Unknown error',
         });
     }
 };

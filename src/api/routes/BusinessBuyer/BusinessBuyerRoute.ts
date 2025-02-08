@@ -16,6 +16,6 @@ router.post('/create', createBusinessBuyer);
 router.get('/getall', getAllBusinessBuyers);
 router.get('/get/:UserId', getBusinessBuyerById);
 router.put('/update/:UserId', UpdateBusinessBuyer);
-router.delete('/delete/:id', deleteBusinessBuyer);
+router.delete('/delete/:UserId', deleteBusinessBuyer);
 
 export default router;

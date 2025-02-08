@@ -19,6 +19,6 @@ entrepreneurRouter.get('/detail/:UserId', getEntrepreneurById);
 entrepreneurRouter.put('/update/:UserId', UpdateEntrepreneur);
 
 //  delete an entrepreneur 
-entrepreneurRouter.delete('/delete/:id', deleteEntrepreneur);
+entrepreneurRouter.delete('/delete/:UserId', deleteEntrepreneur);
 
 export default entrepreneurRouter;
