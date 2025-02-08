@@ -109,7 +109,7 @@ export const UpdateInvestor = async (req: Request, res: Response): Promise<Respo
 export const deleteInvestor = async (req: Request, res: Response) => {
   try {
     const investorRepository = AppDataSource.getRepository(Investor);
-    const result = await investorRepository.delete(req.params.id);
+    const result = await investorRepository.delete(req.params.UserId);
 
     if (result.affected === 0) {
       return res.status(404).json({
