@@ -58,6 +58,9 @@ export class UserPost extends BaseEntity {
   @Column({ type: "text" , default: null})
   repostText !: string;
 
+  @CreateDateColumn({ type: 'timestamp' })
+  originalPostedAt !: Date;
+
   @BeforeInsert()
   private async beforeInsert() {
     this.id = this.generateUUID();
