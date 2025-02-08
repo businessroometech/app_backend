@@ -34,7 +34,7 @@ export const formatTimestamp = (createdAt: Date): string => {
 // user post and and update post
 export const CreateUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, title, content, hashtags, mediaKeys, repostedFrom, repostText } = req.body;
+    const { userId, title, content, hashtags, mediaKeys, repostedFrom, repostText, originalPostedAt } = req.body;
 
     // Validate if the user exists
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -71,6 +71,7 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       repostedFrom,
       repostText,
       isRepost: Boolean(repostedFrom),
+      originalPostedAt
     });
 
     const savedPost = await postRepository.save(newPost);
@@ -227,6 +228,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
+            originalPostedAt: post.originalPostedAt
           },
           userDetails: {
             postedId: user.id,
