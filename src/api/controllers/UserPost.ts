@@ -197,6 +197,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
           commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
+          createdAt: comment.createdAt,
           postId: comment.postId,
         };
       })
@@ -228,13 +229,15 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
+            createdAt: post.createdAt,
             originalPostedAt: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
           },
           userDetails: {
             postedId: user.id,
             firstName: user.firstName || '',
             lastName: user.lastName || '',
-            timestamp: formatTimestamp(post.createdAt),
+            // timestamp: formatTimestamp(post.createdAt),
+            createdAt: post.createdAt,
             userRole: user.userRole,
             avatar: imgUrl,
             zoomProfile: user.zoomProfile,
@@ -469,6 +472,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
+            createdAt: post.createdAt,
             originalPostedAt: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
           },
           userDetails: {
@@ -550,6 +554,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
           commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
+          createdAt: comment.createdAt
         };
       })
     );
@@ -576,6 +581,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         isRepost: post.isRepost,
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
+        createdAt: post.createdAt,
         originalPostedAt: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
       },
       userDetails: {
