@@ -91,7 +91,6 @@ export const suggestUsersByEmail = async (req: Request, res: Response): Promise<
 export const createMention = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { users, posts, mentionBy, mentionTo } = req.body;
-  
       // Validate request body
       if (!mentionBy || !mentionTo || !Array.isArray(users) || users.length === 0) {
         return res.status(400).json({
@@ -131,8 +130,8 @@ export const createMention = async (req: Request, res: Response): Promise<Respon
   
       // Create mention records
       const mention = mentionRepository.create({
-        users: mentionedUsers,
-        posts: relatedPosts,
+        // userId: mentionedUsers,
+        // posts: relatedPosts,
         mentionBy,
         mentionTo,
         createdBy: mentionBy,
@@ -156,3 +155,6 @@ export const createMention = async (req: Request, res: Response): Promise<Respon
       });
     }
   };
+
+
+
