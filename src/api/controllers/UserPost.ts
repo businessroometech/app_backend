@@ -228,7 +228,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
-            originalPostedAt: post.originalPostedAt
+            originalPostedAt: formatTimestamp(post.originalPostedAt)
           },
           userDetails: {
             postedId: user.id,
@@ -318,8 +318,8 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
     }
 
     const userPostRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await userPostRepo.findOne({ 
-      where: { id: PostId,  userId } , 
+    const userPost = await userPostRepo.findOne({
+      where: { id: PostId, userId },
     });
 
     if (!userPost) {
@@ -469,7 +469,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
-            originalPostedAt: post.originalPostedAt
+            originalPostedAt: formatTimestamp(post.originalPostedAt)
           },
           userDetails: {
             postedId: user?.id,
@@ -557,7 +557,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     // Fetch profile picture URL
     const userId = post.userId;
     const userRepos = AppDataSource.getRepository(PersonalDetails)
-    const user = await userRepos.findOne({where:{id:userId}})
+    const user = await userRepos.findOne({ where: { id: userId } })
     const imgUrl = user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
 
     // Format the post with related data
@@ -576,7 +576,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         isRepost: post.isRepost,
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
-        originalPostedAt: post.originalPostedAt
+        originalPostedAt: formatTimestamp(post.originalPostedAt)
       },
       userDetails: {
         postedId: user?.id,
