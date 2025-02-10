@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-
+//hello//
 @Entity({ name: 'Investor' })
 export class Investor {
   @PrimaryGeneratedColumn('uuid')

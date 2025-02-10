@@ -6,7 +6,7 @@ import { AppDataSource } from '@/server';
 
 import { BusinessBuyer } from '../../entity/BusinessBuyer/BusinessBuyer';
 
-
+//hellooo//
 
 export const createBusinessBuyer = async (req: Request, res: Response) => {
   try {

@@ -4,7 +4,7 @@ import { BeforeInsert,Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { OneToOne } from 'typeorm';
 
 import { PersonalDetails } from '../personal/PersonalDetails';
-
+//Hello//
 @Entity({name : "StartupOverview"})
 export class Entrepreneur {
 

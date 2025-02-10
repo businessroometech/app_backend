@@ -11,7 +11,7 @@ import {
 } from '../../controllers/BusinessBuyer/BusinessBuyer';
 
 const router = Router();
-
+//hello//
 router.post('/create', createBusinessBuyer);
 router.get('/getall', getAllBusinessBuyers);
 router.get('/get/:UserId', getBusinessBuyerById);
