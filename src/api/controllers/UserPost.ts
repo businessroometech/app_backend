@@ -469,6 +469,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
+            originalPostedAt: post.originalPostedAt
           },
           userDetails: {
             postedId: user?.id,
@@ -575,6 +576,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         isRepost: post.isRepost,
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
+        originalPostedAt: post.originalPostedAt
       },
       userDetails: {
         postedId: user?.id,
