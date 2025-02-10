@@ -53,9 +53,5 @@ export class Like extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
-
-  @ManyToOne(() => PersonalDetails, (personalDetails) => personalDetails.likes, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user!: PersonalDetails;
-
+  
 }

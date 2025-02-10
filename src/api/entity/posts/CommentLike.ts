@@ -57,7 +57,4 @@ export class CommentLike extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @ManyToOne(() => PersonalDetails, (personalDetails) => personalDetails.commentLikes, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user!: PersonalDetails;
 }
