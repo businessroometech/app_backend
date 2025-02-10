@@ -137,7 +137,6 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: "float", nullable: true })
   rotateProfile !: number;
 
-
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
@@ -191,9 +190,4 @@ export class PersonalDetails extends BaseEntity {
   @ManyToMany(() => Mention, (mention) => mention.user)
   mentions!: Mention[];
 
-  @OneToMany(() => Like, (like) => like.user)
-  likes!: Like[];
-
-  @OneToMany(() => Like, (like) => like.user)
-  commentLikes!: Like[];
 }

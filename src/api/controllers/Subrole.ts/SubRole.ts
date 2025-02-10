@@ -80,25 +80,27 @@ export const getAllSubRole = async (req: Request, res: Response) => {
 
 export const deleteRoles = async (req: Request, res: Response) => {
   try {
-    const SubRoleRepository = AppDataSource.getRepository(SubRole);
-    const result = await SubRoleRepository.delete(req.params.id);
+    const subRoleRepository = AppDataSource.getRepository(SubRole);
+    
+    // Delete all sub-roles related to the given userId
+    const result = await subRoleRepository.delete({ UserId: req.params.UserId });
 
     if (result.affected === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Business not found',
+        message: 'No sub-roles found for the given userId',
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: 'SubRoles deleted successfully',
+      message: 'All sub-roles deleted successfully for the given userId',
     });
   } catch (error) {
-    console.error('Error deleting business for subroles:', error);
+    console.error('Error deleting sub-roles:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to delete Subroles',
+      message: 'Failed to delete sub-roles',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }

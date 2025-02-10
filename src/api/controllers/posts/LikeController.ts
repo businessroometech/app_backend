@@ -81,15 +81,36 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
     }
 
     const likeRepository = AppDataSource.getRepository(Like);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
 
-    const likes = await likeRepository.find({ where: { postId, status: true }, relations: ['user'] });
+    // Fetch likes for the given post
+    const likes = await likeRepository.find({
+      where: { postId, status: true },
+    });
 
-    return res.status(200).json({ status: 'success', message: 'Likes fetched successfully.', data: { likes } });
+    // Fetch user details for each like
+    const likesWithUsers = await Promise.all(
+      likes.map(async (like) => {
+        const user = await personalDetailsRepository.findOne({ where: { id: like.userId } });
+
+        return {
+          ...like,
+          user: user
+        };
+      })
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Likes fetched successfully.',
+      data: { likes: likesWithUsers },
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
+
 
 export const createCommentLike = async (req: Request, res: Response) => {
   try {
@@ -163,15 +184,36 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
     }
 
     const commentLikeRepository = AppDataSource.getRepository(CommentLike);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
 
-    const likes = await commentLikeRepository.find({ where: { postId, commentId, status: true }, relations: ['user'] });
+    // Fetch likes for the given post and comment
+    const likes = await commentLikeRepository.find({
+      where: { postId, commentId, status: true },
+    });
 
-    return res.status(200).json({ status: 'success', message: 'Likes fetched successfully.', data: { likes } });
+    // Fetch user details for each like
+    const likesWithUsers = await Promise.all(
+      likes.map(async (like) => {
+        const user = await personalDetailsRepository.findOne({ where: { id: like.userId } });
+
+        return {
+          ...like,
+          user: user ? { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email } : null,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Likes fetched successfully.',
+      data: { likes: likesWithUsers },
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
+
 
 // userlike list for post
 export const getUserPostLikeList = async (req: Request, res: Response) => {

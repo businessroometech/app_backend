@@ -10,6 +10,9 @@ router.get('/get/:UserId', getSubRoleByUniqueId);
 
 router.get('/getall' , getAllSubRole)
 
-router.delete("/delete/:id" , deleteRoles)
+router.delete("/delete/:UserId" , deleteRoles)
 
 export default router
+
+
+//hello//

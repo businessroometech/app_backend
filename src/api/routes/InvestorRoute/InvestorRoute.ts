@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import express from 'express';
 
-import { createInvestor, deleteInvestor,getAllInvestors, getInvestorById, updateInvestor } from '../../controllers/Investor/InvestorProfile';
+import { createInvestor, deleteInvestor,getAllInvestors, getInvestorById, UpdateInvestor,  } from '../../controllers/Investor/InvestorProfile';
 
 const router = express.Router();
 
@@ -15,9 +15,10 @@ router.get('/getall', getAllInvestors);
 router.get('/get/:UserId', getInvestorById);
 
 // Update  investor by ID
-router.put('/update/:id', updateInvestor);
+router.put('/update/:UserId', UpdateInvestor);
 
 // Delete investor by ID
-router.delete('/delete/:id', deleteInvestor);
+router.delete('/delete/:UserId', deleteInvestor);
 
 export default router;
+//.............hello.//

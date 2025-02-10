@@ -34,7 +34,7 @@ export const formatTimestamp = (createdAt: Date): string => {
 // user post and and update post
 export const CreateUserPost = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, title, content, hashtags, mediaKeys, repostedFrom, repostText } = req.body;
+    const { userId, title, content, hashtags, mediaKeys, repostedFrom, repostText, originalPostedAt } = req.body;
 
     // Validate if the user exists
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -71,6 +71,7 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
       repostedFrom,
       repostText,
       isRepost: Boolean(repostedFrom),
+      originalPostedAt
     });
 
     const savedPost = await postRepository.save(newPost);
@@ -227,6 +228,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
+            originalPostedAt: formatTimestamp(post.originalPostedAt)
           },
           userDetails: {
             postedId: user.id,
@@ -316,8 +318,8 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
     }
 
     const userPostRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await userPostRepo.findOne({ 
-      where: { id: PostId,  userId } , 
+    const userPost = await userPostRepo.findOne({
+      where: { id: PostId, userId },
     });
 
     if (!userPost) {
@@ -467,6 +469,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
+            originalPostedAt: formatTimestamp(post.originalPostedAt)
           },
           userDetails: {
             postedId: user?.id,
@@ -554,7 +557,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     // Fetch profile picture URL
     const userId = post.userId;
     const userRepos = AppDataSource.getRepository(PersonalDetails)
-    const user = await userRepos.findOne({where:{id:userId}})
+    const user = await userRepos.findOne({ where: { id: userId } })
     const imgUrl = user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
 
     // Format the post with related data
@@ -573,6 +576,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         isRepost: post.isRepost,
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
+        originalPostedAt: formatTimestamp(post.originalPostedAt)
       },
       userDetails: {
         postedId: user?.id,
