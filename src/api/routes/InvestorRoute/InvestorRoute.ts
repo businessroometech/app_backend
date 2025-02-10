@@ -18,7 +18,7 @@ router.get('/get/:UserId', getInvestorById);
 router.put('/update/:UserId', UpdateInvestor);
 
 // Delete investor by ID
-router.delete('/delete/:id', deleteInvestor);
+router.delete('/delete/:UserId', deleteInvestor);
 
 export default router;
-//..............//
+//.............hello.//

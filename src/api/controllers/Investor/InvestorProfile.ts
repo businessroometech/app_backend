@@ -109,24 +109,26 @@ export const UpdateInvestor = async (req: Request, res: Response): Promise<Respo
 export const deleteInvestor = async (req: Request, res: Response) => {
   try {
     const investorRepository = AppDataSource.getRepository(Investor);
-    const result = await investorRepository.delete(req.params.id);
+
+    // Delete all investors related to the given userId
+    const result = await investorRepository.delete({ UserId: req.params.UserId });
 
     if (result.affected === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Investor not found',
+        message: 'No investors found for the given userId',
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: 'Investor deleted successfully',
+      message: 'All investors deleted successfully for the given userId',
     });
   } catch (error) {
-    console.error('Error deleting investor:', error);
+    console.error('Error deleting investors:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to delete investor',
+      message: 'Failed to delete investors',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
