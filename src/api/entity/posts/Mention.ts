@@ -12,6 +12,8 @@ import {
 import { PersonalDetails } from '../personal/PersonalDetails';
 import { UserPost } from '../UserPost';
 import { randomBytes } from 'crypto';
+import { NestedComment } from './NestedComment';
+import { Comment } from './Comment';
 
 @Entity({ name: 'Mention' })
 export class Mention extends BaseEntity {
@@ -22,8 +24,16 @@ export class Mention extends BaseEntity {
   @JoinColumn({ name: 'userId' })
   user!: PersonalDetails;
 
-  @ManyToOne(() => UserPost, (post) => post.mentions, { nullable: false })
+  @ManyToOne(() => UserPost, (post) => post.mentions, { nullable: true })
   post!: UserPost;
+
+  @ManyToOne(() => Comment, (comment) => comment.mentions, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'commentId' })
+  comment!: Comment;
+
+  @ManyToOne(() => NestedComment, (nestedComment) => nestedComment.mentions, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'nestedCommentId' })
+  nestedComment!: NestedComment;
 
   @Column({ type: 'varchar' })
   mentionBy!: string;

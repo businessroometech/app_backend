@@ -5,9 +5,11 @@ import {
     Column,     
     CreateDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
+import { Mention } from './Mention';
 
 @Entity({ name: 'Comment' })
 export class Comment extends BaseEntity {
@@ -49,4 +51,9 @@ export class Comment extends BaseEntity {
     private generateUUID() {
         return randomBytes(16).toString('hex');
     }
+
+    
+    @OneToMany(() => Mention, (mention) => mention.comment, { cascade: true })
+    mentions!: Mention[];
+  
 }
