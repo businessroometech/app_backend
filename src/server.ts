@@ -1,6 +1,6 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express } from 'express';
+import express, { Express, Request, Response } from 'express';
 import helmet from 'helmet';
 import { pino } from 'pino';
 import { DataSource } from 'typeorm';
@@ -50,6 +50,7 @@ import { Wishlists } from './api/entity/WishLists/Wishlists';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import SubRoleRoutes from './api/routes/SubRole/SubRoleRoutes';
 import { initializeSocket } from './socket';
+import axios from 'axios';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -127,6 +128,24 @@ app.use('/v1/subrole', SubRoleRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');
+});
+
+
+// Route to fetch metadata
+app.get("/fetch-metadata", async (req: Request, res: Response) => {
+  try {
+    const { url } = req.query;
+    if (!url) return res.status(400).json({ error: "URL parameter is required" });
+
+    const response = await axios.get(url as string, {
+      headers: { "User-Agent": "Mozilla/5.0" }, 
+    });
+
+    res.send(response.data);
+  } catch (error: any) {
+    console.error("Error fetching metadata:", error.message);
+    res.status(500).json({ error: "Failed to fetch metadata" });
+  }
 });
 
 // Error handlers
