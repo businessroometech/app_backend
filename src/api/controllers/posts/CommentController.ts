@@ -10,6 +10,8 @@ import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Connection } from '@/api/entity/connection/Connections';
+import { CreateMention } from './Mention';
+import { In } from 'typeorm';
 
 export const createOrUpdateComment = async (req: Request, res: Response) => {
   try {
@@ -42,7 +44,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
       updatedBy: 'system',
     });
 
-    await comment.save();
+    const saveComment = await comment.save();
 
     // Get the post and user information
     const postRepo = AppDataSource.getRepository(UserPost);
@@ -85,7 +87,31 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
         `/feed/home#${commentId}`
       );
     }
+    
+    const mentionPattern = /@(\w+)/g;
+    const mentionedUsernames = [...text.matchAll(mentionPattern)].map((match) => match[1]);
+    let mentionResponses = [];
+    if (mentionedUsernames.length > 0) {
+      console.log('Extracted Mentions:', mentionedUsernames);
 
+      const mentionedUsers = await personalRepo.find({
+        where: { userName: In(mentionedUsernames) },
+      });
+
+      for (const mentionedUser of mentionedUsers) {
+        const mentionResponse = await CreateMention({
+          userId,
+          commentId: saveComment.id,
+          nestedCommentId: undefined,
+          mentionBy: userId,
+          mentionTo: mentionedUser.id,
+          posts: [postId],
+        });
+        mentionResponses.push(mentionResponse);
+        console.log(`Mention created for @${mentionedUser.userName}:`, mentionResponse);
+      }
+      return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment, mentionResponses } });
+    }
     return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
   } catch (error) {
     console.error(error);
@@ -205,7 +231,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
       nestedComment.text = text;
       nestedComment.updatedBy = createdBy || 'system';
 
-      await nestedCommentRepo.save(nestedComment); // Fix: Use repository.save()
+      await nestedCommentRepo.save(nestedComment);
 
       return res
         .status(200)
@@ -255,19 +281,45 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
       console.log('Notification sent:', notification);
     }
 
+    // **Extract mentions from text and create mentions one by one**
+    const mentionPattern = /@(\w+)/g;
+    const mentionedUsernames = [...text.matchAll(mentionPattern)].map((match) => match[1]);
+
+    let mentionResponses = [];
+
+    if (mentionedUsernames.length > 0) {
+      console.log('Extracted Mentions:', mentionedUsernames);
+
+      // Fetch user IDs for mentioned usernames
+      const mentionedUsers = await userRepo.find({
+        where: { userName: In(mentionedUsernames) },
+      });
+
+      for (const mentionedUser of mentionedUsers) {
+        const mentionResponse = await CreateMention({
+          userId,
+          commentId,
+          nestedCommentId: savedComment.id,
+          mentionBy: userId,
+          mentionTo: mentionedUser.id,
+          users: [mentionedUser.id],
+          posts: [postId],
+        });
+        mentionResponses.push(mentionResponse);
+        console.log(`Mention created for @${mentionedUser.userName}:`, mentionResponse);
+      }
+    }
+
     return res.status(201).json({
       status: 'success',
       message: 'Comment created successfully.',
-      data: { savedComment, notification },
+      data: { savedComment, notification, mentions: mentionResponses },
     });
-
   } catch (error) {
     console.error('Error in createOrUpdateNestedComment:', error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
-
-
 // export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
 //   try {
 //     const { userId, postId, commentId, text, createdBy, nestedCommentId } = req.body;
@@ -440,7 +492,7 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
 
         if (user) {
           const userImg = user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
-          
+
           // Check if the user is a mutual connection, but exclude the requesting user
           let isMutualConnection: boolean | null = null;
           if (userId !== user.id) {
@@ -463,10 +515,10 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
       })
     );
 
-    const filteredLikeList = likeList.filter(user => user !== null);
+    const filteredLikeList = likeList.filter((user) => user !== null);
 
     // Check if the given user has liked the comment
-    const userLikeStatus = commentLikes.some(commentLike => commentLike.userId === userId);
+    const userLikeStatus = commentLikes.some((commentLike) => commentLike.userId === userId);
 
     return res.status(200).json({
       status: 'success',
@@ -478,4 +530,3 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
-
