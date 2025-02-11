@@ -109,6 +109,12 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
         });
         mentionResponses.push(mentionResponse);
         console.log(`Mention created for @${mentionedUser.userName}:`, mentionResponse);
+        await sendNotification(
+          mentionedUser.id, 
+          `${userInfo.firstName} mentioned you in a comment`, 
+          userInfo.profilePictureUploadId,
+          `/feed/home#${commentId}`
+        );        
       }
       return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment, mentionResponses } });
     }
@@ -307,6 +313,13 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
         });
         mentionResponses.push(mentionResponse);
         console.log(`Mention created for @${mentionedUser.userName}:`, mentionResponse);
+        await sendNotification(
+          mentionedUser.id, 
+          `${findUser?.firstName} mentioned you in a reply to a comment`, 
+          findUser?.profilePictureUploadId,
+          `/feed/home#${commentId}`
+        );
+        
       }
     }
 
