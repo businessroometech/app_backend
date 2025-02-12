@@ -10,6 +10,7 @@ import { Reaction } from '../entity/posts/Reaction';
 import { Mention } from '../entity/posts/Mention';
 import { broadcastMessage, getSocketInstance } from '@/socket';
 import { sendNotification } from './notifications/SocketNotificationController';
+import { BlockedPost } from '../entity/posts/BlockedPost';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -206,9 +207,15 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     // Fetch profile picture URL
     const imgUrl = user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
 
+
     // Format posts with related data
+    const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
+    const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: userId } });
+    const blockedPostIds = blockedPosts.map(bp => bp.blockedPost);
+    const newUserPosts = userPosts.filter(post => !blockedPostIds.includes(post.id));
+
     const formattedPosts = await Promise.all(
-      userPosts.map(async (post) => {
+      newUserPosts.map(async (post) => {
         const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
@@ -399,9 +406,14 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       return like?.status;
     };
 
+    const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
+    const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: userId } });
+    const blockedPostIds = blockedPosts.map(bp => bp.blockedPost);
+    const newUserPosts = posts.filter(post => !blockedPostIds.includes(post.id)); 
+
     // Format the posts with user details, likes, comments, and reactions
     const formattedPosts = await Promise.all(
-      posts.map(async (post) => {
+      newUserPosts.map(async (post) => {
         // Fetch media URLs related to the post
         const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
 

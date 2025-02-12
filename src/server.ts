@@ -50,6 +50,8 @@ import { Wishlists } from './api/entity/WishLists/Wishlists';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import SubRoleRoutes from './api/routes/SubRole/SubRoleRoutes';
 import { initializeSocket } from './socket';
+import { BlockedPost } from './api/entity/posts/BlockedPost';
+import { BlockedUser } from './api/entity/posts/BlockedUser';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -83,6 +85,8 @@ const AppDataSource = new DataSource({
     Wishlists,
     ActiveUser,
     SubRole,
+    BlockedPost,
+    BlockedUser
   ],
   synchronize: false,
 });
