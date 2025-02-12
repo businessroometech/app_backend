@@ -619,4 +619,3 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     });
   }
 };
-

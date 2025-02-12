@@ -10,6 +10,9 @@ import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Connection } from '@/api/entity/connection/Connections';
+import { CreateMention } from './Mention';
+import { In } from 'typeorm';
+import { Mention } from '@/api/entity/posts/Mention';
 
 export const createOrUpdateComment = async (req: Request, res: Response) => {
   try {
@@ -21,72 +24,85 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
 
     if (commentId) {
       const comment = await Comment.findOne({ where: { id: commentId } });
-
       if (!comment) {
         return res.status(404).json({ status: 'error', message: 'Comment not found.' });
       }
-
       comment.text = text;
       comment.updatedBy = 'system';
-
       await comment.save();
-
       return res.status(200).json({ status: 'success', message: 'Comment updated successfully.', data: { comment } });
     }
 
-    const comment = Comment.create({
-      userId,
-      postId,
-      text,
-      createdBy: 'system',
-      updatedBy: 'system',
-    });
+    const newComment = Comment.create({ userId, postId, text, createdBy: 'system', updatedBy: 'system' });
+    const savedComment = await newComment.save();
 
-    await comment.save();
-
-    // Get the post and user information
+    // Fetch post and user details
     const postRepo = AppDataSource.getRepository(UserPost);
     const userPost = await postRepo.findOne({ where: { id: postId } });
-
     if (!userPost) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Post not found.',
-      });
+      return res.status(404).json({ status: 'error', message: 'Post not found.' });
     }
 
     const personalRepo = AppDataSource.getRepository(PersonalDetails);
     const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
     const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
-
     if (!userInfo || !commenterInfo) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'User information not found.',
-      });
+      return res.status(404).json({ status: 'error', message: 'User information not found.' });
     }
 
-    // Create a notification
-    // const notificationRepo = AppDataSource.getRepository(Notifications);
-    // let notification = notificationRepo.create({
-    //   userId: userInfo.id,
-    //   message: `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
-    //   navigation: `/feed/home#${postId}`,
-    // });
-    // // Save the notification
-    // notification = await notificationRepo.save(notification);
-
-    const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
+    const media = commenterInfo.profilePictureUploadId || null;
     if (userPost.userId !== commenterInfo.id) {
       await sendNotification(
         userPost.userId,
         `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
         media,
-        `/feed/home#${commentId}`
+        `/feed/home#${savedComment.id}`
       );
     }
 
-    return res.status(201).json({ status: 'success', message: 'Comment created successfully.', data: { comment } });
+    // Extract mentions from comment text
+    const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+    const mentions = [...text.matchAll(mentionPattern)].map(match => match[1]);
+    
+    if (mentions.length > 0) {
+      const userRepository = AppDataSource.getRepository(PersonalDetails);
+      const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
+      const validMentionedUserIds = mentionedUsers.map(user => user.id);
+
+      if (validMentionedUserIds.length !== mentions.length) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'One or more mentioned users do not exist.',
+          invalidMentions: mentions.filter(m => !mentionedUsers.some(u => u.userName === m))
+        });
+      }
+
+      const mentionRepo = AppDataSource.getRepository(Mention);
+      const mentionResponses = [];
+      for (const mentionedUser of mentionedUsers) {
+        const mentionResponse = await mentionRepo.save({
+          userId,
+          postId,
+          commentId: savedComment.id,
+          mentionBy: userId,
+          mentionTo: mentionedUser.id,
+        });
+        mentionResponses.push(mentionResponse);
+
+        await sendNotification(
+          mentionedUser.id,
+          `${commenterInfo.firstName} mentioned you in a comment`,
+          commenterInfo.profilePictureUploadId,
+          `/feed/home#${savedComment.id}`
+        );
+      }
+    }
+
+    return res.status(201).json({
+      status: 'success',
+      message: 'Comment created successfully.',
+      data: { comment: savedComment },
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
@@ -193,7 +209,10 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
     }
 
     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+    const parentCommentRepo = AppDataSource.getRepository(Comment);
 
+    let savedComment;
     if (nestedCommentId) {
       console.log('Updating Nested Comment:', nestedCommentId);
       const nestedComment = await nestedCommentRepo.findOne({ where: { id: nestedCommentId } });
@@ -204,47 +223,37 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
 
       nestedComment.text = text;
       nestedComment.updatedBy = createdBy || 'system';
-
-      await nestedCommentRepo.save(nestedComment); // Fix: Use repository.save()
+      savedComment = await nestedCommentRepo.save(nestedComment);
 
       return res
         .status(200)
         .json({ status: 'success', message: 'Nested Comment updated successfully.', data: { nestedComment } });
     }
 
-    // Fetch the parent comment details
-    const parentCommentRepo = AppDataSource.getRepository(Comment);
+    // Validate parent comment
     const parentComment = await parentCommentRepo.findOne({ where: { id: commentId } });
-
     if (!parentComment) {
       return res.status(404).json({ status: 'error', message: 'Parent comment not found.' });
     }
 
     console.log('Creating new Nested Comment');
 
-    const comment = nestedCommentRepo.create({
-      userId,
-      postId,
-      commentId,
-      text,
-      createdBy: createdBy || 'system',
-      updatedBy: createdBy || 'system',
-    });
+    savedComment = await nestedCommentRepo.save(
+      nestedCommentRepo.create({
+        userId,
+        postId,
+        commentId,
+        text,
+        createdBy: createdBy || 'system',
+        updatedBy: createdBy || 'system',
+      })
+    );
 
-    const savedComment = await nestedCommentRepo.save(comment);
     console.log('Saved Comment:', savedComment);
 
-    // Fetch user details
-    const userRepo = AppDataSource.getRepository(PersonalDetails);
-    const findUser = await userRepo.findOne({ where: { id: savedComment.userId } });
-
-    if (!findUser) {
-      console.log('User not found:', savedComment.userId);
-    }
+    const findUser = await userRepo.findOne({ where: { id: userId } });
 
     let notification = null;
-
-    // Send notification if the commenter is not the same as the parent comment's author
     if (findUser && findUser.id !== parentComment.userId) {
       notification = await sendNotification(
         parentComment.userId,
@@ -255,12 +264,46 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
       console.log('Notification sent:', notification);
     }
 
+    // Extract mentions
+    const mentionPattern = /@([\w.]+)/g;
+    const mentionedUsernames = [...text.matchAll(mentionPattern)].map((match) => match[1]);
+
+    let mentionResponses = [];
+    if (mentionedUsernames.length > 0) {
+      console.log('Extracted Mentions:', mentionedUsernames);
+
+      // Fetch mentioned users
+      const mentionedUsers = await userRepo.find({
+        where: { userName: In(mentionedUsernames) },
+      });
+
+      for (const mentionedUser of mentionedUsers) {
+        if (mentionedUser.id !== userId) {
+          const mentionResponse = await CreateMention({
+            userId,
+            commentId,
+            nestedCommentId: savedComment.id,
+            mentionBy: userId,
+            mentionTo: mentionedUser.id,
+          });
+          mentionResponses.push(mentionResponse);
+          console.log(`Mention created for @${mentionedUser.userName}:`, mentionResponse);
+
+          await sendNotification(
+            mentionedUser.id,
+            `${findUser?.firstName} mentioned you in a reply to a comment`,
+            findUser?.profilePictureUploadId,
+            `/feed/home#${commentId}`
+          );
+        }
+      }
+    }
+
     return res.status(201).json({
       status: 'success',
       message: 'Comment created successfully.',
-      data: { savedComment, notification },
+      data: { savedComment, notification, mentions: mentionResponses },
     });
-
   } catch (error) {
     console.error('Error in createOrUpdateNestedComment:', error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
@@ -440,7 +483,7 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
 
         if (user) {
           const userImg = user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
-          
+
           // Check if the user is a mutual connection, but exclude the requesting user
           let isMutualConnection: boolean | null = null;
           if (userId !== user.id) {
@@ -463,10 +506,10 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
       })
     );
 
-    const filteredLikeList = likeList.filter(user => user !== null);
+    const filteredLikeList = likeList.filter((user) => user !== null);
 
     // Check if the given user has liked the comment
-    const userLikeStatus = commentLikes.some(commentLike => commentLike.userId === userId);
+    const userLikeStatus = commentLikes.some((commentLike) => commentLike.userId === userId);
 
     return res.status(200).json({
       status: 'success',
@@ -478,4 +521,3 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
-

@@ -6,6 +6,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { Mention } from '@/api/entity/posts/Mention';
 import { UserPost } from '@/api/entity/UserPost';
 import { Connection } from '@/api/entity/connection/Connections';
+import { NestedComment } from '@/api/entity/posts/NestedComment';
 
 export const suggestUsersByEmail = async (req: Request, res: Response): Promise<Response> => {
   try { 
@@ -130,22 +131,22 @@ export const createMention = async (req: Request, res: Response): Promise<Respon
       }
   
       // Create mention records
-      const mention = mentionRepository.create({
-        users: mentionedUsers,
-        posts: relatedPosts,
+      const mentions = users.map((user, index) => mentionRepository.create({
+        user: mentionedUsers[index],
+        post: relatedPosts[index % relatedPosts.length],
         mentionBy,
         mentionTo,
         createdBy: mentionBy,
         updatedBy: mentionBy,
-      });
+      }));
   
-      // Save mention to the database
-      const savedMention = await mentionRepository.save(mention);
+      // Save mentions to the database
+      const savedMentions = await mentionRepository.save(mentions);
   
       return res.status(201).json({
         status: 'success',
-        message: 'Mention created successfully.',
-        data: savedMention,
+        message: 'Mentions created successfully.',
+        data: savedMentions,
       });
     } catch (error: any) {
       // Handle errors
@@ -156,3 +157,89 @@ export const createMention = async (req: Request, res: Response): Promise<Respon
       });
     }
   };
+
+
+  interface CreateMentionParams {
+    userId: string;
+    postId?: string;
+    commentId?: string;
+    nestedCommentId?: string;
+    mentionBy: string;
+    mentionTo: string;
+  }
+  
+  export const CreateMention = async ({
+    userId,
+    postId,
+    commentId,
+    nestedCommentId,
+    mentionBy,
+    mentionTo,
+  }: CreateMentionParams): Promise<{ status: string; message: string; data?: Mention }> => {
+    try {
+      if (!mentionBy || !mentionTo || !userId) {
+        return {
+          status: 'error',
+          message: 'mentionBy, mentionTo, and userId are required.',
+        };
+      }
+  
+      const mentionRepository = AppDataSource.getRepository(Mention);
+      const userRepository = AppDataSource.getRepository(PersonalDetails);
+      const postRepository = AppDataSource.getRepository(UserPost);
+      const commentRepository = AppDataSource.getRepository(Comment);
+      const nestedCommentRepository = AppDataSource.getRepository(NestedComment);
+  
+      // Validate user existence
+      const user = await userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        return { status: 'error', message: 'User does not exist.' };
+      }
+  
+      let post: UserPost | null = null;
+      let comment: Comment | null = null;
+      let nestedComment: NestedComment | null = null;
+  
+      // Validate Post
+      if (postId) {
+        post = await postRepository.findOne({ where: { id: postId } });
+        if (!post) return { status: 'error', message: 'Post does not exist.' };
+      }
+  
+      // Validate Comment
+      if (commentId) {
+        comment = await commentRepository.findOne({ where: { id: commentId } });
+        if (!comment) return { status: 'error', message: 'Comment does not exist.' };
+      }
+  
+      // Validate Nested Comment
+      if (nestedCommentId) {
+        nestedComment = await nestedCommentRepository.findOne({ where: { id: nestedCommentId } });
+        if (!nestedComment) return { status: 'error', message: 'Nested comment does not exist.' };
+      }
+  
+      // Create and Save Mention
+      const mention = mentionRepository.create({
+        userId,
+        post,
+        comment,
+        nestedComment,
+        mentionBy,
+        mentionTo,
+        createdBy: mentionBy,
+        updatedBy: mentionBy,
+      });
+  
+      const savedMention = await mentionRepository.save(mention);
+  
+      return {
+        status: 'success',
+        message: 'Mention created successfully.',
+        data: savedMention[0],
+      };
+    } catch (error: any) {
+      console.error('CreateMention Error:', error);
+      return { status: 'error', message: `Failed to create mention: ${error.message}` };
+    }
+  };
+  
