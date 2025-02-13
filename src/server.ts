@@ -53,6 +53,8 @@ import { initializeSocket } from './socket';
 import { BlockedPost } from './api/entity/posts/BlockedPost';
 import { BlockedUser } from './api/entity/posts/BlockedUser';
 import axios from 'axios';
+import { ReportedPost } from './api/entity/posts/ReportedPost';
+import { ReportedUser } from './api/entity/posts/ReportedUser';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -87,7 +89,9 @@ const AppDataSource = new DataSource({
     ActiveUser,
     SubRole,
     BlockedPost,
-    BlockedUser
+    BlockedUser,
+    ReportedPost,
+    ReportedUser
   ],
   synchronize: false,
 });

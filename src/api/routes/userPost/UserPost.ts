@@ -4,7 +4,7 @@ import { getComments, getNestedComments, deleteComment, deleteNestedComment, cre
 import { createLike, getAllLikesForPost, createCommentLike, getAllLikesForComment, getUserPostLikeList, getPostCommentersList } from '@/api/controllers/posts/LikeController';
 import { createOrUpdateReaction, removeReaction } from '@/api/controllers/posts/ReactionController';
 import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
-import { blockPost } from "@/api/controllers/posts/Blocked";
+import { blockPost, blockUser, reportedPost, reportedUser } from "@/api/controllers/posts/Blocked";
 
 const Router = express.Router();
 
@@ -38,6 +38,10 @@ Router.post("/get-all-likes-for-comment", getAllLikesForComment)
 Router.post("/get-user-post-by-id", GetUserPostById)
 
 Router.post("/block-post", blockPost);
+Router.post("/block-user", blockUser);
+Router.post("/report-post", reportedPost);
+Router.post("/report-user", reportedUser);
+
 
 export default Router;
 

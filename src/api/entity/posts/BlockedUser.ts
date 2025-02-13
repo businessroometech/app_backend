@@ -25,6 +25,9 @@ export class BlockedUser extends BaseEntity {
   @Column({ type: 'uuid' })
   blockedUser!: string;
 
+  @Column({ type:  "text"})
+  reason !: string;
+
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
 
