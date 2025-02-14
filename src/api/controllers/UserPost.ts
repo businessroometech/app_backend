@@ -403,7 +403,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
 
     const getLikeStatus = async (postId: string) => {
       const like = await likeRepository.findOne({ where: { userId, postId } });
-      return like?.status;
+      return like;
     };
 
     const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
@@ -420,7 +420,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         // Calculate like count and comment count
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
-        const likeStatus = await getLikeStatus(post.id);
+        const like = await getLikeStatus(post.id);
         const reactionRepository = AppDataSource.getRepository(Reaction);
 
         // Fetch reactions with related post data
@@ -478,7 +478,8 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             mediaKeys: post.mediaKeys,
             likeCount,
             commentCount,
-            likeStatus: likeStatus ? likeStatus : false,
+            likeStatus: like ? like.status : false,
+            reactionId: like?.reactionId,
             reactions: totalReactions,
             userReaction,
             isRepost: post.isRepost,

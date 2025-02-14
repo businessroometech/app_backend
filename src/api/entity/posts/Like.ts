@@ -25,7 +25,7 @@ export class Like extends BaseEntity {
   @Column({ type: 'uuid' })
   postId!: string;
 
-  @Column({ type: "int" })
+  @Column({ type: "int" , default: 1})
   reactionId !: number;
 
   @Column({ type: 'bool', default: false })
