@@ -12,7 +12,7 @@ import { Comment } from '@/api/entity/posts/Comment';
 
 export const createLike = async (req: Request, res: Response) => {
   try {
-    const { userId, postId, status } = req.body;
+    const { userId, postId, status, reactionId } = req.body;
     if (!userId || !postId) {
       return res.status(400).json({ status: 'error', message: 'userId and postId are required.' });
     }
@@ -26,6 +26,7 @@ export const createLike = async (req: Request, res: Response) => {
         userId,
         postId,
         status,
+        reactionId
       });
     }
     await like.save();
@@ -198,7 +199,7 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
 
         return {
           ...like,
-          user: user ? { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email } : null,
+          user: user ? { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.emailAddress } : null,
         };
       })
     );

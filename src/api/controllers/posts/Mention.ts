@@ -7,6 +7,7 @@ import { Mention } from '@/api/entity/posts/Mention';
 import { UserPost } from '@/api/entity/UserPost';
 import { Connection } from '@/api/entity/connection/Connections';
 import { NestedComment } from '@/api/entity/posts/NestedComment';
+import { Comment } from '@/api/entity/posts/Comment';
 
 export const suggestUsersByEmail = async (req: Request, res: Response): Promise<Response> => {
   try { 

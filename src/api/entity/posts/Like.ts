@@ -25,6 +25,9 @@ export class Like extends BaseEntity {
   @Column({ type: 'uuid' })
   postId!: string;
 
+  @Column({ type: "int" })
+  reactionId !: number;
+
   @Column({ type: 'bool', default: false })
   status!: boolean;
 
@@ -53,5 +56,5 @@ export class Like extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
-  
+
 }
