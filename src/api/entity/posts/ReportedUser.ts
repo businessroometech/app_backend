@@ -25,8 +25,8 @@ export class ReportedUser extends BaseEntity {
     @Column({ type: 'uuid' })
     ReportedBy !: string;
 
-    @Column({ type: 'text' })
-    reason !: string;
+    @Column({ type: 'simple-array' })
+    reason !: string[];
 
     @Column({ type: 'text' })
     additionalComment !: string;
