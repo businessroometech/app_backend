@@ -409,7 +409,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
     const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: userId } });
     const blockedPostIds = blockedPosts.map(bp => bp.blockedPost);
-    const newUserPosts = posts.filter(post => !blockedPostIds.includes(post.id)); 
+    const newUserPosts = posts.filter(post => !blockedPostIds.includes(post.id));
 
     // Format the posts with user details, likes, comments, and reactions
     const formattedPosts = await Promise.all(
@@ -479,7 +479,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             likeCount,
             commentCount,
             likeStatus: like ? like.status : false,
-            reactionId: like?.reactionId,
+            reactionId: like ? like?.reactionId : null,
             reactions: totalReactions,
             userReaction,
             isRepost: post.isRepost,
@@ -578,6 +578,11 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     const user = await userRepos.findOne({ where: { id: userId } })
     const imgUrl = user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
 
+    const getReactionId = async () => {
+      const like = await likeRepository.findOne({ where: { userId } });
+      return like?.reactionId;
+    }
+
     // Format the post with related data
     const formattedPost = {
       post: {
@@ -590,7 +595,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         mediaKeys: post.mediaKeys,
         likeCount: likes.length,
         commentCount: comments.length,
-        likeStatus: likes.some((like) => like.userId === req.body.userId),
+        likeStatus: likes.some((like) => like.userId === userId),
+        reactionId: await getReactionId(),
         isRepost: post.isRepost,
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
