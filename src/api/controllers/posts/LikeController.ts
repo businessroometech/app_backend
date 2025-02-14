@@ -216,7 +216,6 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
   }
 };
 
-
 // userlike list for post
 export const getUserPostLikeList = async (req: Request, res: Response) => {
   try {
@@ -239,10 +238,16 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     const personalRepo = AppDataSource.getRepository(PersonalDetails);
     let users = await personalRepo.find({ where: { id: In(likes.map((like) => like.userId)) } });
 
+    const getUserLike = async (userId: string) => {
+      const like = await likeRepository.findOne({ where: { userId } });
+      return like;
+    }
+
     const likers = await Promise.all(
       users.map(async (user) => ({
         ...user,
         likerUrl: user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
+        like: await getUserLike(user.id)
       }))
     );
 
