@@ -227,6 +227,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     const likeRepository = AppDataSource.getRepository(Like);
 
     const likes = await likeRepository.find({ where: { postId, status: true } });
+    console.log("First likes", likes);
 
     if (!likes) {
       return res.status(404).json({ status: 'error', message: 'post not available.' });
@@ -239,7 +240,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     let users = await personalRepo.find({ where: { id: In(likes.map((like) => like.userId)) } });
 
     const getUserLike = async (userId: string) => {
-      const like = await likeRepository.findOne({ where: { userId } });
+      const like = await likeRepository.findOne({ where: { userId, postId } });
       return like;
     }
 
