@@ -21,6 +21,7 @@ export const createLike = async (req: Request, res: Response) => {
 
     if (like) {
       like.status = status;
+      like.reactionId = reactionId;
     } else {
       like = Like.create({
         userId,
