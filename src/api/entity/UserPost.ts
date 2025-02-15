@@ -61,7 +61,7 @@ export class UserPost extends BaseEntity {
   @CreateDateColumn({ type: 'timestamp' })
   originalPostedAt !: Date;
 
-  @CreateDateColumn({ type: 'text' })
+  @Column({ type: 'varchar' })
   originalPostedTimeline !: String;
 
   @BeforeInsert()

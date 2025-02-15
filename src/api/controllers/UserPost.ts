@@ -239,7 +239,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
             repostText: post.repostText,
             createdAt: post.createdAt,
             originalPostedAt: post.originalPostedAt,
-            originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
+            originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : ''
           },
           userDetails: {
             postedId: user.id,
@@ -551,7 +551,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         repostText: post.repostText,
         createdAt: post.createdAt,
         originalPostedAt: post.originalPostedAt,
-        originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
+        originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : ''
       },
       userDetails: {
         postedId: user?.id,
