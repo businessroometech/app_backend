@@ -18,6 +18,7 @@ import { ProfileVisit } from '../notifications/ProfileVisit';
 import { Mention } from '../posts/Mention';
 import { Reaction } from '../posts/Reaction';
 import { Like } from '../posts/Like';
+import { BlockedUser } from '../posts/BlockedUser';
 
 interface Address {
   addressLine1: string;
@@ -189,5 +190,12 @@ export class PersonalDetails extends BaseEntity {
 
   @ManyToMany(() => Mention, (mention) => mention.user)
   mentions!: Mention[];
+
+  
+  @OneToMany(() => BlockedUser, (blockedUser) => blockedUser.blocker)
+  blockedUsers!: BlockedUser[];
+
+  @OneToMany(() => BlockedUser, (blockedUser) => blockedUser.blocked)
+  blockedByOthers!: BlockedUser[];
 
 }
