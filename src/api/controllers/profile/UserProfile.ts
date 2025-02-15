@@ -10,6 +10,7 @@ import { generatePresignedUrl } from '../s3/awsControllers';
 import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { Like } from '@/api/entity/posts/Like';
+import { BlockedUser } from '@/api/entity/posts/BlockedUser';
 
 const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
@@ -411,8 +412,10 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
     }
 
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const blockedUserRepository = AppDataSource.getRepository(BlockedUser);
+    const connectionRepository = AppDataSource.getRepository(Connection);
 
-    // Search for users matching the query
+    // Fetch users matching the search query
     const searchResults = await personalDetailsRepository.find({
       where: [
         { firstName: ILike(`%${searchQuery}%`) },
@@ -425,10 +428,19 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
       return res.status(204).json({ message: 'No results found.' });
     }
 
-    const connectionRepository = AppDataSource.getRepository(Connection);
-    const searchResult = await Promise.all(
+    // Fetch blocked users (users blocked by the current user or who have blocked the user)
+    const blockedUsers = await blockedUserRepository.find({
+      where: [{ blockedBy: userId }, { blockedUser: userId }],
+    });
+
+    // Create a set of blocked user IDs
+    const blockedUserIds = new Set(
+      blockedUsers.flatMap((block) => [block.blockedBy, block.blockedUser])
+    );
+
+    const filteredResults = await Promise.all(
       searchResults
-        .filter((result) => result.id !== userId)
+        .filter((result) => result.id !== userId && !blockedUserIds.has(result.id)) // Exclude blocked users
         .map(async (result) => {
           // Fetch mutual connection count
           const mutualConnectionCount = await connectionRepository.count({
@@ -457,7 +469,7 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
 
     return res.status(200).json({
       message: 'Search results fetched successfully.',
-      data: searchResult,
+      data: filteredResults,
     });
   } catch (error: any) {
     console.error('Error searching user profile:', error);
@@ -467,6 +479,7 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
     });
   }
 };
+
 
 // find user by userName
 export const findUserByUserName = async (req: Request, res: Response): Promise<Response> => {
