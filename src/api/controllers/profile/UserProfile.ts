@@ -123,7 +123,7 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
 // get user profile
 export const getUserProfile = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, profileId } = req.body;
+    let { userId, profileId } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -131,9 +131,8 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-    if(!profileId){
-      userId===profileId
-    }
+    // Assign profileId to userId if it's missing
+    profileId = profileId || userId;
 
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -148,19 +147,6 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
         { blockedBy: profileId, blockedUser: userId },
       ],
     });
-
-    if (blockedEntry) {
-      if (blockedEntry.blockedBy === userId) {
-        return res.status(200).json({
-          message: 'You have blocked this user.',
-          data: { unblockOption: true },
-        });
-      } else {
-        return res.status(403).json({
-          message: 'You are blocked from viewing this profile.',
-        });
-      }
-    }
 
     // Fetch user details
     const personalDetails = await personalDetailsRepository.findOne({
@@ -200,6 +186,20 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       ],
     });
 
+    if (blockedEntry) {
+      if (blockedEntry.blockedBy === userId) {
+        return res.status(200).json({
+          message: 'You have blocked this user.',
+          data: { unblockOption: true },
+        });
+      } else {
+        return res.status(403).json({
+          message: 'You are blocked from viewing this profile.',
+          data: personalDetails
+        });
+      }
+    }
+
     return res.status(200).json({
       message: 'User profile fetched successfully.',
       data: {
@@ -220,7 +220,6 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
     });
   }
 };
-
 
 export const ProfileVisitController = {
   /**
