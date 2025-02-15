@@ -11,6 +11,7 @@ import { Mention } from '../entity/posts/Mention';
 import { broadcastMessage, getSocketInstance } from '@/socket';
 import { sendNotification } from './notifications/SocketNotificationController';
 import { BlockedPost } from '../entity/posts/BlockedPost';
+import { Connection } from '../entity/connection/Connections';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -352,175 +353,120 @@ export const DeleteUserPost = async (req: Request, res: Response): Promise<Respo
 // Get all posts for public view
 export const getPosts = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId, page, limit = 5 } = req.body;
+    const { userId, page = 1, limit = 5 } = req.body;
 
-    // Get the repositories
+    // Get repositories
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
+    const connectionRepository = AppDataSource.getRepository(Connection);
 
-    // Get the total number of posts (without pagination)
-    const totalPosts = await userPostRepository.count();
+    // Fetch connected users
+    const connections = await connectionRepository.find({
+      where: [
+        { receiverId: userId, status: "accepted" },
+        { requesterId: userId, status: "accepted" },
+      ],
+    });
 
-    // Get all posts with pagination
+    // Extract connected user IDs
+    const connectedUserIds = connections.map(conn =>
+      conn.requesterId === userId ? conn.receiverId : conn.requesterId
+    );
+
+    if (connectedUserIds.length === 0) {
+      return res.status(200).json({
+        status: "success",
+        message: "No connected users found.",
+        data: { posts: [], page, limit, totalPosts: 0 },
+      });
+    }
+
+    // Get total posts count for pagination
+    const totalPosts = await userPostRepository.count({
+      where: { userId: In(connectedUserIds) },
+    });
+
+    // Fetch posts from connected users only
     const posts = await userPostRepository.find({
-      order: {
-        updatedAt: 'DESC',
-        createdAt: 'DESC',
-      },
-      // select: ['id', 'userId', 'title', 'content', 'hashtags', 'mediaKeys', 'createdAt'],
+      where: { userId: In(connectedUserIds) },
+      order: { updatedAt: "DESC", createdAt: "DESC" },
       skip: (page - 1) * limit,
       take: limit,
     });
 
-    if (!posts || posts.length === 0) {
+    if (!posts.length) {
       return res.status(200).json({
-        status: 'success',
-        message: 'No posts found for this user.',
+        status: "success",
+        message: "No posts found for connected users.",
         data: { posts: [], page, limit, totalPosts },
       });
     }
 
-    const postIds = posts.map((post) => post.id);
+    const postIds = posts.map(post => post.id);
 
-    // Fetch comments, likes, and reactions for the posts
-    const comments = await commentRepository.find({
-      where: { postId: In(postIds) },
-    });
-
-    const likes = await likeRepository.find({
-      where: { postId: In(postIds) },
-    });
+    // Fetch related comments, likes, and reactions
+    const comments = await commentRepository.find({ where: { postId: In(postIds) } });
+    const likes = await likeRepository.find({ where: { postId: In(postIds) } });
 
     // Generate media URLs for posts
     const mediaKeysWithUrls = await Promise.all(
-      posts.map(async (post) => ({
+      posts.map(async post => ({
         postId: post.id,
-        mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
+        mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map(generatePresignedUrl)) : [],
       }))
     );
 
-    const getLikeStatus = async (postId: string) => {
-      const like = await likeRepository.findOne({ where: { userId, postId } });
-      return like;
-    };
-
+    // Blocked posts
     const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
     const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: userId } });
     const blockedPostIds = blockedPosts.map(bp => bp.blockedPost);
-    const newUserPosts = posts.filter(post => !blockedPostIds.includes(post.id));
+    const filteredPosts = posts.filter(post => !blockedPostIds.includes(post.id));
 
-    // Format the posts with user details, likes, comments, and reactions
+    // Format posts
     const formattedPosts = await Promise.all(
-      newUserPosts.map(async (post) => {
-        // Fetch media URLs related to the post
-        const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
+      filteredPosts.map(async post => {
+        const mediaUrls = mediaKeysWithUrls.find(media => media.postId === post.id)?.mediaUrls || [];
+        const likeCount = likes.filter(like => like.postId === post.id).length;
+        const commentCount = comments.filter(comment => comment.postId === post.id).length;
+        const like = await likeRepository.findOne({ where: { userId, postId: post.id } });
 
-        // Calculate like count and comment count
-        const likeCount = likes.filter((like) => like.postId === post.id).length;
-        const commentCount = comments.filter((comment) => comment.postId === post.id).length;
-        const like = await getLikeStatus(post.id);
-        const reactionRepository = AppDataSource.getRepository(Reaction);
+        const user = await userRepository.findOne({ where: { id: post.userId } });
 
-        // Fetch reactions with related post data
-        const reactions = await reactionRepository.find({
-          where: { post: { id: In(postIds) } },
-          relations: ['post', 'user'],
-        });
-
-        const postReactions = reactions.filter((reaction) => reaction.post?.id === post.id);
-
-        const totalReactions = postReactions.reduce((acc: Record<string, number>, reaction) => {
-          if (reaction.reactionType) {
-            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-          }
-          return acc;
-        }, {});
-
-        // Fetch the user's reaction to the post
-        const userReaction = postReactions.find((reaction) => reaction.user?.id === userId)?.reactionType || null;
-
-        // Fetch top 5 comments for the post
-        const postComments = await commentRepository.find({
-          where: { postId: post.id },
-          order: { createdAt: 'ASC' },
-          take: 5,
-        });
-
-        // Format the comments
-        const formattedComments = await Promise.all(
-          postComments.map(async (comment) => {
-            const commenter = await userRepository.findOne({
-              where: { id: comment.userId },
-            });
-
-            return {
-              commenter,
-            };
-          })
-        );
-
-        // Fetch user details for the post creator
-        const user = await userRepository.findOne({
-          where: { id: post.userId },
-        });
-
-        // Return the formatted post object
         return {
           post: {
-            Id: post.id,
+            id: post.id,
             userId: post.userId,
             title: post.title,
             content: post.content,
             hashtags: post.hashtags,
-            mediaUrls: mediaUrls,
-            mediaKeys: post.mediaKeys,
+            mediaUrls,
             likeCount,
             commentCount,
             likeStatus: like ? like.status : false,
-            reactionId: like ? like?.reactionId : null,
-            reactions: totalReactions,
-            userReaction,
-            isRepost: post.isRepost,
-            repostedFrom: post.repostedFrom,
-            repostText: post.repostText,
             createdAt: post.createdAt,
-            originalPostedAt: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
           },
           userDetails: {
-            postedId: user?.id,
-            firstName: user?.firstName || '',
-            lastName: user?.lastName || '',
-            timestamp: formatTimestamp(post.createdAt),
-            userRole: user?.userRole,
+            id: user?.id,
+            firstName: user?.firstName || "",
+            lastName: user?.lastName || "",
             avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
-            zoomProfile: user?.zoomProfile,
-            rotateProfile: user?.rotateProfile
           },
-          comments: formattedComments,
         };
       })
     );
 
-    // Return the formatted posts with pagination info
     return res.status(200).json({
-      message: 'User posts retrieved successfully.',
-      data: {
-        posts: formattedPosts,
-        page,
-        limit,
-        totalPosts,
-      },
+      status: "success",
+      message: "Connected users' posts retrieved successfully.",
+      data: { posts: formattedPosts, page, limit, totalPosts },
     });
   } catch (error: any) {
-    // Handle and log errors
-    return res.status(500).json({
-      message: 'Internal server error. Could not fetch posts.',
-      error: error.message,
-    });
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
 
 // get user post by postId
 export const GetUserPostById = async (req: Request, res: Response): Promise<Response> => {

@@ -124,16 +124,42 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
   try {
     const { userId, profileId } = req.body;
 
-    if (!userId) {
+    if (!userId || !profileId) {
       return res.status(400).json({
-        message: 'User ID is required.',
+        message: 'User ID and Profile ID are required.',
       });
     }
 
-    // Fetch user details from the PersonalDetails repository
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const connectionRepository = AppDataSource.getRepository(Connection);
+    const postRepository = AppDataSource.getRepository(UserPost);
+    const likeRepository = AppDataSource.getRepository(Like);
+    const blockedUserRepository = AppDataSource.getRepository(BlockedUser);
+
+    // Check if the user is blocked or has blocked the profile
+    const blockedEntry = await blockedUserRepository.findOne({
+      where: [
+        { blockedBy: userId, blockedUser: profileId },
+        { blockedBy: profileId, blockedUser: userId },
+      ],
+    });
+
+    if (blockedEntry) {
+      if (blockedEntry.blockedBy === userId) {
+        return res.status(200).json({
+          message: 'You have blocked this user.',
+          data: { unblockOption: true },
+        });
+      } else {
+        return res.status(403).json({
+          message: 'You are blocked from viewing this profile.',
+        });
+      }
+    }
+
+    // Fetch user details
     const personalDetails = await personalDetailsRepository.findOne({
-      where: { id: userId },
+      where: { id: profileId },
     });
 
     if (!personalDetails) {
@@ -142,7 +168,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-    // Generate URLs for profile and cover images
+    // Generate image URLs
     const profileImgUrl = personalDetails.profilePictureUploadId
       ? await generatePresignedUrl(personalDetails.profilePictureUploadId)
       : null;
@@ -151,33 +177,24 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       ? await generatePresignedUrl(personalDetails.bgPictureUploadId)
       : null;
 
-    // Fetch the number of connections
-    const connectionRepository = AppDataSource.getRepository(Connection);
+    // Fetch connection, post, and like counts
     const connectionsCount = await connectionRepository.count({
       where: [
-        { requesterId: userId, status: 'accepted' },
-        { receiverId: userId, status: 'accepted' },
+        { requesterId: profileId, status: 'accepted' },
+        { receiverId: profileId, status: 'accepted' },
       ],
     });
 
-    const postRepository = AppDataSource.getRepository(UserPost);
-    const userPostsCount = await postRepository.count({ where: { userId } });
+    const postsCount = await postRepository.count({ where: { userId: profileId } });
+    const likeCount = await likeRepository.count({ where: { userId: profileId } });
 
-    const likeRepository = AppDataSource.getRepository(Like);
-    const userLikesCount = await likeRepository.count({ where: { userId } });
-
-    const connectionsStatus = await connectionRepository.find({
+    const connectionsStatus = await connectionRepository.findOne({
       where: [
         { requesterId: userId, receiverId: profileId },
         { receiverId: userId, requesterId: profileId },
       ],
     });
 
-    if (!connectionsStatus || connectionsStatus.length === 0) {
-      connectionsStatus === null;
-    }
-
-    // Return the user's profile data
     return res.status(200).json({
       message: 'User profile fetched successfully.',
       data: {
@@ -185,9 +202,9 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
         profileImgUrl,
         coverImgUrl,
         connectionsCount,
-        postsCount: userPostsCount,
-        likeCount: userLikesCount,
-        connectionsStatus: connectionsStatus.length > 0 ? connectionsStatus[0].status : '',
+        postsCount,
+        likeCount,
+        connectionsStatus: connectionsStatus ? connectionsStatus.status : null,
       },
     });
   } catch (error: any) {
@@ -198,6 +215,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
     });
   }
 };
+
 
 export const ProfileVisitController = {
   /**

@@ -34,8 +34,8 @@ export class Connection {
   @Column({ type: 'uuid' })
   receiverId!: string; 
 
-  @Column({ type: 'enum', enum: ['pending', 'accepted', 'rejected'], default: 'pending' })
-  status!: 'pending' | 'accepted' | 'rejected';
+  @Column({ type: 'enum', enum: ['pending', 'accepted', 'rejected', 'block'], default: 'pending' })
+  status!: 'pending' | 'accepted' | 'rejected' | 'block';
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
   createdAt!: Date;

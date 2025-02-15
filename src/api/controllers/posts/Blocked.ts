@@ -1,3 +1,5 @@
+import { Connection } from "@/api/entity/connection/Connections";
+import { PersonalDetails } from "@/api/entity/personal/PersonalDetails";
 import { BlockedPost } from "@/api/entity/posts/BlockedPost";
 import { BlockedUser } from "@/api/entity/posts/BlockedUser";
 import { ReportedPost } from "@/api/entity/posts/ReportedPost";
@@ -21,24 +23,62 @@ export const blockPost = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: "Error hidding post" })
     }
 }
-
 export const blockUser = async (req: Request, res: Response) => {
     try {
         const { userId, blockedUser, reason } = req.body;
 
+        if (!userId || !blockedUser || !reason) {
+            return res.status(400).json({ status: "error", message: "Missing required fields" });
+        }
+
+        const personalRepo = AppDataSource.getRepository(PersonalDetails);
         const blockedUserRepo = AppDataSource.getRepository(BlockedUser);
-        const blockUser = blockedUserRepo.create({
+        const connectionRepo = AppDataSource.getRepository(Connection);
+
+        // Validate users exist
+        const user = await personalRepo.findOne({ where: { id: userId } });
+        const targetUser = await personalRepo.findOne({ where: { id: blockedUser } });
+
+        if (!user || !targetUser) {
+            return res.status(404).json({ status: "error", message: "User not found" });
+        }
+
+        // Check if the users have a connection
+        const connection = await connectionRepo.findOne({
+            where: [
+                { requesterId: userId, receiverId: blockedUser },
+                { requesterId: blockedUser, receiverId: userId }
+            ]
+        });
+
+        if (connection) {
+            await connectionRepo.remove(connection); 
+        }
+
+        // Check if user is already blocked
+        const existingBlock = await blockedUserRepo.findOne({
+            where: { blockedBy: userId, blockedUser }
+        });
+
+        if (existingBlock) {
+            return res.status(400).json({ status: "error", message: "User is already blocked" });
+        }
+
+        // Block user
+        const blockEntry = blockedUserRepo.create({
             blockedBy: userId,
             blockedUser: blockedUser,
             reason
         });
-        await blockUser.save();
 
-        return res.status(200).json({ status: "success", message: "User blocked succesfully" })
+        await blockedUserRepo.save(blockEntry);
+
+        return res.status(200).json({ status: "success", message: "User blocked successfully" });
     } catch (err) {
-        return res.status(500).json({ status: "error", message: "Error blocking user" })
+        console.error("Error blocking user:", err);
+        return res.status(500).json({ status: "error", message: "Error blocking user" });
     }
-}
+};
 
 export const reportedUser = async (req: Request, res: Response) => {
     try {
