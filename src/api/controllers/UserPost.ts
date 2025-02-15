@@ -452,7 +452,8 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             firstName: user?.firstName || "",
             lastName: user?.lastName || "",
             avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
-            timeStamp: formatTimestamp( post.updatedAt || post.createdAt )
+            timestamp: formatTimestamp( post.updatedAt || post.createdAt ),
+            userRole: user?.userRole
           },
         };
       })
