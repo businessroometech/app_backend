@@ -97,7 +97,7 @@ const AppDataSource = new DataSource({
     ReportedUser,
     General,
   ],
-  synchronize: false,
+  synchronize: false, 
 });
 
 // Initialize the DataSource
