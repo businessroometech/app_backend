@@ -435,6 +435,11 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
 
         const user = await userRepository.findOne({ where: { id: post.userId } });
 
+        const getReactionId = async () => {
+          const like = await likeRepository.findOne({ where: { userId } });
+          return like?.reactionId;
+        }
+
         return {
           post: {
             Id: post.id,
@@ -446,7 +451,13 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             likeCount,
             commentCount,
             likeStatus: like ? like.status : false,
+            reactionId: await getReactionId(),
+            isRepost: post.isRepost,
+            repostedFrom: post.repostedFrom,
+            repostText: post.repostText,
             createdAt: post.createdAt,
+            originalPostedAt: post.originalPostedAt,
+            originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : ''
           },
           userDetails: {
             id: user?.id,
