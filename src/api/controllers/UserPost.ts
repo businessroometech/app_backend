@@ -238,7 +238,8 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
             createdAt: post.createdAt,
-            originalPostedAt: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
+            originalPostedAt: post.originalPostedAt,
+            originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
           },
           userDetails: {
             postedId: user.id,
@@ -452,7 +453,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
             firstName: user?.firstName || "",
             lastName: user?.lastName || "",
             avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
-            timestamp: formatTimestamp( post.updatedAt || post.createdAt ),
+            timestamp: formatTimestamp(post.updatedAt || post.createdAt),
             userRole: user?.userRole
           },
         };
@@ -549,7 +550,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
         createdAt: post.createdAt,
-        originalPostedAt: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
+        originalPostedAt: post.originalPostedAt,
+        originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : null
       },
       userDetails: {
         postedId: user?.id,
