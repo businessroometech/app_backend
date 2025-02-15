@@ -23,11 +23,12 @@ export const blockPost = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: "Error hidding post" })
     }
 }
+
 export const blockUser = async (req: Request, res: Response) => {
     try {
         const { userId, blockedUser, reason } = req.body;
 
-        if (!userId || !blockedUser || !reason) {
+        if (!userId || !blockedUser ) {
             return res.status(400).json({ status: "error", message: "Missing required fields" });
         }
 
@@ -51,8 +52,10 @@ export const blockUser = async (req: Request, res: Response) => {
             ]
         });
 
+        // If a connection exists, update its status to 'blocked'
         if (connection) {
-            await connectionRepo.remove(connection); 
+            connection.status = 'block';
+            await connectionRepo.save(connection);
         }
 
         // Check if user is already blocked
@@ -77,6 +80,50 @@ export const blockUser = async (req: Request, res: Response) => {
     } catch (err) {
         console.error("Error blocking user:", err);
         return res.status(500).json({ status: "error", message: "Error blocking user" });
+    }
+};
+
+export const unblockUser = async (req: Request, res: Response) => {
+    try {
+        const { userId, blockedUser } = req.body;
+
+        if (!userId || !blockedUser) {
+            return res.status(400).json({ status: "error", message: "Missing required fields" });
+        }
+
+        const blockedUserRepo = AppDataSource.getRepository(BlockedUser);
+        const connectionRepo = AppDataSource.getRepository(Connection);
+
+        // Check if the user is blocked
+        const blockEntry = await blockedUserRepo.findOne({
+            where: { blockedBy: userId, blockedUser }
+        });
+
+        if (!blockEntry) {
+            return res.status(404).json({ status: "error", message: "User is not blocked" });
+        }
+
+        // Remove the block entry
+        await blockedUserRepo.remove(blockEntry);
+
+        // Check if the users have a connection
+        const connection = await connectionRepo.findOne({
+            where: [
+                { requesterId: userId, receiverId: blockedUser },
+                { requesterId: blockedUser, receiverId: userId }
+            ]
+        });
+
+        // If a connection exists, update its status to 'active'
+        if (connection) {
+            connection.status = 'pending';
+            await connectionRepo.save(connection);
+        }
+
+        return res.status(200).json({ status: "success", message: "User unblocked successfully" });
+    } catch (err) {
+        console.error("Error unblocking user:", err);
+        return res.status(500).json({ status: "error", message: "Error unblocking user" });
     }
 };
 

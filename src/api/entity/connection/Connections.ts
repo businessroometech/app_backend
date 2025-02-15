@@ -1,16 +1,9 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, BaseEntity, BeforeUpdate } from 'typeorm';
 import { PersonalDetails } from '../personal/PersonalDetails';
+import { BlockedUser } from '../posts/BlockedUser';
 
 @Entity('connections')
-export class Connection {
+export class Connection extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -35,11 +28,23 @@ export class Connection {
   receiverId!: string; 
 
   @Column({ type: 'enum', enum: ['pending', 'accepted', 'rejected', 'block'], default: 'pending' })
-  status!: 'pending' | 'accepted' | 'rejected' | 'block';
+  status!: 'pending' | 'accepted' | 'rejected' | 'block'; 
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
   createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', onUpdate: 'CURRENT_TIMESTAMP(6)' })
   updatedAt!: Date;
+
+  @BeforeUpdate()
+  async handleBlocking() {
+    if (this.status === 'block') {
+      await BlockedUser.create({
+        blockedBy: this.requesterId,
+        blockedUser: this.receiverId,
+        connectionId: this.id,
+        reason: 'User blocked via connection',
+      }).save();
+    }
+  }
 }

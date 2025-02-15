@@ -123,7 +123,7 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
 // get user profile
 export const getUserProfile = async (req: Request, res: Response): Promise<Response> => {
   try {
-    let { userId, profileId } = req.body;
+    let { userId, profileId = userId } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -131,10 +131,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-    // Assign profileId to userId if it's missing
-    profileId = profileId || userId;
-
-    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+   const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
     const postRepository = AppDataSource.getRepository(UserPost);
     const likeRepository = AppDataSource.getRepository(Like);
@@ -190,12 +187,12 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       if (blockedEntry.blockedBy === userId) {
         return res.status(200).json({
           message: 'You have blocked this user.',
-          data: { unblockOption: true },
+          data: {personalDetails,  connectionsStatus: "Blocked", unblockOption: true ,}
         });
       } else {
-        return res.status(403).json({
+        return res.status(200).json({
           message: 'You are blocked from viewing this profile.',
-          data: personalDetails
+          data: {personalDetails,  connectionsStatus: "Blocked",}
         });
       }
     }
@@ -431,21 +428,22 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
       return res.status(204).json({ message: 'No results found.' });
     }
 
-    // Fetch blocked users (users blocked by the current user or who have blocked the user)
+    // Fetch blocked users where either userId is the blocker or is blocked
     const blockedUsers = await blockedUserRepository.find({
       where: [{ blockedBy: userId }, { blockedUser: userId }],
     });
 
-    // Create a set of blocked user IDs
+    // Create a Set of users that are either blocked by the user or have blocked the user
     const blockedUserIds = new Set(
       blockedUsers.flatMap((block) => [block.blockedBy, block.blockedUser])
     );
 
+    // Filter results: Remove blocked users and prevent self-inclusion
     const filteredResults = await Promise.all(
       searchResults
-        .filter((result) => result.id !== userId && !blockedUserIds.has(result.id)) // Exclude blocked users
+        .filter((result) => result.id !== userId && !blockedUserIds.has(result.id)) // Remove blocked profiles
         .map(async (result) => {
-          // Fetch mutual connection count
+          // Fetch mutual connections count
           const mutualConnectionCount = await connectionRepository.count({
             where: [
               { requesterId: userId, receiverId: result.id, status: 'accepted' },
@@ -453,7 +451,7 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
             ],
           });
 
-          // Get profile image URL
+          // Generate profile image URL if available
           const profileImgUrl = result.profilePictureUploadId
             ? await generatePresignedUrl(result.profilePictureUploadId)
             : null;
