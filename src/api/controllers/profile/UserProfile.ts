@@ -125,10 +125,14 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
   try {
     const { userId, profileId } = req.body;
 
-    if (!userId || !profileId) {
+    if (!userId) {
       return res.status(400).json({
         message: 'User ID and Profile ID are required.',
       });
+    }
+
+    if(!profileId){
+      userId===profileId
     }
 
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
