@@ -100,7 +100,7 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
             mentionedUser.id,
             `${user.firstName} ${user.lastName} mentioned you in a post`,
             user.profilePictureUploadId,
-            `/feed/home#${savedPost.id}`
+            `/feed/post/${savedPost.id}`
           );
         }
       }

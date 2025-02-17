@@ -63,7 +63,7 @@ export const createLike = async (req: Request, res: Response) => {
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
         media,
-        `/feed/home#${postId}`
+        `/feed/post/${postId}`
       );
     }
 
@@ -166,7 +166,7 @@ export const createCommentLike = async (req: Request, res: Response) => {
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
         commenterInfo.profilePictureUploadId,
-        `/feed/home#${userPost.id}`
+        `/feed/post/${userPost.id}`
       );
     }
 

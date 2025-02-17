@@ -56,7 +56,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
         userPost.userId,
         `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
         media,
-        `/feed/home#${savedComment.id}`
+        `/feed/post/${savedComment.id}`
       );
     }
 
@@ -93,7 +93,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
           mentionedUser.id,
           `${commenterInfo.firstName} mentioned you in a comment`,
           commenterInfo.profilePictureUploadId,
-          `/feed/home#${savedComment.id}`
+          `/feed/post/${savedComment.id}`
         );
       }
     }
@@ -259,7 +259,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
         parentComment.userId,
         `${findUser.firstName} ${findUser.lastName} replied to your comment`,
         findUser.profilePictureUploadId,
-        `/feed/home#${commentId}`
+        `/feed/post/${commentId}`
       );
       console.log('Notification sent:', notification);
     }
@@ -293,7 +293,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
             mentionedUser.id,
             `${findUser?.firstName} mentioned you in a reply to a comment`,
             findUser?.profilePictureUploadId,
-            `/feed/home#${commentId}`
+            `/feed/post/${commentId}`
           );
         }
       }
@@ -365,7 +365,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
 //         parentComment.userId,
 //         `${findUser?.firstName} ${findUser?.lastName} replied to your comment`,
 //         findUser?.profilePictureUploadId,
-//         `/feed/home#${commentId}`
+//         `/feed/post/${commentId}`
 //       );
 //     }
 //     if (notification) {
@@ -431,7 +431,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
         // let notification = notificationRepos.create({
         //   userId: comment.userId,
         //   message: ` ${commenter?.firstName} ${commenter?.lastName} replied your comment`,
-        //   navigation: `/feed/home#${comment.id}`,
+        //   navigation: `/feed/post/${comment.id}`,
         // });
         // notification = await notificationRepos.save(notification);
 
