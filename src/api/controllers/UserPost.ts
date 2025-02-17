@@ -5,7 +5,7 @@ import { PersonalDetails } from '../entity/personal/PersonalDetails';
 import { Comment } from '../entity/posts/Comment';
 import { Like } from '../entity/posts/Like';
 import { generatePresignedUrl } from './s3/awsControllers';
-import { In } from 'typeorm';
+import { In, Not } from 'typeorm';
 import { Reaction } from '../entity/posts/Reaction';
 import { Mention } from '../entity/posts/Mention';
 import { broadcastMessage, getSocketInstance } from '@/socket';
@@ -362,6 +362,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
     const connectionRepository = AppDataSource.getRepository(Connection);
+    const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
 
     // Fetch connected users
     const connections = await connectionRepository.find({
@@ -376,36 +377,42 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
       conn.requesterId === userId ? conn.receiverId : conn.requesterId
     );
 
-    if (connectedUserIds.length === 0) {
-      return res.status(200).json({
-        status: "success",
-        message: "No connected users found.",
-        data: { posts: [], page, limit, totalPosts: 0 },
-      });
-    }
+    // Fetch blocked posts
+    const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: userId } });
+    const blockedPostIds = blockedPosts.map(bp => bp.blockedPost);
 
-    // Get total posts count for pagination
-    const totalPosts = await userPostRepository.count({
-      where: { userId: In(connectedUserIds) },
-    });
-
-    // Fetch posts from connected users only
-    const posts = await userPostRepository.find({
-      where: { userId: In([connectedUserIds, userId]) },
+    // Fetch posts from connected users (priority posts)
+    const connectedPosts = await userPostRepository.find({
+      where: { userId: In([...connectedUserIds, userId]), id: Not(In(blockedPostIds)) },
       order: { updatedAt: "DESC", createdAt: "DESC" },
-      skip: (page - 1) * limit,
-      take: limit,
     });
 
-    if (!posts.length) {
+    // Fetch public posts (exclude blocked and connected users' posts)
+    const publicPosts = await userPostRepository.find({
+      where: {
+        userId: Not(In([...connectedUserIds, userId])),
+        id: Not(In(blockedPostIds)),
+      },
+      order: { updatedAt: "DESC", createdAt: "DESC" },
+    });
+
+    // Merge connected and public posts, keeping connected posts first
+    const allPosts = [...connectedPosts, ...publicPosts];
+
+    // Implement pagination
+    const startIndex = (page - 1) * limit;
+    const paginatedPosts = allPosts.slice(startIndex, startIndex + limit);
+    const totalPosts = allPosts.length;
+
+    if (!paginatedPosts.length) {
       return res.status(200).json({
         status: "success",
-        message: "No posts found for connected users.",
+        message: "No posts found.",
         data: { posts: [], page, limit, totalPosts },
       });
     }
 
-    const postIds = posts.map(post => post.id);
+    const postIds = paginatedPosts.map(post => post.id);
 
     // Fetch related comments, likes, and reactions
     const comments = await commentRepository.find({ where: { postId: In(postIds) } });
@@ -413,21 +420,15 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
 
     // Generate media URLs for posts
     const mediaKeysWithUrls = await Promise.all(
-      posts.map(async post => ({
+      paginatedPosts.map(async post => ({
         postId: post.id,
         mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map(generatePresignedUrl)) : [],
       }))
     );
 
-    // Blocked posts
-    const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
-    const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: userId } });
-    const blockedPostIds = blockedPosts.map(bp => bp.blockedPost);
-    const filteredPosts = posts.filter(post => !blockedPostIds.includes(post.id));
-
     // Format posts
     const formattedPosts = await Promise.all(
-      filteredPosts.map(async post => {
+      paginatedPosts.map(async post => {
         const mediaUrls = mediaKeysWithUrls.find(media => media.postId === post.id)?.mediaUrls || [];
         const likeCount = likes.filter(like => like.postId === post.id).length;
         const commentCount = comments.filter(comment => comment.postId === post.id).length;
@@ -436,9 +437,9 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
         const user = await userRepository.findOne({ where: { id: post.userId } });
 
         const getReactionId = async () => {
-          const like = await likeRepository.findOne({ where: { userId } });
+          const like = await likeRepository.findOne({ where: { userId, postId: post.id } });
           return like?.reactionId;
-        }
+        };
 
         return {
           post: {
@@ -473,7 +474,7 @@ export const getPosts = async (req: Request, res: Response): Promise<Response> =
 
     return res.status(200).json({
       status: "success",
-      message: "Connected users' posts retrieved successfully.",
+      message: "Posts retrieved successfully.",
       data: { posts: formattedPosts, page, limit, totalPosts },
     });
   } catch (error: any) {
