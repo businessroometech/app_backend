@@ -165,8 +165,8 @@ export const getAllPost = async (req: Request, res: Response): Promise<Response>
             createdAt: post.createdAt,
             originalPostedAt: post.originalPostedAt,
             originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
-            likedByConnections: likedByConnections[post.id] || [],
-            commentedByConnections: commentedByConnections[post.id] || [],
+            likedByConnections: Array.from(new Set(likedByConnections[post.id] || [])), 
+            commentedByConnections: Array.from(new Set(commentedByConnections[post.id] || [])),
           },
           userDetails: {
             id: user?.id,
