@@ -5,8 +5,12 @@ import express, { Express, Request, Response } from 'express';
 import helmet from 'helmet';
 import { pino } from 'pino';
 import { DataSource } from 'typeorm';
+import { WebSocketServer } from 'ws';
+
 import errorHandler from '@/common/middleware/errorHandler';
+import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
+import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import BusinessBuyerRoute from '../src/api/routes/BusinessBuyer/BusinessBuyerRoute';
@@ -120,20 +124,20 @@ app.use(requestLogger);
 app.use(express.json());
 
 // Routes mounting
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/post', userPost);
-app.use('/api/v1/notifications', notifications);
-app.use('/api/v1/connection', connectionRouter);
-app.use('/api/v1/chat', chatRouter);
-app.use('/api/v1/businessseller', BuisnessSeller);
-app.use('/api/v1/investor', InvestorRoute);
-app.use('/api/v1/businessbuyer', BusinessBuyerRoute);
-app.use('/api/v1/entrepreneur', EntrepreneurRoutes);
-app.use('/api/v1/live', liveRouter);
-app.use('/api/v1/wishlists', WishlistsRoutes);
-app.use('/api/v1/socket-notifications', SocketNotificationRouting);
-app.use('/api/v1/subrole', SubRoleRoutes);
-app.use('/api/v1/general', GeneralRoutes);
+app.use('/v1/auth', authRouter);
+app.use('/v1/post', userPost);
+app.use('/v1/notifications', notifications);
+app.use('/v1/connection', connectionRouter);
+app.use('/v1/chat', chatRouter);
+app.use('/v1/businessseller', BuisnessSeller);
+app.use('/v1/investor', InvestorRoute);
+app.use('/v1/businessbuyer', BusinessBuyerRoute);
+app.use('/v1/entrepreneur', EntrepreneurRoutes);
+app.use('/v1/live', liveRouter);
+app.use('/v1/wishlists', WishlistsRoutes);
+app.use('/v1/socket-notifications', SocketNotificationRouting);
+app.use('/v1/subrole', SubRoleRoutes);
+app.use('/v1/general', GeneralRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');
