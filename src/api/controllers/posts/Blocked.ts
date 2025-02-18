@@ -4,6 +4,7 @@ import { BlockedPost } from "@/api/entity/posts/BlockedPost";
 import { BlockedUser } from "@/api/entity/posts/BlockedUser";
 import { ReportedPost } from "@/api/entity/posts/ReportedPost";
 import { ReportedUser } from "@/api/entity/posts/ReportedUser";
+import { UserPost } from "@/api/entity/UserPost";
 import { AppDataSource } from "@/server";
 import { Request, Response } from "express";
 
@@ -28,7 +29,7 @@ export const blockUser = async (req: Request, res: Response) => {
     try {
         const { userId, blockedUser, reason } = req.body;
 
-        if (!userId || !blockedUser ) {
+        if (!userId || !blockedUser) {
             return res.status(400).json({ status: "error", message: "Missing required fields" });
         }
 
@@ -151,12 +152,19 @@ export const reportedPost = async (req: Request, res: Response) => {
         const { userId, reportedPost, reason, additionalComment } = req.body;
 
         const reportedPostRepo = AppDataSource.getRepository(ReportedPost);
+        const postRepo = AppDataSource.getRepository(UserPost);
+
         const reportPost = reportedPostRepo.create({
             ReportedBy: userId,
             ReportedPost: reportedPost,
             reason,
             additionalComment
         });
+
+        const post: UserPost | null = await postRepo.findOne({ where: { id: reportedPost } })
+        if (post) post.isHidden = true;
+        await post?.save();
+
         await reportPost.save();
 
         return res.status(200).json({ status: "success", message: "reported post succesfully" })
