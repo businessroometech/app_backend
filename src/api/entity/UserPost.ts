@@ -64,6 +64,12 @@ export class UserPost extends BaseEntity {
   @Column({ type: 'varchar' })
   originalPostedTimeline !: String;
 
+  @Column({ type: 'int' })
+  repostCount !: number;
+
+  @Column({ type: "boolean", default: false })
+  isHidden !: boolean;
+
   @BeforeInsert()
   private async beforeInsert() {
     this.id = this.generateUUID();

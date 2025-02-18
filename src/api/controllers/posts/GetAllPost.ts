@@ -59,13 +59,13 @@ export const getAllPost = async (req: Request, res: Response): Promise<Response>
 
     // Fetch priority posts (Connections' Posts)
     const connectedPosts = await userPostRepository.find({
-      where: { userId: In([...connectedUserIds, userId]) },
+      where: { userId: In([...connectedUserIds, userId]) , isHidden: false },
       order: { updatedAt: 'DESC', createdAt: 'DESC' },
     });
 
     // Fetch public posts engaged by connections
     const publicPosts = await userPostRepository.find({
-      where: { userId: Not(In([...connectedUserIds, userId])) },
+      where: { userId: Not(In([...connectedUserIds, userId])) , isHidden: false},
       order: { updatedAt: 'DESC', createdAt: 'DESC' },
     });
 

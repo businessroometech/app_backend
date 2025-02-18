@@ -147,7 +147,7 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
     // Fetch user posts with pagination
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const [userPosts, totalPosts] = await userPostRepository.findAndCount({
-      where: { userId },
+      where: { userId , isHidden: false},
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
