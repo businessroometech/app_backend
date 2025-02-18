@@ -1,10 +1,11 @@
 import express from 'express';
-import { CreateUserPost, DeleteUserPost, FindUserPost, getPosts, GetUserPostById, UpdateUserPost } from '@/api/controllers/UserPost';
+import { CreateUserPost, DeleteUserPost, FindUserPost,  GetUserPostById, UpdateUserPost } from '@/api/controllers/UserPost';
 import { getComments, getNestedComments, deleteComment, deleteNestedComment, createOrUpdateComment, createOrUpdateNestedComment, getCommentLikeUserList } from '@/api/controllers/posts/CommentController';
 import { createLike, getAllLikesForPost, createCommentLike, getAllLikesForComment, getUserPostLikeList, getPostCommentersList } from '@/api/controllers/posts/LikeController';
 import { createOrUpdateReaction, removeReaction } from '@/api/controllers/posts/ReactionController';
 import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
 import { blockPost, blockUser, reportedPost, reportedUser, unblockUser } from "@/api/controllers/posts/Blocked";
+import { getAllPost } from '@/api/controllers/posts/GetAllPost';
 
 const Router = express.Router();
 
@@ -12,7 +13,7 @@ Router.post('/create-userpost', CreateUserPost)
 Router.post('/get-userpost-byUserId', FindUserPost)
 Router.post('/update-userpost-byPostId', UpdateUserPost)
 Router.post('/delete-userpost-byPostId', DeleteUserPost)
-Router.post('/get-all-post', getPosts)
+Router.post('/get-all-post', getAllPost)
 
 Router.post('/create-like', createLike);
 Router.post('/create-comment-like', createCommentLike);
