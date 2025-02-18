@@ -88,7 +88,7 @@ export const getAllPost = async (req: Request, res: Response): Promise<Response>
     const remainingPublicPosts = publicPosts.filter((post) => !engagedPublicPosts.includes(post));
 
     // Merge all prioritized posts
-    let allPosts = [...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
+    let allPosts = [ ...engagedPublicPosts, ...connectedPosts, ...remainingPublicPosts];
 
     // Filter out blocked posts and posts by blocked users
     allPosts = allPosts.filter((post) => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
