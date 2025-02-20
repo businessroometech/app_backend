@@ -56,7 +56,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
         userPost.userId,
         `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
         media,
-        `/feed/post/${savedComment.id}`
+        `/feed/post/${postId}#${savedComment.id}`
       );
     }
 
@@ -93,7 +93,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
           mentionedUser.id,
           `${commenterInfo.firstName} mentioned you in a comment`,
           commenterInfo.profilePictureUploadId,
-          `/feed/post/${savedComment.id}`
+          `/feed/post/${postId}#${savedComment.id}`
         );
       }
     }
@@ -259,7 +259,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
         parentComment.userId,
         `${findUser.firstName} ${findUser.lastName} replied to your comment`,
         findUser.profilePictureUploadId,
-        `/feed/post/${commentId}`
+        `/feed/post/${postId}#${commentId}`
       );
       console.log('Notification sent:', notification);
     }
@@ -293,7 +293,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
             mentionedUser.id,
             `${findUser?.firstName} mentioned you in a reply to a comment`,
             findUser?.profilePictureUploadId,
-            `/feed/post/${commentId}`
+            `/feed/post/${postId}#${commentId}`
           );
         }
       }
