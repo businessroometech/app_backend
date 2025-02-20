@@ -85,7 +85,12 @@ export const getAllPost = async (req: Request, res: Response): Promise<Response>
     
     // Filter out blocked posts and users
     allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
-
+    allPosts = allPosts
+    .filter((post, index, self) =>
+      self.findIndex(p => p.id === post.id) === index 
+    )
+    .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
+  
     // Sort posts by date (latest first)
     allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
