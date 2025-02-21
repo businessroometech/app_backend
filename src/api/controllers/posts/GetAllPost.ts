@@ -130,7 +130,7 @@ export const getAllPost = async (req: Request, res: Response): Promise<Response>
     const mediaKeysWithUrls = await Promise.all(paginatedPosts.map(async post => ({
       postId: post.id,
       mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map(generatePresignedUrl)) : [],
-    })));
+    }))); 
 
     // Format posts
     const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
