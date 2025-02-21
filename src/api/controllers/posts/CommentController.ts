@@ -16,7 +16,7 @@ import { Mention } from '@/api/entity/posts/Mention';
 
 export const createOrUpdateComment = async (req: Request, res: Response) => {
   try {
-    const { userId, postId, text, commentId } = req.body;
+    const { userId, postId, text, commentId, mediaKeys } = req.body;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
@@ -33,7 +33,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
       return res.status(200).json({ status: 'success', message: 'Comment updated successfully.', data: { comment } });
     }
 
-    const newComment = Comment.create({ userId, postId, text, createdBy: 'system', updatedBy: 'system' });
+    const newComment = Comment.create({ userId, postId, text, mediaKeys, createdBy: 'system', updatedBy: 'system' });
     const savedComment = await newComment.save();
 
     // Fetch post and user details
@@ -172,6 +172,7 @@ export const getComments = async (req: Request, res: Response) => {
           postId: comment.postId,
           likeStatus: commentLike?.status ? commentLike.status : false,
           commenterId: commenter?.id,
+          mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })
     );
