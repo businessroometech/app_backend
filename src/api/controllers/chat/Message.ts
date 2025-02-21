@@ -25,6 +25,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     console.log("message sent to room :", roomId);
 
     io.to(roomId).emit('newMessage', message);
+    io.to(receiverId).emit('messageCount', message);
 
     return res.status(201).json({ success: true, data: { message } });
   } catch (error) {
