@@ -10,10 +10,11 @@ export class Entrepreneur {
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;
+
   @Column({ type: 'varchar', length: 200, nullable: true })
   businessName!: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
+  @Column({ type: 'uuid' })
   UserId!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })

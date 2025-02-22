@@ -11,7 +11,7 @@ export class General {
   @Column({ type: 'varchar', length: 255 })
   currentRole!: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'uuid' })
   UserId!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })

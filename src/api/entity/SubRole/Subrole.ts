@@ -9,14 +9,11 @@ export class SubRole extends BaseEntity {
   @PrimaryColumn('uuid')
   id!: string;
 
-    @Column({ type: 'varchar', length: 100})
-    UserId!: string;
+  @Column({ type: 'uuid' })
+  UserId!: string;
 
-
-    @Column({type:'varchar' , length:"100"})
-    SubRole! : string 
-     
-    
+  @Column({ type: 'varchar', length: "100" })
+  SubRole!: string
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {

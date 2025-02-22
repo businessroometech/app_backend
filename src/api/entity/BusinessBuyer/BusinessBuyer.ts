@@ -12,7 +12,7 @@ export class BusinessBuyer {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @Column({type: "varchar" ,  })
+  @Column({ type: 'uuid' })
   UserId! : string
 
   @Column({ type: 'varchar', length: 100, nullable: true })

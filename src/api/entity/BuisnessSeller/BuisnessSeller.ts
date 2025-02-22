@@ -8,9 +8,8 @@ export class BusinessForSale extends BaseEntity {
   @PrimaryColumn("uuid")
   id!: string;
 
-  @Column({ type: 'varchar', length: 100})
+  @Column({ type: 'uuid' })
   UserId!: string;
-
     
   @Column("json")
   OwnerDetails!: any[];
