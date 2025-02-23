@@ -29,7 +29,7 @@ export class NestedComment extends BaseEntity {
     @Column({ type: 'text' })
     text!: string;  @Column({ type: 'simple-array', nullable: true })
     mediaKeys?: string[];
-
+  
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
 
