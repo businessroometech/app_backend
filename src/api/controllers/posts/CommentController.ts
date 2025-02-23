@@ -203,7 +203,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
   try {
     console.log('Received Request:', req.body);
 
-    const { userId, postId, commentId, text, createdBy, nestedCommentId } = req.body;
+    const { userId, postId, commentId, text, createdBy, nestedCommentId, mediaKeys } = req.body;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
@@ -245,6 +245,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
         postId,
         commentId,
         text,
+        mediaKeys,
         createdBy: createdBy || 'system',
         updatedBy: createdBy || 'system',
       })
@@ -444,6 +445,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
           postId: comment.postId,
           commentId: comment.commentId,
           commenterId: commenter?.id,
+          mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })
     );
