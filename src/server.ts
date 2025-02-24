@@ -58,6 +58,8 @@ import { initializeSocket } from './socket';
 
 import { ReportedPost } from './api/entity/posts/ReportedPost';
 import { ReportedUser } from './api/entity/posts/ReportedUser';
+import { Account } from './api/entity/LandingPage/Account';
+import { Connect } from './api/entity/LandingPage/Connect';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -96,6 +98,8 @@ const AppDataSource = new DataSource({
     ReportedPost,
     ReportedUser,
     General,
+    Account,
+    Connect
   ],
   synchronize: false, 
 });
