@@ -13,10 +13,10 @@ export class Connect extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   lastName!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, unique: true, nullable: true })
   emailAddress!: string;
 
-  @Column({ type: 'varchar', length: 15, nullable: true })
+  @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
   phoneNumber!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
