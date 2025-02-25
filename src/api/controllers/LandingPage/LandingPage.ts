@@ -24,7 +24,7 @@ export const getInTouch = async (req: Request, res: Response) => {
 
         await transporter.sendMail({
             from: "ashutoshnegi196@gmail.com",
-            to: "ashutoshnegi195@gmail.com",
+            to: "arunmanchanda9999@gmail.com",
             subject: "New Contact Request Received",
             text: `New contact request received:\n\nFirst Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${emailAddress}\nPhone: ${phoneNumber}\nCategory: ${select}\nMessage: ${message}`,
         });
@@ -45,7 +45,7 @@ export const createAccount = async (req: Request, res: Response) => {
 
         await transporter.sendMail({
             from: "ashutoshnegi196@gmail.com",
-            to: "ashutoshnegi195@gmail.com",
+            to: "arunmanchanda9999@gmail.com",
             subject: "New Account Signup Request",
             text: `New signup request received:\n\nFirst Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${emailAddress}\nPhone: ${phoneNumber}\nCountry Code: ${countryCode}\nCountry: ${country}\nRole: ${role}`,
         });
