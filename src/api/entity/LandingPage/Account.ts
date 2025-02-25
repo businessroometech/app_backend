@@ -16,10 +16,10 @@ export class Account extends BaseEntity {
   @Column({ type: 'varchar', length: 100, unique: true, nullable: true })
   emailAddress!: string;
 
-  @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 15, nullable: true })
   countryCode!: string;
 
-  @Column({ type: 'varchar', length: 15, nullable: true })
+  @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
   phoneNumber!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
