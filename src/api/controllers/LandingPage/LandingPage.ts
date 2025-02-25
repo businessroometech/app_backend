@@ -82,14 +82,49 @@ export const getInTouch = async (req: Request, res: Response) => {
     }
 };
 
+// export const createAccount = async (req: Request, res: Response) => {
+//     try {
+//         const { firstName, lastName, emailAddress, phoneNumber, countryCode, country, role } = req.body;
+
+//         const accountRepo = AppDataSource.getRepository(Account);
+//         const acc = accountRepo.create({ firstName, lastName, emailAddress, countryCode, country, phoneNumber, role });
+//         await acc.save();
+
+//         await transporter.sendMail({
+//             from: "ashutoshnegi196@gmail.com",
+//             to: "arunmanchanda9999@gmail.com",
+//             subject: "New Account Signup Request",
+//             text: `New signup request received:\n\nFirst Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${emailAddress}\nPhone: ${phoneNumber}\nCountry Code: ${countryCode}\nCountry: ${country}\nRole: ${role}`,
+//         });
+
+//         return res.status(200).json({ status: "success", message: "Signup request sent and email notification delivered", data: { account: acc } });
+//     } catch (error) {
+//         return res.status(500).json({ status: "error", message: "Error sending signup request" });
+//     }
+// };
+
 export const createAccount = async (req: Request, res: Response) => {
     try {
         const { firstName, lastName, emailAddress, phoneNumber, countryCode, country, role } = req.body;
 
         const accountRepo = AppDataSource.getRepository(Account);
+
+        // Check if email or phone number already exists
+        const existingEmail = await accountRepo.findOne({ where: { emailAddress } });
+        if (existingEmail) {
+            return res.status(400).json({ status: "error", message: "Email address already exists." });
+        }
+
+        const existingPhone = await accountRepo.findOne({ where: { phoneNumber } });
+        if (existingPhone) {
+            return res.status(400).json({ status: "error", message: "Phone number already exists." });
+        }
+
+        // Create new account
         const acc = accountRepo.create({ firstName, lastName, emailAddress, countryCode, country, phoneNumber, role });
         await acc.save();
 
+        // Send email notification
         await transporter.sendMail({
             from: "ashutoshnegi196@gmail.com",
             to: "arunmanchanda9999@gmail.com",
@@ -99,6 +134,17 @@ export const createAccount = async (req: Request, res: Response) => {
 
         return res.status(200).json({ status: "success", message: "Signup request sent and email notification delivered", data: { account: acc } });
     } catch (error) {
+        if (error instanceof QueryFailedError) {
+            const errorMessage = error.message.toLowerCase();
+            if (errorMessage.includes("duplicate key") || errorMessage.includes("unique constraint")) {
+                if (errorMessage.includes("emailAddress")) {
+                    return res.status(400).json({ status: "error", message: "Email address already exists." });
+                } else if (errorMessage.includes("phoneNumber")) {
+                    return res.status(400).json({ status: "error", message: "Phone number already exists." });
+                }
+            }
+        }
+
         return res.status(500).json({ status: "error", message: "Error sending signup request" });
     }
 };
