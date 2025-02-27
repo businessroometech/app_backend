@@ -123,7 +123,7 @@ app.use(
   })
 );
 app.use(helmet());
-// app.use(rateLimiter);
+app.use(rateLimiter);
 app.use(requestLogger);
 app.use(express.json());
 
