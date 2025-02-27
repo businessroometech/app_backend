@@ -49,9 +49,6 @@ export class PersonalDetails extends BaseEntity {
   countryCode!: string;
 
   @Column({ type: 'varchar', default: '', nullable: true })
-  mobileNumber!: string;
-
-  @Column({ type: 'varchar', default: '', nullable: true })
   gender !: string;
 
   @Column({ type: 'uuid', nullable: true })
@@ -77,9 +74,6 @@ export class PersonalDetails extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   bio!: string;
-
-  @Column({ type: 'varchar', default: '', nullable: true })
-  gender!: string;
 
   @Column({ type: 'varchar', default: '', nullable: true })
   preferredLanguage!: string;
