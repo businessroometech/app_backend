@@ -45,6 +45,15 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'varchar', default: '', nullable: true })
   country!: string;
 
+  @Column({ type: 'varchar', default: '', nullable: true })
+  countryCode!: string;
+
+  @Column({ type: 'varchar', default: '', nullable: true })
+  mobileNumber!: string;
+
+  @Column({ type: 'varchar', default: '', nullable: true })
+  gender !: string;
+
   @Column({ type: 'uuid', nullable: true })
   profilePictureUploadId!: string;
 
