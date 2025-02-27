@@ -19,16 +19,16 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       emailAddress,
       password,
       country,
-      countryCode,
-      mobileNumber,
-      gender,
+      countryCode = '',
+      mobileNumber = '',
+      gender = '',
       dob,
       userRole,
       createdBy = 'system',
       updatedBy = 'system',
     } = req.body;
 
-    if (!firstName || !lastName || !emailAddress || !password || !country || !gender || !countryCode || !mobileNumber) {
+    if (!firstName || !lastName || !emailAddress || !password || !country) {
       res.status(400).json({
         status: 'error',
         message: 'All fields are required',
