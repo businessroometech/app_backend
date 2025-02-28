@@ -64,6 +64,7 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       rotate,
       zoomProfile,
       rotateProfile,
+      investorType
     } = req.body;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -102,6 +103,7 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       if (rotate !== undefined) personalDetails.rotate = rotate;
       if (zoomProfile !== undefined) personalDetails.zoomProfile = zoomProfile;
       if (rotateProfile !== undefined) personalDetails.rotateProfile = rotateProfile;
+      if (investorType !== undefined) personalDetails.investorType = investorType;
       personalDetails.updatedBy = 'system';
 
       await personalDetailsRepository.save(personalDetails);
