@@ -19,10 +19,16 @@ interface GetAllPostRequest extends Request {
   };
 }
 
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
 // Get all posts for public view
-export const getAllPost = async (req: Request, res: Response): Promise<Response> => {
+export const getAllPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, page = 1, limit = 5 } = req.body;
+    const { page = 1, limit = 5 } = req.body;
+    
+    const userId = req.userId;
     
     // Repositories
     const userRepository = AppDataSource.getRepository(PersonalDetails);
