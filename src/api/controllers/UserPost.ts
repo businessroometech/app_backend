@@ -33,10 +33,16 @@ export const formatTimestamp = (createdAt: Date): string => {
   return `${yearsAgo}y`;
 };
 
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
 // user post and and update post
-export const CreateUserPost = async (req: Request, res: Response): Promise<Response> => {
+export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, title, content, hashtags, mediaKeys, repostedFrom, repostText, originalPostedAt } = req.body;
+    const { title, content, hashtags, mediaKeys, repostedFrom, repostText, originalPostedAt } = req.body;
+
+    const userId = req.userId;
 
     // Validate if the user exists
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -124,9 +130,11 @@ export const CreateUserPost = async (req: Request, res: Response): Promise<Respo
   }
 };
 // FindUserPost by userId
-export const FindUserPost = async (req: Request, res: Response): Promise<Response> => {
+export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, page = 1, limit = 5 } = req.body;
+    const { page = 1, limit = 5 } = req.body;
+
+    const userId = req.userId;
 
     // Validate userId
     if (!userId) {
@@ -276,9 +284,11 @@ export const FindUserPost = async (req: Request, res: Response): Promise<Respons
 };
 
 // find and update user post
-export const UpdateUserPost = async (req: Request, res: Response): Promise<Response> => {
+export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, id, title, content, hashtags, mentionId, mediaIds, likeIds, commentIds, shareIds } = req.body;
+    const { id, title, content, hashtags, mentionId, mediaIds, likeIds, commentIds, shareIds } = req.body;
+
+    const userId = req.userId;
 
     // Check if the user ID exists in the PersonalDetails repository
     // Get the PersonalDetails repository
@@ -319,9 +329,11 @@ export const UpdateUserPost = async (req: Request, res: Response): Promise<Respo
 };
 
 // find and delete user post
-export const DeleteUserPost = async (req: Request, res: Response): Promise<Response> => {
+export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { PostId, userId } = req.body;
+    const { PostId } = req.body;
+
+    const userId = req.userId;
 
     const userRepos = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepos.findOneBy({ id: userId });
