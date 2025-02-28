@@ -142,10 +142,10 @@ export class PersonalDetails extends BaseEntity {
   rotateProfile !: number;
 
   @Column({
-    type: 'varchar',
+    type: 'simple-array',
     nullable: true
   })
-  investorType !: string;
+  investorType !: string[];
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
