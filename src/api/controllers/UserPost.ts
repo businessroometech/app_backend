@@ -1,3 +1,4 @@
+import multer from 'multer';
 import { Request, Response } from 'express';
 import { UserPost } from '../entity/UserPost';
 import { AppDataSource } from '@/server';
@@ -131,15 +132,22 @@ export interface AuthenticatedRequest extends Request {
 //   }
 // };
 
+
+const storage = multer.memoryStorage(); // Store files in memory as buffers
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit per file
+});
+
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     console.log('Request body:', req.body);
 
-    const { title, content, hashtags, documents, repostedFrom, repostText, originalPostedAt } = req.body;
+    const { title, content, hashtags, repostedFrom, repostText, originalPostedAt } = req.body;
     const userId = req.userId;
 
     if (!content || typeof content !== 'string') {
-      console.error('Missing or invalid content:', content);
       return res.status(400).json({ message: 'Content is required and must be a string.' });
     }
 
@@ -150,6 +158,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
     }
 
+    // Extract mentions from content
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
@@ -163,17 +172,13 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       });
     }
 
+    // Upload files to S3
     const uploadedDocumentUrls: string[] = [];
-
-    if (documents && Array.isArray(documents)) {
-      console.log('Documents found:', documents);
-      for (const document of documents) {
-        if (!document) {
-          console.error('Invalid document:', document);
-          continue;
-        }
+    if (req.files && Array.isArray(req.files)) {
+      for (const file of req.files as Express.Multer.File[]) {
         try {
-          const uploadedUrl = await uploadBufferDocumentToS3(Buffer.from(document), userId, 'application/pdf');
+          console.log('Uploading file:', file.originalname);
+          const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
           uploadedDocumentUrls.push(uploadedUrl);
         } catch (uploadError) {
           console.error('S3 Upload Error:', uploadError);
@@ -181,13 +186,14 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       }
     }
 
+    // Create new post entry
     const postRepository = AppDataSource.getRepository(UserPost);
     const newPost = postRepository.create({
       userId,
       title,
       content,
       hashtags,
-      mediaKeys: uploadedDocumentUrls, 
+      mediaKeys: uploadedDocumentUrls, // Store S3 URLs
       repostedFrom,
       repostText,
       isRepost: Boolean(repostedFrom),
@@ -196,6 +202,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
     const savedPost = await postRepository.save(newPost);
 
+    // Handle mentions
     let mention = null;
     if (validMentionedUserIds.length > 0) {
       const mentionRepository = AppDataSource.getRepository(Mention);
@@ -210,6 +217,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
       mention = await mentionRepository.save(mentionsToSave);
 
+      // Send notifications to mentioned users
       for (const mentionedUser of mentionedUsers) {
         if (mentionedUser.id !== userId) {
           await sendNotification(
@@ -222,6 +230,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       }
     }
 
+    // Emit socket event
     const io = getSocketInstance();
     io.emit('postSent', { success: true, postId: savedPost.id });
 
@@ -239,6 +248,9 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     });
   }
 };
+
+// Attach multer middleware to the route
+export const uploadMiddleware = multer({ storage: storage }).array('documents', 10);
 
 
 
