@@ -12,6 +12,7 @@ import { broadcastMessage, getSocketInstance } from '@/socket';
 import { sendNotification } from './notifications/SocketNotificationController';
 import { BlockedPost } from '../entity/posts/BlockedPost';
 import { Connection } from '../entity/connection/Connections';
+import { uploadBufferDocumentToS3 } from "../controllers/s3/awsControllers";
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -38,13 +39,103 @@ export interface AuthenticatedRequest extends Request {
 }
 
 // user post and and update post
+// export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+//   try {
+//     const { title, content, hashtags, mediaKeys, repostedFrom, repostText, originalPostedAt } = req.body;
+
+//     const userId = req.userId;
+
+//     // Validate if the user exists
+//     const userRepository = AppDataSource.getRepository(PersonalDetails);
+//     const user = await userRepository.findOneBy({ id: userId });
+
+//     if (!user) {
+//       return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
+//     }
+
+//     // Extract mentions from content
+//     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+//     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
+
+//     // Fetch valid mentioned users
+//     const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
+//     const validMentionedUserIds = mentionedUsers.map((u) => u.id);
+
+//     // Validate if all mentioned users exist
+//     if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
+//       return res.status(404).json({
+//         message: 'One or more mentioned users do not exist.',
+//         invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
+//       });
+//     }
+
+//     // Create the post
+//     const postRepository = AppDataSource.getRepository(UserPost);
+//     const newPost = postRepository.create({
+//       userId,
+//       title,
+//       content,
+//       hashtags,
+//       mediaKeys,
+//       repostedFrom,
+//       repostText,
+//       isRepost: Boolean(repostedFrom),
+//       originalPostedAt
+//     });
+
+//     const savedPost = await postRepository.save(newPost);
+
+//     let mention = null;
+//     if (validMentionedUserIds.length > 0) {
+//       const mentionRepository = AppDataSource.getRepository(Mention);
+
+//       const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
+//         mentionRepository.create({
+//           user: user,
+//           post: savedPost,
+//           mentionBy: userId,
+//           mentionTo: mentionedUserId,
+//         })
+//       );
+
+//       mention = await mentionRepository.save(mentionsToSave);
+
+//       // Send mention notifications
+//       for (const mentionedUser of mentionedUsers) {
+//         if (mentionedUser.id !== userId) {
+//           await sendNotification(
+//             mentionedUser.id,
+//             `${user.firstName} ${user.lastName} mentioned you in a post`,
+//             user.profilePictureUploadId,
+//             `/feed/post/${savedPost.id}`
+//           );
+//         }
+//       }
+//     }
+
+//     // Broadcast the "post sent" event via WebSocket
+//     const io = getSocketInstance();
+//     io.emit('postSent', { success: true, postId: savedPost.id });
+
+//     return res.status(201).json({
+//       message: 'Post created successfully.',
+//       data: savedPost,
+//       mention,
+//     });
+
+//   } catch (error: any) {
+//     return res.status(500).json({
+//       message: 'Internal server error. Could not create post.',
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { title, content, hashtags, mediaKeys, repostedFrom, repostText, originalPostedAt } = req.body;
-
+    const { title, content, hashtags, documents, repostedFrom, repostText, originalPostedAt } = req.body;
     const userId = req.userId;
 
-    // Validate if the user exists
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
 
@@ -52,15 +143,12 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
     }
 
-    // Extract mentions from content
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
-    // Fetch valid mentioned users
     const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
     const validMentionedUserIds = mentionedUsers.map((u) => u.id);
 
-    // Validate if all mentioned users exist
     if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
       return res.status(404).json({
         message: 'One or more mentioned users do not exist.',
@@ -68,18 +156,26 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       });
     }
 
-    // Create the post
+    const uploadedDocumentUrls: string[] = [];
+
+    if (documents && Array.isArray(documents)) {
+      for (const document of documents) {
+        const uploadedUrl = await uploadBufferDocumentToS3(Buffer.from(document), userId, 'application/pdf');
+        uploadedDocumentUrls.push(uploadedUrl);
+      }
+    }
+
     const postRepository = AppDataSource.getRepository(UserPost);
     const newPost = postRepository.create({
       userId,
       title,
       content,
       hashtags,
-      mediaKeys,
+      mediaKeys: uploadedDocumentUrls, 
       repostedFrom,
       repostText,
       isRepost: Boolean(repostedFrom),
-      originalPostedAt
+      originalPostedAt,
     });
 
     const savedPost = await postRepository.save(newPost);
@@ -87,7 +183,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     let mention = null;
     if (validMentionedUserIds.length > 0) {
       const mentionRepository = AppDataSource.getRepository(Mention);
-
       const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
         mentionRepository.create({
           user: user,
@@ -99,7 +194,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
       mention = await mentionRepository.save(mentionsToSave);
 
-      // Send mention notifications
       for (const mentionedUser of mentionedUsers) {
         if (mentionedUser.id !== userId) {
           await sendNotification(
@@ -112,7 +206,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       }
     }
 
-    // Broadcast the "post sent" event via WebSocket
     const io = getSocketInstance();
     io.emit('postSent', { success: true, postId: savedPost.id });
 
@@ -129,6 +222,8 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     });
   }
 };
+
+
 // FindUserPost by userId
 export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
@@ -155,7 +250,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     // Fetch user posts with pagination
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const [userPosts, totalPosts] = await userPostRepository.findAndCount({
-      where: { userId , isHidden: false},
+      where: { userId, isHidden: false },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -350,7 +445,7 @@ export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): 
       return res.status(404).json({ message: 'Post not found. Invalid Post Id.' });
     }
 
-    await userPostRepo.delete(postId); 
+    await userPostRepo.delete(postId);
 
     return res.status(200).json({ message: 'User post deleted successfully.' });
 

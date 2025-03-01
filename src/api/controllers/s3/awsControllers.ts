@@ -1,6 +1,7 @@
 import { GetObjectCommand, GetObjectCommandInput, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
+import crypto from "crypto";
 
 const s3 = new S3Client({
   credentials: {
@@ -69,5 +70,33 @@ export const getDocumentFromBucket = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error retrieving document:', error);
     res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+  }
+};
+
+export const uploadBufferDocumentToS3 = async (
+  documentBuffer: Buffer,
+  userId: string | undefined,
+  contentType: string
+): Promise<string> => {
+  try {
+    const fileExtension = contentType.split('/')[1] || 'pdf';
+    const fileKey = `uploads/${userId}/${crypto.randomUUID()}.${fileExtension}`;
+
+    const uploadParams = {
+      Bucket: process.env.AWS_S3_BUCKET_NAME!,
+      Key: fileKey,
+      Body: documentBuffer,
+      ContentType: contentType,
+    };
+
+    // Use the instantiated s3 client
+    await s3.send(new PutObjectCommand(uploadParams));
+
+    // Construct the file URL (Public access should be enabled or use presigned URL)
+    const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+    return fileUrl;
+  } catch (error) {
+    console.error('S3 Upload Error:', error);
+    throw new Error('Error uploading document to S3');
   }
 };
