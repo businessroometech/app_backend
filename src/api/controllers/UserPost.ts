@@ -133,12 +133,15 @@ export interface AuthenticatedRequest extends Request {
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
+    console.log('Request body:', req.body);
+
     const { title, content, hashtags, documents, repostedFrom, repostText, originalPostedAt } = req.body;
     const userId = req.userId;
 
-    // if (!content) {
-    //   return res.status(400).json({ message: 'Content is required and must be a string.' });
-    // }
+    if (!content || typeof content !== 'string') {
+      console.error('Missing or invalid content:', content);
+      return res.status(400).json({ message: 'Content is required and must be a string.' });
+    }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
@@ -163,9 +166,18 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     const uploadedDocumentUrls: string[] = [];
 
     if (documents && Array.isArray(documents)) {
+      console.log('Documents found:', documents);
       for (const document of documents) {
-        const uploadedUrl = await uploadBufferDocumentToS3(Buffer.from(document), userId, 'application/pdf');
-        uploadedDocumentUrls.push(uploadedUrl);
+        if (!document) {
+          console.error('Invalid document:', document);
+          continue;
+        }
+        try {
+          const uploadedUrl = await uploadBufferDocumentToS3(Buffer.from(document), userId, 'application/pdf');
+          uploadedDocumentUrls.push(uploadedUrl);
+        } catch (uploadError) {
+          console.error('S3 Upload Error:', uploadError);
+        }
       }
     }
 
