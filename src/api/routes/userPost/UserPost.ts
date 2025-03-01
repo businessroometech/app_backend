@@ -13,7 +13,7 @@ const Router = express.Router();
 Router.post('/create-userpost', authenticate, CreateUserPost)
 Router.post('/get-userpost-byUserId', authenticate, FindUserPost)
 Router.post('/update-userpost-byPostId', authenticate, UpdateUserPost)
-Router.post('/delete-userpost-byPostId', authenticate, DeleteUserPost)
+Router.delete('/delete-userpost/:postId', authenticate, DeleteUserPost)
 Router.get('/get-all-post', authenticate, getAllPost)
 
 Router.post('/create-like', authenticate, createLike);

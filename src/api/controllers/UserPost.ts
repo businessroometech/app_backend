@@ -331,7 +331,7 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
 // find and delete user post
 export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { PostId } = req.body;
+    const { postId } = req.params;
 
     const userId = req.userId;
 
@@ -343,14 +343,14 @@ export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): 
 
     const userPostRepo = AppDataSource.getRepository(UserPost);
     const userPost = await userPostRepo.findOne({
-      where: { id: PostId, userId },
+      where: { id: postId, userId },
     });
 
     if (!userPost) {
       return res.status(404).json({ message: 'Post not found. Invalid Post Id.' });
     }
 
-    await userPostRepo.delete(PostId); // Correct way to delete
+    await userPostRepo.delete(postId); 
 
     return res.status(200).json({ message: 'User post deleted successfully.' });
 
