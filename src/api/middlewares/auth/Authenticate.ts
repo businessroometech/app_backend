@@ -19,7 +19,7 @@ export const authenticate = (req: AuthenticatedRequest, res: Response, next: () 
       return res.status(403).json({ status: 'error', message: 'Need to login again' });
     }
 
-    if (!payload || !payload.userId) {
+    if (!payload || !payload.id) {
       return res.status(403).json({ status: 'error', message: 'Invalid token' });
     }
 
