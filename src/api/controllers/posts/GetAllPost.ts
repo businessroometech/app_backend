@@ -11,13 +11,13 @@ import { Request, Response } from 'express';
 import { Comment } from '@/api/entity/posts/Comment';
 import { BlockedUser } from '@/api/entity/posts/BlockedUser';
 
-interface GetAllPostRequest extends Request {
-  body: {
-    userId: string;
-    page?: number;
-    limit?: number;
-  };
-}
+// interface GetAllPostRequest extends Request {
+//   body: {
+//     userId: string;
+//     page?: number;
+//     limit?: number;
+//   };
+// }
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -26,10 +26,10 @@ export interface AuthenticatedRequest extends Request {
 // Get all posts for public view
 export const getAllPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { page = 1, limit = 5 } = req.body;
-    
+    const { page = 1, limit = 5 } = req.query;
+
     const userId = req.userId;
-    
+
     // Repositories
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const userPostRepository = AppDataSource.getRepository(UserPost);
@@ -74,12 +74,12 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       likeRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
       commentRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
     ]);
-    
+
     const engagedPublicPosts = publicPosts.filter(post =>
       connectionLikes.some(like => like.postId === post.id) ||
       connectionComments.some(comment => comment.postId === post.id)
     );
-    
+
     // Fetch all user posts
     const userPost = await userPostRepository.find({ where: { userId: In([userId]) } });
 
@@ -88,21 +88,21 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
 
     // Merge all prioritized posts
     let allPosts = [...userPost, ...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
-    
+
     // Filter out blocked posts and users
     allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
     allPosts = allPosts
-    .filter((post, index, self) =>
-      self.findIndex(p => p.id === post.id) === index 
-    )
-    .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
-  
+      .filter((post, index, self) =>
+        self.findIndex(p => p.id === post.id) === index
+      )
+      .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
+
     // Sort posts by date (latest first)
     allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     // Pagination
-    const startIndex = (page - 1) * limit;
-    const paginatedPosts = allPosts.slice(startIndex, startIndex + limit);
+    const startIndex = (Number(page) - 1) * Number(limit);
+    const paginatedPosts = allPosts.slice(startIndex, startIndex + Number(limit));
     const totalPosts = allPosts.length;
 
     if (!paginatedPosts.length) {
@@ -136,7 +136,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const mediaKeysWithUrls = await Promise.all(paginatedPosts.map(async post => ({
       postId: post.id,
       mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map(generatePresignedUrl)) : [],
-    }))); 
+    })));
 
     // Format posts
     const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
@@ -149,7 +149,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       // Remove duplicate user interactions
       const uniqueLikedByConnections = Array.from(new Set(likedByConnections[post.id] || []));
       const uniqueCommentedByConnections = Array.from(new Set(commentedByConnections[post.id] || []));
-      
+
       // Filter out users who liked the post from the commented list
       const finalCommentedByConnections = uniqueCommentedByConnections.filter(userId => !uniqueLikedByConnections.includes(userId));
 
@@ -173,7 +173,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
           likedByConnections: uniqueLikedByConnections,
           commentedByConnections: finalCommentedByConnections,
-          
+
         },
         userDetails: {
           id: user?.id,

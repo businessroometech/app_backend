@@ -8,29 +8,29 @@ import { blockPost, blockUser, reportedPost, reportedUser, unblockUser } from "@
 import { getAllPost } from '@/api/controllers/posts/GetAllPost';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
-const Router = express.Router();
-
+const Router = express.Router();                                                                                                                                                                                                                                                         
+ 
 Router.post('/create-userpost', authenticate, CreateUserPost)
 Router.post('/get-userpost-byUserId', authenticate, FindUserPost)
 Router.post('/update-userpost-byPostId', authenticate, UpdateUserPost)
 Router.post('/delete-userpost-byPostId', authenticate, DeleteUserPost)
-Router.post('/get-all-post', authenticate, getAllPost)
+Router.get('/get-all-post', authenticate, getAllPost)
 
 Router.post('/create-like', authenticate, createLike);
 Router.post('/create-comment-like', authenticate, createCommentLike);
 Router.post('/create-comment', authenticate, createOrUpdateComment);
 Router.post('/create-nested-comment', authenticate, createOrUpdateNestedComment);
 
-Router.post('/get-likes', authenticate, getAllLikesForPost);
-Router.post('/get-comments', authenticate, getComments);
-Router.post('/get-nested-comments', authenticate, getNestedComments);
+Router.get('/get-likes/:postId', authenticate, getAllLikesForPost);
+Router.get('/get-comments', authenticate, getComments);
+Router.get('/get-nested-comments/:commentId', authenticate, getNestedComments);
 Router.post('/get-comment-like-list', authenticate, getCommentLikeUserList);
 
-Router.post('/get-post-likes-list', authenticate, getUserPostLikeList);
-Router.post('/get-post-commenter-list', authenticate, getPostCommentersList);
+Router.get('/get-post-likes-list/:postId', authenticate, getUserPostLikeList);
+Router.get('/get-post-commenter-list/:postId', authenticate, getPostCommentersList);
 
-Router.delete('/comments', authenticate, deleteComment);
-Router.delete('/nested-comments', authenticate, deleteNestedComment);
+Router.delete('/comments/:commentId', authenticate, deleteComment);
+Router.delete('/nested-comments/:nestedCommentId', authenticate, deleteNestedComment);
 
 Router.post("/create-update-reaction", authenticate, createOrUpdateReaction)
 Router.post("/remove-reaction", authenticate, removeReaction)
@@ -45,6 +45,4 @@ Router.post("/unblock-user", authenticate, unblockUser);
 Router.post("/report-post", authenticate, reportedPost);
 Router.post("/report-user", authenticate, reportedUser);
 
-
 export default Router;
-

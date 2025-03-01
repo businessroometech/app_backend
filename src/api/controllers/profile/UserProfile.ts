@@ -12,6 +12,10 @@ import { sendNotification } from '../notifications/SocketNotificationController'
 import { Like } from '@/api/entity/posts/Like';
 import { BlockedUser } from '@/api/entity/posts/BlockedUser';
 
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
 const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
   const createdTime = new Date(createdAt).getTime();
@@ -38,11 +42,10 @@ const formatTimestamp = (createdAt: Date): string => {
   return `${yearsAgo}y`;
 };
 
-export const UpdateUserProfile = async (req: Request, res: Response) => {
+export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       occupation,
-      userId,
       profilePictureUploadId,
       bgPictureUploadId,
       firstName,
@@ -66,6 +69,8 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       rotateProfile,
       investorType
     } = req.body;
+
+    const userId = req.userId;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
@@ -123,9 +128,10 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
 };
 
 // get user profile
-export const getUserProfile = async (req: Request, res: Response): Promise<Response> => {
+export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    let { userId, profileId = userId } = req.body;
+    const userId = req.userId;
+    let { profileId = userId } = req.params;
 
     if (!userId) {
       return res.status(400).json({
@@ -133,7 +139,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-   const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
     const postRepository = AppDataSource.getRepository(UserPost);
     const likeRepository = AppDataSource.getRepository(Like);
@@ -189,12 +195,12 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       if (blockedEntry.blockedBy === userId) {
         return res.status(200).json({
           message: 'You have blocked this user.',
-          data: {personalDetails,  connectionsStatus: "Blocked", unblockOption: true ,}
+          data: { personalDetails, connectionsStatus: "Blocked", unblockOption: true, }
         });
       } else {
         return res.status(200).json({
           message: 'You are blocked from viewing this profile.',
-          data: {personalDetails,  connectionsStatus: "Blocked",}
+          data: { personalDetails, connectionsStatus: "Blocked", }
         });
       }
     }
@@ -401,9 +407,11 @@ export const ProfileVisitController = {
 };
 
 // search user profile
-export const searchUserProfile = async (req: Request, res: Response): Promise<Response> => {
+export const searchUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, searchQuery } = req.body;
+    const { searchQuery } = req.body;
+
+    const userId = req.userId;
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' });

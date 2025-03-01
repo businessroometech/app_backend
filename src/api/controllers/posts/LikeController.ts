@@ -10,9 +10,15 @@ import { generatePresignedUrl } from '../s3/awsControllers';
 import { In } from 'typeorm';
 import { Comment } from '@/api/entity/posts/Comment';
 
-export const createLike = async (req: Request, res: Response) => {
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
+export const createLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, status, reactionId } = req.body;
+    const { postId, status, reactionId } = req.body;
+    const userId = req.userId;
+
     if (!userId || !postId) {
       return res.status(400).json({ status: 'error', message: 'userId and postId are required.' });
     }
@@ -76,7 +82,7 @@ export const createLike = async (req: Request, res: Response) => {
 
 export const getAllLikesForPost = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
@@ -114,9 +120,11 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
 };
 
 
-export const createCommentLike = async (req: Request, res: Response) => {
+export const createCommentLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, commentId, status } = req.body;
+    const { postId, commentId, status } = req.body;
+
+    const userId = req.userId;
     if (!userId || !postId || !commentId) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and commentId are required.' });
     }
@@ -219,7 +227,7 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
 // userlike list for post
 export const getUserPostLikeList = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
@@ -262,7 +270,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
 // post commenters list
 export const getPostCommentersList = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });

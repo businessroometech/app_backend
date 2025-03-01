@@ -14,9 +14,15 @@ import { CreateMention } from './Mention';
 import { In } from 'typeorm';
 import { Mention } from '@/api/entity/posts/Mention';
 
-export const createOrUpdateComment = async (req: Request, res: Response) => {
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
+export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, text, commentId, mediaKeys } = req.body;
+    const { postId, text, commentId, mediaKeys } = req.body;
+
+    const userId = req.userId;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
@@ -63,7 +69,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
     // Extract mentions from comment text
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...text.matchAll(mentionPattern)].map(match => match[1]);
-    
+
     if (mentions.length > 0) {
       const userRepository = AppDataSource.getRepository(PersonalDetails);
       const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
@@ -110,7 +116,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
 };
 
 export const deleteComment = async (req: Request, res: Response) => {
-  const { commentId } = req.body;
+  const { commentId } = req.params;
 
   if (!commentId) {
     return res.status(400).json({ error: 'Comment ID is required' });
@@ -132,10 +138,11 @@ export const deleteComment = async (req: Request, res: Response) => {
   }
 };
 
-export const getComments = async (req: Request, res: Response) => {
+export const getComments = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, page = 1, limit = 5 } = req.body;
-
+    const { page = 1, limit = 5 } = req.query;
+    const { postId } = req.params;
+    const userId = req.userId;
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
     }
@@ -199,11 +206,13 @@ export const getComments = async (req: Request, res: Response) => {
   }
 };
 
-export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
+export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
     console.log('Received Request:', req.body);
 
-    const { userId, postId, commentId, text, createdBy, nestedCommentId, mediaKeys } = req.body;
+    const { postId, commentId, text, createdBy, nestedCommentId, mediaKeys } = req.body;
+
+    const userId = req.userId;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
@@ -383,7 +392,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
 // };
 
 export const deleteNestedComment = async (req: Request, res: Response) => {
-  const { nestedCommentId } = req.body;
+  const { nestedCommentId } = req.params;
 
   if (!nestedCommentId) {
     return res.status(400).json({ error: 'Nested Comment ID is required' });
@@ -407,7 +416,7 @@ export const deleteNestedComment = async (req: Request, res: Response) => {
 
 export const getNestedComments = async (req: Request, res: Response) => {
   try {
-    const { commentId } = req.body;
+    const { commentId } = req.params;
 
     if (!commentId) {
       return res.status(400).json({ status: 'success', message: 'commentId is required.' });
