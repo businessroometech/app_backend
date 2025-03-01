@@ -153,7 +153,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
     });
 
     if (!personalDetails) {
-      return res.status(404).json({
+      return res.status(400).json({
         message: 'User profile not found.',
       });
     }

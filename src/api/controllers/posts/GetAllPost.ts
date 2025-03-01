@@ -39,7 +39,7 @@ export const getAllPost = async (req: Request, res: Response): Promise<Response>
 
     // Fetch user details
     const currentUser = await userRepository.findOne({ where: { id: userId } });
-    if (!currentUser) return res.status(404).json({ message: 'User not found.' });
+    if (!currentUser) return res.status(400).json({ message: 'User not found.' });
 
     // Fetch connections
     const connections = await connectionRepository.find({
