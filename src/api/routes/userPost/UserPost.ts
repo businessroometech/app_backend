@@ -22,7 +22,7 @@ Router.post('/create-comment', authenticate, createOrUpdateComment);
 Router.post('/create-nested-comment', authenticate, createOrUpdateNestedComment);
 
 Router.get('/get-likes/:postId', authenticate, getAllLikesForPost);
-Router.get('/get-comments', authenticate, getComments);
+Router.get('/get-comments/:postId', authenticate, getComments);
 Router.get('/get-nested-comments/:commentId', authenticate, getNestedComments);
 Router.post('/get-comment-like-list', authenticate, getCommentLikeUserList);
 
