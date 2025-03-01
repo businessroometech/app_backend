@@ -136,9 +136,9 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     const { title, content, hashtags, documents, repostedFrom, repostText, originalPostedAt } = req.body;
     const userId = req.userId;
 
-    if (!content) {
-      return res.status(400).json({ message: 'Content is required and must be a string.' });
-    }
+    // if (!content) {
+    //   return res.status(400).json({ message: 'Content is required and must be a string.' });
+    // }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
