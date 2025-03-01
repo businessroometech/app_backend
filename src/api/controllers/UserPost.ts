@@ -136,6 +136,10 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     const { title, content, hashtags, documents, repostedFrom, repostText, originalPostedAt } = req.body;
     const userId = req.userId;
 
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: 'Content is required and must be a string.' });
+    }
+
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
 
@@ -216,12 +220,14 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     });
 
   } catch (error: any) {
+    console.error('CreateUserPost Error:', error);
     return res.status(500).json({
       message: 'Internal server error. Could not create post.',
       error: error.message,
     });
   }
 };
+
 
 
 // FindUserPost by userId
