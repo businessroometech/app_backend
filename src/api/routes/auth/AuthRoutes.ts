@@ -28,7 +28,7 @@ Router.post('/generate-upload-url', generateUploadUrl);
 Router.post('/document-retrival', getDocumentFromBucket);
 
 Router.post('/update-or-create-Profile', authenticate, UpdateUserProfile)
-Router.get('/get-user-Profile/:profileId', authenticate, getUserProfile)
+Router.get('/get-user-Profile', authenticate, getUserProfile)
 
 
 Router.post('/recored-visit', ProfileVisitController.recordVisit)
