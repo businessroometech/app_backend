@@ -131,7 +131,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const userId = req.userId;
-    let { profileId = userId } = req.params;
+    let { profileId = userId } = req.query;
 
     if (!userId) {
       return res.status(400).json({
@@ -148,14 +148,14 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     // Check if the user is blocked or has blocked the profile
     const blockedEntry = await blockedUserRepository.findOne({
       where: [
-        { blockedBy: userId, blockedUser: profileId },
-        { blockedBy: profileId, blockedUser: userId },
+        { blockedBy: userId, blockedUser: String(profileId) },
+        { blockedBy: String(profileId), blockedUser: userId },
       ],
     });
 
     // Fetch user details
     const personalDetails = await personalDetailsRepository.findOne({
-      where: { id: profileId },
+      where: { id: String(profileId) },
     });
 
     if (!personalDetails) {
@@ -176,18 +176,18 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     // Fetch connection, post, and like counts
     const connectionsCount = await connectionRepository.count({
       where: [
-        { requesterId: profileId, status: 'accepted' },
-        { receiverId: profileId, status: 'accepted' },
+        { requesterId: String(profileId), status: 'accepted' },
+        { receiverId: String(profileId), status: 'accepted' },
       ],
     });
 
-    const postsCount = await postRepository.count({ where: { userId: profileId } });
-    const likeCount = await likeRepository.count({ where: { userId: profileId } });
+    const postsCount = await postRepository.count({ where: { userId: String(profileId) } });
+    const likeCount = await likeRepository.count({ where: { userId: String(profileId) } });
 
     const connectionsStatus = await connectionRepository.findOne({
       where: [
-        { requesterId: userId, receiverId: profileId },
-        { receiverId: userId, requesterId: profileId },
+        { requesterId: userId, receiverId: String(profileId) },
+        { receiverId: userId, requesterId: String(profileId) },
       ],
     });
 
