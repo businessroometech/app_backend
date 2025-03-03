@@ -9,7 +9,7 @@ import { findUserByUserName, getUserProfile, ProfileVisitController, searchUserP
 import { sendResetEmail, resetPassword } from "@/api/controllers/auth/ResetPassword";
 import { getOnlineUsers } from '@/api/controllers/chat/Message';
 import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
-import { getInTouch, createAccount } from '@/api/controllers/LandingPage/LandingPage';
+import { getInTouch, createAccount, transfer } from '@/api/controllers/LandingPage/LandingPage';
 // import { getOnlineUsers } from "../../../socket";
 // import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 
@@ -41,6 +41,7 @@ Router.post('/get-user-userName', findUserByUserName);
 
 Router.post('/get-in-touch', getInTouch);
 Router.post('/create-account', createAccount);
+Router.post('/migration/connect-to-account', transfer);
 
 export default Router;
 
