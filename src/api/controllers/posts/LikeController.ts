@@ -7,7 +7,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { generatePresignedUrl } from '../s3/awsControllers';
-import { In } from 'typeorm';
+import { FindOptionsWhere, In } from 'typeorm';
 import { Comment } from '@/api/entity/posts/Comment';
 
 export interface AuthenticatedRequest extends Request {
@@ -16,7 +16,7 @@ export interface AuthenticatedRequest extends Request {
 
 export const createLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { postId, status, reactionId } = req.body;
+    const { postId, reactionId } = req.body;
     const userId = req.userId;
 
     if (!userId || !postId) {
@@ -26,13 +26,18 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
     let like = await likeRepository.findOne({ where: { userId, postId } });
 
     if (like) {
-      like.status = status;
-      like.reactionId = reactionId;
+      if (like.reactionId !== reactionId) {
+        like.status = true;
+        like.reactionId = reactionId;
+      }
+      else {
+        like.status = !like.status;
+      }
     } else {
       like = Like.create({
         userId,
         postId,
-        status,
+        status: true,
         reactionId
       });
     }
@@ -64,7 +69,7 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
 
     let notifications = null;
 
-    if (userInfo.id !== userId && status === true) {
+    if (userInfo.id !== userId && like.status === true) {
       notifications = await sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
@@ -83,41 +88,59 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
 export const getAllLikesForPost = async (req: Request, res: Response) => {
   try {
     const { postId } = req.params;
+    const { reactionId, page = '1', limit = '10' } = req.query;
 
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
     }
 
+    // Parse pagination values
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const offset = (pageNumber - 1) * limitNumber;
+
+    // Parse reactionId correctly
+    let reactionIdFilter: FindOptionsWhere<Like> | undefined = undefined;
+    if (reactionId) {
+      const parsedReactionId = Array.isArray(reactionId)
+        ? reactionId.map((id) => parseInt(String(id), 10)).filter((id) => !isNaN(id))
+        : parseInt(reactionId as string, 10);
+
+      if (!isNaN(parsedReactionId as number)) {
+        reactionIdFilter = { reactionId: Number(parsedReactionId) };
+      }
+    }
+
     const likeRepository = AppDataSource.getRepository(Like);
-    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
 
-    // Fetch likes for the given post
-    const likes = await likeRepository.find({
-      where: { postId, status: true },
+    // Fetch likes for the given post with pagination
+    const [likes, totalLikes] = await likeRepository.findAndCount({
+      where: {
+        postId,
+        status: true,
+        ...reactionIdFilter, // Apply reactionId filter if present
+      },
+      relations: ['user'], // Fetch user details directly
+      take: limitNumber,
+      skip: offset,
     });
-
-    // Fetch user details for each like
-    const likesWithUsers = await Promise.all(
-      likes.map(async (like) => {
-        const user = await personalDetailsRepository.findOne({ where: { id: like.userId } });
-
-        return {
-          ...like,
-          user: user
-        };
-      })
-    );
 
     return res.status(200).json({
       status: 'success',
       message: 'Likes fetched successfully.',
-      data: { likes: likesWithUsers },
+      data: {
+        likes,
+        totalLikes,
+        totalPages: Math.ceil(totalLikes / limitNumber),
+        currentPage: pageNumber,
+      },
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
+
 
 
 export const createCommentLike = async (req: AuthenticatedRequest, res: Response) => {
