@@ -94,45 +94,55 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
     }
 
-    // Parse pagination values
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const offset = (pageNumber - 1) * limitNumber;
 
-    // Parse reactionId correctly
-    let reactionIdFilter: FindOptionsWhere<Like> | undefined = undefined;
-    if (reactionId) {
-      const parsedReactionId = Array.isArray(reactionId)
-        ? reactionId.map((id) => parseInt(String(id), 10)).filter((id) => !isNaN(id))
-        : parseInt(reactionId as string, 10);
+    const postRepo = AppDataSource.getRepository(UserPost);
 
-      if (!isNaN(parsedReactionId as number)) {
-        reactionIdFilter = { reactionId: Number(parsedReactionId) };
-      }
+    const post = await postRepo.findOne({ where: { id: postId } });
+
+    if (!post) {
+      return res.status(400).json({ status: 'error', message: 'invalid postId.' });
     }
 
-    const likeRepository = AppDataSource.getRepository(Like);
 
-    const [likes, totalLikes] = await likeRepository.findAndCount({
-      where: {
-        postId,
-        status: true,
-        ...(reactionIdFilter ? { reactionId: reactionIdFilter.reactionId } : {})
-      },
-      relations: ['user'],
-      take: limitNumber,
-      skip: offset,
-    });
+    const likeRepository = AppDataSource.getRepository(Like);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+
+    // Fetch likes for the given post
+    let likes;
+    if (reactionId) {
+      likes = await likeRepository.find({
+        where: { postId, status: true, reactionId: Number(reactionId) },
+        take: limitNumber,
+        skip: offset,
+      });
+    }
+    else {
+      likes = await likeRepository.find({
+        where: { postId, status: true },
+        take: limitNumber,
+        skip: offset,
+      });
+    }
+
+    // Fetch user details for each like
+    const likesWithUsers = await Promise.all(
+      likes.map(async (like) => {
+        const user = await personalDetailsRepository.findOne({ where: { id: like.userId } });
+
+        return {
+          ...like,
+          user: user
+        };
+      })
+    );
 
     return res.status(200).json({
       status: 'success',
       message: 'Likes fetched successfully.',
-      data: {
-        likes,
-        totalLikes,
-        totalPages: Math.ceil(totalLikes / limitNumber),
-        currentPage: pageNumber,
-      },
+      data: { likes: likesWithUsers },
     });
   } catch (error) {
     console.error(error);
