@@ -147,6 +147,12 @@ export class PersonalDetails extends BaseEntity {
   })
   investorType !: string[];
 
+  @Column({ type: 'bool', default: false })
+  isBadgeOn !: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  badgeName !: string;
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
