@@ -113,14 +113,13 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
 
     const likeRepository = AppDataSource.getRepository(Like);
 
-    // Fetch likes for the given post with pagination
     const [likes, totalLikes] = await likeRepository.findAndCount({
       where: {
         postId,
         status: true,
-        ...reactionIdFilter, // Apply reactionId filter if present
+        ...(reactionIdFilter ? { reactionId: reactionIdFilter.reactionId } : {})
       },
-      relations: ['user'], // Fetch user details directly
+      relations: ['user'],
       take: limitNumber,
       skip: offset,
     });
