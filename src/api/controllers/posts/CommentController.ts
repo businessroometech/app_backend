@@ -158,7 +158,11 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
       order: { createdAt: 'ASC' },
       take: itemsPerPage,
       skip,
-    });
+    }) || [];
+
+    if (comments.length === 0) {
+      return res.status(200).json({ status: "success", message: "No comments available", data: { comments: [], pagination: { currentPage, itemsPerPage, totalComments: 0 } } });
+    }
 
     // Format the comments
     const formattedComments = await Promise.all(
@@ -171,10 +175,54 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
 
+
+        //-------------------------------------------------------------------- for nested comments---------------------------------------------------
+        const nestedCommentRepository = AppDataSource.getRepository(NestedComment);
+
+        const nestedComments = await nestedCommentRepository.find({
+          where: { commentId: comment.id },
+          order: { createdAt: 'ASC' },
+        });
+
+        if (!nestedComments) {
+          return res.status(200).json({ status: "success", message: "No replies available" });
+        }
+
+        const formattedNestedComments = await Promise.all(
+          nestedComments.map(async (comment) => {
+            const userRepository = AppDataSource.getRepository(PersonalDetails);
+            const commenter = await userRepository.findOne({
+              where: { id: comment.userId },
+              select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
+            });
+
+            if (!commenter) {
+              return res.status(400).json({ status: "error", message: "user for this comment not found" });
+            }
+
+            const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
+
+            return {
+              id: comment.id,
+              commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
+              text: comment.text,
+              timestamp: formatTimestamp(comment.createdAt),
+              postId: comment.postId,
+              commentId: comment.commentId,
+              commenterId: commenter?.id,
+              profilePic: profilePictureUrl,
+              mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
+            };
+          })
+        );
+
         if (!commenter) {
           return res.status(400).json({ status: "error", message: "user for this comment not found" });
         }
-        const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
+        // const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
+        const profilePictureUrl = commenter?.profilePictureUploadId
+          ? await generatePresignedUrl(commenter.profilePictureUploadId).catch(() => null)
+          : null;
 
         return {
           id: comment.id,
@@ -185,7 +233,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           likeStatus: commentLike?.status ? commentLike.status : false,
           commenterId: commenter?.id,
           profilePic: profilePictureUrl,
-          mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
+          replies: formattedNestedComments
         };
       })
     );
@@ -198,7 +246,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         pagination: {
           currentPage,
           itemsPerPage,
-          totalComments: comments?.length,
+          totalComments: comments.length,
         },
       },
     });
@@ -434,6 +482,10 @@ export const getNestedComments = async (req: Request, res: Response) => {
       order: { createdAt: 'ASC' },
     });
 
+    if (!nestedComments) {
+      return res.status(200).json({ status: "success", message: "No replies available" });
+    }
+
     const formattedNestedComments = await Promise.all(
       nestedComments.map(async (comment) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -445,7 +497,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
         if (!commenter) {
           return res.status(400).json({ status: "error", message: "user for this comment not found" });
         }
-        
+
         const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
 
         // // Create a notification
