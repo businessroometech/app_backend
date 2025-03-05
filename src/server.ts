@@ -101,7 +101,7 @@ const AppDataSource = new DataSource({
     Account,
     Connect
   ],
-  synchronize: true, 
+  synchronize: false, 
 });
 
 // Initialize the DataSource

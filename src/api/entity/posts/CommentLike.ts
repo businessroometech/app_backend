@@ -48,6 +48,9 @@ export class CommentLike extends BaseEntity {
   })
   updatedAt!: Date;
 
+  @Column({ type: "int" , default: 1})
+  reactionId !: number;
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();

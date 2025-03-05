@@ -154,9 +154,10 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
 
 export const createCommentLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { postId, commentId, status } = req.body;
+    const { postId, commentId, reactionId } = req.body;
 
     const userId = req.userId;
+    
     if (!userId || !postId || !commentId) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and commentId are required.' });
     }
@@ -166,13 +167,21 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
     let like = await commentLikeRepository.findOne({ where: { userId, postId, commentId } });
 
     if (like) {
-      like.status = status;
+      if (like.reactionId !== reactionId) {
+        like.status = true;
+        like.reactionId = reactionId;
+      }
+      else
+      {
+        like.status = !like.status;
+      }
     } else {
       like = commentLikeRepository.create({
         userId,
         postId,
         commentId,
-        status,
+        status: true,
+        reactionId
       });
     }
 
@@ -201,10 +210,10 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
     }
 
     // Create a notification
-    if (commenterInfo.id !== userInfo.id && status === true) {
+    if (commenterInfo.id !== userInfo.id && like.status === true) {
       await sendNotification(
         userInfo.id,
-        `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
+        `${commenterInfo.firstName} ${commenterInfo.lastName} liked your comment`,
         commenterInfo.profilePictureUploadId,
         `/feed/post/${userPost.id}`
       );
