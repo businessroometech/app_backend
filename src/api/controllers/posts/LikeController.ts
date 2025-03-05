@@ -32,8 +32,8 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
         like.reactionId = reactionId;
       }
       else {
-        if (like.status) like.status = false;
-        else like.status = true;
+        like.status = !like.status;
+        like.reactionId = reactionId;
       }
     } else {
       like = Like.create({
@@ -172,8 +172,8 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
         like.reactionId = reactionId;
       }
       else {
-        if (like.status) like.status = false;
-        else like.status = true;
+        like.status = !like.status;
+        like.reactionId = reactionId;
       }
     } else {
       like = commentLikeRepository.create({
@@ -368,8 +368,8 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
         like.reactionId = reactionId;
       }
       else {
-        if (like.status) like.status = false;
-        else like.status = true;
+        like.status = !like.status;
+        like.reactionId = reactionId;  
       }
     } else {
       like = nestedCommentLikeRepository.create({
