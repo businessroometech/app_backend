@@ -171,6 +171,12 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
 
+        if (!commenter) {
+          return res.status(400).json({ status: "error", message: "user for this comment not found" });
+        }
+
+        const profilePictureUrl = generatePresignedUrl(commenter?.profilePictureUploadId);
+
         return {
           id: comment.id,
           commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
@@ -179,6 +185,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           postId: comment.postId,
           likeStatus: commentLike?.status ? commentLike.status : false,
           commenterId: commenter?.id,
+          commenterProfilePicture: profilePictureUrl,
           mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })
