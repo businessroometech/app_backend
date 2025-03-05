@@ -198,7 +198,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         pagination: {
           currentPage,
           itemsPerPage,
-          totalComments: comments.length,
+          totalComments: comments?.length,
         },
       },
     });
