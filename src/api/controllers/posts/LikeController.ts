@@ -27,13 +27,14 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
     let like = await likeRepository.findOne({ where: { userId, postId } });
 
     if (like) {
-      if (like.reactionId !== reactionId) {
+      if (like.reactionId != reactionId) {
         like.status = true;
         like.reactionId = reactionId;
       }
       else {
-        like.status = !like.status;
-        like.reactionId = reactionId;
+        like.status = false;
+        // like.status = !like.status;
+        like.reactionId = 1000;
       }
     } else {
       like = Like.create({
@@ -172,8 +173,9 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
         like.reactionId = reactionId;
       }
       else {
-        like.status = !like.status;
-        like.reactionId = reactionId;
+        like.status = false;
+        // like.status = !like.status;
+        like.reactionId = 1000;
       }
     } else {
       like = commentLikeRepository.create({
@@ -368,8 +370,9 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
         like.reactionId = reactionId;
       }
       else {
-        like.status = !like.status;
-        like.reactionId = reactionId;  
+        like.status = false;
+        // like.status = !like.status;
+        like.reactionId = 1000;
       }
     } else {
       like = nestedCommentLikeRepository.create({
