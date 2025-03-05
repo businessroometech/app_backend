@@ -174,8 +174,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         if (!commenter) {
           return res.status(400).json({ status: "error", message: "user for this comment not found" });
         }
-
-        const profilePictureUrl = generatePresignedUrl(commenter?.profilePictureUploadId);
+        const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
 
         return {
           id: comment.id,
@@ -185,7 +184,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           postId: comment.postId,
           likeStatus: commentLike?.status ? commentLike.status : false,
           commenterId: commenter?.id,
-          commenterProfilePicture: profilePictureUrl,
+          profilePic: profilePictureUrl,
           mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })
@@ -446,8 +445,8 @@ export const getNestedComments = async (req: Request, res: Response) => {
         if (!commenter) {
           return res.status(400).json({ status: "error", message: "user for this comment not found" });
         }
-
-        const profilePictureUrl = generatePresignedUrl(commenter?.profilePictureUploadId);
+        
+        const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
 
         // // Create a notification
         // const notificationRepos = AppDataSource.getRepository(Notifications);
@@ -466,7 +465,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
           postId: comment.postId,
           commentId: comment.commentId,
           commenterId: commenter?.id,
-          commenterProfilePicture: profilePictureUrl,
+          profilePic: profilePictureUrl,
           mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })
