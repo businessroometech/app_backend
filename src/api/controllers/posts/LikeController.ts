@@ -9,6 +9,7 @@ import { sendNotification } from '../notifications/SocketNotificationController'
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { FindOptionsWhere, In } from 'typeorm';
 import { Comment } from '@/api/entity/posts/Comment';
+import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -31,7 +32,8 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
         like.reactionId = reactionId;
       }
       else {
-        like.status = !like.status;
+        if (like.status) like.status = false;
+        else like.status = true;
       }
     } else {
       like = Like.create({
@@ -150,14 +152,12 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const createCommentLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { postId, commentId, reactionId } = req.body;
 
     const userId = req.userId;
-    
+
     if (!userId || !postId || !commentId) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and commentId are required.' });
     }
@@ -171,9 +171,9 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
         like.status = true;
         like.reactionId = reactionId;
       }
-      else
-      {
-        like.status = !like.status;
+      else {
+        if (like.status) like.status = false;
+        else like.status = true;
       }
     } else {
       like = commentLikeRepository.create({
@@ -344,5 +344,81 @@ export const getPostCommentersList = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
+  }
+};
+
+
+export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { postId, commentId, nestedCommentId, reactionId } = req.body;
+
+    const userId = req.userId;
+
+    if (!userId || !postId || !commentId || !nestedCommentId) {
+      return res.status(400).json({ status: 'error', message: 'userId, postId, nestedCommentId and commentId are required.' });
+    }
+
+    const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
+
+    let like = await nestedCommentLikeRepository.findOne({ where: { userId, postId, commentId } });
+
+    if (like) {
+      if (like.reactionId !== reactionId) {
+        like.status = true;
+        like.reactionId = reactionId;
+      }
+      else {
+        if (like.status) like.status = false;
+        else like.status = true;
+      }
+    } else {
+      like = nestedCommentLikeRepository.create({
+        userId,
+        postId,
+        commentId,
+        nestedCommentId,
+        status: true,
+        reactionId
+      });
+    }
+
+    await nestedCommentLikeRepository.save(like);
+
+    // Get the post and user information
+    // const postRepo = AppDataSource.getRepository(UserPost);
+    // const userPost = await postRepo.findOne({ where: { id: postId } });
+
+    // if (!userPost) {
+    //   return res.status(404).json({
+    //     status: 'error',
+    //     message: 'Post not found.',
+    //   });
+    // }
+
+    // const personalRepo = AppDataSource.getRepository(PersonalDetails);
+    // const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
+    // const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+
+    // if (!userInfo || !commenterInfo) {
+    //   return res.status(404).json({
+    //     status: 'error',
+    //     message: 'User information not found.',
+    //   });
+    // }
+
+    // Create a notification
+    // if (commenterInfo.id !== userInfo.id && like.status === true) {
+    //   await sendNotification(
+    //     userInfo.id,
+    //     `${commenterInfo.firstName} ${commenterInfo.lastName} liked your comment`,
+    //     commenterInfo.profilePictureUploadId,
+    //     `/feed/post/${userPost.id}`
+    //   );
+    // }
+
+    return res.status(200).json({ status: 'success', message: 'Nested Comment Like status updated.', data: { like } });
+  } catch (error: any) {
+    console.error('Error details:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error', error: error.message });
   }
 };

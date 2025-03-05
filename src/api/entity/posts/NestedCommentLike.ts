@@ -2,19 +2,15 @@ import { randomBytes } from 'crypto';
 import {
   BaseEntity,
   BeforeInsert,
-  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { PersonalDetails } from '../personal/PersonalDetails';
 
-@Entity({ name: 'Like' })
-export class Like extends BaseEntity {
+@Entity({ name: 'NestedCommentLike' })
+export class NestedCommentLike extends BaseEntity {
 
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -24,6 +20,12 @@ export class Like extends BaseEntity {
 
   @Column({ type: 'uuid' })
   postId!: string;
+
+  @Column({ type: 'uuid' })
+  commentId!: string;
+
+  @Column({ type: 'uuid' })
+  nestedCommentId!: string;
 
   @Column({ type: "int" , default: 0})
   reactionId !: number;
@@ -47,6 +49,7 @@ export class Like extends BaseEntity {
     precision: 6,
   })
   updatedAt!: Date;
+
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
