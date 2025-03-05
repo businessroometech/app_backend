@@ -166,7 +166,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ['firstName', 'lastName', 'id'],
+          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
@@ -440,8 +440,14 @@ export const getNestedComments = async (req: Request, res: Response) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ['firstName', 'lastName', 'id'],
+          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
         });
+
+        if (!commenter) {
+          return res.status(400).json({ status: "error", message: "user for this comment not found" });
+        }
+
+        const profilePictureUrl = generatePresignedUrl(commenter?.profilePictureUploadId);
 
         // // Create a notification
         // const notificationRepos = AppDataSource.getRepository(Notifications);
@@ -460,6 +466,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
           postId: comment.postId,
           commentId: comment.commentId,
           commenterId: commenter?.id,
+          commenterProfilePicture: profilePictureUrl,
           mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })
