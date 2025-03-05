@@ -208,7 +208,6 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
 
 export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    console.log('Received Request:', req.body);
 
     const { postId, commentId, text, createdBy, nestedCommentId, mediaKeys } = req.body;
 
@@ -312,7 +311,7 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
 
     return res.status(201).json({
       status: 'success',
-      message: 'Comment created successfully.',
+      message: 'Nested Comment created successfully.',
       data: { savedComment, notification, mentions: mentionResponses },
     });
   } catch (error) {
