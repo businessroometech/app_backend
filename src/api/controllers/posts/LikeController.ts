@@ -32,9 +32,9 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
         like.reactionId = reactionId;
       }
       else {
-        like.status = false;
-        // like.status = !like.status;
-        like.reactionId = 1000;
+        // like.status = false;
+        like.status = !like.status;
+        // like.reactionId = 1000;
       }
     } else {
       like = Like.create({
@@ -168,14 +168,14 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
     let like = await commentLikeRepository.findOne({ where: { userId, postId, commentId } });
 
     if (like) {
-      if (like.reactionId !== reactionId) {
+      if (like.reactionId != reactionId) {
         like.status = true;
         like.reactionId = reactionId;
       }
       else {
-        like.status = false;
-        // like.status = !like.status;
-        like.reactionId = 1000;
+        // like.status = false;
+        like.status = !like.status;
+        // like.reactionId = 1000;
       }
     } else {
       like = commentLikeRepository.create({
@@ -365,14 +365,14 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
     let like = await nestedCommentLikeRepository.findOne({ where: { userId, postId, commentId } });
 
     if (like) {
-      if (like.reactionId !== reactionId) {
+      if (like.reactionId != reactionId) {
         like.status = true;
         like.reactionId = reactionId;
       }
       else {
-        like.status = false;
-        // like.status = !like.status;
-        like.reactionId = 1000;
+        // like.status = false;
+        like.status = !like.status;
+        // like.reactionId = 1000;
       }
     } else {
       like = nestedCommentLikeRepository.create({
