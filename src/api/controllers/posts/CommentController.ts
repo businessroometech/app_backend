@@ -226,6 +226,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
 
         return {
           id: comment.id,
+          commentId: comment.id,
           commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
