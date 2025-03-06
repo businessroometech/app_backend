@@ -2,10 +2,10 @@ import { GetObjectCommand, GetObjectCommandInput, PutObjectCommand, S3Client } f
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
 import crypto from "crypto";
-import { promisify } from "util";
-import zlib from "zlib";
+// import { promisify } from "util";
+// import zlib from "zlib";
 
-const gzip = promisify(zlib.gzip);
+// const gzip = promisify(zlib.gzip);
 
 const s3 = new S3Client({
   credentials: {
@@ -83,17 +83,14 @@ export const uploadBufferDocumentToS3 = async (
   contentType: string
 ): Promise<string> => {
   try {
-    const fileExtension = contentType.split('/')[1] || 'bin'; 
-    const fileKey = `uploads/${userId}/${crypto.randomUUID()}.${fileExtension}.gz`;
-
-    const compressedBuffer = await gzip(documentBuffer);
+    const fileExtension = contentType.split('/')[1] || 'bin';
+    const fileKey = `uploads/${userId}/${crypto.randomUUID()}.${fileExtension}`;
 
     const uploadParams = {
       Bucket: process.env.AWS_BUCKET,
       Key: fileKey,
-      Body: compressedBuffer,
-      ContentType: contentType, 
-      ContentEncoding: 'gzip',  
+      Body: documentBuffer,
+      ContentType: contentType,
     };
 
     await s3.send(new PutObjectCommand(uploadParams));
