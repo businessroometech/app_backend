@@ -2,6 +2,10 @@ import { GetObjectCommand, GetObjectCommandInput, PutObjectCommand, S3Client } f
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Request, Response } from 'express';
 import crypto from "crypto";
+import { promisify } from "util";
+import zlib from "zlib";
+
+const gzip = promisify(zlib.gzip);
 
 const s3 = new S3Client({
   credentials: {
@@ -79,23 +83,30 @@ export const uploadBufferDocumentToS3 = async (
   contentType: string
 ): Promise<string> => {
   try {
-    const fileExtension = contentType.split('/')[1] || 'pdf';
-    const fileKey = `uploads/${userId}/${crypto.randomUUID()}.${fileExtension}`;
+    const fileExtension = contentType.split('/')[1] || 'bin'; 
+    const fileKey = `uploads/${userId}/${crypto.randomUUID()}.${fileExtension}.gz`;
+
+    const compressedBuffer = await gzip(documentBuffer);
 
     const uploadParams = {
       Bucket: process.env.AWS_BUCKET,
       Key: fileKey,
-      Body: documentBuffer,
-      ContentType: contentType,
+      Body: compressedBuffer,
+      ContentType: contentType, 
+      ContentEncoding: 'gzip',  
     };
 
     await s3.send(new PutObjectCommand(uploadParams));
 
     // Generate a presigned URL valid for 1 hour
-    const signedUrl = await getSignedUrl(s3, new GetObjectCommand({
-      Bucket: process.env.AWS_BUCKET,
-      Key: fileKey,
-    }), { expiresIn: 3600 });
+    const signedUrl = await getSignedUrl(
+      s3,
+      new GetObjectCommand({
+        Bucket: process.env.AWS_BUCKET,
+        Key: fileKey,
+      }),
+      { expiresIn: 3600 }
+    );
 
     return signedUrl;
   } catch (error) {
