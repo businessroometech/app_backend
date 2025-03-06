@@ -39,99 +39,6 @@ export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
-// user post and and update post
-// export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
-//   try {
-//     const { title, content, hashtags, mediaKeys, repostedFrom, repostText, originalPostedAt } = req.body;
-
-//     const userId = req.userId;
-
-//     // Validate if the user exists
-//     const userRepository = AppDataSource.getRepository(PersonalDetails);
-//     const user = await userRepository.findOneBy({ id: userId });
-
-//     if (!user) {
-//       return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
-//     }
-
-//     // Extract mentions from content
-//     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-//     const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
-
-//     // Fetch valid mentioned users
-//     const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
-//     const validMentionedUserIds = mentionedUsers.map((u) => u.id);
-
-//     // Validate if all mentioned users exist
-//     if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
-//       return res.status(404).json({
-//         message: 'One or more mentioned users do not exist.',
-//         invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
-//       });
-//     }
-
-//     // Create the post
-//     const postRepository = AppDataSource.getRepository(UserPost);
-//     const newPost = postRepository.create({
-//       userId,
-//       title,
-//       content,
-//       hashtags,
-//       mediaKeys,
-//       repostedFrom,
-//       repostText,
-//       isRepost: Boolean(repostedFrom),
-//       originalPostedAt
-//     });
-
-//     const savedPost = await postRepository.save(newPost);
-
-//     let mention = null;
-//     if (validMentionedUserIds.length > 0) {
-//       const mentionRepository = AppDataSource.getRepository(Mention);
-
-//       const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
-//         mentionRepository.create({
-//           user: user,
-//           post: savedPost,
-//           mentionBy: userId,
-//           mentionTo: mentionedUserId,
-//         })
-//       );
-
-//       mention = await mentionRepository.save(mentionsToSave);
-
-//       // Send mention notifications
-//       for (const mentionedUser of mentionedUsers) {
-//         if (mentionedUser.id !== userId) {
-//           await sendNotification(
-//             mentionedUser.id,
-//             `${user.firstName} ${user.lastName} mentioned you in a post`,
-//             user.profilePictureUploadId,
-//             `/feed/post/${savedPost.id}`
-//           );
-//         }
-//       }
-//     }
-
-//     // Broadcast the "post sent" event via WebSocket
-//     const io = getSocketInstance();
-//     io.emit('postSent', { success: true, postId: savedPost.id });
-
-//     return res.status(201).json({
-//       message: 'Post created successfully.',
-//       data: savedPost,
-//       mention,
-//     });
-
-//   } catch (error: any) {
-//     return res.status(500).json({
-//       message: 'Internal server error. Could not create post.',
-//       error: error.message,
-//     });
-//   }
-// };
-
 
 const storage = multer.memoryStorage(); // Store files in memory as buffers
 
@@ -142,9 +49,8 @@ const upload = multer({
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    console.log('Request body:', req.body);
 
-    const { title, content, hashtags, repostedFrom, repostText, originalPostedAt } = req.body;
+    const { title, content, hashtags, repostedFrom, repostText, originalPostedAt, } = req.body;
     const userId = req.userId;
 
     if (!content || typeof content !== 'string') {
@@ -193,7 +99,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       title,
       content,
       hashtags,
-      mediaKeys: uploadedDocumentUrls, // Store S3 URLs
+      mediaUrls: uploadedDocumentUrls, // Store S3 URLs
       repostedFrom,
       repostText,
       isRepost: Boolean(repostedFrom),
@@ -306,12 +212,12 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     ]);
 
     // Fetch media URLs for posts
-    const mediaKeysWithUrls = await Promise.all(
-      userPosts.map(async (post) => ({
-        postId: post.id,
-        mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
-      }))
-    );
+    // const mediaKeysWithUrls = await Promise.all(
+    //   userPosts.map(async (post) => ({
+    //     postId: post.id,
+    //     mediaUrls: post.mediaKe ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
+    //   }))
+    // );
 
     // Format comments for each post
     const postComments = await commentRepository.find({
@@ -350,7 +256,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
     const formattedPosts = await Promise.all(
       newUserPosts.map(async (post) => {
-        const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
+        // const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
         const likeStatus = likes.some((like) => like.postId === post.id && like.userId === userId);
@@ -362,8 +268,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             title: post.title,
             content: post.content,
             hashtags: post.hashtags,
-            mediaUrls,
-            mediaKeys: post.mediaKeys,
+            mediaUrls: post.mediaUrls,
             likeCount,
             commentCount,
             likeStatus,
@@ -519,7 +424,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     ]);
 
     // Fetch media URLs for the post
-    const mediaUrls = post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [];
+    // const mediaUrls = post.mediaUr ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [];
 
     // Format comments
     const formattedComments = await Promise.all(
@@ -558,8 +463,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         title: post.title,
         content: post.content,
         hashtags: post.hashtags,
-        mediaUrls,
-        mediaKeys: post.mediaKeys,
+        mediaUrls: post.mediaUrls,
         likeCount: likes.length,
         commentCount: comments.length,
         likeStatus: likes.some((like) => like.userId === userId),

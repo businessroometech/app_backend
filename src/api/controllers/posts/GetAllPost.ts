@@ -133,14 +133,14 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     }, {} as Record<string, string[]>);
 
     // Generate media URLs
-    const mediaKeysWithUrls = await Promise.all(paginatedPosts.map(async post => ({
-      postId: post.id,
-      mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map(generatePresignedUrl)) : [],
-    })));
+    // const mediaKeysWithUrls = await Promise.all(paginatedPosts.map(async post => ({
+    //   postId: post.id,
+    //   mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map(generatePresignedUrl)) : [],
+    // })));
 
     // Format posts
     const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
-      const mediaUrls = mediaKeysWithUrls.find(media => media.postId === post.id)?.mediaUrls || [];
+      // const mediaUrls = mediaKeysWithUrls.find(media => media.postId === post.id)?.mediaUrls || [];
       const likeCount = likes.filter(like => like.postId === post.id).length;
       const commentCount = comments.filter(comment => comment.postId === post.id).length;
       const like = await likeRepository.findOne({ where: { userId, postId: post.id } });
@@ -160,10 +160,10 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           title: post.title,
           content: post.content,
           hashtags: post.hashtags,
-          mediaKeys: post.mediaKeys,
+          // mediaKeys: post.mediaKeys,
           repostPostId: post.isRepost,
           originalPostedAt: post.originalPostedAt,
-          mediaUrls,
+          mediaUrls: post.mediaUrls,
           reactionCount: likeCount,
           reactionStatus: like?.status,
           reactionId: like?.reactionId,

@@ -31,7 +31,7 @@ export class UserPost extends BaseEntity {
   hashtags?: string[];
 
   @Column({ type: 'simple-array', nullable: true })
-  mediaKeys?: string[];
+  mediaUrls?: string[];
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
