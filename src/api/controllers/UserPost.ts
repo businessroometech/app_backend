@@ -208,7 +208,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
     const [comments, likes] = await Promise.all([
       commentRepository.find({ where: { postId: In(postIds) } }),
-      likeRepository.find({ where: { postId: In(postIds) } }),
+      likeRepository.find({ where: { postId: In(postIds), status: true } }),
     ]);
 
     // Fetch media URLs for posts
@@ -420,7 +420,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
 
     const [comments, likes] = await Promise.all([
       commentRepository.find({ where: { postId } }),
-      likeRepository.find({ where: { postId } }),
+      likeRepository.find({ where: { postId , status: true} }),
     ]);
 
     // Fetch media URLs for the post
