@@ -79,18 +79,26 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     }
 
     // Upload files to S3
-    const uploadedDocumentUrls: string[] = [];
+    const uploadedDocumentUrls: { url: string; type: string }[] = [];
+
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files as Express.Multer.File[]) {
         try {
           console.log('Uploading file:', file.originalname);
           const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
-          uploadedDocumentUrls.push(uploadedUrl);
+
+          console.log(file.mimetype);
+          uploadedDocumentUrls.push({
+            url: uploadedUrl,
+            type: file.mimetype,
+          });
+
         } catch (uploadError) {
           console.error('S3 Upload Error:', uploadError);
         }
       }
     }
+
 
     // Create new post entry
     const postRepository = AppDataSource.getRepository(UserPost);
@@ -420,7 +428,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
 
     const [comments, likes] = await Promise.all([
       commentRepository.find({ where: { postId } }),
-      likeRepository.find({ where: { postId , status: true} }),
+      likeRepository.find({ where: { postId, status: true } }),
     ]);
 
     // Fetch media URLs for the post

@@ -24,14 +24,14 @@ export class UserPost extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   title!: string;
 
-  @Column({ type: 'text', nullable:true })
+  @Column({ type: 'text', nullable: true })
   content!: string;
 
   @Column({ type: 'simple-array', nullable: true })
   hashtags?: string[];
 
   @Column({ type: 'simple-array', nullable: true })
-  mediaUrls?: string[];
+  mediaUrls?: { url: string, type: string }[];
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -55,7 +55,7 @@ export class UserPost extends BaseEntity {
   @Column({ type: "uuid", default: null })
   repostedFrom !: string;
 
-  @Column({ type: "text" , default: null})
+  @Column({ type: "text", default: null })
   repostText !: string;
 
   @CreateDateColumn({ type: 'timestamp' })
@@ -85,8 +85,8 @@ export class UserPost extends BaseEntity {
   reactions!: Reaction[];
 
   @OneToMany(() => Mention, (mention) => mention.post, {
-    cascade: true, 
+    cascade: true,
   })
   mentions!: Mention[];
-  
+
 }
