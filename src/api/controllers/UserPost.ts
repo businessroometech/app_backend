@@ -401,7 +401,7 @@ export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): 
     const userRepos = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepos.findOneBy({ id: userId });
     if (!user) {
-      return res.status(400).json({ message: 'User Id is invalid or does not exist.' });
+      return res.status(400).json({ status: "fail", message: 'User Id is invalid or does not exist.' });
     }
 
     const userPostRepo = AppDataSource.getRepository(UserPost);
@@ -410,17 +410,17 @@ export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): 
     });
 
     if (!userPost) {
-      return res.status(404).json({ message: 'Post not found. Invalid Post Id.' });
+      return res.status(400).json({ status: "fail", message: 'Post not found. Invalid Post Id.' });
     }
 
     await userPostRepo.delete(postId);
 
-    return res.status(200).json({ message: 'User post deleted successfully.' });
+    return res.status(200).json({ status: "success", message: 'User post deleted successfully.' });
 
   } catch (error: any) {
     return res.status(500).json({
       message: 'Internal server error. Could not delete user post.',
-      error: error.message,
+      status: "error",
     });
   }
 };
@@ -527,6 +527,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     };
 
     return res.status(200).json({
+      status:"success",
       message: 'Post retrieved successfully.',
       data: formattedPost,
     });

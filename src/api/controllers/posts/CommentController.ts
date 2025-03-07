@@ -120,22 +120,22 @@ export const deleteComment = async (req: Request, res: Response) => {
   const { commentId } = req.params;
 
   if (!commentId) {
-    return res.status(400).json({ error: 'Comment ID is required' });
+    return res.status(400).json({ status: "fail", error: 'Comment ID is required' });
   }
 
   try {
     const comment = await Comment.findOne({ where: { id: commentId } });
 
     if (!comment) {
-      return res.status(404).json({ error: 'Comment not found' });
+      return res.status(400).json({ status: "fail", error: 'Comment not found' });
     }
 
     await comment.remove();
 
-    return res.status(200).json({ message: 'Comment deleted successfully' });
+    return res.status(200).json({ status: "success", message: 'Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting comment:', error);
-    return res.status(500).json({ error: 'An error occurred while deleting the comment' });
+    return res.status(500).json({ status: "error", message: 'An error occurred while deleting the comment' });
   }
 };
 
@@ -460,22 +460,22 @@ export const deleteNestedComment = async (req: Request, res: Response) => {
   const { nestedCommentId } = req.params;
 
   if (!nestedCommentId) {
-    return res.status(400).json({ error: 'Nested Comment ID is required' });
+    return res.status(400).json({ status: "success", message: 'Nested Comment ID is required' });
   }
 
   try {
     const nestedComment = await NestedComment.findOne({ where: { id: nestedCommentId } });
 
     if (!nestedComment) {
-      return res.status(404).json({ error: 'Nested Comment not found' });
+      return res.status(404).json({ status: "fail", message: 'Nested Comment not found' });
     }
 
     await nestedComment.remove();
 
-    return res.status(200).json({ message: 'Nested Comment deleted successfully' });
+    return res.status(200).json({ status: "success", message: 'Nested Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting nested comment:', error);
-    return res.status(500).json({ error: 'An error occurred while deleting the nested comment' });
+    return res.status(500).json({ status: "success", message: 'An error occurred while deleting the nested comment' });
   }
 };
 
