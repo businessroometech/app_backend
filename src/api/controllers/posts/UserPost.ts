@@ -327,7 +327,9 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             userRole: user.userRole,
             avatar: imgUrl,
             zoomProfile: user.zoomProfile,
-            rotateProfile: user.rotateProfile
+            rotateProfile: user.rotateProfile,
+            isBadgeOn: user?.isBadgeOn,
+            badgeName: user?.badgeName
           },
           comments: formattedComments.filter((comment) => comment.postId === post.id),
         };
@@ -528,6 +530,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         timestamp: formatTimestamp(post.createdAt),
         userRole: user?.userRole,
         avatar: imgUrl,
+        isBadgeOn: user?.isBadgeOn,
+        badgeName: user?.badgeName
       },
       comments: formattedComments,
     };

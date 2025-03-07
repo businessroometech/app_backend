@@ -111,8 +111,11 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       if (zoomProfile !== undefined) personalDetails.zoomProfile = zoomProfile;
       if (rotateProfile !== undefined) personalDetails.rotateProfile = rotateProfile;
       if (investorType !== undefined) personalDetails.investorType = investorType;
-      if (isBadgeOn !== undefined) personalDetails.isBadgeOn = isBadgeOn;
-      if (badgeName !== undefined) personalDetails.badgeName = badgeName;
+      if (isBadgeOn !== undefined) {
+        personalDetails.isBadgeOn = isBadgeOn;
+        personalDetails.badgeName = badgeName;
+      }
+
       personalDetails.updatedBy = 'system';
 
       await personalDetailsRepository.save(personalDetails);

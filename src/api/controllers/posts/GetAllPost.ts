@@ -186,6 +186,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           likedByConnections: uniqueLikedByConnections,
           commentedByConnections: finalCommentedByConnections,
 
+
         },
         userDetails: {
           id: user?.id,
@@ -195,6 +196,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           timestamp: formatTimestamp(post.updatedAt || post.createdAt),
           userRole: user?.userRole,
           connection: connectedUserIds.includes(post.userId),
+          isBadgeOn: user?.isBadgeOn,
+          badgeName: user?.badgeName
         },
       };
     }));
