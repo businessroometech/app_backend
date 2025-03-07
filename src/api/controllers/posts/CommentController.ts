@@ -234,6 +234,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           likeStatus: commentLike?.status ? commentLike.status : false,
           commenterId: commenter?.id,
           profilePic: profilePictureUrl,
+          replyCount: formattedNestedComments.length,
           replies: formattedNestedComments
         };
       })
