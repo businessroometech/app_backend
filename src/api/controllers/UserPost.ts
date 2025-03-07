@@ -50,11 +50,11 @@ const upload = multer({
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
 
-    const { title, content, hashtags, repostedFrom, repostText, originalPostedAt, } = req.body;
+    const { title, content, hashtags, repostedFrom, repostText } = req.body;
     const userId = req.userId;
 
-    if (!content || typeof content !== 'string') {
-      return res.status(400).json({ message: 'Content is required and must be a string.' });
+    if (typeof content !== 'string') {
+      return res.status(400).json({ message: 'Content must be a string.' });
     }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -78,43 +78,64 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       });
     }
 
-    // Upload files to S3
-    const uploadedDocumentUrls: { key: string; type: string }[] = [];
+    // ------------- REPOST ----------------------------------------------------------
 
-    if (req.files && Array.isArray(req.files)) {
-      for (const file of req.files as Express.Multer.File[]) {
-        try {
-          console.log('Uploading file:', file.originalname);
-          const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
-          // const documentUrl = await generatePresignedUrl(uploadedUrl.fileKey);
-          console.log(file.mimetype);
-          uploadedDocumentUrls.push({
-            key: uploadedUrl.fileKey,
-            type: file.mimetype,
-          });
+    const postRepository = AppDataSource.getRepository(UserPost);
+    let savedPost;
 
-        } catch (uploadError) {
-          console.error('S3 Upload Error:', uploadError);
+    if (repostText && repostedFrom) {
+      const post = await postRepository.findOne({ where: { id: repostedFrom } });
+      const newPost = postRepository.create({
+        userId,
+        title: post?.title,
+        content: post?.content,
+        hashtags: post?.hashtags,
+        mediaKeys: post?.mediaKeys,
+        repostedFrom,
+        repostText,
+        isRepost: Boolean(repostedFrom),
+        originalPostedAt: post?.createdAt,
+      });
+
+      savedPost = await postRepository.save(newPost);
+    }
+    else {
+      // Upload files to S3
+      const uploadedDocumentUrls: { key: string; type: string }[] = [];
+
+      if (req.files && Array.isArray(req.files)) {
+        for (const file of req.files as Express.Multer.File[]) {
+          try {
+            console.log('Uploading file:', file.originalname);
+            const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            // const documentUrl = await generatePresignedUrl(uploadedUrl.fileKey);
+            console.log(file.mimetype);
+            uploadedDocumentUrls.push({
+              key: uploadedUrl.fileKey,
+              type: file.mimetype,
+            });
+
+          } catch (uploadError) {
+            console.error('S3 Upload Error:', uploadError);
+          }
         }
       }
+
+
+      // Create new post entry
+      const newPost = postRepository.create({
+        userId,
+        title,
+        content,
+        hashtags,
+        mediaKeys: uploadedDocumentUrls,
+        repostedFrom,
+        repostText,
+        isRepost: Boolean(repostedFrom),
+      });
+
+      savedPost = await postRepository.save(newPost);
     }
-
-
-    // Create new post entry
-    const postRepository = AppDataSource.getRepository(UserPost);
-    const newPost = postRepository.create({
-      userId,
-      title,
-      content,
-      hashtags,
-      mediaKeys: uploadedDocumentUrls,
-      repostedFrom,
-      repostText,
-      isRepost: Boolean(repostedFrom),
-      originalPostedAt,
-    });
-
-    const savedPost = await postRepository.save(newPost);
 
     // Handle mentions
     let mention = null;
