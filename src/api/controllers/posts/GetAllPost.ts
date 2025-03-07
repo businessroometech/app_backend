@@ -169,7 +169,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           content: post.content,
           hashtags: post.hashtags,
           // mediaKeys: post.mediaKeys,
-          repostPostId: post.isRepost,
+          // repostPostId: post.isRepost,
           originalPostedAt: post.originalPostedAt,
           mediaUrls: documentsUrls,
           reactionCount: likeCount,

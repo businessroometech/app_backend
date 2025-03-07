@@ -82,6 +82,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
     if (repostText && repostedFrom) {
       const post = await postRepository.findOne({ where: { id: repostedFrom } });
+      console.log(post);
       const newPost = postRepository.create({
         userId,
         title: post?.title,
