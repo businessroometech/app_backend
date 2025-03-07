@@ -81,7 +81,7 @@ export const uploadBufferDocumentToS3 = async (
   documentBuffer: Buffer,
   userId: string | undefined,
   contentType: string
-): Promise<string> => {
+): Promise<{ fileKey: string, signedUrl: string }> => {
   try {
     const fileExtension = contentType.split('/')[1] || 'bin';
     const fileKey = `uploads/${userId}/${crypto.randomUUID()}.${fileExtension}`;
@@ -105,7 +105,7 @@ export const uploadBufferDocumentToS3 = async (
       { expiresIn: 3600 }
     );
 
-    return signedUrl;
+    return { fileKey, signedUrl };
   } catch (error) {
     console.error('S3 Upload Error:', error);
     throw new Error('Error uploading document to S3');

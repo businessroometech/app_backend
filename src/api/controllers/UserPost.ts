@@ -13,7 +13,7 @@ import { broadcastMessage, getSocketInstance } from '@/socket';
 import { sendNotification } from './notifications/SocketNotificationController';
 import { BlockedPost } from '../entity/posts/BlockedPost';
 import { Connection } from '../entity/connection/Connections';
-import { uploadBufferDocumentToS3 } from "../controllers/s3/awsControllers";
+import { uploadBufferDocumentToS3, getDocumentFromBucket } from "../controllers/s3/awsControllers";
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -79,17 +79,17 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     }
 
     // Upload files to S3
-    const uploadedDocumentUrls: { url: string; type: string }[] = [];
+    const uploadedDocumentUrls: { key: string; type: string }[] = [];
 
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files as Express.Multer.File[]) {
         try {
           console.log('Uploading file:', file.originalname);
           const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
-
+          // const documentUrl = await generatePresignedUrl(uploadedUrl.fileKey);
           console.log(file.mimetype);
           uploadedDocumentUrls.push({
-            url: uploadedUrl,
+            key: uploadedUrl.fileKey,
             type: file.mimetype,
           });
 
@@ -107,7 +107,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       title,
       content,
       hashtags,
-      mediaUrls: uploadedDocumentUrls, // Store S3 URLs
+      mediaKeys: uploadedDocumentUrls,
       repostedFrom,
       repostText,
       isRepost: Boolean(repostedFrom),
@@ -223,7 +223,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     // const mediaKeysWithUrls = await Promise.all(
     //   userPosts.map(async (post) => ({
     //     postId: post.id,
-    //     mediaUrls: post.mediaKe ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [],
+    //     mediaUrls: post.mediaKeys ? await Promise.all(post.mediaKeys.map((media) => generatePresignedUrl(media.key))) : [],
     //   }))
     // );
 
@@ -264,7 +264,11 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
     const formattedPosts = await Promise.all(
       newUserPosts.map(async (post) => {
-        // const mediaUrls = mediaKeysWithUrls.find((media) => media.postId === post.id)?.mediaUrls || [];
+        const documentsUrls: { url: string, type: string }[] = [];
+        post.mediaKeys?.map(async (media) => {
+          const dUrl = await generatePresignedUrl(media.key);
+          documentsUrls.push({ url: dUrl, type: media.type });
+        });
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
         const likeStatus = likes.some((like) => like.postId === post.id && like.userId === userId);
@@ -276,7 +280,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             title: post.title,
             content: post.content,
             hashtags: post.hashtags,
-            mediaUrls: post.mediaUrls,
+            mediaUrls: documentsUrls,
             likeCount,
             commentCount,
             likeStatus,
@@ -432,7 +436,14 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     ]);
 
     // Fetch media URLs for the post
-    // const mediaUrls = post.mediaUr ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [];
+    // const mediaUrls = post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [];
+
+    const documentsUrls: { url: string, type: string }[] = [];
+
+    post.mediaKeys?.map(async (media) => {
+      const dUrl = await generatePresignedUrl(media.key);
+      documentsUrls.push({ url: dUrl, type: media.type });
+    });
 
     // Format comments
     const formattedComments = await Promise.all(
@@ -471,7 +482,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         title: post.title,
         content: post.content,
         hashtags: post.hashtags,
-        mediaUrls: post.mediaUrls,
+        mediaUrls: documentsUrls,
         likeCount: likes.length,
         commentCount: comments.length,
         likeStatus: likes.some((like) => like.userId === userId),

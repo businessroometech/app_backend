@@ -117,7 +117,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const postIds = paginatedPosts.map(post => post.id);
     const [comments, likes] = await Promise.all([
       commentRepository.find({ where: { postId: In(postIds) } }),
-      likeRepository.find({ where: { postId: In(postIds) , status: true } }),
+      likeRepository.find({ where: { postId: In(postIds), status: true } }),
     ]);
 
     const likedByConnections = connectionLikes.reduce((acc, like) => {
@@ -140,7 +140,11 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
 
     // Format posts
     const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
-      // const mediaUrls = mediaKeysWithUrls.find(media => media.postId === post.id)?.mediaUrls || [];
+      const documentsUrls: { url: string, type: string }[] = [];
+      post.mediaKeys?.map(async (media) => {
+        const dUrl = await generatePresignedUrl(media.key);
+        documentsUrls.push({ url: dUrl, type: media.type });
+      });
       const likeCount = likes.filter(like => like.postId === post.id).length;
       const commentCount = comments.filter(comment => comment.postId === post.id).length;
       const like = await likeRepository.findOne({ where: { userId, postId: post.id } });
@@ -163,7 +167,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           // mediaKeys: post.mediaKeys,
           repostPostId: post.isRepost,
           originalPostedAt: post.originalPostedAt,
-          mediaUrls: post.mediaUrls,
+          mediaUrls: documentsUrls,
           reactionCount: likeCount,
           reactionStatus: like?.status,
           reactionId: like?.reactionId,
