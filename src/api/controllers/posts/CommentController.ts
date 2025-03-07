@@ -13,6 +13,7 @@ import { Connection } from '@/api/entity/connection/Connections';
 import { CreateMention } from './Mention';
 import { In } from 'typeorm';
 import { Mention } from '@/api/entity/posts/Mention';
+import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -173,6 +174,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
+        const [commentLikes, totalCommentLikes] = await commentLikeRepository.findAndCount({ where: { commentId: comment.id, status: true, } });
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
 
 
@@ -196,6 +198,9 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
             });
 
+            const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
+            const [nestedCommentLikes, totalNestedCommentLikes] = await nestedCommentLikeRepository.findAndCount({ where: { nestedCommentId: comment.id, commentId: comment.id, status: true } });
+
             if (!commenter) {
               return res.status(400).json({ status: "error", message: "user for this comment not found" });
             }
@@ -209,6 +214,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               timestamp: formatTimestamp(comment.createdAt),
               postId: comment.postId,
               commentId: comment.commentId,
+              likeCount: totalNestedCommentLikes,
               commenterId: commenter?.id,
               profilePic: profilePictureUrl,
               mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
@@ -232,6 +238,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
           likeStatus: commentLike?.status ? commentLike.status : false,
+          likeCount: totalCommentLikes,
           commenterId: commenter?.id,
           profilePic: profilePictureUrl,
           replyCount: formattedNestedComments.length,
