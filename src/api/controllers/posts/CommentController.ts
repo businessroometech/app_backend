@@ -199,7 +199,9 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
             });
 
             const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
-            const [nestedCommentLikes, totalNestedCommentLikes] = await nestedCommentLikeRepository.findAndCount({ where: { nestedCommentId: comment.id, commentId: comment.id, status: true } });
+            const [nestedCommentLikes, totalNestedCommentLikes] = await nestedCommentLikeRepository.findAndCount({ where: { nestedCommentId: comment.id, commentId: comment.commentId, status: true } });
+            const nestedCommentLike = await nestedCommentLikeRepository.findOne({ where: { userId, commentId: comment.commentId, nestedCommentId: comment.id } });
+
 
             if (!commenter) {
               return res.status(400).json({ status: "error", message: "user for this comment not found" });
@@ -215,6 +217,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               postId: comment.postId,
               commentId: comment.commentId,
               likeCount: totalNestedCommentLikes,
+              likeStatus: nestedCommentLike?.status,
               commenterId: commenter?.id,
               profilePic: profilePictureUrl,
               mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
