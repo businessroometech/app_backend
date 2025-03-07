@@ -6,7 +6,7 @@ import { UserPost } from '@/api/entity/UserPost';
 import { AppDataSource } from '@/server';
 import { Between, In, Not } from 'typeorm';
 import { generatePresignedUrl } from '../s3/awsControllers';
-import { formatTimestamp } from '../UserPost';
+import { formatTimestamp } from './UserPost';
 import { Request, Response } from 'express';
 import { Comment } from '@/api/entity/posts/Comment';
 import { BlockedUser } from '@/api/entity/posts/BlockedUser';
@@ -26,9 +26,13 @@ export interface AuthenticatedRequest extends Request {
 // Get all posts for public view
 export const getAllPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { page = 1, limit = 5 } = req.query;
+    const { page = 1, limit = 5 , isDiscussion = false} = req.query;
 
+    
     const userId = req.userId;
+    
+    let discuss = false;
+    if(isDiscussion === 'true') discuss = true;
 
     // Repositories
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -58,13 +62,13 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
 
     // Fetch priority posts (User + Connections' Posts)
     const connectedPosts = await userPostRepository.find({
-      where: { userId: In([...connectedUserIds, userId]), isHidden: false },
+      where: { userId: In([...connectedUserIds, userId]), isDiscussion: discuss, isHidden: false },
       order: { updatedAt: 'DESC', createdAt: 'DESC' },
     });
 
     // Fetch public posts
     const publicPosts = await userPostRepository.find({
-      where: { userId: Not(In([...connectedUserIds, userId])), isHidden: false },
+      where: { userId: Not(In([...connectedUserIds, userId])), isDiscussion: discuss, isHidden: false },
       order: { updatedAt: 'DESC', createdAt: 'DESC' },
     });
 
@@ -81,7 +85,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     );
 
     // Fetch all user posts
-    const userPost = await userPostRepository.find({ where: { userId: In([userId]) } });
+    const userPost = await userPostRepository.find({ where: { userId: In([userId]), isDiscussion: discuss } });
 
     // Remaining public posts (not engaged by connections)
     const remainingPublicPosts = publicPosts.filter(post => !engagedPublicPosts.includes(post));
@@ -175,6 +179,9 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           repostedFrom: post.repostedFrom,
           repostText: post.repostText,
           createdAt: post.createdAt,
+          isDiscussion: post.isDiscussion,
+          discussionTopic: post.discussionTopic,
+          discussionContent: post.discussionContent,
           originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
           likedByConnections: uniqueLikedByConnections,
           commentedByConnections: finalCommentedByConnections,

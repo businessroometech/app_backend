@@ -49,6 +49,8 @@ export class UserPost extends BaseEntity {
   })
   updatedAt!: Date;
 
+  // for repost
+
   @Column({ type: "boolean", default: false })
   isRepost !: boolean;
 
@@ -69,6 +71,23 @@ export class UserPost extends BaseEntity {
 
   @Column({ type: "boolean", default: false })
   isHidden !: boolean;
+
+  // for discussion
+  
+  @Column({ type: 'bool', default: false })
+  isDiscussion !: boolean;
+
+  @Column({ type: "varchar", nullable: false })
+  discussionTopic !: string;
+
+  @Column({ type: "text" })
+  discussionContent !: string;
+
+  @Column({ type: "text" })
+  question !: string;
+
+  @Column({ type: "simple-array" })
+  pollOptions !: string[];
 
   @BeforeInsert()
   private async beforeInsert() {

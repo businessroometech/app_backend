@@ -1,5 +1,5 @@
 import express from 'express';
-import { CreateUserPost, DeleteUserPost, FindUserPost, GetUserPostById, UpdateUserPost, uploadMiddleware } from '@/api/controllers/UserPost';
+import { CreateUserPost, DeleteUserPost, FindUserPost, GetUserPostById, UpdateUserPost, uploadMiddleware } from '@/api/controllers/posts/UserPost';
 import { getComments, getNestedComments, deleteComment, deleteNestedComment, createOrUpdateComment, createOrUpdateNestedComment, getCommentLikeUserList } from '@/api/controllers/posts/CommentController';
 import { createLike, getAllLikesForPost, createCommentLike, createNestedCommentLike, getAllLikesForComment, getUserPostLikeList, getPostCommentersList } from '@/api/controllers/posts/LikeController';
 import { createOrUpdateReaction, removeReaction } from '@/api/controllers/posts/ReactionController';

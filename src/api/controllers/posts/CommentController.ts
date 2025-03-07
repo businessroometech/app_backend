@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Comment } from '../../entity/posts/Comment'; // Adjust the import path as needed
 import { AppDataSource } from '@/server';
 import { NestedComment } from '@/api/entity/posts/NestedComment';
-import { formatTimestamp } from '../UserPost';
+import { formatTimestamp } from './UserPost';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { CommentLike } from '@/api/entity/posts/CommentLike';
 import { Notifications } from '@/api/entity/notifications/Notifications';

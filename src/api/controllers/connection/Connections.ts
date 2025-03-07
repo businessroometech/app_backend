@@ -3,7 +3,7 @@ import { Connection } from '@/api/entity/connection/Connections';
 import { AppDataSource } from '@/server';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { request } from 'node:http';
-import { formatTimestamp } from '../UserPost';
+import { formatTimestamp } from '../posts/UserPost';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Brackets, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';

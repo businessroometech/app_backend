@@ -1,19 +1,19 @@
 import multer from 'multer';
 import { Request, Response } from 'express';
-import { UserPost } from '../entity/UserPost';
+import { UserPost } from '../../entity/UserPost';
 import { AppDataSource } from '@/server';
-import { PersonalDetails } from '../entity/personal/PersonalDetails';
-import { Comment } from '../entity/posts/Comment';
-import { Like } from '../entity/posts/Like';
-import { generatePresignedUrl } from './s3/awsControllers';
+import { PersonalDetails } from '../../entity/personal/PersonalDetails';
+import { Comment } from '../../entity/posts/Comment';
+import { Like } from '../../entity/posts/Like';
+import { generatePresignedUrl } from '../s3/awsControllers';
 import { In, Not } from 'typeorm';
-import { Reaction } from '../entity/posts/Reaction';
-import { Mention } from '../entity/posts/Mention';
+import { Reaction } from '../../entity/posts/Reaction';
+import { Mention } from '../../entity/posts/Mention';
 import { broadcastMessage, getSocketInstance } from '@/socket';
-import { sendNotification } from './notifications/SocketNotificationController';
-import { BlockedPost } from '../entity/posts/BlockedPost';
-import { Connection } from '../entity/connection/Connections';
-import { uploadBufferDocumentToS3, getDocumentFromBucket } from "../controllers/s3/awsControllers";
+import { sendNotification } from '../notifications/SocketNotificationController';
+import { BlockedPost } from '../../entity/posts/BlockedPost';
+import { Connection } from '../../entity/connection/Connections';
+import { uploadBufferDocumentToS3, getDocumentFromBucket } from "../s3/awsControllers";
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -50,12 +50,8 @@ const upload = multer({
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
 
-    const { title, content, hashtags, repostedFrom, repostText } = req.body;
+    const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent  } = req.body;
     const userId = req.userId;
-
-    if (typeof content !== 'string') {
-      return res.status(400).json({ message: 'Content must be a string.' });
-    }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
@@ -65,23 +61,25 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     }
 
     // Extract mentions from content
-    const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-    const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
+    // const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+    // const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
-    const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
-    const validMentionedUserIds = mentionedUsers.map((u) => u.id);
+    // const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
+    // const validMentionedUserIds = mentionedUsers.map((u) => u.id);
 
-    if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
-      return res.status(404).json({
-        message: 'One or more mentioned users do not exist.',
-        invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
-      });
-    }
+    // if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
+    //   return res.status(404).json({
+    //     message: 'One or more mentioned users do not exist.',
+    //     invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
+    //   });
+    // }
 
     // ------------- REPOST ----------------------------------------------------------
 
     const postRepository = AppDataSource.getRepository(UserPost);
     let savedPost;
+
+
 
     if (repostText && repostedFrom) {
       const post = await postRepository.findOne({ where: { id: repostedFrom } });
@@ -99,6 +97,17 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
       savedPost = await postRepository.save(newPost);
     }
+    else if(isDiscussion && discussionTopic)
+    {
+      const newPost = postRepository.create({
+        userId,
+        isDiscussion,
+        discussionContent,
+        discussionTopic
+      });
+
+      savedPost = await postRepository.save(newPost);
+    }
     else {
       // Upload files to S3
       const uploadedDocumentUrls: { key: string; type: string }[] = [];
@@ -108,8 +117,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
           try {
             console.log('Uploading file:', file.originalname);
             const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
-            // const documentUrl = await generatePresignedUrl(uploadedUrl.fileKey);
-            console.log(file.mimetype);
             uploadedDocumentUrls.push({
               key: uploadedUrl.fileKey,
               type: file.mimetype,
@@ -120,7 +127,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
           }
         }
       }
-
 
       // Create new post entry
       const newPost = postRepository.create({
@@ -138,41 +144,41 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     }
 
     // Handle mentions
-    let mention = null;
-    if (validMentionedUserIds.length > 0) {
-      const mentionRepository = AppDataSource.getRepository(Mention);
-      const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
-        mentionRepository.create({
-          user: user,
-          post: savedPost,
-          mentionBy: userId,
-          mentionTo: mentionedUserId,
-        })
-      );
+    // let mention = null;
+    // if (validMentionedUserIds.length > 0) {
+    //   const mentionRepository = AppDataSource.getRepository(Mention);
+    //   const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
+    //     mentionRepository.create({
+    //       user: user,
+    //       post: savedPost,
+    //       mentionBy: userId,
+    //       mentionTo: mentionedUserId,
+    //     })
+    //   );
 
-      mention = await mentionRepository.save(mentionsToSave);
+    //   mention = await mentionRepository.save(mentionsToSave);
 
-      // Send notifications to mentioned users
-      for (const mentionedUser of mentionedUsers) {
-        if (mentionedUser.id !== userId) {
-          await sendNotification(
-            mentionedUser.id,
-            `${user.firstName} ${user.lastName} mentioned you in a post`,
-            user.profilePictureUploadId,
-            `/feed/post/${savedPost.id}`
-          );
-        }
-      }
-    }
+    //   // Send notifications to mentioned users
+    //   for (const mentionedUser of mentionedUsers) {
+    //     if (mentionedUser.id !== userId) {
+    //       await sendNotification(
+    //         mentionedUser.id,
+    //         `${user.firstName} ${user.lastName} mentioned you in a post`,
+    //         user.profilePictureUploadId,
+    //         `/feed/post/${savedPost.id}`
+    //       );
+    //     }
+    //   }
+    // }
 
-    // Emit socket event
-    const io = getSocketInstance();
-    io.emit('postSent', { success: true, postId: savedPost.id });
+    // // Emit socket event
+    // const io = getSocketInstance();
+    // io.emit('postSent', { success: true, postId: savedPost.id });
 
     return res.status(201).json({
       message: 'Post created successfully.',
       data: savedPost,
-      mention,
+      // mention,
     });
 
   } catch (error: any) {
@@ -215,7 +221,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     // Fetch user posts with pagination
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const [userPosts, totalPosts] = await userPostRepository.findAndCount({
-      where: { userId, isHidden: false },
+      where: { userId, isDiscussion: false, isHidden: false },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
