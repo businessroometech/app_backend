@@ -73,21 +73,24 @@ export class UserPost extends BaseEntity {
   isHidden !: boolean;
 
   // for discussion
-  
+
   @Column({ type: 'bool', default: false })
   isDiscussion !: boolean;
 
-  @Column({ type: "varchar", nullable: false })
+  @Column({ type: "varchar", nullable: true })
   discussionTopic !: string;
 
-  @Column({ type: "text" })
+  @Column({ type: "text", nullable: true })
   discussionContent !: string;
+
+  @Column({ type: "boolean", default: false })
+  isPoll !: boolean;
 
   @Column({ type: "text" })
   question !: string;
 
-  @Column({ type: "simple-array" })
-  pollOptions !: string[];
+  @Column("json", { nullable: true })
+  pollOptions?: { option: string; votes: number }[];
 
   @BeforeInsert()
   private async beforeInsert() {

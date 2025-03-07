@@ -61,6 +61,7 @@ import { ReportedUser } from './api/entity/posts/ReportedUser';
 import { Account } from './api/entity/LandingPage/Account';
 import { Connect } from './api/entity/LandingPage/Connect';
 import { NestedCommentLike } from './api/entity/posts/NestedCommentLike';
+import { PollEntry } from './api/entity/posts/PollEntry';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -101,9 +102,10 @@ const AppDataSource = new DataSource({
     General,
     Account,
     Connect,
-    NestedCommentLike
+    NestedCommentLike,
+    PollEntry
   ],
-  synchronize: false, 
+  synchronize: true, 
 });
 
 // Initialize the DataSource

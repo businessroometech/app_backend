@@ -14,6 +14,7 @@ import { sendNotification } from '../notifications/SocketNotificationController'
 import { BlockedPost } from '../../entity/posts/BlockedPost';
 import { Connection } from '../../entity/connection/Connections';
 import { uploadBufferDocumentToS3, getDocumentFromBucket } from "../s3/awsControllers";
+import { PollEntry } from '@/api/entity/posts/PollEntry';
 
 // Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
@@ -50,7 +51,7 @@ const upload = multer({
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
 
-    const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent  } = req.body;
+    const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, isPoll, question, pollOptions  } = req.body;
     const userId = req.userId;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -79,8 +80,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     const postRepository = AppDataSource.getRepository(UserPost);
     let savedPost;
 
-
-
     if (repostText && repostedFrom) {
       const post = await postRepository.findOne({ where: { id: repostedFrom } });
       const newPost = postRepository.create({
@@ -97,6 +96,15 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
       savedPost = await postRepository.save(newPost);
     }
+    else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
+      const newPost = postRepository.create({
+        userId,
+        isPoll,
+        question,
+        pollOptions: pollOptions.map((option) => ({ option, votes: 0 })),
+      });
+      savedPost = await postRepository.save(newPost);
+    } 
     else if(isDiscussion && discussionTopic)
     {
       const newPost = postRepository.create({
@@ -192,6 +200,69 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
 // Attach multer middleware to the route
 export const uploadMiddleware = multer({ storage: storage }).array('documents', 10);
+
+
+export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+  try {
+    const { postId, selectedOption } = req.body;
+    const userId = req.userId;
+
+    if (!postId || !selectedOption) {
+      return res.status(400).json({ message: "postId and selectedOption are required." });
+    }
+
+    const postRepository = AppDataSource.getRepository(UserPost);
+    const pollEntryRepository = AppDataSource.getRepository(PollEntry);
+
+    const post = await postRepository.findOne({ where: { id: postId } });
+    if (!post || !post.isPoll || !post.pollOptions) {
+      return res.status(400).json({ message: "Invalid poll post." });
+    }
+
+    const selectedOptionIndex = post.pollOptions.findIndex(option => option.option === selectedOption);
+    if (selectedOptionIndex === -1) {
+      return res.status(400).json({ message: "Invalid option selected." });
+    }
+
+    // Check if user has already voted
+    const existingVote = await pollEntryRepository.findOne({ where: { userId, postId } });
+
+    if (existingVote) {
+      if (existingVote.selectedOption === selectedOption) {
+
+        post.pollOptions[selectedOptionIndex].votes -= 1;
+        await postRepository.save(post);
+
+        existingVote.status = false; 
+        existingVote.updatedBy = "system"; 
+        await pollEntryRepository.save(existingVote);
+
+        return res.status(200).json({ message: "Vote removed successfully.", data: post });
+      } else {
+        return res.status(400).json({ message: "User has already voted for a different option." });
+      }
+    }
+
+    post.pollOptions[selectedOptionIndex].votes += 1;
+    await postRepository.save(post);
+
+    const newPollEntry = pollEntryRepository.create({
+      userId,
+      postId,
+      selectedOption,
+      status: true, 
+      createdBy: "system",
+      updatedBy: "system",
+    });
+
+    await pollEntryRepository.save(newPollEntry);
+
+    return res.status(200).json({ message: "Vote recorded successfully.", data: post });
+  } catch (error: any) {
+    console.error("VoteInPoll Error:", error);
+    return res.status(500).json({ message: "Internal server error.", error: error.message });
+  }
+};
 
 
 
