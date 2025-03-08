@@ -105,7 +105,7 @@ const AppDataSource = new DataSource({
     NestedCommentLike,
     PollEntry
   ],
-  synchronize: true, 
+  synchronize: false,
 });
 
 // Initialize the DataSource
@@ -135,7 +135,7 @@ app.use(express.json());
 
 // Routes mounting
 app.use('/v1/auth', authRouter);
-app.use('/v1/post', userPost); 
+app.use('/v1/post', userPost);
 app.use('/v1/notifications', notifications);
 app.use('/v1/connection', connectionRouter);
 app.use('/v1/chat', chatRouter);
