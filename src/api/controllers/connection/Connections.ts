@@ -14,8 +14,14 @@ export interface AuthenticatedRequest extends Request {
 }
 
 // Send a connection request
-export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
+export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { requesterId, receiverId } = req.body;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -49,7 +55,7 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     // Create a notification
    await sendNotification(
       receiverId,
-      `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
+      `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
       requester?.profilePictureUploadId,
       `/settings/ManageConnections`
     );
@@ -68,6 +74,11 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
 export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { connectionId, status } = req.body;
   const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
 
@@ -113,8 +124,12 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 // Get user's connections and mutual connections
 export const getUserConnections = async (req: AuthenticatedRequest , res: Response): Promise<Response> => {
   const { profileId } = req.params;
-
   const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connections = await connectionRepository.find({
@@ -185,8 +200,13 @@ export const getUserConnections = async (req: AuthenticatedRequest , res: Respon
 };
 
 // Remove a connection
-export const removeConnection = async (req: Request, res: Response): Promise<Response> => {
+export const removeConnection = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { connectionId } = req.params;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -208,13 +228,13 @@ export const removeConnection = async (req: Request, res: Response): Promise<Res
 
 // get user connection
 export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
-    const userId = req.userId; // Get user ID from request body
-
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required.' });
-    }
-
     const connectionRepository = AppDataSource.getRepository(Connection);
 
     // Fetch pending connection requests
@@ -268,8 +288,14 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
   }
 };
 
-export const unsendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
+export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { requesterId, receiverId } = req.body;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connection = await connectionRepository.findOne({
@@ -295,54 +321,64 @@ export const unsendConnectionRequest = async (req: Request, res: Response): Prom
     });
   }
 };
-
 export const ConnectionsSuggestionController = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { page = 1, limit = 5 } = req.query;
 
     const userId = req.userId;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required"
+      });
+    }
+
     const offset = (Number(page) - 1) * Number(limit);
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
 
+    // Get all connections for this user
     const connections = await connectionRepository.find({
       where: [
-        { requesterId: userId, status: In(["pending", "accepted", "rejected"]) },
-        { receiverId: userId, status: In(["pending", "accepted", "rejected"]) },
+        { requesterId: userId },
+        { receiverId: userId }
       ],
     });
 
-    console.log("Existing connections:", connections);
-
+    // Get IDs of users already connected with
     const connectedUserIds = connections.reduce((acc, conn) => {
       if (conn.requesterId !== userId) acc.add(conn.requesterId);
       if (conn.receiverId !== userId) acc.add(conn.receiverId);
       return acc;
-    }, new Set<string>()); 
+    }, new Set<string>());
 
-    console.log("Connected user IDs:", Array.from(connectedUserIds));
-
+    // Find users not connected with yet
     const [users, total] = await userRepository.findAndCount({
-      where: { id: Not(In([...connectedUserIds, userId])) }, 
+      where: {
+        id: Not(In([userId, ...Array.from(connectedUserIds)])) // Exclude self and connected users
+      },
       skip: offset,
       take: Number(limit),
+      order: {
+        createdAt: 'DESC' // Order by newest first
+      }
     });
 
-    console.log("Fetched users:", users);
+    if (!users.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No suggestions available at this time",
+        data: [],
+        total: 0,
+        page: Number(page),
+        limit: Number(limit)
+      });
+    }
 
-    const shuffleArray = (array: any[]) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    };
-
-    const shuffledUsers = shuffleArray(users);
-
+    // Map user details and get profile pictures
     const result = await Promise.all(
-      shuffledUsers.map(async (user) => ({
+      users.map(async (user) => ({
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -352,28 +388,33 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
       }))
     );
 
-    console.log("Final result:", result);
-
     return res.status(200).json({
       success: true,
-      message: "Suggested users fetched successfully.",
+      message: "Suggested users fetched successfully",
       data: result,
       total,
       page: Number(page),
       limit: Number(limit),
     });
+
   } catch (error: any) {
     console.error("Error fetching connection suggestions:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
+      error: error.message
     });
   }
 };
 
 export class ConnectionController {
-  static async fetchUserConnectionsStatus(req: Request, res: Response) {
+  static async fetchUserConnectionsStatus(req: AuthenticatedRequest, res: Response) {
     const { requesterId, status } = req.body;
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required.' });
+    }
 
     try {
       if (!requesterId || !status) {
