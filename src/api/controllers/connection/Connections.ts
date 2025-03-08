@@ -81,10 +81,10 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
-
     const connection = await connectionRepository.findOne({
       where: [{ requesterId: connectionId, receiverId: userId }],
     });
+
     if (!connection) {
       return res.status(404).json({ message: 'Connection not found.' });
     }
@@ -427,7 +427,7 @@ export class ConnectionController {
 
       // Fetch connections from the database
       const connectionRepository = AppDataSource.getRepository(Connection);
-      const connections = await connectionRepository.find({
+      let connections = await connectionRepository.find({
         where: { requesterId, status },
         relations: ['receiver'],
       });
@@ -435,7 +435,18 @@ export class ConnectionController {
       if (connections.length < 1) {
         return res.status(404).json({ message: 'No connections found.' });
       }
-      return res.status(200).json(connections);
+
+      const connectionsWithImages = await Promise.all(connections.map(async (connection) => {
+        const receiverImage = connection.receiver.profilePictureUploadId 
+          ? await generatePresignedUrl(connection.receiver.profilePictureUploadId)
+          : null;
+        return {
+          ...connection,
+          receiverImage
+        };
+      }));
+
+      return res.status(200).json(connectionsWithImages);
     } catch (error: any) {
       console.error('Error fetching user connections status:', error);
       return res.status(500).json({
