@@ -92,6 +92,12 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         repostedFrom,
         repostText,
         isRepost: Boolean(repostedFrom),
+        isDiscussion: post?.isDiscussion,
+        discussionContent: post?.discussionContent,
+        discussionTopic: post?.discussionTopic,
+        isPoll: post?.isPoll,
+        pollOptions: post?.pollOptions,
+        question: post?.question,
         originalPostedAt: post?.createdAt,
       });
 
