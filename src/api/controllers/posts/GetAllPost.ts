@@ -157,21 +157,21 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       // Filter out users who liked the post from the commented list
       const finalCommentedByConnections = uniqueCommentedByConnections.filter(userId => !uniqueLikedByConnections.includes(userId));
 
-      // Fetch user details for liked and commented connections
-      const likedUsers = await userRepository.findByIds(uniqueLikedByConnections);
-      const commentedUsers = await userRepository.findByIds(finalCommentedByConnections);
+      // // Fetch user details for liked and commented connections
+      // const likedUsers = await userRepository.findByIds(uniqueLikedByConnections);
+      // const commentedUsers = await userRepository.findByIds(finalCommentedByConnections);
 
-      const likedByConnectionsWithDetails = likedUsers.map(user => ({
-        id: user.id,
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-      }));
+      // const likedByConnectionsWithDetails = likedUsers.map(user => ({
+      //   id: user.id,
+      //   firstName: user.firstName || '',
+      //   lastName: user.lastName || '',
+      // }));
 
-      const commentedByConnectionsWithDetails = commentedUsers.map(user => ({
-        id: user.id,
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-      }));
+      // const commentedByConnectionsWithDetails = commentedUsers.map(user => ({
+      //   id: user.id,
+      //   firstName: user.firstName || '',
+      //   lastName: user.lastName || '',
+      // }));
 
       return {
         post: {
@@ -193,8 +193,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           discussionTopic: post.discussionTopic,
           discussionContent: post.discussionContent,
           originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
-          likedByConnections: likedByConnectionsWithDetails,
-          commentedByConnections: commentedByConnectionsWithDetails,
+          likedByConnections: uniqueLikedByConnections,
+          commentedByConnections: finalCommentedByConnections,
         },
         userDetails: {
           id: user?.id,
