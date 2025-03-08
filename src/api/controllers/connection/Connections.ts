@@ -9,6 +9,10 @@ import { Brackets, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { getSocketInstance } from '@/socket';
 
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
 // Send a connection request
 export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
   const { requesterId, receiverId } = req.body;
@@ -61,9 +65,9 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
 };
 
 // Accept or reject a connection request
-export const updateConnectionStatus = async (req: Request, res: Response): Promise<Response> => {
-  const { userId, connectionId, status } = req.body;
-
+export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+  const { connectionId, status } = req.body;
+  const userId = req.userId;
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
 
@@ -107,9 +111,10 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
 };
 
 // Get user's connections and mutual connections
-export const getUserConnections = async (req: Request, res: Response): Promise<Response> => {
-  const { profileId, userId } = req.body;
+export const getUserConnections = async (req: AuthenticatedRequest , res: Response): Promise<Response> => {
+  const { profileId } = req.params;
 
+  const userId = req.userId;
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connections = await connectionRepository.find({
@@ -181,7 +186,7 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
 
 // Remove a connection
 export const removeConnection = async (req: Request, res: Response): Promise<Response> => {
-  const { connectionId } = req.body;
+  const { connectionId } = req.params;
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -202,9 +207,9 @@ export const removeConnection = async (req: Request, res: Response): Promise<Res
 };
 
 // get user connection
-export const getUserConnectionRequests = async (req: Request, res: Response) => {
+export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId } = req.body; // Get user ID from request body
+    const userId = req.userId; // Get user ID from request body
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' });
@@ -291,17 +296,19 @@ export const unsendConnectionRequest = async (req: Request, res: Response): Prom
   }
 };
 
-export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
+export const ConnectionsSuggestionController = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, page = 1, limit = 5 } = req.body;
+    const { page = 1, limit = 5 } = req.query;
 
-    const offset = (page - 1) * limit;
+    const userId = req.userId;
+
+    const offset = (Number(page) - 1) * Number(limit);
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
 
     const [users, total] = await userRepository.findAndCount({
       skip: offset,
-      take: limit,
+      take: Number(limit),
     });
 
     const connectionRepository = AppDataSource.getRepository(Connection);

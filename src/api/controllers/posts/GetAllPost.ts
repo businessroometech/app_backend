@@ -44,8 +44,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const blockUserRepo = AppDataSource.getRepository(BlockedUser);
 
     // Fetch blocked posts and users
-    const blockedPostIds = (await blockPostRepo.find({ where: { blockedBy: userId } })).map(bp => bp.blockedPost);
-    const blockedUserIds = (await blockUserRepo.find({ where: { blockedBy: userId } })).map(bu => bu.blockedUser);
+    // const blockedPostIds = (await blockPostRepo.find({ where: { blockedBy: userId } })).map(bp => bp.blockedPost);
+    // const blockedUserIds = (await blockUserRepo.find({ where: { blockedBy: userId } })).map(bu => bu.blockedUser);
 
     // Fetch user details
     const currentUser = await userRepository.findOne({ where: { id: userId } });
@@ -94,14 +94,15 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     let allPosts = [...userPost, ...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
 
     // Filter out blocked posts and users
-    allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
-    allPosts = allPosts
-      .filter((post, index, self) =>
-        self.findIndex(p => p.id === post.id) === index
-      )
-      .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
+    // allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
+    // allPosts = allPosts
+    //   .filter((post, index, self) =>
+    //     self.findIndex(p => p.id === post.id) === index
+    //   )
+    //   .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
 
     // Sort posts by date (latest first)
+    
     allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     // Pagination
