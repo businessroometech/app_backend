@@ -301,31 +301,35 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
     const { page = 1, limit = 5 } = req.query;
 
     const userId = req.userId;
-
     const offset = (Number(page) - 1) * Number(limit);
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
+    const connectionRepository = AppDataSource.getRepository(Connection);
+
+    const connections = await connectionRepository.find({
+      where: [
+        { requesterId: userId, status: In(["pending", "accepted", "rejected"]) },
+        { receiverId: userId, status: In(["pending", "accepted", "rejected"]) },
+      ],
+    });
+
+    console.log("Existing connections:", connections);
+
+    const connectedUserIds = connections.reduce((acc, conn) => {
+      if (conn.requesterId !== userId) acc.add(conn.requesterId);
+      if (conn.receiverId !== userId) acc.add(conn.receiverId);
+      return acc;
+    }, new Set<string>()); 
+
+    console.log("Connected user IDs:", Array.from(connectedUserIds));
 
     const [users, total] = await userRepository.findAndCount({
+      where: { id: Not(In([...connectedUserIds, userId])) }, 
       skip: offset,
       take: Number(limit),
     });
 
-    const connectionRepository = AppDataSource.getRepository(Connection);
-    const connections = await connectionRepository.find({
-      where: [
-        {
-          requesterId: userId,
-          status: In(['pending', 'accepted', 'rejected']),
-        },
-        {
-          receiverId: userId,
-          status: In(['pending', 'accepted', 'rejected']),
-        },
-      ],
-    });
-
-    const connectedUserIds = connections.map((connection) => connection.receiverId);
+    console.log("Fetched users:", users);
 
     const shuffleArray = (array: any[]) => {
       for (let i = array.length - 1; i > 0; i--) {
@@ -335,9 +339,7 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
       return array;
     };
 
-    const filteredUsers = users.filter((user) => user.id !== userId && !connectedUserIds.includes(user.id));
-
-    const shuffledUsers = shuffleArray(filteredUsers);
+    const shuffledUsers = shuffleArray(users);
 
     const result = await Promise.all(
       shuffledUsers.map(async (user) => ({
@@ -350,19 +352,21 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
       }))
     );
 
+    console.log("Final result:", result);
+
     return res.status(200).json({
       success: true,
-      message: 'Suggested users fetched successfully.',
+      message: "Suggested users fetched successfully.",
       data: result,
       total,
-      page,
-      limit,
+      page: Number(page),
+      limit: Number(limit),
     });
   } catch (error: any) {
-    console.error('Error fetching connection suggestions:', error);
+    console.error("Error fetching connection suggestions:", error);
     return res.status(500).json({
       success: false,
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
     });
   }
 };
