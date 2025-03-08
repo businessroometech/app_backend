@@ -51,7 +51,7 @@ const upload = multer({
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
 
-    const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, isPoll, question, pollOptions  } = req.body;
+    const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, isPoll, question, pollOptions } = req.body;
     const userId = req.userId;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -101,13 +101,13 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       const newPost = postRepository.create({
         userId,
         isPoll,
+        isDiscussion,
         question,
         pollOptions: pollOptions.map((option) => ({ option, votes: 0 })),
       });
       savedPost = await postRepository.save(newPost);
-    } 
-    else if(isDiscussion && discussionTopic)
-    {
+    }
+    else if (isDiscussion && discussionTopic) {
       const newPost = postRepository.create({
         userId,
         isDiscussion,
@@ -234,8 +234,8 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
         post.pollOptions[selectedOptionIndex].votes -= 1;
         await postRepository.save(post);
 
-        existingVote.status = false; 
-        existingVote.updatedBy = "system"; 
+        existingVote.status = false;
+        existingVote.updatedBy = "system";
         await pollEntryRepository.save(existingVote);
 
         return res.status(200).json({ message: "Vote removed successfully.", data: post });
@@ -251,7 +251,7 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
       userId,
       postId,
       selectedOption,
-      status: true, 
+      status: true,
       createdBy: "system",
       updatedBy: "system",
     });
@@ -609,7 +609,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     };
 
     return res.status(200).json({
-      status:"success",
+      status: "success",
       message: 'Post retrieved successfully.',
       data: formattedPost,
     });
