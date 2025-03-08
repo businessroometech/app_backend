@@ -183,7 +183,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           originalPostedAt: post.originalPostedAt,
           mediaUrls: documentsUrls,
           reactionCount: likeCount,
-          reactionStatus: like?.status,
+          reactionStatus: like ? like.status : false,
           reactionId: like?.reactionId,
           commentCount,
           repostedFrom: post.repostedFrom,
