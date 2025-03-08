@@ -409,13 +409,13 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
 
 export class ConnectionController {
   static async fetchUserConnectionsStatus(req: AuthenticatedRequest, res: Response) {
-    const { requesterId, status } = req.body;
+    const {  status } = req.params;
     const userId = req.userId;
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' });
     }
-
+    const requesterId = userId;
     try {
       if (!requesterId || !status) {
         return res.status(400).json({ message: 'Both requesterId and status are required.' });

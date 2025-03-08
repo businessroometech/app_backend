@@ -11,6 +11,6 @@ Router.delete('/remove-connection/:connectionId', authenticate, removeConnection
 Router.post('/unsend-connection-request', authenticate, unsendConnectionRequest);
 Router.get('/get-connection-request', authenticate, getUserConnectionRequests);
 Router.get("/get-connection-suggest", authenticate, ConnectionsSuggestionController)
-Router.get("/get-connection-status", authenticate, ConnectionController.fetchUserConnectionsStatus)
+Router.get("/get-connection-status/:status", authenticate, ConnectionController.fetchUserConnectionsStatus)
 
 export default Router;
