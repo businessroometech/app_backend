@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { Reaction } from './posts/Reaction';
 import { Mention } from './posts/Mention';
+import { nullable } from 'zod';
 
 @Entity({ name: 'UserPost' })
 export class UserPost extends BaseEntity {
@@ -91,6 +92,9 @@ export class UserPost extends BaseEntity {
 
   @Column("json", { nullable: true })
   pollOptions?: { option: string; votes: number }[];
+
+  @Column({ type: 'varchar', nullable: true })
+  pollDuration !: string;
 
   @BeforeInsert()
   private async beforeInsert() {

@@ -120,7 +120,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const postIds = paginatedPosts.map(post => post.id);
     const [comments, likes] = await Promise.all([
       commentRepository.find({ where: { postId: In(postIds) } }),
-      likeRepository.find({ where: { postId: In(postIds) } }),
+      likeRepository.find({ where: { postId: In(postIds),status: true } }),
     ]);
 
     const likedByConnections = connectionLikes.reduce((acc, like) => {
@@ -183,7 +183,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           originalPostedAt: post.originalPostedAt,
           mediaUrls: documentsUrls,
           reactionCount: likeCount,
-          reactionStatus: like?.status,
+          reactionStatus: like ? like.status : false,
           reactionId: like?.reactionId,
           commentCount,
           repostedFrom: post.repostedFrom,
