@@ -80,7 +80,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     const postRepository = AppDataSource.getRepository(UserPost);
     let savedPost;
 
-    if (repostText && repostedFrom) {
+    if (repostedFrom) {
       const post = await postRepository.findOne({ where: { id: repostedFrom } });
       console.log(post);
       const newPost = postRepository.create({
@@ -222,8 +222,37 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
     const pollEntryRepository = AppDataSource.getRepository(PollEntry);
 
     const post = await postRepository.findOne({ where: { id: postId } });
+
     if (!post || !post.isPoll || !post.pollOptions) {
       return res.status(400).json({ message: "Invalid poll post." });
+    }
+
+    let pollDuration = post.pollDuration;
+    let createdOn = post.createdAt;
+
+    if (pollDuration) {
+      let checkDate;
+      let createdDate = new Date(createdOn); // Ensure createdOn is a Date object
+
+      if (pollDuration === '1 day') {
+        checkDate = new Date(createdDate);
+        checkDate.setDate(checkDate.getDate() + 1);
+      } else if (pollDuration === '3 days') {
+        checkDate = new Date(createdDate);
+        checkDate.setDate(checkDate.getDate() + 3);
+      } else if (pollDuration === '1 week') {
+        checkDate = new Date(createdDate);
+        checkDate.setDate(checkDate.getDate() + 7);
+      } else if (pollDuration === '2 weeks') {
+        checkDate = new Date(createdDate);
+        checkDate.setDate(checkDate.getDate() + 14);
+      }
+
+      let currDate = new Date();
+
+      if (checkDate && checkDate < currDate) {
+        return res.status(400).json({ status: "error", message: "Poll is now inActive!" });
+      }
     }
 
     const selectedOptionIndex = post.pollOptions.findIndex(option => option.option === selectedOption);
@@ -244,9 +273,9 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
         existingVote.updatedBy = "system";
         await pollEntryRepository.save(existingVote);
 
-        return res.status(200).json({ message: "Vote removed successfully.", data: post });
+        return res.status(200).json({ status: "success", message: "Vote removed successfully.", data: { post } });
       } else {
-        return res.status(400).json({ message: "User has already voted for a different option." });
+        return res.status(400).json({ status: "success", message: "User has already voted for a different option." });
       }
     }
 
@@ -264,10 +293,10 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
 
     await pollEntryRepository.save(newPollEntry);
 
-    return res.status(200).json({ message: "Vote recorded successfully.", data: post });
+    return res.status(200).json({ status: "success", message: "Vote recorded successfully.", data: { post } });
   } catch (error: any) {
     console.error("VoteInPoll Error:", error);
-    return res.status(500).json({ message: "Internal server error.", error: error.message });
+    return res.status(500).json({ status: "error", message: "Internal server error.", error: error.message });
   }
 };
 
