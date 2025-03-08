@@ -39,6 +39,12 @@ export class NestedComment extends BaseEntity {
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', precision: 6 })
     createdAt!: Date;
 
+    @Column({ type: 'bool', default: false })
+    isChild !: boolean;
+
+    @Column({ type: 'uuid', nullable: true })
+    repliedTo !: string;
+
     @UpdateDateColumn({
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP(6)',

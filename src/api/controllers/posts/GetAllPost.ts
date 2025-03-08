@@ -26,13 +26,13 @@ export interface AuthenticatedRequest extends Request {
 // Get all posts for public view
 export const getAllPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { page = 1, limit = 5 , isDiscussion = false} = req.query;
+    const { page = 1, limit = 5, isDiscussion = false } = req.query;
 
-    
+
     const userId = req.userId;
-    
+
     let discuss = false;
-    if(isDiscussion === 'true') discuss = true;
+    if (isDiscussion === 'true') discuss = true;
 
     // Repositories
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -102,7 +102,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     //   .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
 
     // Sort posts by date (latest first)
-    
+
     allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     // Pagination
@@ -144,12 +144,74 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     // })));
 
     // Format posts
+    // const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
+    //   const documentsUrls: { url: string, type: string }[] = [];
+    //   post.mediaKeys?.map(async (media) => {
+    //     const dUrl = await generatePresignedUrl(media.key);
+    //     documentsUrls.push({ url: dUrl, type: media.type });
+    //   });
+    //   const likeCount = likes.filter(like => like.postId === post.id).length;
+    //   const commentCount = comments.filter(comment => comment.postId === post.id).length;
+    //   const like = await likeRepository.findOne({ where: { userId, postId: post.id } });
+    //   const user = await userRepository.findOne({ where: { id: post.userId } });
+
+    //   // Remove duplicate user interactions
+    //   const uniqueLikedByConnections = Array.from(new Set(likedByConnections[post.id] || []));
+    //   const uniqueCommentedByConnections = Array.from(new Set(commentedByConnections[post.id] || []));
+
+    //   // Filter out users who liked the post from the commented list
+    //   const finalCommentedByConnections = uniqueCommentedByConnections.filter(userId => !uniqueLikedByConnections.includes(userId));
+
+    //   return {
+    //     post: {
+    //       Id: post.id,
+    //       userId: post.userId,
+    //       title: post.title,
+    //       content: post.content,
+    //       hashtags: post.hashtags,
+    //       // mediaKeys: post.mediaKeys,
+    //       // repostPostId: post.isRepost,
+    //       originalPostedAt: post.originalPostedAt,
+    //       mediaUrls: documentsUrls,
+    //       reactionCount: likeCount,
+    //       reactionStatus: like?.status,
+    //       reactionId: like?.reactionId,
+    //       commentCount,
+    //       repostedFrom: post.repostedFrom,
+    //       repostText: post.repostText,
+    //       createdAt: post.createdAt,
+    //       isDiscussion: post.isDiscussion,
+    //       discussionTopic: post.discussionTopic,
+    //       discussionContent: post.discussionContent,
+    //       originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
+    //       likedByConnections: uniqueLikedByConnections,
+    //       commentedByConnections: finalCommentedByConnections,
+
+
+    //     },
+    //     userDetails: {
+    //       id: user?.id,
+    //       firstName: user?.firstName || '',
+    //       lastName: user?.lastName || '',
+    //       avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
+    //       timestamp: formatTimestamp(post.updatedAt || post.createdAt),
+    //       userRole: user?.userRole,
+    //       connection: connectedUserIds.includes(post.userId),
+    //       isBadgeOn: user?.isBadgeOn,
+    //       badgeName: user?.badgeName
+    //     },
+    //   };
+    // }));
+
     const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
       const documentsUrls: { url: string, type: string }[] = [];
-      post.mediaKeys?.map(async (media) => {
+
+      // Fetch media URLs
+      await Promise.all(post.mediaKeys?.map(async (media) => {
         const dUrl = await generatePresignedUrl(media.key);
         documentsUrls.push({ url: dUrl, type: media.type });
-      });
+      }) || []);
+
       const likeCount = likes.filter(like => like.postId === post.id).length;
       const commentCount = comments.filter(comment => comment.postId === post.id).length;
       const like = await likeRepository.findOne({ where: { userId, postId: post.id } });
@@ -162,6 +224,22 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       // Filter out users who liked the post from the commented list
       const finalCommentedByConnections = uniqueCommentedByConnections.filter(userId => !uniqueLikedByConnections.includes(userId));
 
+      // Fetch user details for liked and commented connections
+      const likedUsers = await userRepository.findByIds(uniqueLikedByConnections);
+      const commentedUsers = await userRepository.findByIds(finalCommentedByConnections);
+
+      const likedByConnectionsWithDetails = likedUsers.map(user => ({
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+      }));
+
+      const commentedByConnectionsWithDetails = commentedUsers.map(user => ({
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+      }));
+
       return {
         post: {
           Id: post.id,
@@ -169,8 +247,6 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           title: post.title,
           content: post.content,
           hashtags: post.hashtags,
-          // mediaKeys: post.mediaKeys,
-          // repostPostId: post.isRepost,
           originalPostedAt: post.originalPostedAt,
           mediaUrls: documentsUrls,
           reactionCount: likeCount,
@@ -184,10 +260,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           discussionTopic: post.discussionTopic,
           discussionContent: post.discussionContent,
           originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
-          likedByConnections: uniqueLikedByConnections,
-          commentedByConnections: finalCommentedByConnections,
-
-
+          likedByConnections: likedByConnectionsWithDetails,
+          commentedByConnections: commentedByConnectionsWithDetails,
         },
         userDetails: {
           id: user?.id,
@@ -202,6 +276,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
         },
       };
     }));
+
 
     return res.status(200).json({
       status: 'success',

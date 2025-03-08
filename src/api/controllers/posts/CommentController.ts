@@ -275,7 +275,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
 export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
 
-    const { postId, commentId, text, createdBy, nestedCommentId, mediaKeys } = req.body;
+    const { postId, commentId, text, createdBy, nestedCommentId, mediaKeys, repliedTo, isChild = false } = req.body;
 
     const userId = req.userId;
 
@@ -320,6 +320,8 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
         commentId,
         text,
         mediaKeys,
+        isChild,
+        repliedTo: repliedTo ? repliedTo : null,
         createdBy: createdBy || 'system',
         updatedBy: createdBy || 'system',
       })
