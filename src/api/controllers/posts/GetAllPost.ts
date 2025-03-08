@@ -43,8 +43,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const blockUserRepo = AppDataSource.getRepository(BlockedUser);
 
     // Fetch blocked posts and users
-    const blockedPostIds = (await blockPostRepo.find({ where: { blockedBy: userId } })).map(bp => bp.blockedPost);
-    const blockedUserIds = (await blockUserRepo.find({ where: { blockedBy: userId } })).map(bu => bu.blockedUser);
+    // const blockedPostIds = (await blockPostRepo.find({ where: { blockedBy: userId } })).map(bp => bp.blockedPost);
+    // const blockedUserIds = (await blockUserRepo.find({ where: { blockedBy: userId } })).map(bu => bu.blockedUser);
 
     // Fetch user details
     const currentUser = await userRepository.findOne({ where: { id: userId } });
@@ -61,13 +61,13 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
 
     // Fetch priority posts (User + Connections' Posts)
     const connectedPosts = await userPostRepository.find({
-      where: { userId: In([...connectedUserIds, userId]), isHidden: false },
+      where: { userId: In([...connectedUserIds, userId]), isDiscussion: discuss, isHidden: false },
       order: { updatedAt: 'DESC', createdAt: 'DESC' },
     });
 
     // Fetch public posts
     const publicPosts = await userPostRepository.find({
-      where: { userId: Not(In([...connectedUserIds, userId])), isHidden: false },
+      where: { userId: Not(In([...connectedUserIds])), isDiscussion: discuss, isHidden: false },
       order: { updatedAt: 'DESC', createdAt: 'DESC' },
     });
 
@@ -84,21 +84,21 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     );
     
     // Fetch all user posts
-    const userPost = await userPostRepository.find({ where: { userId: In([userId]) } });
+    // const userPost = await userPostRepository.find({ where: { userId: In([userId]), isDiscussion: discuss } });
 
     // Remaining public posts (not engaged by connections)
     const remainingPublicPosts = publicPosts.filter(post => !engagedPublicPosts.includes(post));
 
     // Merge all prioritized posts
-    let allPosts = [...userPost, ...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
+    let allPosts = [ ...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
     
     // Filter out blocked posts and users
-    allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
-    allPosts = allPosts
-    .filter((post, index, self) =>
-      self.findIndex(p => p.id === post.id) === index 
-    )
-    .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
+    // allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
+    // allPosts = allPosts
+    // .filter((post, index, self) =>
+    //   self.findIndex(p => p.id === post.id) === index 
+    // )
+    // .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
   
     // Sort posts by date (latest first)
     allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -141,8 +141,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
 
       // Fetch media URLs
       await Promise.all(post.mediaKeys?.map(async (media) => {
-        const dUrl = await generatePresignedUrl(media.key);
-        documentsUrls.push({ url: dUrl, type: media.type });
+        const dUrl = await generatePresignedUrl(media?.key);
+        documentsUrls.push({ url: dUrl, type: media?.type });
       }) || []);
 
       const likeCount = likes.filter(like => like.postId === post.id).length;
@@ -158,20 +158,20 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       const finalCommentedByConnections = uniqueCommentedByConnections.filter(userId => !uniqueLikedByConnections.includes(userId));
 
       // // Fetch user details for liked and commented connections
-      // const likedUsers = await userRepository.findByIds(uniqueLikedByConnections);
-      // const commentedUsers = await userRepository.findByIds(finalCommentedByConnections);
+      const likedUsers = await userRepository.findByIds(uniqueLikedByConnections);
+      const commentedUsers = await userRepository.findByIds(finalCommentedByConnections);
 
-      // const likedByConnectionsWithDetails = likedUsers.map(user => ({
-      //   id: user.id,
-      //   firstName: user.firstName || '',
-      //   lastName: user.lastName || '',
-      // }));
+      const likedByConnectionsWithDetails = likedUsers.map(user => ({
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+      }));
 
-      // const commentedByConnectionsWithDetails = commentedUsers.map(user => ({
-      //   id: user.id,
-      //   firstName: user.firstName || '',
-      //   lastName: user.lastName || '',
-      // }));
+      const commentedByConnectionsWithDetails = commentedUsers.map(user => ({
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+      }));
 
       return {
         post: {
@@ -193,8 +193,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           discussionTopic: post.discussionTopic,
           discussionContent: post.discussionContent,
           originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
-          likedByConnections: uniqueLikedByConnections,
-          commentedByConnections: finalCommentedByConnections,
+          likedByConnections: likedByConnectionsWithDetails,
+          commentedByConnections: commentedByConnectionsWithDetails,
         },
         userDetails: {
           id: user?.id,
