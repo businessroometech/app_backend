@@ -279,13 +279,18 @@ export const ProfileVisitController = {
   },
 
   // Method for fetching profile visits
-  getMyProfileVisits: async (req: Request, res: Response) => {
+  getMyProfileVisits: async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { userId, page = 1, limit = 10 } = req.body;
+      const userId = req.userId;
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      
       const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
       const connectionRepository = AppDataSource.getRepository(Connection);
+      
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
       const visits = await profileVisitRepository
         .createQueryBuilder('profileVisit')
         .select('profileVisit.visitor', 'visitorId')
@@ -295,8 +300,8 @@ export const ProfileVisitController = {
         .where('profileVisit.visited = :userId AND profileVisit.visitedAt >= :oneWeekAgo', { userId, oneWeekAgo })
         .groupBy('profileVisit.visitor')
         .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
-        .offset((page - 1) * limit)
-        .limit(limit)
+        .offset((Number(page) - 1) * Number(limit))
+        .limit(Number(limit))
         .getRawMany();
 
       const visitors = await Promise.all(
@@ -320,7 +325,7 @@ export const ProfileVisitController = {
             ? await generatePresignedUrl(visitor?.profilePictureUploadId)
             : null;
 
-          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt); // format timestamp not work
+          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt);
           return {
             visitor: { ...visitor, profilePicture, visitedAt },
             visitCount: parseInt(visit.visitCount, 10),
@@ -344,9 +349,11 @@ export const ProfileVisitController = {
   },
 
   // Method for fetching profiles the user has visited
-  getProfilesIVisited: async (req: Request, res: Response) => {
+  getProfilesIVisited: async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { userId, page = 1, limit = 10 } = req.body;
+      const userId = req.userId;
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
 
       const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
       const connectionRepository = AppDataSource.getRepository(Connection);
@@ -365,7 +372,7 @@ export const ProfileVisitController = {
         .where('profileVisit.visitor = :userId AND profileVisit.visitedAt >= :oneWeekAgo', { userId, oneWeekAgo })
         .groupBy('profileVisit.visited')
         .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
-        .offset((page - 1) * limit)
+          .offset((page - 1) * limit)
         .limit(limit)
         .getRawMany();
 
