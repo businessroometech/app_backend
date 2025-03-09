@@ -13,7 +13,7 @@ const Router = express.Router();
 Router.post('/create-userpost', authenticate, uploadMiddleware, CreateUserPost)
 Router.post('/vote-in-poll', authenticate, VoteInPoll); 
 
-Router.get('/get-userpost', authenticate, FindUserPost)
+Router.get('/get-user-post', authenticate, FindUserPost)
 Router.post('/update-userpost-byPostId', authenticate, UpdateUserPost)
 Router.delete('/delete-userpost/:postId', authenticate, DeleteUserPost)
 Router.get('/get-all-post', authenticate, getAllPost)

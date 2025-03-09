@@ -303,7 +303,9 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
 // FindUserPost by userId
 export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { page = 1, limit = 5 } = req.query;
+    
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
 
     const userId = req.userId;
 
