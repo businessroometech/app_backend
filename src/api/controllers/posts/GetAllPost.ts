@@ -120,7 +120,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const postIds = paginatedPosts.map(post => post.id);
     const [comments, likes] = await Promise.all([
       commentRepository.find({ where: { postId: In(postIds) } }),
-      likeRepository.find({ where: { postId: In(postIds),status: true } }),
+      likeRepository.find({ where: { postId: In(postIds), status: true } }),
     ]);
 
     const likedByConnections = connectionLikes.reduce((acc, like) => {
@@ -173,6 +173,12 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
         lastName: user.lastName || '',
       }));
 
+      let originalPUser;
+      if (post?.repostedFrom) {
+        const repostedPost = await userPostRepository.findOne({ where: { id: post.repostedFrom } });
+        originalPUser = await userRepository.findOne({ where: { id: repostedPost?.userId } });
+      }
+
       return {
         post: {
           Id: post.id,
@@ -210,9 +216,17 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           isBadgeOn: user?.isBadgeOn,
           badgeName: user?.badgeName
         },
+        originalPostUser: {
+          id: originalPUser?.id,
+          firstName: originalPUser?.firstName || '',
+          lastName: originalPUser?.lastName || '',
+          avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
+          userRole: originalPUser?.userRole,
+          isBadgeOn: originalPUser?.isBadgeOn,
+          badgeName: originalPUser?.badgeName
+        }
       };
     }));
-
 
     return res.status(200).json({
       status: 'success',

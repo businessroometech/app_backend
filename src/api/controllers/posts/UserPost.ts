@@ -303,7 +303,7 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
 // FindUserPost by userId
 export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    
+
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
 
@@ -407,6 +407,12 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
         const likeStatus = likes.some((like) => like.postId === post.id && like.userId === userId);
 
+        let originalPUser;
+        if (post?.repostedFrom) {
+          const repostedPost = await userPostRepository.findOne({ where: { id: post.repostedFrom } });
+          originalPUser = await userRepository.findOne({ where: { id: repostedPost?.userId } });
+        }
+
         return {
           post: {
             Id: post.id,
@@ -439,6 +445,15 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             badgeName: user?.badgeName
           },
           comments: formattedComments.filter((comment) => comment.postId === post.id),
+          originalPostUser: {
+            id: originalPUser?.id,
+            firstName: originalPUser?.firstName || '',
+            lastName: originalPUser?.lastName || '',
+            avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
+            userRole: originalPUser?.userRole,
+            isBadgeOn: originalPUser?.isBadgeOn,
+            badgeName: originalPUser?.badgeName
+          }
         };
       })
     );
@@ -610,6 +625,12 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
       return like?.reactionId;
     }
 
+    let originalPUser;
+    if (post?.repostedFrom) {
+      const repostedPost = await postRepository.findOne({ where: { id: post.repostedFrom } });
+      originalPUser = await userRepos.findOne({ where: { id: repostedPost?.userId } });
+    }
+
     // Format the post with related data
     const formattedPost = {
       post: {
@@ -641,6 +662,15 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         badgeName: user?.badgeName
       },
       comments: formattedComments,
+      originalPostUser: {
+        id: originalPUser?.id,
+        firstName: originalPUser?.firstName || '',
+        lastName: originalPUser?.lastName || '',
+        avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
+        userRole: originalPUser?.userRole,
+        isBadgeOn: originalPUser?.isBadgeOn,
+        badgeName: originalPUser?.badgeName
+      }
     };
 
     return res.status(200).json({
