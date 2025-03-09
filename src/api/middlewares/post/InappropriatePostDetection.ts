@@ -34,22 +34,20 @@ const analyzeImage = async (filePath: string): Promise<boolean> => {
 
 // Middleware to check inappropriate images
 export const filterInappropriateMedia = async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded." });
+    if (req.file) {
+
+        const filePath = path.join(__dirname, "../", req.file.path);
+
+        const isInappropriate = await analyzeImage(filePath);
+
+        // Delete file after analysis
+        fs.unlink(filePath, (err) => {
+            if (err) console.error("Error deleting file:", err);
+        });
+
+        if (isInappropriate) {
+            return res.status(403).json({ message: "Inappropriate content detected. Upload rejected." });
+        }
     }
-
-    const filePath = path.join(__dirname, "../", req.file.path);
-
-    const isInappropriate = await analyzeImage(filePath);
-
-    // Delete file after analysis
-    fs.unlink(filePath, (err) => {
-        if (err) console.error("Error deleting file:", err);
-    });
-
-    if (isInappropriate) {
-        return res.status(403).json({ message: "Inappropriate content detected. Upload rejected." });
-    }
-
     next();
 };
