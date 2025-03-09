@@ -31,9 +31,9 @@ Router.post('/update-or-create-Profile', authenticate, UpdateUserProfile)
 Router.get('/get-user-Profile', authenticate, getUserProfile)
 
 
-Router.post('/recored-visit', ProfileVisitController.recordVisit)
-Router.post('/get-profile-visit', ProfileVisitController.getMyProfileVisits)
-Router.post('/get-profile-visited', ProfileVisitController.getProfilesIVisited)
+Router.post('/recored-visit',authenticate, ProfileVisitController.recordVisit)
+Router.get('/get-profile-visit',authenticate, ProfileVisitController.getMyProfileVisits)
+Router.get('/get-profile-visited',authenticate, ProfileVisitController.getProfilesIVisited)
 
 Router.post('/online-users', getOnlineUsers);
 Router.post('/get-users', searchUserProfile);
