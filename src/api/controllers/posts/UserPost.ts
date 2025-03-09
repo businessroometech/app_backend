@@ -300,8 +300,6 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
   }
 };
 
-
-
 // FindUserPost by userId
 export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
@@ -444,6 +442,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     );
 
     return res.status(200).json({
+      status: "success",
       message: 'User posts retrieved successfully.',
       data: {
         posts: formattedPosts,
@@ -455,6 +454,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
   } catch (error: any) {
     console.error('Error retrieving user posts:', error);
     return res.status(500).json({
+      status: "error",
       message: 'Internal server error. Could not retrieve user posts.',
       error: error.message,
     });
@@ -540,12 +540,10 @@ export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): 
   }
 };
 
-
-
 // get user post by postId
 export const GetUserPostById = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     // Validate postId
     if (!postId) {

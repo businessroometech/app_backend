@@ -40,7 +40,7 @@ Router.post("/remove-reaction", authenticate, removeReaction)
 
 Router.post("/mention", authenticate, suggestUsersByEmail)
 Router.post("/get-all-likes-for-comment", authenticate, getAllLikesForComment)
-Router.post("/get-user-post-by-id", authenticate, GetUserPostById)
+Router.get("/get-user-post-by-id/:postId", authenticate, GetUserPostById)
 
 Router.post("/block-post", authenticate, blockPost);
 Router.post("/block-user", authenticate, blockUser);
