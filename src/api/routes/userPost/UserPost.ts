@@ -7,10 +7,11 @@ import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
 import { blockPost, blockUser, reportedPost, reportedUser, unblockUser } from "@/api/controllers/posts/Blocked";
 import { getAllPost } from '@/api/controllers/posts/GetAllPost';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
+import { filterInappropriateMedia } from '@/api/middlewares/post/InappropriatePostDetection';
 
 const Router = express.Router();
 
-Router.post('/create-userpost', authenticate, uploadMiddleware, CreateUserPost)
+Router.post('/create-userpost', authenticate, uploadMiddleware, filterInappropriateMedia, CreateUserPost)
 Router.post('/vote-in-poll', authenticate, VoteInPoll); 
 
 Router.get('/get-user-post', authenticate, FindUserPost)

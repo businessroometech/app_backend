@@ -208,7 +208,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 // Attach multer middleware to the route
 export const uploadMiddleware = multer({ storage: storage }).array('documents', 10);
 
-
 export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { postId, selectedOption } = req.body;
@@ -232,26 +231,25 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
 
     if (pollDuration) {
       let checkDate;
-      let createdDate = new Date(createdOn); // Ensure createdOn is a Date object
+      let createdDate = new Date(createdOn);
 
-      if (pollDuration === '1 day') {
+      if (pollDuration === "1 day") {
         checkDate = new Date(createdDate);
         checkDate.setDate(checkDate.getDate() + 1);
-      } else if (pollDuration === '3 days') {
+      } else if (pollDuration === "3 days") {
         checkDate = new Date(createdDate);
         checkDate.setDate(checkDate.getDate() + 3);
-      } else if (pollDuration === '1 week') {
+      } else if (pollDuration === "1 week") {
         checkDate = new Date(createdDate);
         checkDate.setDate(checkDate.getDate() + 7);
-      } else if (pollDuration === '2 weeks') {
+      } else if (pollDuration === "2 weeks") {
         checkDate = new Date(createdDate);
         checkDate.setDate(checkDate.getDate() + 14);
       }
 
       let currDate = new Date();
-
       if (checkDate && checkDate < currDate) {
-        return res.status(400).json({ status: "error", message: "Poll is now inActive!" });
+        return res.status(400).json({ status: "error", message: "Poll is now inactive!" });
       }
     }
 
@@ -260,10 +258,9 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
       return res.status(400).json({ message: "Invalid option selected." });
     }
 
-    // Check if user has already voted
     const existingVote = await pollEntryRepository.findOne({ where: { userId, postId } });
 
-    if (existingVote) {
+    if (existingVote && existingVote.status) {
       if (existingVote.selectedOption === selectedOption) {
 
         post.pollOptions[selectedOptionIndex].votes -= 1;
@@ -275,8 +272,32 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
 
         return res.status(200).json({ status: "success", message: "Vote removed successfully.", data: { post } });
       } else {
-        return res.status(400).json({ status: "success", message: "User has already voted for a different option." });
+
+        const previousOptionIndex = post.pollOptions.findIndex(option => option.option === existingVote.selectedOption);
+        if (previousOptionIndex !== -1) {
+          post.pollOptions[previousOptionIndex].votes -= 1;
+        }
+
+        post.pollOptions[selectedOptionIndex].votes += 1;
+        await postRepository.save(post);
+
+        existingVote.selectedOption = selectedOption;
+        existingVote.updatedBy = "system";
+        await pollEntryRepository.save(existingVote);
+
+        return res.status(200).json({ status: "success", message: "Vote updated successfully.", data: { post } });
       }
+    } else if (existingVote && !existingVote.status) {
+
+      existingVote.selectedOption = selectedOption;
+      existingVote.status = true;
+      existingVote.updatedBy = "system";
+      await pollEntryRepository.save(existingVote);
+
+      post.pollOptions[selectedOptionIndex].votes += 1;
+      await postRepository.save(post);
+
+      return res.status(200).json({ status: "success", message: "Vote recorded successfully.", data: { post } });
     }
 
     post.pollOptions[selectedOptionIndex].votes += 1;
@@ -299,6 +320,7 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
     return res.status(500).json({ status: "error", message: "Internal server error.", error: error.message });
   }
 };
+
 
 // FindUserPost by userId
 export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
