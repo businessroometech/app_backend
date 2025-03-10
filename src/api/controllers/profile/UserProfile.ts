@@ -284,13 +284,13 @@ export const ProfileVisitController = {
       const userId = req.userId;
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 10;
-      
+
       const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
       const connectionRepository = AppDataSource.getRepository(Connection);
-      
+
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
+
       const visits = await profileVisitRepository
         .createQueryBuilder('profileVisit')
         .select('profileVisit.visitor', 'visitorId')
@@ -372,7 +372,7 @@ export const ProfileVisitController = {
         .where('profileVisit.visitor = :userId AND profileVisit.visitedAt >= :oneWeekAgo', { userId, oneWeekAgo })
         .groupBy('profileVisit.visited')
         .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
-          .offset((page - 1) * limit)
+        .offset((page - 1) * limit)
         .limit(limit)
         .getRawMany();
 
@@ -423,7 +423,7 @@ export const ProfileVisitController = {
 // search user profile
 export const searchUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { searchQuery } = req.body;
+    const searchQuery = req.query.search;
 
     const userId = req.userId;
 
@@ -488,6 +488,8 @@ export const searchUserProfile = async (req: AuthenticatedRequest, res: Response
             userRole: result.userRole,
             profileImgUrl,
             mutualConnectionCount,
+            isBadgeOn: result.isBadgeOn,
+            badgeName: result.badgeName
           };
         })
     );
