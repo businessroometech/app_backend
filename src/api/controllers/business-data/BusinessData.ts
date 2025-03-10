@@ -16,8 +16,9 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
     try {
         const subRole = req.query.subRole as string;
         const userId = req.userId;
-        const data = { userId, ...req.body };
+        const { id, ...data } = req.body; // Extract `id` from the request body
 
+        // Define repositories for each subRole
         const repositories: Record<string, Repository<any>> = {
             investor: AppDataSource.getRepository(InvestorData),
             aquiringStartup: AppDataSource.getRepository(AquiringStartup),
@@ -26,27 +27,52 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
             sellingStartup: AppDataSource.getRepository(SellingStartup),
         };
 
-
+        // Get the appropriate repository based on subRole
         const repository = repositories[subRole];
 
         if (!repository) {
             return res.status(400).json({ status: "fail", message: "Invalid subRole provided" });
         }
 
-        let existingData: any = await repository.findOne({ where: { userId, isHidden: false } });
+        let savedData;
 
-        if (existingData) {
-            repository.merge(existingData, data);
+        if (subRole === "sellingStartup") {
+            if (id) {
+                const existingData = await repository.findOne({ where: { id, userId, isHidden: false } });
+
+                if (!existingData) {
+                    return res.status(404).json({ status: "fail", message: "Record not found" });
+                }
+
+                Object.assign(existingData, data);
+                savedData = await repository.save(existingData);
+            } else {
+                const newData = repository.create({ userId, ...data });
+                savedData = await repository.save(newData);
+            }
         } else {
-            existingData = repository.create(data);
+            let existingData = await repository.findOne({ where: { userId, isHidden: false } });
+            if (existingData) {
+                Object.assign(existingData, data); 
+                savedData = await repository.save(existingData);
+            } else {
+                const newData = repository.create({ userId, ...data });
+                savedData = await repository.save(newData);
+            }
         }
 
-        const savedData = await repository.save(existingData as InvestorData | AquiringStartup | ExploringIdeas | SeekingConnections | SellingStartup);
-
-        return res.status(200).json({ status: "success", message: "business profile created", data: { businessData: savedData } });
+        return res.status(200).json({
+            status: "success",
+            message: "Business profile created or updated",
+            data: { businessData: savedData }
+        });
 
     } catch (error: any) {
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        console.error("Error in createOrUpdateInvestorData:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
     }
 };
 
@@ -105,7 +131,7 @@ export const getInvestorData = async (req: AuthenticatedRequest, res: Response) 
         let data;
 
         if (userId) {
-            data = await repository.findOne({ where: { userId, isHidden: false } });
+            data = await repository.find({ where: { userId, isHidden: false } });
 
             if (!data) {
                 return res.status(404).json({ status: "fail", message: "data not found" });
