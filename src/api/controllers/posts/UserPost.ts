@@ -331,8 +331,12 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
+    const profileId = req.query.profileId;
 
     const userId = req.userId;
+    let id: any = userId;
+
+    if(profileId) id = profileId;
 
     // Validate userId
     if (!userId) {
@@ -342,8 +346,8 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     // Fetch user details
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOne({
-      where: { id: userId },
-      select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId'],
+      where: { id: id },
+      select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId' , 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
     });
 
     if (!user) {
@@ -353,7 +357,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     // Fetch user posts with pagination
     const userPostRepository = AppDataSource.getRepository(UserPost);
     const [userPosts, totalPosts] = await userPostRepository.findAndCount({
-      where: { userId, isDiscussion: false, isHidden: false },
+      where: { userId: id, isDiscussion: false, isHidden: false },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -417,7 +421,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
     // Format posts with related data
     const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
-    const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: userId } });
+    const blockedPosts = await blockedPostRepo.find({ where: { blockedBy: id } });
     const blockedPostIds = blockedPosts.map(bp => bp.blockedPost);
     const newUserPosts = userPosts.filter(post => !blockedPostIds.includes(post.id));
 
@@ -430,7 +434,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
         });
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
-        const likeStatus = likes.some((like) => like.postId === post.id && like.userId === userId);
+        const likeStatus = likes.some((like) => like.postId === post.id && like.userId === id);
 
         let originalPUser;
         if (post?.repostedFrom) {
