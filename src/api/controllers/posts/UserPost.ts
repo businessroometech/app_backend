@@ -204,8 +204,12 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
   }
 };
 
-// Attach multer middleware to the route
-export const uploadMiddleware = multer({ storage: storage }).array('documents', 10);
+export const uploadMiddleware = multer({ storage: storage }).fields([
+  { name: "profilePhoto", maxCount: 1 },
+  { name: "coverPhoto", maxCount: 1 },
+  { name: "documents", maxCount: 10 },
+]);
+
 
 export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
@@ -460,8 +464,6 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             createdAt: post.createdAt,
             userRole: user.userRole,
             avatar: imgUrl,
-            zoomProfile: user.zoomProfile,
-            rotateProfile: user.rotateProfile,
             isBadgeOn: user?.isBadgeOn,
             badgeName: user?.badgeName
           },

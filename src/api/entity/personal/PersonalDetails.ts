@@ -153,6 +153,16 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: "varchar", nullable: true })
   badgeName !: string;
 
+  @Column({ type: "json", nullable: true })
+  experience!: {
+    current: boolean;
+    startDate: string;
+    endDate?: string;
+    position: string;
+    organization: string;
+    description: string;
+  }[];
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
