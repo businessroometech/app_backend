@@ -10,7 +10,7 @@ import { sendResetEmail, resetPassword } from "@/api/controllers/auth/ResetPassw
 import { getOnlineUsers } from '@/api/controllers/chat/Message';
 import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 import { getInTouch, createAccount, transfer } from '@/api/controllers/LandingPage/LandingPage';
-import { uploadMiddleware } from '@/api/controllers/posts/UserPost';
+// import { uploadMiddleware2 } from '@/api/controllers/posts/UserPost';
 // import { getOnlineUsers } from "../../../socket";
 // import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 
@@ -28,7 +28,7 @@ Router.post('/verify-email', verifyEmail);
 Router.post('/generate-upload-url', generateUploadUrl);
 Router.post('/document-retrival', getDocumentFromBucket);
 
-Router.post('/update-or-create-Profile', authenticate, uploadMiddleware, UpdateUserProfile)
+Router.post('/update-or-create-Profile', authenticate, UpdateUserProfile)
 Router.get('/get-user-Profile', authenticate, getUserProfile)
 
 

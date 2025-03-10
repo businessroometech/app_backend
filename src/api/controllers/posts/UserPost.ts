@@ -40,12 +40,12 @@ export interface AuthenticatedRequest extends Request {
 }
 
 
-const storage = multer.memoryStorage(); 
+const storage = multer.memoryStorage();
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-});
+// const upload = multer({
+//   storage: storage,
+//   limits: { fileSize: 50 * 1024 * 1024 },
+// }).array("files");
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
@@ -204,11 +204,12 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
   }
 };
 
-export const uploadMiddleware = multer({ storage: storage }).fields([
-  { name: "profilePhoto", maxCount: 1 },
-  { name: "coverPhoto", maxCount: 1 },
-  { name: "documents", maxCount: 10 },
-]);
+export const uploadMiddleware = multer({ storage: storage }).array('files', 10);
+
+// export const uploadMiddleware2 = multer({ storage: storage }).fields([
+//   { name: "profilePhoto", maxCount: 1 },
+//   { name: "coverPhoto", maxCount: 1 }
+// ]);
 
 
 export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
@@ -336,7 +337,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     const userId = req.userId;
     let id: any = userId;
 
-    if(profileId) id = profileId;
+    if (profileId) id = profileId;
 
     // Validate userId
     if (!userId) {
@@ -347,7 +348,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOne({
       where: { id: id },
-      select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId' , 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
+      select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId', 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
     });
 
     if (!user) {
