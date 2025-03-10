@@ -11,37 +11,37 @@ export class InvestorData extends BaseEntity {
     @Column({ type: "bool", default: false })
     isHidden !: boolean;
 
-    @Column({ type: 'varchar' }) 
+    @Column({ type: 'varchar', nullable: true }) 
     isAccredited !: string;
 
     @Column({ type: 'varchar', nullable: true }) 
     accreditationGroups?: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true  })
     investorProfile !: string;
 
-    @Column('simple-array') 
+    @Column('simple-array',{ nullable: true } ) 
     startupTypes !: string[];
 
-    @Column({ type: 'varchar' }) 
+    @Column({ type: 'varchar', nullable: true  }) 
     investmentStage !: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true  })
     specificRegion !: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true  })
     regionPreference !: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true  })
     investmentSize !: string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', nullable: true  })
     totalBudget !: string;
 
-    @Column({ type: 'varchar' }) 
+    @Column({ type: 'varchar', nullable: true  }) 
     coInvestment !: string;
 
-    @Column({ type: 'varchar' }) 
+    @Column({ type: 'varchar', nullable: true  }) 
     equityPercentage !: string;
 
     @Column({ type: 'varchar', nullable: true }) 

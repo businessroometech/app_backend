@@ -16,7 +16,6 @@ import { Connection } from '../../entity/connection/Connections';
 import { uploadBufferDocumentToS3, getDocumentFromBucket } from "../s3/awsControllers";
 import { PollEntry } from '@/api/entity/posts/PollEntry';
 
-// Utility function to format the timestamp (e.g., "2 seconds ago", "3 minutes ago")
 export const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
   const createdTime = new Date(createdAt).getTime();
@@ -41,11 +40,11 @@ export interface AuthenticatedRequest extends Request {
 }
 
 
-const storage = multer.memoryStorage(); // Store files in memory as buffers
+const storage = multer.memoryStorage(); 
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit per file
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
