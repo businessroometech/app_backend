@@ -66,6 +66,10 @@ import { Connect } from './api/entity/LandingPage/Connect';
 import { NestedCommentLike } from './api/entity/posts/NestedCommentLike';
 import { PollEntry } from './api/entity/posts/PollEntry';
 import { InvestorData } from './api/entity/business-data/InvestorData';
+import { AquiringStartup } from './api/entity/business-data/AquiringStartup';
+import { SellingStartup } from './api/entity/business-data/SellingStartup';
+import { SeekingConnections } from './api/entity/business-data/SeekingConnections';
+import { ExploringIdeas } from './api/entity/business-data/ExploringIdeas';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -108,7 +112,11 @@ const AppDataSource = new DataSource({
     Connect,
     NestedCommentLike,
     PollEntry,
-    InvestorData
+    InvestorData,
+    AquiringStartup,
+    SellingStartup,
+    SeekingConnections,
+    ExploringIdeas
   ],
   synchronize: false,
 });

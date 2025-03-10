@@ -6,13 +6,13 @@ import {
   createOrUpdateInvestorData,
   getInvestorData,
   deleteInvestorData
-} from '../../controllers/business-data/InvestorData';
+} from '../../controllers/business-data/BusinessData';
 
 
 const router = Router();
 
 router.post('/investor-data', authenticate, createOrUpdateInvestorData);
 router.get('/investor-data', authenticate, getInvestorData);
-router.delete('/investor-data/:investorId', authenticate, deleteInvestorData);
+router.delete('/investor-data/:id', authenticate, deleteInvestorData);
 
 export default router;

@@ -8,6 +8,9 @@ export class InvestorData extends BaseEntity {
     @Column({ type: 'uuid' }) 
     userId !: string;
 
+    @Column({ type: "bool", default: false })
+    isHidden !: boolean;
+
     @Column({ type: 'varchar' }) 
     isAccredited !: string;
 
