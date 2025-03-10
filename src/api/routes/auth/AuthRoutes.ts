@@ -36,7 +36,7 @@ Router.get('/get-profile-visit',authenticate, ProfileVisitController.getMyProfil
 Router.get('/get-profile-visited',authenticate, ProfileVisitController.getProfilesIVisited)
 
 Router.post('/online-users', getOnlineUsers);
-Router.get('/users', searchUserProfile);
+Router.get('/users', authenticate, searchUserProfile);
 Router.post('/get-user-userName', findUserByUserName);
 
 Router.post('/get-in-touch', getInTouch);
