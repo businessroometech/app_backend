@@ -101,9 +101,9 @@ export class PersonalDetails extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    default: '',
+    nullable: true,
   })
-  userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor';
+  userRole!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
