@@ -50,71 +50,62 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const currentUser = await userRepository.findOne({ where: { id: userId } });
     if (!currentUser) return res.status(400).json({ message: 'User not found.' });
 
-    console.log("--------------------------", currentUser);
+    const connections = await connectionRepository
+      .createQueryBuilder('connection')
+      .where('connection.status = :status', { status: 'accepted' })
+      .andWhere(
+        '(connection.requesterId = :userId OR connection.receiverId = :userId)',
+        { userId }
+      )
+      .getMany();
 
-    // Fetch connections
-    // const connections = await connectionRepository.find({
-    // where: [
-    //   { receiverId: userId, status: 'accepted' },
-    //   { requesterId: userId, status: 'accepted' },
-    // ],
-    // });
-
-    // console.log("--------------------------",connections);
-    // if(!connections)
-    // {
-    //   return res.status(400).json({ status: "error", message: "No connections" })
-    // }
-
-    // const connectedUserIds = connections.map(conn => conn.requesterId === userId ? conn.receiverId : conn.requesterId);
+    const connectedUserIds = connections.map(conn => conn.requesterId === userId ? conn.receiverId : conn.requesterId);
 
     // Fetch priority posts (User + Connections' Posts)
-    // const connectedPosts = await userPostRepository.find({
-    //   where: { userId: In([...connectedUserIds, userId]), isDiscussion: discuss, isHidden: false },
-    //   order: { updatedAt: 'DESC', createdAt: 'DESC' },
-    // });
+    const connectedPosts = await userPostRepository.find({
+      where: { userId: In([...connectedUserIds, userId]), isDiscussion: discuss, isHidden: false },
+      order: { updatedAt: 'DESC', createdAt: 'DESC' },
+    });
 
     // // Fetch public posts
-    // const publicPosts = await userPostRepository.find({
-    //   where: { userId: Not(In([...connectedUserIds])), isDiscussion: discuss, isHidden: false },
-    //   order: { updatedAt: 'DESC', createdAt: 'DESC' },
-    // });
+    const publicPosts = await userPostRepository.find({
+      where: { userId: Not(In([...connectedUserIds])), isDiscussion: discuss, isHidden: false },
+      order: { updatedAt: 'DESC', createdAt: 'DESC' },
+    });
 
     // // Identify posts that connections engaged with (liked or commented)
-    // const publicPostIds = publicPosts.map(post => post.id);
-    // const [connectionLikes, connectionComments] = await Promise.all([
-    //   likeRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
-    //   commentRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
-    // ]);
+    const publicPostIds = publicPosts.map(post => post.id);
+    const [connectionLikes, connectionComments] = await Promise.all([
+      likeRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
+      commentRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
+    ]);
 
-    // const engagedPublicPosts = publicPosts.filter(post =>
-    //   connectionLikes.some(like => like.postId === post.id) ||
-    //   connectionComments.some(comment => comment.postId === post.id)
-    // );
+    const engagedPublicPosts = publicPosts.filter(post =>
+      connectionLikes.some(like => like.postId === post.id) ||
+      connectionComments.some(comment => comment.postId === post.id)
+    );
 
     // Fetch all user posts
-    // const userPost = await userPostRepository.find({ where: { userId: In([userId]), isDiscussion: discuss } });
+    const userPost = await userPostRepository.find({ where: { userId: In([userId]), isDiscussion: discuss } });
 
     // Remaining public posts (not engaged by connections)
-    // const remainingPublicPosts = publicPosts.filter(post => !engagedPublicPosts.includes(post));
+    const remainingPublicPosts = publicPosts.filter(post => !engagedPublicPosts.includes(post));
 
     // Merge all prioritized posts
-    // let allPosts = [...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
+    let allPosts = [...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
 
     // Filter out blocked posts and users
-    // allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
-    // allPosts = allPosts
-    //   .filter((post, index, self) =>
-    //     self.findIndex(p => p.id === post.id) === index
-    //   )
-    //   .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
+    allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
+    allPosts = allPosts
+      .filter((post, index, self) =>
+        self.findIndex(p => p.id === post.id) === index
+      )
+      .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
 
     // // Sort posts by date (latest first)
-    // allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     // // Pagination
-
-    const allPosts = await userPostRepository.find();
 
     const startIndex = (Number(page) - 1) * Number(limit);
     const paginatedPosts = allPosts.slice(startIndex, Number(startIndex) + Number(limit));
@@ -135,17 +126,17 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       likeRepository.find({ where: { postId: In(postIds), status: true } }),
     ]);
 
-    // const likedByConnections = connectionLikes.reduce((acc, like) => {
-    //   if (!acc[like.postId]) acc[like.postId] = [];
-    //   acc[like.postId].push(like.userId);
-    //   return acc;
-    // }, {} as Record<string, string[]>);
+    const likedByConnections = connectionLikes.reduce((acc, like) => {
+      if (!acc[like.postId]) acc[like.postId] = [];
+      acc[like.postId].push(like.userId);
+      return acc;
+    }, {} as Record<string, string[]>);
 
-    // const commentedByConnections = connectionComments.reduce((acc, comment) => {
-    //   if (!acc[comment.postId]) acc[comment.postId] = [];
-    //   acc[comment.postId].push(comment.userId);
-    //   return acc;
-    // }, {} as Record<string, string[]>);
+    const commentedByConnections = connectionComments.reduce((acc, comment) => {
+      if (!acc[comment.postId]) acc[comment.postId] = [];
+      acc[comment.postId].push(comment.userId);
+      return acc;
+    }, {} as Record<string, string[]>);
 
 
     const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
@@ -163,27 +154,27 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       const user = await userRepository.findOne({ where: { id: post.userId } });
 
       // Remove duplicate user interactions
-      // const uniqueLikedByConnections = Array.from(new Set(likedByConnections[post.id] || []));
-      // const uniqueCommentedByConnections = Array.from(new Set(commentedByConnections[post.id] || []));
+      const uniqueLikedByConnections = Array.from(new Set(likedByConnections[post.id] || []));
+      const uniqueCommentedByConnections = Array.from(new Set(commentedByConnections[post.id] || []));
 
       // Filter out users who liked the post from the commented list
-      // const finalCommentedByConnections = uniqueCommentedByConnections.filter(userId => !uniqueLikedByConnections.includes(userId));
+      const finalCommentedByConnections = uniqueCommentedByConnections.filter(userId => !uniqueLikedByConnections.includes(userId));
 
       // // Fetch user details for liked and commented connections
-      // const likedUsers = await userRepository.findByIds(uniqueLikedByConnections);
-      // const commentedUsers = await userRepository.findByIds(finalCommentedByConnections);
+      const likedUsers = await userRepository.findByIds(uniqueLikedByConnections);
+      const commentedUsers = await userRepository.findByIds(finalCommentedByConnections);
 
-      // const likedByConnectionsWithDetails = likedUsers.map(user => ({
-      //   id: user.id,
-      //   firstName: user.firstName || '',
-      //   lastName: user.lastName || '',
-      // }));
+      const likedByConnectionsWithDetails = likedUsers.map(user => ({
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+      }));
 
-      // const commentedByConnectionsWithDetails = commentedUsers.map(user => ({
-      //   id: user.id,
-      //   firstName: user.firstName || '',
-      //   lastName: user.lastName || '',
-      // }));
+      const commentedByConnectionsWithDetails = commentedUsers.map(user => ({
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+      }));
 
       let originalPUser;
       if (post?.repostedFrom) {
@@ -214,8 +205,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           question: post.question,
           postOptions: post.pollOptions,
           originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
-          // likedByConnections: likedByConnectionsWithDetails,
-          // commentedByConnections: commentedByConnectionsWithDetails,
+          likedByConnections: likedByConnectionsWithDetails,
+          commentedByConnections: commentedByConnectionsWithDetails,
         },
         userDetails: {
           id: user?.id,
