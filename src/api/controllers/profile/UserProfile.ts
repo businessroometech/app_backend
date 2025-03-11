@@ -68,85 +68,93 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
 
     const userId = req.userId;
     const userRepository = AppDataSource.getRepository(PersonalDetails);
-    const user = await userRepository.findOneBy({ id: userId });
 
-    if (!user) {
+    // Fetch user details once
+    const personalDetails = await userRepository.findOneBy({ id: userId });
+
+    if (!personalDetails) {
       return res.status(400).json({ message: "User ID is invalid or does not exist." });
     }
 
-    // Fetch user details
-    const personalDetails = await userRepository.findOneBy({ id: userId });
-
-    if (personalDetails) {
-      // Update basic profile fields
-      if (occupation !== undefined) personalDetails.occupation = occupation;
-      if (firstName !== undefined) personalDetails.firstName = firstName;
-      if (lastName !== undefined) personalDetails.lastName = lastName;
-      if (dob !== undefined) personalDetails.dob = dob;
-      if (experience !== undefined) personalDetails.experience = experience;
-      if (mobileNumber !== undefined) personalDetails.mobileNumber = mobileNumber;
-      if (emailAddress !== undefined) personalDetails.emailAddress = emailAddress;
-      if (bio !== undefined) personalDetails.bio = bio;
-      if (gender !== undefined) personalDetails.gender = gender;
-      if (investorType !== undefined) personalDetails.investorType = investorType;
-      if (isBadgeOn !== undefined) {
-        personalDetails.isBadgeOn = isBadgeOn;
-        personalDetails.badgeName = badgeName;
-      }
-
-      // Check for profile photo & cover photo in req.files
-      if (req.files) {
-        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-
-        if (files.profilePhoto && files.profilePhoto.length > 0) {
-          try {
-            console.log("Uploading profile photo:", files.profilePhoto[0].originalname);
-            const profilePhotoKey = await uploadBufferDocumentToS3(
-              files.profilePhoto[0].buffer,
-              userId,
-              files.profilePhoto[0].mimetype
-            );
-            personalDetails.profilePictureUploadId = profilePhotoKey.fileKey;
-          } catch (uploadError) {
-            console.error("Profile photo upload error:", uploadError);
-          }
-        }
-
-        if (files.coverPhoto && files.coverPhoto.length > 0) {
-          try {
-            console.log("Uploading cover photo:", files.coverPhoto[0].originalname);
-            const coverPhotoKey = await uploadBufferDocumentToS3(
-              files.coverPhoto[0].buffer,
-              userId,
-              files.coverPhoto[0].mimetype
-            );
-            personalDetails.bgPictureUploadId = coverPhotoKey.fileKey;
-          } catch (uploadError) {
-            console.error("Cover photo upload error:", uploadError);
-          }
-        }
-
-        if (files.documents && Array.isArray(files.documents)) {
-          for (const file of files.documents) {
-            try {
-              console.log("Uploading document:", file.originalname);
-              await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
-            } catch (uploadError) {
-              console.error("S3 Upload Error:", uploadError);
-            }
-          }
-        }
-      }
-
-      personalDetails.updatedBy = "system";
-
-      await userRepository.save(personalDetails);
-
-      return res.status(200).json({
-        message: "User profile updated successfully.",
-        data: personalDetails,
-      });
+    // Update basic profile fields
+    if (occupation !== undefined) personalDetails.occupation = occupation;
+    if (firstName !== undefined) personalDetails.firstName = firstName;
+    if (lastName !== undefined) personalDetails.lastName = lastName;
+    if (dob !== undefined) personalDetails.dob = dob;
+    if (experience !== undefined) personalDetails.experience = experience;
+    if (mobileNumber !== undefined) personalDetails.mobileNumber = mobileNumber;
+    if (emailAddress !== undefined) personalDetails.emailAddress = emailAddress;
+    if (bio !== undefined) personalDetails.bio = bio;
+    if (gender !== undefined) personalDetails.gender = gender;
+    if (investorType !== undefined) personalDetails.investorType = investorType;
+    if (isBadgeOn !== undefined) {
+      personalDetails.isBadgeOn = isBadgeOn;
+      personalDetails.badgeName = badgeName;
     }
+
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      console.log("Files received:", files);
+
+      if (files.profilePhoto) {
+        console.log("Profile Photo Exists:", files.profilePhoto[0].originalname);
+      } else {
+        console.log("Profile Photo Missing!");
+      }
+
+      if (files.coverPhoto) {
+        console.log("Cover Photo Exists:", files.coverPhoto[0].originalname);
+      } else {
+        console.log("Cover Photo Missing!");
+      }
+    }
+
+    // Check for profile photo & cover photo in req.files
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+      let profilePhotoSuccess = false;
+      let coverPhotoSuccess = false;
+
+      if (files.profilePhoto && files.profilePhoto.length > 0) {
+        try {
+          console.log("Uploading profile photo:", files.profilePhoto[0].originalname);
+          const profilePhotoKey = await uploadBufferDocumentToS3(
+            files.profilePhoto[0].buffer,
+            userId,
+            files.profilePhoto[0].mimetype
+          );
+          personalDetails.profilePictureUploadId = profilePhotoKey.fileKey;
+          profilePhotoSuccess = true;
+        } catch (uploadError) {
+          console.error("Profile photo upload error:", uploadError);
+        }
+      }
+
+      if (files.coverPhoto && files.coverPhoto.length > 0) {
+        try {
+          console.log("Uploading cover photo:", files.coverPhoto[0].originalname);
+          const coverPhotoKey = await uploadBufferDocumentToS3(
+            files.coverPhoto[0].buffer,
+            userId,
+            files.coverPhoto[0].mimetype
+          );
+          personalDetails.bgPictureUploadId = coverPhotoKey.fileKey;
+          coverPhotoSuccess = true;
+        } catch (uploadError) {
+          console.error("Cover photo upload error:", uploadError);
+        }
+      }
+    }
+
+    personalDetails.updatedBy = "system";
+
+    await userRepository.save(personalDetails);
+
+    return res.status(200).json({
+      message: "User profile updated successfully.",
+      data: personalDetails,
+    });
   } catch (error: any) {
     console.error("Error updating user profile:", error);
     return res.status(500).json({
@@ -155,6 +163,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     });
   }
 };
+
 
 // get user profile
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
