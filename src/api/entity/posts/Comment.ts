@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import {
     BaseEntity,
     BeforeInsert,
-    Column,     
+    Column,
     CreateDateColumn,
     Entity,
     OneToMany,
@@ -26,9 +26,8 @@ export class Comment extends BaseEntity {
     @Column({ type: 'text' })
     text!: string;
 
-    @Column({ type: 'simple-array', nullable: true })
-    mediaKeys?: string[];
-
+    @Column({ type: 'json', nullable: true })
+    mediaKeys?: { key: string, type: string };
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -56,8 +55,8 @@ export class Comment extends BaseEntity {
         return randomBytes(16).toString('hex');
     }
 
-    
+
     @OneToMany(() => Mention, (mention) => mention.comment, { cascade: true })
     mentions!: Mention[];
-  
+
 }

@@ -64,7 +64,7 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
           }
         }
       }
-      // newComment.mediaKeys = uploadedDocumentUrl;
+      newComment.mediaKeys = uploadedDocumentUrl;
     }
 
 
