@@ -656,8 +656,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     if (post && post.repostedFrom) {
       const repostedPost = await postRepository.findOne({ where: { id: post.repostedFrom } });
 
-      if (repostedPost) {  // Ensure repostedPost is not null
-        originalPUser = await userRepos.findOne({ where: { id: repostedPost.userId } });    
+      if (repostedPost) {
+        originalPUser = await userRepos.findOne({ where: { id: "3b8ba5e34776d98fc34c7e5ed0f29a42" } });    
       }
     }
 

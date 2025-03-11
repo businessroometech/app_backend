@@ -118,7 +118,7 @@ const AppDataSource = new DataSource({
     SeekingConnections,
     ExploringIdeas
   ],
-  synchronize: true,
+  synchronize: false,
 });
 
 // Initialize the DataSource
