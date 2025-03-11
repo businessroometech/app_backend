@@ -59,6 +59,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       )
       .getMany();
 
+
     const connectedUserIds = connections.map(conn => conn.requesterId === userId ? conn.receiverId : conn.requesterId);
 
     // Fetch priority posts (User + Connections' Posts)
@@ -94,6 +95,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     // Merge all prioritized posts
     let allPosts = [...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
 
+
     // Filter out blocked posts and users
     allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
     allPosts = allPosts
@@ -111,6 +113,10 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const paginatedPosts = allPosts.slice(startIndex, Number(startIndex) + Number(limit));
     const totalPosts = allPosts.length;
 
+    console.log(startIndex, page, limit);
+    console.log("******************************",paginatedPosts);
+
+
     if (!paginatedPosts.length) {
       return res.status(200).json({
         status: 'success',
@@ -125,6 +131,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       commentRepository.find({ where: { postId: In(postIds) } }),
       likeRepository.find({ where: { postId: In(postIds), status: true } }),
     ]);
+
 
     const likedByConnections = connectionLikes.reduce((acc, like) => {
       if (!acc[like.postId]) acc[like.postId] = [];
@@ -215,7 +222,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
           timestamp: formatTimestamp(post.updatedAt || post.createdAt),
           userRole: user?.userRole,
-          // connection: connectedUserIds.includes(post.userId),
+          connection: connectedUserIds.includes(post.userId),
           isBadgeOn: user?.isBadgeOn,
           badgeName: user?.badgeName
         },

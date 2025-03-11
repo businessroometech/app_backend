@@ -413,7 +413,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
     // Fetch profile picture URL
     const imgUrl = user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
-
+    console.log(imgUrl);
 
     // Format posts with related data
     const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
@@ -609,21 +609,26 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
       likeRepository.find({ where: { postId, status: true } }),
     ]);
 
-    // Fetch media URLs for the post
-    // const mediaUrls = post.mediaKeys ? await Promise.all(post.mediaKeys.map((key) => generatePresignedUrl(key))) : [];
+    const generateSafePresignedUrl = async (key: string) => {
+      try {
+        return await generatePresignedUrl(key);
+      } catch (error) {
+        console.error("Error generating presigned URL for key:", key, error);
+        return null;
+      }
+    };
 
-    const documentsUrls: { url: string, type: string }[] = [];
+    const documentsUrls = post.mediaKeys
+      ? await Promise.all(post.mediaKeys.map(async (media) => ({
+        url: await generateSafePresignedUrl(media?.key),
+        type: media.type,
+      })))
+      : [];
 
-    post.mediaKeys?.map(async (media) => {
-      const dUrl = await generatePresignedUrl(media.key);
-      documentsUrls.push({ url: dUrl, type: media.type });
-    });
-
-    // Format comments
     const formattedComments = await Promise.all(
       comments.map(async (comment) => {
         const commenter = await AppDataSource.getRepository(PersonalDetails).findOne({
-          where: { id: comment.userId },
+          where: { id: comment?.userId },
           select: ['firstName', 'lastName'],
         });
 
@@ -631,13 +636,12 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
           id: comment.id,
           commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`,
           text: comment.text,
-          timestamp: formatTimestamp(comment.createdAt),
-          createdAt: comment.createdAt
+          timestamp: formatTimestamp(comment?.createdAt),
+          createdAt: comment?.createdAt
         };
       })
     );
 
-    // Fetch profile picture URL
     const userId = post.userId;
     const userRepos = AppDataSource.getRepository(PersonalDetails)
     const user = await userRepos.findOne({ where: { id: userId } })
@@ -649,9 +653,12 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     }
 
     let originalPUser;
-    if (post?.repostedFrom) {
+    if (post && post.repostedFrom) {
       const repostedPost = await postRepository.findOne({ where: { id: post.repostedFrom } });
-      originalPUser = await userRepos.findOne({ where: { id: repostedPost?.userId } });
+
+      if (repostedPost) {  // Ensure repostedPost is not null
+        originalPUser = await userRepos.findOne({ where: { id: repostedPost.userId } });    
+      }
     }
 
     // Format the post with related data
