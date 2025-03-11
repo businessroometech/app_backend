@@ -55,7 +55,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       .where('connection.status = :status', { status: 'accepted' })
       .andWhere(
         '(connection.requesterId = :userId OR connection.receiverId = :userId)',
-        { userId }
+        // { userId }
       )
       .getMany();
 
