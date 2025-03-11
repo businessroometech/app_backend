@@ -53,7 +53,7 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
     await connectionRepository.save(newConnection);
 
     // Create a notification
-   await sendNotification(
+    await sendNotification(
       receiverId,
       `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
       requester?.profilePictureUploadId,
@@ -107,7 +107,7 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
     // Create a notification
     const notification = await sendNotification(
       connection.requester.id,
-      `${connection.receiver.firstName} ${connection.receiver.lastName} ${data?.status } your connection request`,
+      `${connection.receiver.firstName} ${connection.receiver.lastName} ${data?.status} your connection request`,
       connection?.receiver?.profilePictureUploadId,
       `/settings/ManageConnections`
     );
@@ -118,11 +118,11 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
   } catch (error: any) {
     console.error('Error updating connection status:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
-  } 
+  }
 };
 
 // Get user's connections and mutual connections
-export const getUserConnections = async (req: AuthenticatedRequest , res: Response): Promise<Response> => {
+export const getUserConnections = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { profileId } = req.params;
   const userId = req.userId;
 
@@ -187,7 +187,7 @@ export const getUserConnections = async (req: AuthenticatedRequest , res: Respon
           userRole: user?.userRole,
           profilePictureUrl: profilePictureUrl,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
-          mutual: isMutual, 
+          mutual: isMutual,
         };
       })
     );
@@ -265,7 +265,7 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
         const profilePictureUploadUrl = user?.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
-   
+
         return {
           connectionId: connection.id,
           requesterId: connection.requesterId,
@@ -278,10 +278,10 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
         };
       })
     );
-    
+
 
     return res.status(200).json(response);
-  
+
   } catch (error) {
     console.error('Error fetching connection requests:', error);
     return res.status(500).json({ message: 'Server error. Please try again later.' });
@@ -409,7 +409,7 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
 
 export class ConnectionController {
   static async fetchUserConnectionsStatus(req: AuthenticatedRequest, res: Response) {
-    const {  status } = req.params;
+    const { status } = req.params;
     const userId = req.userId;
 
     if (!userId) {
@@ -420,24 +420,34 @@ export class ConnectionController {
       if (!requesterId || !status) {
         return res.status(400).json({ message: 'Both requesterId and status are required.' });
       }
-      const validStatuses = ['pending', 'accepted', 'rejected'];
-      if (!validStatuses.includes(status)) {
+      
+      const connectionRepository = AppDataSource.getRepository(Connection);
+
+      const validStatuses = ['pending', 'accepted', 'rejected', 'block'] as const;
+      type ConnectionStatus = (typeof validStatuses)[number];
+
+      if (!validStatuses.includes(status as ConnectionStatus)) {
         return res.status(400).json({ message: `Invalid status. Valid values are: ${validStatuses.join(', ')}` });
       }
 
-      // Fetch connections from the database
-      const connectionRepository = AppDataSource.getRepository(Connection);
+      // Properly structuring the where condition
       let connections = await connectionRepository.find({
-        where: { requesterId, status },
+        where: { requesterId, status: status as ConnectionStatus },
         relations: ['receiver'],
       });
+
+      // Fetch connections from the database
+      // let connections  = await connectionRepository.find({
+      //   where: { requesterId, status: status as validStatuses},
+      //   relations: ['receiver'],
+      // });
 
       if (connections.length < 1) {
         return res.status(404).json({ message: 'No connections found.' });
       }
 
       const connectionsWithImages = await Promise.all(connections.map(async (connection) => {
-        const receiverImage = connection.receiver.profilePictureUploadId 
+        const receiverImage = connection.receiver.profilePictureUploadId
           ? await generatePresignedUrl(connection.receiver.profilePictureUploadId)
           : null;
         return {

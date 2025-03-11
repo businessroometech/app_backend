@@ -7,6 +7,7 @@ import { ExploringIdeas } from '@/api/entity/business-data/ExploringIdeas';
 import { SeekingConnections } from '@/api/entity/business-data/SeekingConnections';
 import { SellingStartup } from '@/api/entity/business-data/SellingStartup';
 import { Repository } from 'typeorm';
+import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 
 export interface AuthenticatedRequest extends Request {
     userId?: string;
@@ -16,7 +17,7 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
     try {
         const subRole = req.query.subRole as string;
         const userId = req.userId;
-        const { id, ...data } = req.body; 
+        const { id, ...data } = req.body;
 
         const repositories: Record<string, Repository<any>> = {
             investor: AppDataSource.getRepository(InvestorData),
@@ -27,6 +28,9 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
         };
 
         const repository = repositories[subRole];
+
+        const userRepo = AppDataSource.getRepository(PersonalDetails);
+        const user = await userRepo.findOne({ where: { id: userId } });
 
         if (!repository) {
             return res.status(400).json({ status: "fail", message: "Invalid subRole provided" });
@@ -44,18 +48,29 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 Object.assign(existingData, data);
                 savedData = await repository.save(existingData);
+
+                user!.subRole = subRole;
+                await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
+                user!.subRole = subRole;
+                await user?.save();
             }
         } else {
             let existingData = await repository.findOne({ where: { userId, isHidden: false } });
             if (existingData) {
-                Object.assign(existingData, data); 
+                Object.assign(existingData, data);
                 savedData = await repository.save(existingData);
+
+                user!.subRole = subRole;
+                await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
+
+                user!.subRole = subRole;
+                await user?.save();
             }
         }
 
@@ -68,6 +83,7 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
     } catch (error: any) {
         console.error("Error in createOrUpdateInvestorData:", error);
         return res.status(500).json({
+            status: "error",
             message: "Internal server error",
             error: error.message
         });
@@ -109,8 +125,11 @@ export const deleteInvestorData = async (req: Request, res: Response) => {
 
 export const getInvestorData = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const subRole = req.query.subRole as string;
         const userId = req.userId;
+        
+        const userRepo = AppDataSource.getRepository(PersonalDetails);
+        const user = await userRepo.findOne({ where: { id: userId } });
+        const subRole: any = user?.subRole;
 
         const repositories: Record<string, Repository<any>> = {
             investor: AppDataSource.getRepository(InvestorData),
@@ -138,7 +157,7 @@ export const getInvestorData = async (req: AuthenticatedRequest, res: Response) 
             data = await repository.find();
         }
 
-        return res.status(200).json({ status: "success", message: "business profile fetched", data: { businessData: data } });
+        return res.status(200).json({ status: "success", message: "business profile fetched", data: { businessData: data, subRole: user?.subRole } });
     } catch (error: any) {
         return res.status(500).json({ status: "error", message: "Internal server error", error: error.message });
     }

@@ -8,16 +8,21 @@ import { CommentLike } from '@/api/entity/posts/CommentLike';
 import { Notifications } from '@/api/entity/notifications/Notifications';
 import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
-import { generatePresignedUrl } from '../s3/awsControllers';
+import { generatePresignedUrl, uploadBufferDocumentToS3 } from '../s3/awsControllers';
 import { Connection } from '@/api/entity/connection/Connections';
 import { CreateMention } from './Mention';
 import { In } from 'typeorm';
 import { Mention } from '@/api/entity/posts/Mention';
 import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
+import multer from 'multer';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
+
+const storage = multer.memoryStorage();
+export const commentDocumentMiddleware = multer({ storage: storage }).array('files', 1);
+
 
 export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -41,6 +46,28 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
     }
 
     const newComment = Comment.create({ userId, postId, text, mediaKeys, createdBy: 'system', updatedBy: 'system' });
+
+    if (req.files) {
+      let uploadedDocumentUrl: { key: string; type: string } | undefined;
+      if (req.files && Array.isArray(req.files)) {
+        for (const file of req.files as Express.Multer.File[]) {
+          try {
+            console.log('Uploading file:', file.originalname);
+            const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            uploadedDocumentUrl = {
+              key: uploadedUrl.fileKey,
+              type: file.mimetype,
+            };
+
+          } catch (uploadError) {
+            console.error('S3 Upload Error:', uploadError);
+          }
+        }
+      }
+      // newComment.mediaKeys = uploadedDocumentUrl;
+    }
+
+
     const savedComment = await newComment.save();
 
     // Fetch post and user details
