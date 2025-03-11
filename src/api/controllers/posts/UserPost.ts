@@ -206,11 +206,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
 export const uploadMiddleware = multer({ storage: storage }).array('files', 10);
 
-// export const uploadMiddleware2 = multer({ storage: storage }).fields([
-//   { name: "profilePhoto", maxCount: 1 },
-//   { name: "coverPhoto", maxCount: 1 }
-// ]);
-
 
 export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {

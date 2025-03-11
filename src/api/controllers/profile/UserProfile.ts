@@ -11,6 +11,7 @@ import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { Like } from '@/api/entity/posts/Like';
 import { BlockedUser } from '@/api/entity/posts/BlockedUser';
+import multer from 'multer';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -41,6 +42,12 @@ const formatTimestamp = (createdAt: Date): string => {
   const yearsAgo = Math.floor(monthsAgo / 12);
   return `${yearsAgo}y`;
 };
+
+const storage = multer.memoryStorage();
+export const uploadProfileAndCover = multer({ storage: storage }).fields([
+  { name: "profilePhoto", maxCount: 1 },
+  { name: "coverPhoto", maxCount: 1 }
+]);
 
 export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
