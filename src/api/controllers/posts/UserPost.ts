@@ -61,18 +61,18 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     }
 
     // Extract mentions from content
-    // const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-    // const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
+    const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+    const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
 
-    // const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
-    // const validMentionedUserIds = mentionedUsers.map((u) => u.id);
+    const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
+    const validMentionedUserIds = mentionedUsers.map((u) => u.id);
 
-    // if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
-    //   return res.status(404).json({
-    //     message: 'One or more mentioned users do not exist.',
-    //     invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
-    //   });
-    // }
+    if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
+      return res.status(404).json({
+        message: 'One or more mentioned users do not exist.',
+        invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
+      });
+    }
 
     // ------------- REPOST ----------------------------------------------------------
 
