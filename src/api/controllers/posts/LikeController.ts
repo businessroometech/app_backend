@@ -7,12 +7,19 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { generatePresignedUrl } from '../s3/awsControllers';
-import { In } from 'typeorm';
+import { FindOptionsWhere, In } from 'typeorm';
 import { Comment } from '@/api/entity/posts/Comment';
+import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 
-export const createLike = async (req: Request, res: Response) => {
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
+export const createLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, status, reactionId } = req.body;
+    const { postId, reactionId } = req.body;
+    const userId = req.userId;
+
     if (!userId || !postId) {
       return res.status(400).json({ status: 'error', message: 'userId and postId are required.' });
     }
@@ -20,13 +27,20 @@ export const createLike = async (req: Request, res: Response) => {
     let like = await likeRepository.findOne({ where: { userId, postId } });
 
     if (like) {
-      like.status = status;
-      like.reactionId = reactionId;
+      if (like.reactionId != reactionId) {
+        like.status = true;
+        like.reactionId = reactionId;
+      }
+      else {
+        // like.status = false;
+        like.status = !like.status;
+        // like.reactionId = 1000;
+      }
     } else {
       like = Like.create({
         userId,
         postId,
-        status,
+        status: true,
         reactionId
       });
     }
@@ -58,7 +72,7 @@ export const createLike = async (req: Request, res: Response) => {
 
     let notifications = null;
 
-    if (userInfo.id !== userId && status === true) {
+    if (userInfo.id !== userId && like.status === true) {
       notifications = await sendNotification(
         userInfo.id,
         `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
@@ -76,19 +90,45 @@ export const createLike = async (req: Request, res: Response) => {
 
 export const getAllLikesForPost = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
+    const { reactionId, page = '1', limit = '10' } = req.query;
 
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
     }
 
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const offset = (pageNumber - 1) * limitNumber;
+
+    const postRepo = AppDataSource.getRepository(UserPost);
+
+    const post = await postRepo.findOne({ where: { id: postId } });
+
+    if (!post) {
+      return res.status(400).json({ status: 'error', message: 'invalid postId.' });
+    }
+
+
     const likeRepository = AppDataSource.getRepository(Like);
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
 
     // Fetch likes for the given post
-    const likes = await likeRepository.find({
-      where: { postId, status: true },
-    });
+    let likes;
+    if (reactionId) {
+      likes = await likeRepository.find({
+        where: { postId, status: true, reactionId: Number(reactionId) },
+        take: limitNumber,
+        skip: offset,
+      });
+    }
+    else {
+      likes = await likeRepository.find({
+        where: { postId, status: true },
+        take: limitNumber,
+        skip: offset,
+      });
+    }
 
     // Fetch user details for each like
     const likesWithUsers = await Promise.all(
@@ -113,10 +153,12 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
   }
 };
 
-
-export const createCommentLike = async (req: Request, res: Response) => {
+export const createCommentLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, commentId, status } = req.body;
+    const { postId, commentId, reactionId } = req.body;
+
+    const userId = req.userId;
+
     if (!userId || !postId || !commentId) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and commentId are required.' });
     }
@@ -126,13 +168,22 @@ export const createCommentLike = async (req: Request, res: Response) => {
     let like = await commentLikeRepository.findOne({ where: { userId, postId, commentId } });
 
     if (like) {
-      like.status = status;
+      if (like.reactionId != reactionId) {
+        like.status = true;
+        like.reactionId = reactionId;
+      }
+      else {
+        // like.status = false;
+        like.status = !like.status;
+        // like.reactionId = 1000;
+      }
     } else {
       like = commentLikeRepository.create({
         userId,
         postId,
         commentId,
-        status,
+        status: true,
+        reactionId
       });
     }
 
@@ -161,10 +212,10 @@ export const createCommentLike = async (req: Request, res: Response) => {
     }
 
     // Create a notification
-    if (commenterInfo.id !== userInfo.id && status === true) {
+    if (commenterInfo.id !== userInfo.id && like.status === true) {
       await sendNotification(
         userInfo.id,
-        `${commenterInfo.firstName} ${commenterInfo.lastName} Like your comment`,
+        `${commenterInfo.firstName} ${commenterInfo.lastName} liked your comment`,
         commenterInfo.profilePictureUploadId,
         `/feed/post/${userPost.id}`
       );
@@ -219,7 +270,7 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
 // userlike list for post
 export const getUserPostLikeList = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
@@ -262,7 +313,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
 // post commenters list
 export const getPostCommentersList = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
@@ -295,5 +346,82 @@ export const getPostCommentersList = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
+  }
+};
+
+
+export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { postId, commentId, nestedCommentId, reactionId } = req.body;
+
+    const userId = req.userId;
+
+    if (!userId || !postId || !commentId || !nestedCommentId) {
+      return res.status(400).json({ status: 'error', message: 'userId, postId, nestedCommentId and commentId are required.' });
+    }
+
+    const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
+
+    let like = await nestedCommentLikeRepository.findOne({ where: { userId, postId, commentId } });
+
+    if (like) {
+      if (like.reactionId != reactionId) {
+        like.status = true;
+        like.reactionId = reactionId;
+      }
+      else {
+        // like.status = false;
+        like.status = !like.status;
+        // like.reactionId = 1000;
+      }
+    } else {
+      like = nestedCommentLikeRepository.create({
+        userId,
+        postId,
+        commentId,
+        nestedCommentId,
+        status: true,
+        reactionId
+      });
+    }
+
+    await nestedCommentLikeRepository.save(like);
+
+    // Get the post and user information
+    // const postRepo = AppDataSource.getRepository(UserPost);
+    // const userPost = await postRepo.findOne({ where: { id: postId } });
+
+    // if (!userPost) {
+    //   return res.status(404).json({
+    //     status: 'error',
+    //     message: 'Post not found.',
+    //   });
+    // }
+
+    // const personalRepo = AppDataSource.getRepository(PersonalDetails);
+    // const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
+    // const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+
+    // if (!userInfo || !commenterInfo) {
+    //   return res.status(404).json({
+    //     status: 'error',
+    //     message: 'User information not found.',
+    //   });
+    // }
+
+    // Create a notification
+    // if (commenterInfo.id !== userInfo.id && like.status === true) {
+    //   await sendNotification(
+    //     userInfo.id,
+    //     `${commenterInfo.firstName} ${commenterInfo.lastName} liked your comment`,
+    //     commenterInfo.profilePictureUploadId,
+    //     `/feed/post/${userPost.id}`
+    //   );
+    // }
+
+    return res.status(200).json({ status: 'success', message: 'Nested Comment Like status updated.', data: { like } });
+  } catch (error: any) {
+    console.error('Error details:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error', error: error.message });
   }
 };

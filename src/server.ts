@@ -15,6 +15,9 @@ import { env } from '@/common/utils/envConfig';
 import authRouter from '../src/api/routes/auth/AuthRoutes';
 import BusinessBuyerRoute from '../src/api/routes/BusinessBuyer/BusinessBuyerRoute';
 import BuisnessSeller from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
+
+import BuisnessDataRoutes from '../src/api/routes/business-data/BusinessRoutes';
+
 import chatRouter from '../src/api/routes/chat/MessageRoutes';
 // import chatRouter from '../src/api/routes/chat/MessageRoutes';
 import connectionRouter from '../src/api/routes/connection/Connection';
@@ -60,6 +63,13 @@ import { ReportedPost } from './api/entity/posts/ReportedPost';
 import { ReportedUser } from './api/entity/posts/ReportedUser';
 import { Account } from './api/entity/LandingPage/Account';
 import { Connect } from './api/entity/LandingPage/Connect';
+import { NestedCommentLike } from './api/entity/posts/NestedCommentLike';
+import { PollEntry } from './api/entity/posts/PollEntry';
+import { InvestorData } from './api/entity/business-data/InvestorData';
+import { AquiringStartup } from './api/entity/business-data/AquiringStartup';
+import { SellingStartup } from './api/entity/business-data/SellingStartup';
+import { SeekingConnections } from './api/entity/business-data/SeekingConnections';
+import { ExploringIdeas } from './api/entity/business-data/ExploringIdeas';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -99,9 +109,16 @@ const AppDataSource = new DataSource({
     ReportedUser,
     General,
     Account,
-    Connect
+    Connect,
+    NestedCommentLike,
+    PollEntry,
+    InvestorData,
+    AquiringStartup,
+    SellingStartup,
+    SeekingConnections,
+    ExploringIdeas
   ],
-  synchronize: false, 
+  synchronize: true,
 });
 
 // Initialize the DataSource
@@ -126,10 +143,12 @@ app.use(helmet());
 // app.use(rateLimiter);
 app.use(requestLogger);
 app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
 
 // Routes mounting
 app.use('/v1/auth', authRouter);
-app.use('/v1/post', userPost); 
+app.use('/v1/post', userPost);
 app.use('/v1/notifications', notifications);
 app.use('/v1/connection', connectionRouter);
 app.use('/v1/chat', chatRouter);
@@ -142,6 +161,7 @@ app.use('/v1/wishlists', WishlistsRoutes);
 app.use('/v1/socket-notifications', SocketNotificationRouting);
 app.use('/v1/subrole', SubRoleRoutes);
 app.use('/v1/general', GeneralRoutes);
+app.use('/v1/business-data', BuisnessDataRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');

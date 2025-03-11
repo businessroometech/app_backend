@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { Reaction } from './posts/Reaction';
 import { Mention } from './posts/Mention';
+import { nullable } from 'zod';
 
 @Entity({ name: 'UserPost' })
 export class UserPost extends BaseEntity {
@@ -24,14 +25,14 @@ export class UserPost extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   title!: string;
 
-  @Column({ type: 'text', nullable:true })
+  @Column({ type: 'text', nullable: true })
   content!: string;
 
   @Column({ type: 'simple-array', nullable: true })
   hashtags?: string[];
 
-  @Column({ type: 'simple-array', nullable: true })
-  mediaKeys?: string[];
+  @Column({ type: 'json', nullable: true })
+  mediaKeys?: { key: string, type: string }[];
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -49,13 +50,15 @@ export class UserPost extends BaseEntity {
   })
   updatedAt!: Date;
 
+  // for repost
+
   @Column({ type: "boolean", default: false })
   isRepost !: boolean;
 
   @Column({ type: "uuid", default: null })
   repostedFrom !: string;
 
-  @Column({ type: "text" , default: null})
+  @Column({ type: "text", default: null })
   repostText !: string;
 
   @CreateDateColumn({ type: 'timestamp' })
@@ -69,6 +72,29 @@ export class UserPost extends BaseEntity {
 
   @Column({ type: "boolean", default: false })
   isHidden !: boolean;
+
+  // for discussion
+
+  @Column({ type: 'bool', default: false })
+  isDiscussion !: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  discussionTopic !: string;
+
+  @Column({ type: "text", nullable: true })
+  discussionContent !: string;
+
+  @Column({ type: "boolean", default: false })
+  isPoll !: boolean;
+
+  @Column({ type: "text" })
+  question !: string;
+
+  @Column("json", { nullable: true })
+  pollOptions?: { option: string; votes: number }[];
+
+  @Column({ type: 'varchar', nullable: true })
+  pollDuration !: string;
 
   @BeforeInsert()
   private async beforeInsert() {
@@ -85,8 +111,8 @@ export class UserPost extends BaseEntity {
   reactions!: Reaction[];
 
   @OneToMany(() => Mention, (mention) => mention.post, {
-    cascade: true, 
+    cascade: true,
   })
   mentions!: Mention[];
-  
+
 }

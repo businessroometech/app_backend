@@ -1,18 +1,14 @@
-import { randomBytes } from 'crypto';
 import {
     BaseEntity,
-    BeforeInsert,
     Column,
     CreateDateColumn,
     Entity,
-    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { Mention } from './Mention';
 
-@Entity({ name: 'Comment' })
-export class Comment extends BaseEntity {
+@Entity({ name: 'PollEntry' })
+export class PollEntry extends BaseEntity {
 
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -24,10 +20,10 @@ export class Comment extends BaseEntity {
     postId!: string;
 
     @Column({ type: 'text' })
-    text!: string;
+    selectedOption !: string;
 
-    @Column({ type: 'json', nullable: true })
-    mediaKeys?: { key: string, type: string };
+    @Column({ type: 'bool', default: false })
+    status!: boolean;
 
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;
@@ -45,18 +41,4 @@ export class Comment extends BaseEntity {
         precision: 6,
     })
     updatedAt!: Date;
-
-    @BeforeInsert()
-    async hashPasswordBeforeInsert() {
-        this.id = this.generateUUID();
-    }
-
-    private generateUUID() {
-        return randomBytes(16).toString('hex');
-    }
-
-
-    @OneToMany(() => Mention, (mention) => mention.comment, { cascade: true })
-    mentions!: Mention[];
-
 }

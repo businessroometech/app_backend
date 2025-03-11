@@ -96,7 +96,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const media = null;
     let notification = await sendNotification(
       user.id,
-     `${firstName} ${lastName}, Welcome! to Businessroom.ai, let's complete your profile`,
+      `${firstName} ${lastName}, Welcome! to Businessroom.ai, let's complete your profile`,
       media,
       `/settings/account`
     );
@@ -116,12 +116,18 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
     console.error('Error during signup:', error);
 
-    if (error.code === 'ER_DUP_ENTRY') {
-      res.status(400).json({
-        status: 'error',
-        message: 'This email is already in use.',
-      });
-      return;
+    if (error.code === '23505') {
+      const detail = error.detail || '';
+      if (detail.includes('emailAddress')) {
+        res.status(400).json({ status: 'error', message: 'Email already exists.' });
+        return;
+      } else if (detail.includes('mobileNumber')) {
+        res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
+        return;
+      } else {
+        res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
+        return;
+      }
     }
 
     res.status(500).json({

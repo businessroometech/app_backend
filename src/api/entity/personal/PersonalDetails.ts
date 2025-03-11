@@ -101,9 +101,9 @@ export class PersonalDetails extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    default: '',
+    nullable: true,
   })
-  userRole!: 'BusinessSeller' | 'Entrepreneur' | 'BusinessBuyer' | 'Investor';
+  userRole!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;
@@ -146,6 +146,28 @@ export class PersonalDetails extends BaseEntity {
     nullable: true
   })
   investorType !: string[];
+
+  @Column({ type: 'bool', default: false })
+  isBadgeOn !: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  badgeName !: string;
+
+  @Column({ type: "json", nullable: true })
+  experience!: {
+    current: boolean;
+    startDate: string;
+    endDate?: string;
+    position: string;
+    organization: string;
+    description: string;
+  }[];
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  subRole!: string;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {

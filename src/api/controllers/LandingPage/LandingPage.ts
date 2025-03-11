@@ -148,3 +148,30 @@ export const createAccount = async (req: Request, res: Response) => {
         return res.status(500).json({ status: "error", message: "Error sending signup request" });
     }
 };
+
+export const transfer = async (req: Request, res: Response) => {
+    try {
+        const connectRepo = AppDataSource.getRepository(Connect);
+        const accountRepo = AppDataSource.getRepository(Account);
+
+        const connects = await connectRepo.find();
+
+        for (const con of connects) {
+            const account = accountRepo.create({
+                firstName: con.firstName,
+                lastName: con.lastName,
+                emailAddress: con.emailAddress,
+                phoneNumber: con.phoneNumber,
+                country: con.select,
+            });
+
+            await accountRepo.save(account); 
+        }
+
+        res.status(200).json({ message: "Transfer successful" });
+
+    } catch (error) {
+        console.error("Error during transfer:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};

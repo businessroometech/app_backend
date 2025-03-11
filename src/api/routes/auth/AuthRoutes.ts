@@ -5,11 +5,12 @@ import { logout } from '../../controllers/auth/Logout';
 import { signup } from '../../controllers/auth/Signup';
 import { authenticate } from '../../middlewares/auth/Authenticate';
 import { generateUploadUrl, getDocumentFromBucket } from "../../controllers/s3/awsControllers";
-import { findUserByUserName, getUserProfile, ProfileVisitController, searchUserProfile, UpdateUserProfile } from '@/api/controllers/profile/UserProfile';
+import { findUserByUserName, getUserProfile, ProfileVisitController, searchUserProfile, UpdateUserProfile, uploadProfileAndCover } from '@/api/controllers/profile/UserProfile';
 import { sendResetEmail, resetPassword } from "@/api/controllers/auth/ResetPassword";
 import { getOnlineUsers } from '@/api/controllers/chat/Message';
 import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
-import { getInTouch, createAccount } from '@/api/controllers/LandingPage/LandingPage';
+import { getInTouch, createAccount, transfer } from '@/api/controllers/LandingPage/LandingPage';
+// import { uploadMiddleware2 } from '@/api/controllers/posts/UserPost';
 // import { getOnlineUsers } from "../../../socket";
 // import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 
@@ -27,20 +28,21 @@ Router.post('/verify-email', verifyEmail);
 Router.post('/generate-upload-url', generateUploadUrl);
 Router.post('/document-retrival', getDocumentFromBucket);
 
-Router.post('/update-or-create-Profile', UpdateUserProfile)
-Router.post('/get-user-Profile', getUserProfile)
+Router.post('/update-or-create-Profile', authenticate, uploadProfileAndCover, UpdateUserProfile)
+Router.get('/get-user-Profile', authenticate, getUserProfile)
 
 
-Router.post('/recored-visit', ProfileVisitController.recordVisit)
-Router.post('/get-profile-visit', ProfileVisitController.getMyProfileVisits)
-Router.post('/get-profile-visited', ProfileVisitController.getProfilesIVisited)
+Router.post('/recored-visit', authenticate, ProfileVisitController.recordVisit)
+Router.get('/get-profile-visit', authenticate, ProfileVisitController.getMyProfileVisits)
+Router.get('/get-profile-visited', authenticate, ProfileVisitController.getProfilesIVisited)
 
 Router.post('/online-users', getOnlineUsers);
-Router.post('/get-users', searchUserProfile);
+Router.get('/users', authenticate, searchUserProfile);
 Router.post('/get-user-userName', findUserByUserName);
 
 Router.post('/get-in-touch', getInTouch);
 Router.post('/create-account', createAccount);
+Router.post('/migration/connect-to-account', transfer);
 
 export default Router;
 

@@ -3,15 +3,25 @@ import { Connection } from '@/api/entity/connection/Connections';
 import { AppDataSource } from '@/server';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { request } from 'node:http';
-import { formatTimestamp } from '../UserPost';
+import { formatTimestamp } from '../posts/UserPost';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Brackets, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { getSocketInstance } from '@/socket';
 
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
 // Send a connection request
-export const sendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
+export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { requesterId, receiverId } = req.body;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -43,9 +53,9 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
     await connectionRepository.save(newConnection);
 
     // Create a notification
-   await sendNotification(
+    await sendNotification(
       receiverId,
-      `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
+      `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
       requester?.profilePictureUploadId,
       `/settings/ManageConnections`
     );
@@ -61,15 +71,20 @@ export const sendConnectionRequest = async (req: Request, res: Response): Promis
 };
 
 // Accept or reject a connection request
-export const updateConnectionStatus = async (req: Request, res: Response): Promise<Response> => {
-  const { userId, connectionId, status } = req.body;
+export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+  const { connectionId, status } = req.body;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
-
     const connection = await connectionRepository.findOne({
       where: [{ requesterId: connectionId, receiverId: userId }],
     });
+
     if (!connection) {
       return res.status(404).json({ message: 'Connection not found.' });
     }
@@ -92,7 +107,7 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
     // Create a notification
     const notification = await sendNotification(
       connection.requester.id,
-      `${connection.receiver.firstName} ${connection.receiver.lastName} ${data?.status } your connection request`,
+      `${connection.receiver.firstName} ${connection.receiver.lastName} ${data?.status} your connection request`,
       connection?.receiver?.profilePictureUploadId,
       `/settings/ManageConnections`
     );
@@ -103,12 +118,17 @@ export const updateConnectionStatus = async (req: Request, res: Response): Promi
   } catch (error: any) {
     console.error('Error updating connection status:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
-  } 
+  }
 };
 
 // Get user's connections and mutual connections
-export const getUserConnections = async (req: Request, res: Response): Promise<Response> => {
-  const { profileId, userId } = req.body;
+export const getUserConnections = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+  const { profileId } = req.params;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -167,7 +187,7 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
           userRole: user?.userRole,
           profilePictureUrl: profilePictureUrl,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
-          mutual: isMutual, 
+          mutual: isMutual,
         };
       })
     );
@@ -180,8 +200,13 @@ export const getUserConnections = async (req: Request, res: Response): Promise<R
 };
 
 // Remove a connection
-export const removeConnection = async (req: Request, res: Response): Promise<Response> => {
-  const { connectionId } = req.body;
+export const removeConnection = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+  const { connectionId } = req.params;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
 
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
@@ -202,14 +227,14 @@ export const removeConnection = async (req: Request, res: Response): Promise<Res
 };
 
 // get user connection
-export const getUserConnectionRequests = async (req: Request, res: Response) => {
+export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
-    const { userId } = req.body; // Get user ID from request body
-
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required.' });
-    }
-
     const connectionRepository = AppDataSource.getRepository(Connection);
 
     // Fetch pending connection requests
@@ -240,7 +265,7 @@ export const getUserConnectionRequests = async (req: Request, res: Response) => 
         const profilePictureUploadUrl = user?.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
-   
+
         return {
           connectionId: connection.id,
           requesterId: connection.requesterId,
@@ -253,18 +278,24 @@ export const getUserConnectionRequests = async (req: Request, res: Response) => 
         };
       })
     );
-    
+
 
     return res.status(200).json(response);
-  
+
   } catch (error) {
     console.error('Error fetching connection requests:', error);
     return res.status(500).json({ message: 'Server error. Please try again later.' });
   }
 };
 
-export const unsendConnectionRequest = async (req: Request, res: Response): Promise<Response> => {
+export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { requesterId, receiverId } = req.body;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required.' });
+  }
+
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connection = await connectionRepository.findOne({
@@ -290,50 +321,64 @@ export const unsendConnectionRequest = async (req: Request, res: Response): Prom
     });
   }
 };
-
-export const ConnectionsSuggestionController = async (req: Request, res: Response): Promise<Response> => {
+export const ConnectionsSuggestionController = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, page = 1, limit = 5 } = req.body;
+    const { page = 1, limit = 5 } = req.query;
 
-    const offset = (page - 1) * limit;
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required"
+      });
+    }
+
+    const offset = (Number(page) - 1) * Number(limit);
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
-
-    const [users, total] = await userRepository.findAndCount({
-      skip: offset,
-      take: limit,
-    });
-
     const connectionRepository = AppDataSource.getRepository(Connection);
+
+    // Get all connections for this user
     const connections = await connectionRepository.find({
       where: [
-        {
-          requesterId: userId,
-          status: In(['pending', 'accepted', 'rejected']),
-        },
-        {
-          receiverId: userId,
-          status: In(['pending', 'accepted', 'rejected']),
-        },
+        { requesterId: userId },
+        { receiverId: userId }
       ],
     });
 
-    const connectedUserIds = connections.map((connection) => connection.receiverId);
+    // Get IDs of users already connected with
+    const connectedUserIds = connections.reduce((acc, conn) => {
+      if (conn.requesterId !== userId) acc.add(conn.requesterId);
+      if (conn.receiverId !== userId) acc.add(conn.receiverId);
+      return acc;
+    }, new Set<string>());
 
-    const shuffleArray = (array: any[]) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+    // Find users not connected with yet
+    const [users, total] = await userRepository.findAndCount({
+      where: {
+        id: Not(In([userId, ...Array.from(connectedUserIds)])) // Exclude self and connected users
+      },
+      skip: offset,
+      take: Number(limit),
+      order: {
+        createdAt: 'DESC' // Order by newest first
       }
-      return array;
-    };
+    });
 
-    const filteredUsers = users.filter((user) => user.id !== userId && !connectedUserIds.includes(user.id));
+    if (!users.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No suggestions available at this time",
+        data: [],
+        total: 0,
+        page: Number(page),
+        limit: Number(limit)
+      });
+    }
 
-    const shuffledUsers = shuffleArray(filteredUsers);
-
+    // Map user details and get profile pictures
     const result = await Promise.all(
-      shuffledUsers.map(async (user) => ({
+      users.map(async (user) => ({
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -345,45 +390,73 @@ export const ConnectionsSuggestionController = async (req: Request, res: Respons
 
     return res.status(200).json({
       success: true,
-      message: 'Suggested users fetched successfully.',
+      message: "Suggested users fetched successfully",
       data: result,
       total,
-      page,
-      limit,
+      page: Number(page),
+      limit: Number(limit),
     });
+
   } catch (error: any) {
-    console.error('Error fetching connection suggestions:', error);
+    console.error("Error fetching connection suggestions:", error);
     return res.status(500).json({
       success: false,
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
+      error: error.message
     });
   }
 };
 
 export class ConnectionController {
-  static async fetchUserConnectionsStatus(req: Request, res: Response) {
-    const { requesterId, status } = req.body;
+  static async fetchUserConnectionsStatus(req: AuthenticatedRequest, res: Response) {
+    const { status } = req.params;
+    const userId = req.userId;
 
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required.' });
+    }
+    const requesterId = userId;
     try {
       if (!requesterId || !status) {
         return res.status(400).json({ message: 'Both requesterId and status are required.' });
       }
-      const validStatuses = ['pending', 'accepted', 'rejected'];
-      if (!validStatuses.includes(status)) {
+      
+      const connectionRepository = AppDataSource.getRepository(Connection);
+
+      const validStatuses = ['pending', 'accepted', 'rejected', 'block'] as const;
+      type ConnectionStatus = (typeof validStatuses)[number];
+
+      if (!validStatuses.includes(status as ConnectionStatus)) {
         return res.status(400).json({ message: `Invalid status. Valid values are: ${validStatuses.join(', ')}` });
       }
 
-      // Fetch connections from the database
-      const connectionRepository = AppDataSource.getRepository(Connection);
-      const connections = await connectionRepository.find({
-        where: { requesterId, status },
+      // Properly structuring the where condition
+      let connections = await connectionRepository.find({
+        where: { requesterId, status: status as ConnectionStatus },
         relations: ['receiver'],
       });
+
+      // Fetch connections from the database
+      // let connections  = await connectionRepository.find({
+      //   where: { requesterId, status: status as validStatuses},
+      //   relations: ['receiver'],
+      // });
 
       if (connections.length < 1) {
         return res.status(404).json({ message: 'No connections found.' });
       }
-      return res.status(200).json(connections);
+
+      const connectionsWithImages = await Promise.all(connections.map(async (connection) => {
+        const receiverImage = connection.receiver.profilePictureUploadId
+          ? await generatePresignedUrl(connection.receiver.profilePictureUploadId)
+          : null;
+        return {
+          ...connection,
+          receiverImage
+        };
+      }));
+
+      return res.status(200).json(connectionsWithImages);
     } catch (error: any) {
       console.error('Error fetching user connections status:', error);
       return res.status(500).json({

@@ -6,7 +6,7 @@ import { AppDataSource } from '@/server';
 import { getSocketInstance } from '../../../socket';
 import { Request, Response } from 'express';
 import { generatePresignedUrl } from '../s3/awsControllers';
-import { formatTimestamp } from '../UserPost';
+import { formatTimestamp } from '../posts/UserPost';
 
 export class WebSocketNotification {
   //   private static wss: WebSocketServer;

@@ -6,11 +6,16 @@ import { ILike } from 'typeorm';
 import { UserPost } from '@/api/entity/UserPost';
 import { AppDataSource } from '@/server';
 
-import { generatePresignedUrl } from '../s3/awsControllers';
+import { generatePresignedUrl, uploadBufferDocumentToS3 } from '../s3/awsControllers';
 import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { Like } from '@/api/entity/posts/Like';
 import { BlockedUser } from '@/api/entity/posts/BlockedUser';
+import multer from 'multer';
+
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
 
 const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
@@ -38,13 +43,16 @@ const formatTimestamp = (createdAt: Date): string => {
   return `${yearsAgo}y`;
 };
 
-export const UpdateUserProfile = async (req: Request, res: Response) => {
+const storage = multer.memoryStorage();
+export const uploadProfileAndCover = multer({ storage: storage }).fields([
+  { name: "profilePhoto", maxCount: 1 },
+  { name: "coverPhoto", maxCount: 1 }
+]);
+
+export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       occupation,
-      userId,
-      profilePictureUploadId,
-      bgPictureUploadId,
       firstName,
       lastName,
       dob,
@@ -52,80 +60,116 @@ export const UpdateUserProfile = async (req: Request, res: Response) => {
       emailAddress,
       bio,
       gender,
-      preferredLanguage,
-      socialMediaProfile,
-      height,
-      weight,
-      permanentAddress,
-      currentAddress,
-      aadharNumberUploadId,
-      panNumberUploadId,
-      zoom,
-      rotate,
-      zoomProfile,
-      rotateProfile,
-      investorType
+      investorType,
+      isBadgeOn,
+      badgeName,
+      experience
     } = req.body;
 
+    const userId = req.userId;
     const userRepository = AppDataSource.getRepository(PersonalDetails);
-    const user = await userRepository.findOneBy({ id: userId });
 
-    if (!user) {
-      return res.status(400).json({
-        message: 'User ID is invalid or does not exist.',
-      });
+    // Fetch user details once
+    const personalDetails = await userRepository.findOneBy({ id: userId });
+
+    if (!personalDetails) {
+      return res.status(400).json({ message: "User ID is invalid or does not exist." });
     }
 
-    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-    const personalDetails = await personalDetailsRepository.findOneBy({ id: userId });
-
-    if (personalDetails) {
-      // Only update fields that are provided in the request body, excluding the password
-      if (occupation !== undefined) personalDetails.occupation = occupation;
-      if (profilePictureUploadId !== undefined) personalDetails.profilePictureUploadId = profilePictureUploadId;
-      if (bgPictureUploadId !== undefined) personalDetails.bgPictureUploadId = bgPictureUploadId;
-      if (firstName !== undefined) personalDetails.firstName = firstName;
-      if (lastName !== undefined) personalDetails.lastName = lastName;
-      if (dob !== undefined) personalDetails.dob = dob;
-      if (mobileNumber !== undefined) personalDetails.mobileNumber = mobileNumber;
-      if (emailAddress !== undefined) personalDetails.emailAddress = emailAddress;
-      if (bio !== undefined) personalDetails.bio = bio;
-      if (gender !== undefined) personalDetails.gender = gender;
-      if (preferredLanguage !== undefined) personalDetails.preferredLanguage = preferredLanguage;
-      if (socialMediaProfile !== undefined) personalDetails.socialMediaProfile = socialMediaProfile;
-      if (height !== undefined) personalDetails.height = height;
-      if (weight !== undefined) personalDetails.weight = weight;
-      if (permanentAddress !== undefined) personalDetails.permanentAddress = permanentAddress;
-      if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
-      if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
-      if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
-      if (zoom !== undefined) personalDetails.zoom = zoom;
-      if (rotate !== undefined) personalDetails.rotate = rotate;
-      if (zoomProfile !== undefined) personalDetails.zoomProfile = zoomProfile;
-      if (rotateProfile !== undefined) personalDetails.rotateProfile = rotateProfile;
-      if (investorType !== undefined) personalDetails.investorType = investorType;
-      personalDetails.updatedBy = 'system';
-
-      await personalDetailsRepository.save(personalDetails);
-
-      return res.status(200).json({
-        message: 'User profile updated successfully.',
-        data: personalDetails,
-      });
+    // Update basic profile fields
+    if (occupation !== undefined) personalDetails.occupation = occupation;
+    if (firstName !== undefined) personalDetails.firstName = firstName;
+    if (lastName !== undefined) personalDetails.lastName = lastName;
+    if (dob !== undefined) personalDetails.dob = dob;
+    if (experience !== undefined) personalDetails.experience = experience;
+    if (mobileNumber !== undefined) personalDetails.mobileNumber = mobileNumber;
+    if (emailAddress !== undefined) personalDetails.emailAddress = emailAddress;
+    if (bio !== undefined) personalDetails.bio = bio;
+    if (gender !== undefined) personalDetails.gender = gender;
+    if (investorType !== undefined) personalDetails.investorType = investorType;
+    if (isBadgeOn !== undefined) {
+      personalDetails.isBadgeOn = isBadgeOn;
+      personalDetails.badgeName = badgeName;
     }
+
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      console.log("Files received:", files);
+
+      if (files.profilePhoto) {
+        console.log("Profile Photo Exists:", files.profilePhoto[0].originalname);
+      } else {
+        console.log("Profile Photo Missing!");
+      }
+
+      if (files.coverPhoto) {
+        console.log("Cover Photo Exists:", files.coverPhoto[0].originalname);
+      } else {
+        console.log("Cover Photo Missing!");
+      }
+    }
+
+    // Check for profile photo & cover photo in req.files
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+      let profilePhotoSuccess = false;
+      let coverPhotoSuccess = false;
+
+      if (files.profilePhoto && files.profilePhoto.length > 0) {
+        try {
+          console.log("Uploading profile photo:", files.profilePhoto[0].originalname);
+          const profilePhotoKey = await uploadBufferDocumentToS3(
+            files.profilePhoto[0].buffer,
+            userId,
+            files.profilePhoto[0].mimetype
+          );
+          personalDetails.profilePictureUploadId = profilePhotoKey.fileKey;
+          profilePhotoSuccess = true;
+        } catch (uploadError) {
+          console.error("Profile photo upload error:", uploadError);
+        }
+      }
+
+      if (files.coverPhoto && files.coverPhoto.length > 0) {
+        try {
+          console.log("Uploading cover photo:", files.coverPhoto[0].originalname);
+          const coverPhotoKey = await uploadBufferDocumentToS3(
+            files.coverPhoto[0].buffer,
+            userId,
+            files.coverPhoto[0].mimetype
+          );
+          personalDetails.bgPictureUploadId = coverPhotoKey.fileKey;
+          coverPhotoSuccess = true;
+        } catch (uploadError) {
+          console.error("Cover photo upload error:", uploadError);
+        }
+      }
+    }
+
+    personalDetails.updatedBy = "system";
+
+    await userRepository.save(personalDetails);
+
+    return res.status(200).json({
+      message: "User profile updated successfully.",
+      data: personalDetails,
+    });
   } catch (error: any) {
-    console.error('Error updating user profile:', error);
+    console.error("Error updating user profile:", error);
     return res.status(500).json({
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
       error: error.message,
     });
   }
 };
 
+
 // get user profile
-export const getUserProfile = async (req: Request, res: Response): Promise<Response> => {
+export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    let { userId, profileId = userId } = req.body;
+    const userId = req.userId;
+    let { profileId = userId } = req.query;
 
     if (!userId) {
       return res.status(400).json({
@@ -133,7 +177,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       });
     }
 
-   const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
     const postRepository = AppDataSource.getRepository(UserPost);
     const likeRepository = AppDataSource.getRepository(Like);
@@ -142,14 +186,14 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
     // Check if the user is blocked or has blocked the profile
     const blockedEntry = await blockedUserRepository.findOne({
       where: [
-        { blockedBy: userId, blockedUser: profileId },
-        { blockedBy: profileId, blockedUser: userId },
+        { blockedBy: userId, blockedUser: String(profileId) },
+        { blockedBy: String(profileId), blockedUser: userId },
       ],
     });
 
     // Fetch user details
     const personalDetails = await personalDetailsRepository.findOne({
-      where: { id: profileId },
+      where: { id: String(profileId) },
     });
 
     if (!personalDetails) {
@@ -170,18 +214,18 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
     // Fetch connection, post, and like counts
     const connectionsCount = await connectionRepository.count({
       where: [
-        { requesterId: profileId, status: 'accepted' },
-        { receiverId: profileId, status: 'accepted' },
+        { requesterId: String(profileId), status: 'accepted' },
+        { receiverId: String(profileId), status: 'accepted' },
       ],
     });
 
-    const postsCount = await postRepository.count({ where: { userId: profileId } });
-    const likeCount = await likeRepository.count({ where: { userId: profileId } });
+    const postsCount = await postRepository.count({ where: { userId: String(profileId) } });
+    const likeCount = await likeRepository.count({ where: { userId: String(profileId) } });
 
     const connectionsStatus = await connectionRepository.findOne({
       where: [
-        { requesterId: userId, receiverId: profileId },
-        { receiverId: userId, requesterId: profileId },
+        { requesterId: userId, receiverId: String(profileId) },
+        { receiverId: userId, requesterId: String(profileId) },
       ],
     });
 
@@ -189,12 +233,12 @@ export const getUserProfile = async (req: Request, res: Response): Promise<Respo
       if (blockedEntry.blockedBy === userId) {
         return res.status(200).json({
           message: 'You have blocked this user.',
-          data: {personalDetails,  connectionsStatus: "Blocked", unblockOption: true ,}
+          data: { personalDetails, connectionsStatus: "Blocked", unblockOption: true, }
         });
       } else {
         return res.status(200).json({
           message: 'You are blocked from viewing this profile.',
-          data: {personalDetails,  connectionsStatus: "Blocked",}
+          data: { personalDetails, connectionsStatus: "Blocked", }
         });
       }
     }
@@ -266,13 +310,18 @@ export const ProfileVisitController = {
   },
 
   // Method for fetching profile visits
-  getMyProfileVisits: async (req: Request, res: Response) => {
+  getMyProfileVisits: async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { userId, page = 1, limit = 10 } = req.body;
+      const userId = req.userId;
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+
       const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
       const connectionRepository = AppDataSource.getRepository(Connection);
+
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
       const visits = await profileVisitRepository
         .createQueryBuilder('profileVisit')
         .select('profileVisit.visitor', 'visitorId')
@@ -282,8 +331,8 @@ export const ProfileVisitController = {
         .where('profileVisit.visited = :userId AND profileVisit.visitedAt >= :oneWeekAgo', { userId, oneWeekAgo })
         .groupBy('profileVisit.visitor')
         .orderBy('MAX(profileVisit.visitedAt)', 'DESC')
-        .offset((page - 1) * limit)
-        .limit(limit)
+        .offset((Number(page) - 1) * Number(limit))
+        .limit(Number(limit))
         .getRawMany();
 
       const visitors = await Promise.all(
@@ -307,7 +356,7 @@ export const ProfileVisitController = {
             ? await generatePresignedUrl(visitor?.profilePictureUploadId)
             : null;
 
-          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt); // format timestamp not work
+          const visitedAt = visit.updatedAt ? formatTimestamp(visit.updatedAt) : formatTimestamp(visit.createdAt);
           return {
             visitor: { ...visitor, profilePicture, visitedAt },
             visitCount: parseInt(visit.visitCount, 10),
@@ -331,9 +380,11 @@ export const ProfileVisitController = {
   },
 
   // Method for fetching profiles the user has visited
-  getProfilesIVisited: async (req: Request, res: Response) => {
+  getProfilesIVisited: async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { userId, page = 1, limit = 10 } = req.body;
+      const userId = req.userId;
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
 
       const profileVisitRepository = AppDataSource.getRepository(ProfileVisit);
       const connectionRepository = AppDataSource.getRepository(Connection);
@@ -401,9 +452,11 @@ export const ProfileVisitController = {
 };
 
 // search user profile
-export const searchUserProfile = async (req: Request, res: Response): Promise<Response> => {
+export const searchUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { userId, searchQuery } = req.body;
+    const searchQuery = req.query.search;
+
+    const userId = req.userId;
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' });
@@ -466,6 +519,8 @@ export const searchUserProfile = async (req: Request, res: Response): Promise<Re
             userRole: result.userRole,
             profileImgUrl,
             mutualConnectionCount,
+            isBadgeOn: result.isBadgeOn,
+            badgeName: result.badgeName
           };
         })
     );

@@ -2,21 +2,33 @@ import { Request, Response } from 'express';
 import { Comment } from '../../entity/posts/Comment'; // Adjust the import path as needed
 import { AppDataSource } from '@/server';
 import { NestedComment } from '@/api/entity/posts/NestedComment';
-import { formatTimestamp } from '../UserPost';
+import { formatTimestamp } from './UserPost';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { CommentLike } from '@/api/entity/posts/CommentLike';
 import { Notifications } from '@/api/entity/notifications/Notifications';
 import { UserPost } from '@/api/entity/UserPost';
 import { sendNotification } from '../notifications/SocketNotificationController';
-import { generatePresignedUrl } from '../s3/awsControllers';
+import { generatePresignedUrl, uploadBufferDocumentToS3 } from '../s3/awsControllers';
 import { Connection } from '@/api/entity/connection/Connections';
 import { CreateMention } from './Mention';
 import { In } from 'typeorm';
 import { Mention } from '@/api/entity/posts/Mention';
+import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
+import multer from 'multer';
 
-export const createOrUpdateComment = async (req: Request, res: Response) => {
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
+const storage = multer.memoryStorage();
+export const commentDocumentMiddleware = multer({ storage: storage }).array('files', 1);
+
+
+export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, text, commentId, mediaKeys } = req.body;
+    const { postId, text, commentId, mediaKeys } = req.body;
+
+    const userId = req.userId;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
@@ -34,6 +46,28 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
     }
 
     const newComment = Comment.create({ userId, postId, text, mediaKeys, createdBy: 'system', updatedBy: 'system' });
+
+    if (req.files) {
+      let uploadedDocumentUrl: { key: string; type: string } | undefined;
+      if (req.files && Array.isArray(req.files)) {
+        for (const file of req.files as Express.Multer.File[]) {
+          try {
+            console.log('Uploading file:', file.originalname);
+            const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            uploadedDocumentUrl = {
+              key: uploadedUrl.fileKey,
+              type: file.mimetype,
+            };
+
+          } catch (uploadError) {
+            console.error('S3 Upload Error:', uploadError);
+          }
+        }
+      }
+      newComment.mediaKeys = uploadedDocumentUrl;
+    }
+
+
     const savedComment = await newComment.save();
 
     // Fetch post and user details
@@ -63,7 +97,7 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
     // Extract mentions from comment text
     const mentionPattern = /@([a-zA-Z0-9_]+)/g;
     const mentions = [...text.matchAll(mentionPattern)].map(match => match[1]);
-    
+
     if (mentions.length > 0) {
       const userRepository = AppDataSource.getRepository(PersonalDetails);
       const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
@@ -110,32 +144,33 @@ export const createOrUpdateComment = async (req: Request, res: Response) => {
 };
 
 export const deleteComment = async (req: Request, res: Response) => {
-  const { commentId } = req.body;
+  const { commentId } = req.params;
 
   if (!commentId) {
-    return res.status(400).json({ error: 'Comment ID is required' });
+    return res.status(400).json({ status: "fail", error: 'Comment ID is required' });
   }
 
   try {
     const comment = await Comment.findOne({ where: { id: commentId } });
 
     if (!comment) {
-      return res.status(404).json({ error: 'Comment not found' });
+      return res.status(400).json({ status: "fail", error: 'Comment not found' });
     }
 
     await comment.remove();
 
-    return res.status(200).json({ message: 'Comment deleted successfully' });
+    return res.status(200).json({ status: "success", message: 'Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting comment:', error);
-    return res.status(500).json({ error: 'An error occurred while deleting the comment' });
+    return res.status(500).json({ status: "error", message: 'An error occurred while deleting the comment' });
   }
 };
 
-export const getComments = async (req: Request, res: Response) => {
+export const getComments = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId, postId, page = 1, limit = 5 } = req.body;
-
+    const { page = 1, limit = 5 } = req.query;
+    const { postId } = req.params;
+    const userId = req.userId;
     if (!postId) {
       return res.status(400).json({ status: 'error', message: 'postId is required.' });
     }
@@ -151,7 +186,11 @@ export const getComments = async (req: Request, res: Response) => {
       order: { createdAt: 'ASC' },
       take: itemsPerPage,
       skip,
-    });
+    }) || [];
+
+    if (comments.length === 0) {
+      return res.status(200).json({ status: "success", message: "No comments available", data: { comments: [], pagination: { currentPage, itemsPerPage, totalComments: 0 } } });
+    }
 
     // Format the comments
     const formattedComments = await Promise.all(
@@ -159,20 +198,81 @@ export const getComments = async (req: Request, res: Response) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ['firstName', 'lastName', 'id'],
+          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
+        const [commentLikes, totalCommentLikes] = await commentLikeRepository.findAndCount({ where: { commentId: comment.id, status: true, } });
         const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
+
+
+        //-------------------------------------------------------------------- for nested comments---------------------------------------------------
+        const nestedCommentRepository = AppDataSource.getRepository(NestedComment);
+
+        const nestedComments = await nestedCommentRepository.find({
+          where: { commentId: comment.id },
+          order: { createdAt: 'ASC' },
+        });
+
+        if (!nestedComments) {
+          return res.status(200).json({ status: "success", message: "No replies available" });
+        }
+
+        const formattedNestedComments = await Promise.all(
+          nestedComments.map(async (comment) => {
+            const userRepository = AppDataSource.getRepository(PersonalDetails);
+            const commenter = await userRepository.findOne({
+              where: { id: comment.userId },
+              select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
+            });
+
+            const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
+            const [nestedCommentLikes, totalNestedCommentLikes] = await nestedCommentLikeRepository.findAndCount({ where: { nestedCommentId: comment.id, commentId: comment.commentId, status: true } });
+            const nestedCommentLike = await nestedCommentLikeRepository.findOne({ where: { userId, commentId: comment.commentId, nestedCommentId: comment.id } });
+
+
+            if (!commenter) {
+              return res.status(400).json({ status: "error", message: "user for this comment not found" });
+            }
+
+            const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
+
+            return {
+              id: comment.id,
+              commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
+              text: comment.text,
+              timestamp: formatTimestamp(comment.createdAt),
+              postId: comment.postId,
+              commentId: comment.commentId,
+              likeCount: totalNestedCommentLikes,
+              likeStatus: nestedCommentLike?.status,
+              commenterId: commenter?.id,
+              profilePic: profilePictureUrl,
+              mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
+            };
+          })
+        );
+
+        if (!commenter) {
+          return res.status(400).json({ status: "error", message: "user for this comment not found" });
+        }
+        // const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
+        const profilePictureUrl = commenter?.profilePictureUploadId
+          ? await generatePresignedUrl(commenter.profilePictureUploadId).catch(() => null)
+          : null;
 
         return {
           id: comment.id,
+          commentId: comment.id,
           commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,
           likeStatus: commentLike?.status ? commentLike.status : false,
+          likeCount: totalCommentLikes,
           commenterId: commenter?.id,
-          mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
+          profilePic: profilePictureUrl,
+          replyCount: formattedNestedComments.length,
+          replies: formattedNestedComments
         };
       })
     );
@@ -199,11 +299,12 @@ export const getComments = async (req: Request, res: Response) => {
   }
 };
 
-export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
+export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    console.log('Received Request:', req.body);
 
-    const { userId, postId, commentId, text, createdBy, nestedCommentId, mediaKeys } = req.body;
+    const { postId, commentId, text, createdBy, nestedCommentId, mediaKeys, repliedTo, isChild = false } = req.body;
+
+    const userId = req.userId;
 
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
@@ -246,6 +347,8 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
         commentId,
         text,
         mediaKeys,
+        isChild,
+        repliedTo: repliedTo ? repliedTo : null,
         createdBy: createdBy || 'system',
         updatedBy: createdBy || 'system',
       })
@@ -303,7 +406,7 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
 
     return res.status(201).json({
       status: 'success',
-      message: 'Comment created successfully.',
+      message: 'Nested Comment created successfully.',
       data: { savedComment, notification, mentions: mentionResponses },
     });
   } catch (error) {
@@ -383,31 +486,31 @@ export const createOrUpdateNestedComment = async (req: Request, res: Response) =
 // };
 
 export const deleteNestedComment = async (req: Request, res: Response) => {
-  const { nestedCommentId } = req.body;
+  const { nestedCommentId } = req.params;
 
   if (!nestedCommentId) {
-    return res.status(400).json({ error: 'Nested Comment ID is required' });
+    return res.status(400).json({ status: "success", message: 'Nested Comment ID is required' });
   }
 
   try {
     const nestedComment = await NestedComment.findOne({ where: { id: nestedCommentId } });
 
     if (!nestedComment) {
-      return res.status(404).json({ error: 'Nested Comment not found' });
+      return res.status(404).json({ status: "fail", message: 'Nested Comment not found' });
     }
 
     await nestedComment.remove();
 
-    return res.status(200).json({ message: 'Nested Comment deleted successfully' });
+    return res.status(200).json({ status: "success", message: 'Nested Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting nested comment:', error);
-    return res.status(500).json({ error: 'An error occurred while deleting the nested comment' });
+    return res.status(500).json({ status: "success", message: 'An error occurred while deleting the nested comment' });
   }
 };
 
 export const getNestedComments = async (req: Request, res: Response) => {
   try {
-    const { commentId } = req.body;
+    const { commentId } = req.params;
 
     if (!commentId) {
       return res.status(400).json({ status: 'success', message: 'commentId is required.' });
@@ -420,13 +523,23 @@ export const getNestedComments = async (req: Request, res: Response) => {
       order: { createdAt: 'ASC' },
     });
 
+    if (!nestedComments) {
+      return res.status(200).json({ status: "success", message: "No replies available" });
+    }
+
     const formattedNestedComments = await Promise.all(
       nestedComments.map(async (comment) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ['firstName', 'lastName', 'id'],
+          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
         });
+
+        if (!commenter) {
+          return res.status(400).json({ status: "error", message: "user for this comment not found" });
+        }
+
+        const profilePictureUrl = await generatePresignedUrl(commenter?.profilePictureUploadId);
 
         // // Create a notification
         // const notificationRepos = AppDataSource.getRepository(Notifications);
@@ -445,6 +558,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
           postId: comment.postId,
           commentId: comment.commentId,
           commenterId: commenter?.id,
+          profilePic: profilePictureUrl,
           mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })

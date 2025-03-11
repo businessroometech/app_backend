@@ -37,14 +37,16 @@ export const sendMessage = async (req: Request, res: Response) => {
 // Modify getMessagesUserWise to use the existing Message instance
 export const getMessagesUserWise = async (req: Request, res: Response) => {
   try {
-    const { senderId, receiverId, page = 1, limit = 10 } = req.body;
+    const { senderId, receiverId } = req.body;
+    const page = Number(req.query.page);
+    const limit = Number(req.query.limit);
 
     if (!senderId || !receiverId) {
       return res.status(400).json({ message: "SenderId and ReceiverId are required." });
     }
 
-    const numericPage = Number(page);
-    const numericLimit = Number(limit);
+    const numericPage = page;
+    const numericLimit = limit;
 
     if (isNaN(numericPage) || isNaN(numericLimit) || numericPage <= 0 || numericLimit <= 0) {
       return res.status(400).json({ message: "Page and limit must be positive numbers." });
