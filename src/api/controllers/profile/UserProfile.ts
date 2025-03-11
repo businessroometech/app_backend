@@ -6,7 +6,7 @@ import { ILike } from 'typeorm';
 import { UserPost } from '@/api/entity/UserPost';
 import { AppDataSource } from '@/server';
 
-import { generatePresignedUrl } from '../s3/awsControllers';
+import { generatePresignedUrl, uploadBufferDocumentToS3 } from '../s3/awsControllers';
 import { ProfileVisit } from '@/api/entity/notifications/ProfileVisit';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { Like } from '@/api/entity/posts/Like';
@@ -46,8 +46,6 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
   try {
     const {
       occupation,
-      profilePictureUploadId,
-      bgPictureUploadId,
       firstName,
       lastName,
       dob,
@@ -55,80 +53,97 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       emailAddress,
       bio,
       gender,
-      preferredLanguage,
-      socialMediaProfile,
-      height,
-      weight,
-      permanentAddress,
-      currentAddress,
-      aadharNumberUploadId,
-      panNumberUploadId,
-      zoom,
-      rotate,
-      zoomProfile,
-      rotateProfile,
       investorType,
       isBadgeOn,
-      badgeName
+      badgeName,
+      experience
     } = req.body;
 
     const userId = req.userId;
-
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
 
     if (!user) {
-      return res.status(400).json({
-        message: 'User ID is invalid or does not exist.',
-      });
+      return res.status(400).json({ message: "User ID is invalid or does not exist." });
     }
 
-    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-    const personalDetails = await personalDetailsRepository.findOneBy({ id: userId });
+    // Fetch user details
+    const personalDetails = await userRepository.findOneBy({ id: userId });
 
     if (personalDetails) {
-      // Only update fields that are provided in the request body, excluding the password
+      // Update basic profile fields
       if (occupation !== undefined) personalDetails.occupation = occupation;
-      if (profilePictureUploadId !== undefined) personalDetails.profilePictureUploadId = profilePictureUploadId;
-      if (bgPictureUploadId !== undefined) personalDetails.bgPictureUploadId = bgPictureUploadId;
       if (firstName !== undefined) personalDetails.firstName = firstName;
       if (lastName !== undefined) personalDetails.lastName = lastName;
       if (dob !== undefined) personalDetails.dob = dob;
+      if (experience !== undefined) personalDetails.experience = experience;
       if (mobileNumber !== undefined) personalDetails.mobileNumber = mobileNumber;
       if (emailAddress !== undefined) personalDetails.emailAddress = emailAddress;
       if (bio !== undefined) personalDetails.bio = bio;
       if (gender !== undefined) personalDetails.gender = gender;
-      if (preferredLanguage !== undefined) personalDetails.preferredLanguage = preferredLanguage;
-      if (socialMediaProfile !== undefined) personalDetails.socialMediaProfile = socialMediaProfile;
-      if (height !== undefined) personalDetails.height = height;
-      if (weight !== undefined) personalDetails.weight = weight;
-      if (permanentAddress !== undefined) personalDetails.permanentAddress = permanentAddress;
-      if (currentAddress !== undefined) personalDetails.currentAddress = currentAddress;
-      if (aadharNumberUploadId !== undefined) personalDetails.aadharNumberUploadId = aadharNumberUploadId;
-      if (panNumberUploadId !== undefined) personalDetails.panNumberUploadId = panNumberUploadId;
-      if (zoom !== undefined) personalDetails.zoom = zoom;
-      if (rotate !== undefined) personalDetails.rotate = rotate;
-      if (zoomProfile !== undefined) personalDetails.zoomProfile = zoomProfile;
-      if (rotateProfile !== undefined) personalDetails.rotateProfile = rotateProfile;
       if (investorType !== undefined) personalDetails.investorType = investorType;
       if (isBadgeOn !== undefined) {
         personalDetails.isBadgeOn = isBadgeOn;
         personalDetails.badgeName = badgeName;
       }
 
-      personalDetails.updatedBy = 'system';
+      // Check for profile photo & cover photo in req.files
+      if (req.files) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-      await personalDetailsRepository.save(personalDetails);
+        if (files.profilePhoto && files.profilePhoto.length > 0) {
+          try {
+            console.log("Uploading profile photo:", files.profilePhoto[0].originalname);
+            const profilePhotoKey = await uploadBufferDocumentToS3(
+              files.profilePhoto[0].buffer,
+              userId,
+              files.profilePhoto[0].mimetype
+            );
+            personalDetails.profilePictureUploadId = profilePhotoKey.fileKey;
+          } catch (uploadError) {
+            console.error("Profile photo upload error:", uploadError);
+          }
+        }
+
+        if (files.coverPhoto && files.coverPhoto.length > 0) {
+          try {
+            console.log("Uploading cover photo:", files.coverPhoto[0].originalname);
+            const coverPhotoKey = await uploadBufferDocumentToS3(
+              files.coverPhoto[0].buffer,
+              userId,
+              files.coverPhoto[0].mimetype
+            );
+            personalDetails.bgPictureUploadId = coverPhotoKey.fileKey;
+          } catch (uploadError) {
+            console.error("Cover photo upload error:", uploadError);
+          }
+        }
+
+        if (files.documents && Array.isArray(files.documents)) {
+          for (const file of files.documents) {
+            try {
+              console.log("Uploading document:", file.originalname);
+              await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            } catch (uploadError) {
+              console.error("S3 Upload Error:", uploadError);
+            }
+          }
+        }
+      }
+
+      personalDetails.updatedBy = "system";
+
+      await userRepository.save(personalDetails);
 
       return res.status(200).json({
-        message: 'User profile updated successfully.',
+        message: "User profile updated successfully.",
         data: personalDetails,
       });
     }
   } catch (error: any) {
-    console.error('Error updating user profile:', error);
+    console.error("Error updating user profile:", error);
     return res.status(500).json({
-      message: 'Internal Server Error',
+      message: "Internal Server Error",
       error: error.message,
     });
   }

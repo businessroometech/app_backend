@@ -16,9 +16,8 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
     try {
         const subRole = req.query.subRole as string;
         const userId = req.userId;
-        const { id, ...data } = req.body; // Extract `id` from the request body
+        const { id, ...data } = req.body; 
 
-        // Define repositories for each subRole
         const repositories: Record<string, Repository<any>> = {
             investor: AppDataSource.getRepository(InvestorData),
             aquiringStartup: AppDataSource.getRepository(AquiringStartup),
@@ -27,7 +26,6 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
             sellingStartup: AppDataSource.getRepository(SellingStartup),
         };
 
-        // Get the appropriate repository based on subRole
         const repository = repositories[subRole];
 
         if (!repository) {
