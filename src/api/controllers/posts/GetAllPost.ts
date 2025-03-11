@@ -28,7 +28,6 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
   try {
     const { page = 1, limit = 5, isDiscussion = false } = req.query;
 
-
     const userId = req.userId;
 
     let discuss = false;
@@ -50,15 +49,10 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const currentUser = await userRepository.findOne({ where: { id: userId } });
     if (!currentUser) return res.status(400).json({ message: 'User not found.' });
 
-    const connections = await connectionRepository
-      .createQueryBuilder('connection')
-      .where('connection.status = :status', { status: 'accepted' })
-      .andWhere(
-        '(connection.requesterId = :userId OR connection.receiverId = :userId)',
-        // { userId }
-      )
-      .getMany();
 
+    const connections = await connectionRepository.find({
+      where: { receiverId: userId, requesterId: userId }
+    });
 
     const connectedUserIds = connections.map(conn => conn.requesterId === userId ? conn.receiverId : conn.requesterId);
 
@@ -114,8 +108,6 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const totalPosts = allPosts.length;
 
     console.log(startIndex, page, limit);
-    console.log("******************************",paginatedPosts);
-
 
     if (!paginatedPosts.length) {
       return res.status(200).json({
@@ -149,11 +141,12 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const formattedPosts = await Promise.all(paginatedPosts.map(async post => {
       const documentsUrls: { url: string, type: string }[] = [];
 
-      // Fetch media URLs
-      await Promise.all(post.mediaKeys?.map(async (media) => {
-        const dUrl = await generatePresignedUrl(media?.key);
-        documentsUrls.push({ url: dUrl, type: media?.type });
-      }) || []);
+      await Promise.all(
+        (Array.isArray(post.mediaKeys) ? post.mediaKeys : []).map(async (media) => {
+          const dUrl = await generatePresignedUrl(media.key);
+          documentsUrls.push({ url: dUrl, type: media.type });
+        })
+      );
 
       const likeCount = likes.filter(like => like.postId === post.id).length;
       const commentCount = comments.filter(comment => comment.postId === post.id).length;

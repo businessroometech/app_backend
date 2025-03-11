@@ -148,7 +148,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         title,
         content,
         hashtags,
-        mediaKeys: uploadedDocumentUrls,
+        mediaKeys: uploadedDocumentUrls.length > 0 ? uploadedDocumentUrls : undefined,
         repostedFrom,
         repostText,
         isRepost: Boolean(repostedFrom),
@@ -423,11 +423,15 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
     const formattedPosts = await Promise.all(
       newUserPosts.map(async (post) => {
+
         const documentsUrls: { url: string, type: string }[] = [];
-        post.mediaKeys?.map(async (media) => {
-          const dUrl = await generatePresignedUrl(media.key);
-          documentsUrls.push({ url: dUrl, type: media.type });
-        });
+        await Promise.all(
+          (Array.isArray(post.mediaKeys) ? post.mediaKeys : []).map(async (media) => {
+            const dUrl = await generatePresignedUrl(media.key);
+            documentsUrls.push({ url: dUrl, type: media.type });
+          })
+        );
+
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
         const likeStatus = likes.some((like) => like.postId === post.id && like.userId === id);
@@ -618,12 +622,15 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
       }
     };
 
-    const documentsUrls = post.mediaKeys
-      ? await Promise.all(post.mediaKeys.map(async (media) => ({
-        url: await generateSafePresignedUrl(media?.key),
-        type: media.type,
-      })))
-      : [];
+
+    const documentsUrls: { url: string, type: string }[] = [];
+
+    await Promise.all(
+      (Array.isArray(post.mediaKeys) ? post.mediaKeys : []).map(async (media) => {
+        const dUrl = await generatePresignedUrl(media.key);
+        documentsUrls.push({ url: dUrl, type: media.type });
+      })
+    );
 
     const formattedComments = await Promise.all(
       comments.map(async (comment) => {
@@ -657,7 +664,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
       const repostedPost = await postRepository.findOne({ where: { id: post.repostedFrom } });
 
       if (repostedPost) {
-        originalPUser = await userRepos.findOne({ where: { id: "3b8ba5e34776d98fc34c7e5ed0f29a42" } });    
+        originalPUser = await userRepos.findOne({ where: { id: "3b8ba5e34776d98fc34c7e5ed0f29a42" } });
       }
     }
 
