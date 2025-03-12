@@ -26,10 +26,10 @@ export const commentDocumentMiddleware = multer({ storage: storage }).array('fil
 
 export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { postId, text, commentId, mediaKeys } = req.body;
+    const { postId, text, commentId } = req.body;
 
     const userId = req.userId;
-
+    console.log(postId, text,userId,"*************************************")
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
@@ -45,7 +45,8 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
       return res.status(200).json({ status: 'success', message: 'Comment updated successfully.', data: { comment } });
     }
 
-    const newComment = Comment.create({ userId, postId, text, mediaKeys, createdBy: 'system', updatedBy: 'system' });
+
+    const newComment = Comment.create({ userId, postId, text, createdBy: 'system', updatedBy: 'system' });
 
     if (req.files) {
       let uploadedDocumentUrl: { key: string; type: string } | undefined;
@@ -66,7 +67,6 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
       }
       newComment.mediaKeys = uploadedDocumentUrl;
     }
-
 
     const savedComment = await newComment.save();
 
@@ -247,7 +247,6 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               likeStatus: nestedCommentLike?.status,
               commenterId: commenter?.id,
               profilePic: profilePictureUrl,
-              mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
             };
           })
         );
@@ -272,7 +271,8 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           commenterId: commenter?.id,
           profilePic: profilePictureUrl,
           replyCount: formattedNestedComments.length,
-          replies: formattedNestedComments
+          replies: formattedNestedComments,
+          mediaUrls: comment.mediaKeys ? await generatePresignedUrl(comment.mediaKeys.key) : [],
         };
       })
     );
@@ -346,7 +346,6 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
         postId,
         commentId,
         text,
-        mediaKeys,
         isChild,
         repliedTo: repliedTo ? repliedTo : null,
         createdBy: createdBy || 'system',
@@ -559,7 +558,6 @@ export const getNestedComments = async (req: Request, res: Response) => {
           commentId: comment.commentId,
           commenterId: commenter?.id,
           profilePic: profilePictureUrl,
-          mediaUrls: comment.mediaKeys ? await Promise.all(comment.mediaKeys.map(generatePresignedUrl)) : [],
         };
       })
     );

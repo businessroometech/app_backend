@@ -26,7 +26,7 @@ export interface AuthenticatedRequest extends Request {
 // Get all posts for public view
 export const getAllPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { page = 1, limit = 5, isDiscussion = false } = req.query;
+    const { page = 1, limit = 100, isDiscussion = false } = req.query;
 
     const userId = req.userId;
 
@@ -102,7 +102,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     // // Pagination
-
+      
     const startIndex = (Number(page) - 1) * Number(limit);
     const paginatedPosts = allPosts.slice(startIndex, Number(startIndex) + Number(limit));
     const totalPosts = allPosts.length;

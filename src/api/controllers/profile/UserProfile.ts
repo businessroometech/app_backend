@@ -43,23 +43,22 @@ const formatTimestamp = (createdAt: Date): string => {
   return `${yearsAgo}y`;
 };
 
-const storage = multer.memoryStorage();
-export const uploadProfileAndCover = multer({ storage: storage }).fields([
+export const uploadProfileAndCover = multer({
+  storage: multer.memoryStorage(),
+}).fields([
   { name: "profilePhoto", maxCount: 1 },
   { name: "coverPhoto", maxCount: 1 }
 ]);
 
+
 export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
-      occupation,
+      // occupation,
       firstName,
       lastName,
       dob,
-      mobileNumber,
-      emailAddress,
       bio,
-      gender,
       investorType,
       isBadgeOn,
       badgeName,
@@ -67,57 +66,38 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     } = req.body;
 
     const userId = req.userId;
-    const userRepository = AppDataSource.getRepository(PersonalDetails);
 
-    // Fetch user details once
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is missing or invalid." });
+    }
+
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
     const personalDetails = await userRepository.findOneBy({ id: userId });
 
     if (!personalDetails) {
-      return res.status(400).json({ message: "User ID is invalid or does not exist." });
+      return res.status(404).json({ message: "User not found." });
     }
 
-    // Update basic profile fields
-    if (occupation !== undefined) personalDetails.occupation = occupation;
+    // Update fields if they are provided
+    // if (occupation !== undefined) personalDetails.occupation = occupation;
     if (firstName !== undefined) personalDetails.firstName = firstName;
     if (lastName !== undefined) personalDetails.lastName = lastName;
     if (dob !== undefined) personalDetails.dob = dob;
     if (experience !== undefined) personalDetails.experience = experience;
-    if (mobileNumber !== undefined) personalDetails.mobileNumber = mobileNumber;
-    if (emailAddress !== undefined) personalDetails.emailAddress = emailAddress;
     if (bio !== undefined) personalDetails.bio = bio;
-    if (gender !== undefined) personalDetails.gender = gender;
     if (investorType !== undefined) personalDetails.investorType = investorType;
+
     if (isBadgeOn !== undefined) {
       personalDetails.isBadgeOn = isBadgeOn;
-      personalDetails.badgeName = badgeName;
+      if (badgeName !== undefined) personalDetails.badgeName = badgeName;
     }
 
-    if (req.files) {
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      console.log("Files received:", files);
-
-      if (files.profilePhoto) {
-        console.log("Profile Photo Exists:", files.profilePhoto[0].originalname);
-      } else {
-        console.log("Profile Photo Missing!");
-      }
-
-      if (files.coverPhoto) {
-        console.log("Cover Photo Exists:", files.coverPhoto[0].originalname);
-      } else {
-        console.log("Cover Photo Missing!");
-      }
-    }
-
-    // Check for profile photo & cover photo in req.files
-    if (req.files) {
+    // Ensure `req.files` is defined before accessing
+    if (req.files && Object.keys(req.files).length > 0) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-      let profilePhotoSuccess = false;
-      let coverPhotoSuccess = false;
-
-      if (files.profilePhoto && files.profilePhoto.length > 0) {
-        try {
+      try {
+        if (files.profilePhoto?.length) {
           console.log("Uploading profile photo:", files.profilePhoto[0].originalname);
           const profilePhotoKey = await uploadBufferDocumentToS3(
             files.profilePhoto[0].buffer,
@@ -125,14 +105,9 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
             files.profilePhoto[0].mimetype
           );
           personalDetails.profilePictureUploadId = profilePhotoKey.fileKey;
-          profilePhotoSuccess = true;
-        } catch (uploadError) {
-          console.error("Profile photo upload error:", uploadError);
         }
-      }
 
-      if (files.coverPhoto && files.coverPhoto.length > 0) {
-        try {
+        if (files.coverPhoto?.length) {
           console.log("Uploading cover photo:", files.coverPhoto[0].originalname);
           const coverPhotoKey = await uploadBufferDocumentToS3(
             files.coverPhoto[0].buffer,
@@ -140,15 +115,13 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
             files.coverPhoto[0].mimetype
           );
           personalDetails.bgPictureUploadId = coverPhotoKey.fileKey;
-          coverPhotoSuccess = true;
-        } catch (uploadError) {
-          console.error("Cover photo upload error:", uploadError);
         }
+      } catch (uploadError) {
+        console.error("Error uploading images to S3:", uploadError);
       }
     }
 
     personalDetails.updatedBy = "system";
-
     await userRepository.save(personalDetails);
 
     return res.status(200).json({
@@ -163,6 +136,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     });
   }
 };
+
 
 
 // get user profile

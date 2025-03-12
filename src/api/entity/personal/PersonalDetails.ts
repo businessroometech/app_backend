@@ -51,10 +51,10 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: 'varchar', default: '', nullable: true })
   gender !: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   profilePictureUploadId!: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   bgPictureUploadId!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })

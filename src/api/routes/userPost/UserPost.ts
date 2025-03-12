@@ -1,6 +1,6 @@
 import express from 'express';
 import { CreateUserPost, DeleteUserPost, FindUserPost, GetUserPostById, UpdateUserPost, uploadMiddleware, VoteInPoll } from '@/api/controllers/posts/UserPost';
-import { getComments, getNestedComments, deleteComment, deleteNestedComment, createOrUpdateComment, createOrUpdateNestedComment, getCommentLikeUserList } from '@/api/controllers/posts/CommentController';
+import { getComments, getNestedComments, deleteComment, deleteNestedComment, createOrUpdateComment, createOrUpdateNestedComment, getCommentLikeUserList, commentDocumentMiddleware } from '@/api/controllers/posts/CommentController';
 import { createLike, getAllLikesForPost, createCommentLike, createNestedCommentLike, getAllLikesForComment, getUserPostLikeList, getPostCommentersList } from '@/api/controllers/posts/LikeController';
 import { createOrUpdateReaction, removeReaction } from '@/api/controllers/posts/ReactionController';
 import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
@@ -22,7 +22,7 @@ Router.get('/get-all-post', authenticate, getAllPost)
 Router.post('/create-like', authenticate, createLike);
 Router.post('/create-comment-like', authenticate, createCommentLike);
 Router.post('/create-nested-comment-like', authenticate, createNestedCommentLike);
-Router.post('/create-comment', authenticate, createOrUpdateComment);
+Router.post('/create-comment', authenticate, commentDocumentMiddleware, createOrUpdateComment);
 Router.post('/create-nested-comment', authenticate, createOrUpdateNestedComment);
 
 Router.get('/get-likes/:postId', authenticate, getAllLikesForPost);

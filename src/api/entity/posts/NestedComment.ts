@@ -25,6 +25,9 @@ export class NestedComment extends BaseEntity {
 
     @Column({ type: 'uuid' })
     commentId!: string;
+
+    @Column({ type: 'text'})
+    text!: string;
   
     @Column({ type: 'varchar', default: 'system' })
     createdBy!: string;

@@ -23,7 +23,7 @@ export class Comment extends BaseEntity {
     @Column({ type: 'uuid' })
     postId!: string;
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text'})
     text!: string;
 
     @Column({ type: 'json', nullable: true })
