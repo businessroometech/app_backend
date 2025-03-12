@@ -151,7 +151,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
 
     const users = await userRepository.find({
       where: { id: In(userIds) },
-      select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+      select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'role'],
     });
 
     if (!users || users.length === 0) {
@@ -184,7 +184,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           userId: user?.id,
           firstName: user?.firstName,
           lastName: user?.lastName,
-          userRole: user?.userRole,
+          userRole: user?.role,
           profilePictureUrl: profilePictureUrl,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
           mutual: isMutual,
@@ -255,7 +255,7 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
 
     const users = await userRepository.find({
       where: { id: In(userIds) },
-      select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+      select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'role'],
     });
 
     // Create a response with connection requests and their respective user details
@@ -383,7 +383,7 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
         firstName: user.firstName,
         lastName: user.lastName,
         occupation: user.occupation,
-        userRole: user.userRole,
+        userRole: user.role,
         profilePictureUrl: user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
       }))
     );

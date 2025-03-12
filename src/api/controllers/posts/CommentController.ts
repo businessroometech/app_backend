@@ -593,7 +593,7 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
       commentLikes.map(async (like) => {
         const user = await personalDetailsRepository.findOne({
           where: { id: like.userId },
-          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId', 'userRole'],
+          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId', 'role'],
         });
 
         if (user) {

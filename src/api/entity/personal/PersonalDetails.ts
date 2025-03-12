@@ -103,7 +103,7 @@ export class PersonalDetails extends BaseEntity {
     type: 'varchar',
     nullable: true,
   })
-  userRole!: string;
+  role!: string;
 
   @Column({ type: 'varchar', default: 'system' })
   createdBy!: string;

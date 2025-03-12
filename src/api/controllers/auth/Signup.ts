@@ -23,7 +23,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       mobileNumber,
       gender,
       dob,
-      userRole,
+      role,
       createdBy = 'system',
       updatedBy = 'system',
     } = req.body;
@@ -78,7 +78,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       countryCode,
       mobileNumber,
       gender,
-      userRole,
+      role,
       dob,
       active: 1,
       createdBy,
@@ -116,14 +116,14 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       await queryRunner.rollbackTransaction();
     }
     console.error('Error during signup:', error);
+    if (error.code === 'ER_DUP_ENTRY') {
+      const sqlMessage = error.sqlMessage || '';
 
-    if (error.code === '23505') {
-      const detail = error.detail || '';
-      if (detail.includes('emailAddress')) {
-        res.status(400).json({ status: 'error', message: 'Email already exists.' });
-        return;
-      } else if (detail.includes('mobileNumber')) {
+      if (sqlMessage.includes('mobileNumber')) {
         res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
+        return;
+      } else if (sqlMessage.includes('emailAddress')) {
+        res.status(400).json({ status: 'error', message: 'Email already exists.' });
         return;
       } else {
         res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
