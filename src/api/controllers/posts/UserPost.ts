@@ -428,6 +428,8 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
         const likeStatus = likes.some((like) => like.postId === post.id && like.userId === id);
 
+        const like = await likeRepository.findOne({ where: { userId } });
+
         let originalPUser;
         if (post?.repostedFrom) {
           const repostedPost = await userPostRepository.findOne({ where: { id: post.repostedFrom } });
@@ -449,6 +451,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             hashtags: post.hashtags,
             mediaUrls: documentsUrls,
             reactionCount: likeCount,
+            reactionId: like?.reactionId,
             commentCount,
             reactionStatus: likeStatus,
             isRepost: post.isRepost,
