@@ -47,7 +47,7 @@ const storage = multer.memoryStorage();
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
 
-    const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, isPoll, question, pollOptions } = req.body;
+    const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, topic, isPoll, question, pollOptions } = req.body;
     const userId = req.userId;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
@@ -104,6 +104,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         userId,
         isPoll,
         isDiscussion,
+        discussionTopic: topic,
         question,
         pollOptions: pollOptions.map((option) => ({ option, votes: 0 })),
       });
