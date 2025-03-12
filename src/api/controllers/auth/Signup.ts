@@ -80,6 +80,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       gender,
       userRole,
       dob,
+      active: 1,
       createdBy,
       updatedBy,
     });
@@ -87,10 +88,10 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const user = await userLoginRepository.save(newUser);
 
     // Generate a verification token
-    const verificationToken = jwt.sign({ userId: newUser.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
+    // const verificationToken = jwt.sign({ userId: newUser.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
 
     // Send verification email
-    await sendVerificationEmail(newUser.emailAddress, verificationToken);
+    // await sendVerificationEmail(newUser.emailAddress, verificationToken);
 
     await queryRunner.commitTransaction();
     const media = null;
