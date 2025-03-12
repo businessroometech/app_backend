@@ -120,7 +120,7 @@ const AppDataSource = new DataSource({
     ExploringIdeas,
     Notify
   ],
-  synchronize: true,
+  synchronize: false,
 });
 
 // Initialize the DataSource

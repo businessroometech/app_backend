@@ -8,6 +8,8 @@ import { generatePresignedUrl } from '../s3/awsControllers';
 import { Brackets, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { getSocketInstance } from '@/socket';
+import { createNotification } from '../notify/Notify';
+import { NotificationType } from '@/api/entity/notify/Notify';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -52,13 +54,24 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
     });
     await connectionRepository.save(newConnection);
 
-    // Create a notification
-    await sendNotification(
-      receiverId,
-      `${requester?.firstName} ${requester?.lastName} Sent you a connection Request`,
-      requester?.profilePictureUploadId,
-      `/settings/ManageConnections`
-    );
+    // Notify
+    try {
+      const requesterImageUrl = requester.profilePictureUploadId
+        ? await generatePresignedUrl(requester.profilePictureUploadId)
+        : null;
+
+      await createNotification(
+        NotificationType.REQUEST_RECEIVED,
+        requester.id,
+        receiver.id,
+        `${requester.firstName} ${requester.lastName} sent you a connection Request`,
+        {
+          requesterImageUrl,
+        }
+      );
+    } catch (error) {
+      console.error("Error creating notification:", error);
+    }
 
     return res.status(201).json({
       message: 'Connection request sent successfully.',
@@ -104,16 +117,28 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
     connection.status = status as 'accepted' | 'rejected';
     const data = await connectionRepository.save(connection);
 
-    // Create a notification
-    const notification = await sendNotification(
-      connection.requester.id,
-      `${connection.receiver.firstName} ${connection.receiver.lastName} ${data?.status} your connection request`,
-      connection?.receiver?.profilePictureUploadId,
-      `/settings/ManageConnections`
-    );
-    if (notification) {
-      return res.status(200).json({ message: `Connection ${status} successfully.`, data });
+    // Notify
+
+    if (status === 'accepted') {
+      try {
+        const requesterImageUrl = connection?.receiver?.profilePictureUploadId
+          ? await generatePresignedUrl(connection?.receiver?.profilePictureUploadId)
+          : null;
+
+        await createNotification(
+          NotificationType.REQUEST_RECEIVED,
+          connection?.receiver?.id,
+          connection?.requester?.id,
+          `${connection?.receiver?.firstName} ${connection?.receiver?.lastName} accepted your connection request`,
+          {
+            requesterImageUrl,
+          }
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
     }
+
     return res.status(500).json({ message: 'Internal Server Error please retry' });
   } catch (error: any) {
     console.error('Error updating connection status:', error);
@@ -420,7 +445,7 @@ export class ConnectionController {
       if (!requesterId || !status) {
         return res.status(400).json({ message: 'Both requesterId and status are required.' });
       }
-      
+
       const connectionRepository = AppDataSource.getRepository(Connection);
 
       const validStatuses = ['pending', 'accepted', 'rejected', 'block'] as const;

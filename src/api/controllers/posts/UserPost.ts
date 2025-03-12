@@ -15,6 +15,8 @@ import { BlockedPost } from '../../entity/posts/BlockedPost';
 import { Connection } from '../../entity/connection/Connections';
 import { uploadBufferDocumentToS3, getDocumentFromBucket } from "../s3/awsControllers";
 import { PollEntry } from '@/api/entity/posts/PollEntry';
+import { createNotification } from '../notify/Notify';
+import { NotificationType } from '@/api/entity/notify/Notify';
 
 export const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
@@ -41,11 +43,6 @@ export interface AuthenticatedRequest extends Request {
 
 
 const storage = multer.memoryStorage();
-
-// const upload = multer({
-//   storage: storage,
-//   limits: { fileSize: 50 * 1024 * 1024 },
-// }).array("files");
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
@@ -157,6 +154,40 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       savedPost = await postRepository.save(newPost);
     }
 
+    // Notify
+
+    if (repostedFrom) {
+
+      const repostedByUser = await userRepository.findOne({ where: { id: userId } });
+      const repostedFromPost = await postRepository.findOne({ where: { id: repostedFrom } });
+      const repostedOfUser = await userRepository.findOne({ where: { id: repostedFromPost?.userId } });
+
+
+      if(!repostedByUser || !repostedOfUser)
+      {
+        return res.status(400).json({ status: "error", message: "repostedByUser and repostedOfUser are required " });
+      }
+
+      try {
+        const reposterImageUrl = repostedByUser?.profilePictureUploadId
+          ? await generatePresignedUrl(repostedByUser?.profilePictureUploadId)
+          : null;
+  
+        await createNotification(
+          NotificationType.REQUEST_RECEIVED,
+          repostedOfUser?.id,
+          repostedByUser?.id,
+          `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`,
+          {
+            reposterImageUrl,
+          }
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
+
+    }
+    
     // Handle mentions
     // let mention = null;
     // if (validMentionedUserIds.length > 0) {

@@ -31,7 +31,6 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
     const { postId, text, commentId } = req.body;
 
     const userId = req.userId;
-    console.log(postId, text, userId, "*************************************")
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
