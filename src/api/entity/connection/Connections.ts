@@ -15,7 +15,7 @@ export class Connection extends BaseEntity {
   requester!: PersonalDetails;
 
   @Column({ type: 'uuid' })
-  requesterId!: string; 
+  requesterId!: string;
 
   @ManyToOne(() => PersonalDetails, (personalDetails) => personalDetails.receivedRequests, {
     nullable: false,
@@ -25,10 +25,10 @@ export class Connection extends BaseEntity {
   receiver!: PersonalDetails;
 
   @Column({ type: 'uuid' })
-  receiverId!: string; 
+  receiverId!: string;
 
   @Column({ type: 'enum', enum: ['pending', 'accepted', 'rejected', 'block'], default: 'pending' })
-  status!: 'pending' | 'accepted' | 'rejected' | 'block'; 
+  status!: 'pending' | 'accepted' | 'rejected' | 'block';
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
   createdAt!: Date;
