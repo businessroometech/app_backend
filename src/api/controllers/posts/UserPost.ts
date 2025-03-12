@@ -297,6 +297,7 @@ export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Prom
         await postRepository.save(post);
 
         existingVote.status = false;
+        existingVote.selectedOption = "";
         existingVote.updatedBy = "system";
         await pollEntryRepository.save(existingVote);
 
