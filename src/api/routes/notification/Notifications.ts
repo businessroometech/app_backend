@@ -1,9 +1,10 @@
 import express from "express";
-import { createNotification, fetchNotifications, markAsRead } from "@/api/controllers/notifications/notificationController";
+import { getUserNotifications, markAllNotificationsAsRead, markNotificationAsRead } from "../../controllers/notify/Notify"
+import { authenticate } from "@/api/middlewares/auth/Authenticate";
 const router = express.Router();
 
-router.post("/create",createNotification);
-router.post("/mark-as-read", markAsRead);
-router.post("/fetch", fetchNotifications);
+router.get("/", authenticate, getUserNotifications);
+router.post("/mark-as-read/:notificationId", authenticate, markNotificationAsRead);
+router.post("/mark-all-as-read", authenticate, markAllNotificationsAsRead);
 
 export default router;

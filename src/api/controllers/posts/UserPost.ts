@@ -57,20 +57,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
     }
 
-    // Extract mentions from content
-    // const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-    // const mentions = [...content.matchAll(mentionPattern)].map((match) => match[1]);
-
-    // const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
-    // const validMentionedUserIds = mentionedUsers.map((u) => u.id);
-
-    // if (mentions.length > 0 && validMentionedUserIds.length !== mentions.length) {
-    //   return res.status(404).json({
-    //     message: 'One or more mentioned users do not exist.',
-    //     invalidMentions: mentions.filter((m) => !mentionedUsers.some((u) => u.userName === m)),
-    //   });
-    // }
-
     // ------------- REPOST ----------------------------------------------------------
 
     const postRepository = AppDataSource.getRepository(UserPost);
@@ -78,26 +64,32 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
     if (repostedFrom) {
       const post = await postRepository.findOne({ where: { id: repostedFrom } });
-      console.log(post);
-      const newPost = postRepository.create({
-        userId,
-        title: post?.title,
-        content: post?.content,
-        hashtags: post?.hashtags,
-        mediaKeys: post?.mediaKeys,
-        repostedFrom,
-        repostText,
-        isRepost: Boolean(repostedFrom),
-        isDiscussion: post?.isDiscussion,
-        discussionContent: post?.discussionContent,
-        discussionTopic: post?.discussionTopic,
-        isPoll: post?.isPoll,
-        pollOptions: post?.pollOptions,
-        question: post?.question,
-        originalPostedAt: post?.createdAt,
-      });
 
-      savedPost = await postRepository.save(newPost);
+      if (post) {
+
+        post.repostCount = post.repostCount + 1;
+
+        console.log(post);
+        const newPost = postRepository.create({
+          userId,
+          title: post?.title,
+          content: post?.content,
+          hashtags: post?.hashtags,
+          mediaKeys: post?.mediaKeys,
+          repostedFrom,
+          repostText,
+          isRepost: Boolean(repostedFrom),
+          isDiscussion: post?.isDiscussion,
+          discussionContent: post?.discussionContent,
+          discussionTopic: post?.discussionTopic,
+          isPoll: post?.isPoll,
+          pollOptions: post?.pollOptions,
+          question: post?.question,
+          originalPostedAt: post?.createdAt,
+        });
+
+        savedPost = await postRepository.save(newPost);
+      }
     }
     else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
       const newPost = postRepository.create({
@@ -164,8 +156,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       const repostedOfUser = await userRepository.findOne({ where: { id: repostedFromPost?.userId } });
 
 
-      if(!repostedByUser || !repostedOfUser)
-      {
+      if (!repostedByUser || !repostedOfUser) {
         return res.status(400).json({ status: "error", message: "repostedByUser and repostedOfUser are required " });
       }
 
@@ -173,7 +164,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         const reposterImageUrl = repostedByUser?.profilePictureUploadId
           ? await generatePresignedUrl(repostedByUser?.profilePictureUploadId)
           : null;
-  
+
         await createNotification(
           NotificationType.REQUEST_RECEIVED,
           repostedOfUser?.id,
@@ -188,38 +179,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       }
 
     }
-    
-    // Handle mentions
-    // let mention = null;
-    // if (validMentionedUserIds.length > 0) {
-    //   const mentionRepository = AppDataSource.getRepository(Mention);
-    //   const mentionsToSave = validMentionedUserIds.map((mentionedUserId) =>
-    //     mentionRepository.create({
-    //       user: user,
-    //       post: savedPost,
-    //       mentionBy: userId,
-    //       mentionTo: mentionedUserId,
-    //     })
-    //   );
-
-    //   mention = await mentionRepository.save(mentionsToSave);
-
-    //   // Send notifications to mentioned users
-    //   for (const mentionedUser of mentionedUsers) {
-    //     if (mentionedUser.id !== userId) {
-    //       await sendNotification(
-    //         mentionedUser.id,
-    //         `${user.firstName} ${user.lastName} mentioned you in a post`,
-    //         user.profilePictureUploadId,
-    //         `/feed/post/${savedPost.id}`
-    //       );
-    //     }
-    //   }
-    // }
-
-    // // Emit socket event
-    // const io = getSocketInstance();
-    // io.emit('postSent', { success: true, postId: savedPost.id });
 
     return res.status(201).json({
       message: 'Post created successfully.',
@@ -495,6 +454,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
+            repostCount: post.repostCount,
             createdAt: post.createdAt,
             isDiscussion: post.isDiscussion,
             discussionTopic: post.discussionTopic,
@@ -735,6 +695,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         isRepost: post.isRepost,
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
+        repostCount: post.repostCount,
         createdAt: post.createdAt,
         isDiscussion: post.isDiscussion,
         discussionTopic: post.discussionTopic,

@@ -203,6 +203,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           commentCount,
           repostedFrom: post.repostedFrom,
           repostText: post.repostText,
+          repostCount: post.repostCount,
           createdAt: post.createdAt,
           isDiscussion: post.isDiscussion,
           discussionTopic: post.discussionTopic,

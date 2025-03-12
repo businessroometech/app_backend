@@ -151,7 +151,7 @@ app.use(express.json());
 // Routes mounting
 app.use('/v1/auth', authRouter);
 app.use('/v1/post', userPost);
-app.use('/v1/notifications', notifications);
+app.use('/v1/notification', notifications);
 app.use('/v1/connection', connectionRouter);
 app.use('/v1/chat', chatRouter);
 app.use('/v1/businessseller', BuisnessSeller);

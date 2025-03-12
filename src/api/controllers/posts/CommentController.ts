@@ -292,6 +292,8 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               likeStatus: nestedCommentLike?.status,
               commenterId: commenter?.id,
               profilePic: profilePictureUrl,
+              isChild: comment.isChild,
+              repliedTo: comment.repliedTo
             };
           })
         );
