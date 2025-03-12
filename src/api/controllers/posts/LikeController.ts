@@ -10,6 +10,8 @@ import { generatePresignedUrl } from '../s3/awsControllers';
 import { FindOptionsWhere, In } from 'typeorm';
 import { Comment } from '@/api/entity/posts/Comment';
 import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
+import { createNotification } from '../notify/Notify';
+import { NotificationType } from '@/api/entity/notify/Notify';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -46,42 +48,51 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
     }
     await like.save();
 
-    // Get the post and user information
-    const postRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await postRepo.findOne({ where: { id: postId } });
+    // Notify
 
-    if (!userPost) {
-      return res.status(404).json({
+    const postRepo = AppDataSource.getRepository(UserPost);
+    const likedPost = await postRepo.findOne({ where: { id: postId } });
+
+    if (!likedPost) {
+      return res.status(400).json({
         status: 'error',
         message: 'Post not found.',
       });
     }
 
-    const personalRepo = AppDataSource.getRepository(PersonalDetails);
-    const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
-    const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+    const likedOnUser = await userRepo.findOne({ where: { id: likedPost.userId } });
+    const likedByUser = await userRepo.findOne({ where: { id: userId } });
 
-    if (!userInfo || !commenterInfo) {
-      return res.status(404).json({
+    if (!likedByUser || !likedOnUser) {
+      return res.status(400).json({
         status: 'error',
         message: 'User information not found.',
       });
     }
 
-    const media = commenterInfo.profilePictureUploadId ? commenterInfo.profilePictureUploadId : null;
+    if (likedPost.userId !== userId && like.status) {
+      try {
+        const likerImageUrl = likedByUser.profilePictureUploadId
+          ? await generatePresignedUrl(likedByUser.profilePictureUploadId)
+          : null;
 
-    let notifications = null;
-
-    if (userInfo.id !== userId && like.status === true) {
-      notifications = await sendNotification(
-        userInfo.id,
-        `${commenterInfo.firstName} ${commenterInfo.lastName} liked your post.`,
-        media,
-        `/feed/post/${postId}`
-      );
+        await createNotification(
+          NotificationType.REACTION,
+          likedOnUser.id,
+          userId,
+          `${likedByUser.firstName} ${likedByUser.lastName} reacted on your post`,
+          {
+            likerImageUrl,
+            postId: likedPost.id
+          }
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
     }
 
-    return res.status(200).json({ status: 'success', message: 'Like status updated.', data: { like, notifications } });
+    return res.status(200).json({ status: 'success', message: 'Like status updated.', data: { like } });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
@@ -189,36 +200,49 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
 
     await commentLikeRepository.save(like);
 
-    // Get the post and user information
-    const postRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await postRepo.findOne({ where: { id: postId } });
+    // Notify
 
-    if (!userPost) {
-      return res.status(404).json({
+    const postRepo = AppDataSource.getRepository(UserPost);
+    const likedCommentOfPost = await postRepo.findOne({ where: { id: postId } });
+
+    if (!likedCommentOfPost) {
+      return res.status(400).json({
         status: 'error',
         message: 'Post not found.',
       });
     }
 
-    const personalRepo = AppDataSource.getRepository(PersonalDetails);
-    const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
-    const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+    const likedOnUser = await userRepo.findOne({ where: { id: likedCommentOfPost.userId } });
+    const likedByUser = await userRepo.findOne({ where: { id: userId } });
 
-    if (!userInfo || !commenterInfo) {
-      return res.status(404).json({
+    if (!likedByUser || !likedOnUser) {
+      return res.status(400).json({
         status: 'error',
         message: 'User information not found.',
       });
     }
 
-    // Create a notification
-    if (commenterInfo.id !== userInfo.id && like.status === true) {
-      await sendNotification(
-        userInfo.id,
-        `${commenterInfo.firstName} ${commenterInfo.lastName} liked your comment`,
-        commenterInfo.profilePictureUploadId,
-        `/feed/post/${userPost.id}`
-      );
+    if (likedCommentOfPost.userId !== userId && like.status) {
+      try {
+        const likerImageUrl = likedByUser.profilePictureUploadId
+          ? await generatePresignedUrl(likedByUser.profilePictureUploadId)
+          : null;
+
+        await createNotification(
+          NotificationType.COMMENT_LIKE,
+          likedOnUser.id,
+          userId,
+          `${likedByUser.firstName} ${likedByUser.lastName} reacted on your comment`,
+          {
+            likerImageUrl,
+            postId: likedCommentOfPost.id,
+            commentId: commentId,
+          }
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
     }
 
     return res.status(200).json({ status: 'success', message: 'Comment Like status updated.', data: { like } });
@@ -387,37 +411,51 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
 
     await nestedCommentLikeRepository.save(like);
 
-    // Get the post and user information
-    // const postRepo = AppDataSource.getRepository(UserPost);
-    // const userPost = await postRepo.findOne({ where: { id: postId } });
+    //Notify
 
-    // if (!userPost) {
-    //   return res.status(404).json({
-    //     status: 'error',
-    //     message: 'Post not found.',
-    //   });
-    // }
+    const postRepo = AppDataSource.getRepository(UserPost);
+    const likedNestedCommentOfPost = await postRepo.findOne({ where: { id: postId } });
 
-    // const personalRepo = AppDataSource.getRepository(PersonalDetails);
-    // const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
-    // const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+    if (!likedNestedCommentOfPost) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Post not found.',
+      });
+    }
 
-    // if (!userInfo || !commenterInfo) {
-    //   return res.status(404).json({
-    //     status: 'error',
-    //     message: 'User information not found.',
-    //   });
-    // }
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+    const likedOnUser = await userRepo.findOne({ where: { id: likedNestedCommentOfPost.userId } });
+    const likedByUser = await userRepo.findOne({ where: { id: userId } });
 
-    // Create a notification
-    // if (commenterInfo.id !== userInfo.id && like.status === true) {
-    //   await sendNotification(
-    //     userInfo.id,
-    //     `${commenterInfo.firstName} ${commenterInfo.lastName} liked your comment`,
-    //     commenterInfo.profilePictureUploadId,
-    //     `/feed/post/${userPost.id}`
-    //   );
-    // }
+    if (!likedByUser || !likedOnUser) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User information not found.',
+      });
+    }
+
+    if (likedNestedCommentOfPost.userId !== userId && like.status) {
+      try {
+        const likerImageUrl = likedByUser.profilePictureUploadId
+          ? await generatePresignedUrl(likedByUser.profilePictureUploadId)
+          : null;
+
+        await createNotification(
+          NotificationType.REPLY_LIKE,
+          likedOnUser.id,
+          userId,
+          `${likedByUser.firstName} ${likedByUser.lastName} reacted on your reply`,
+          {
+            likerImageUrl,
+            postId: likedNestedCommentOfPost.id,
+            commentId: commentId,
+            nestedCommentId: nestedCommentId
+          }
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
+    }
 
     return res.status(200).json({ status: 'success', message: 'Nested Comment Like status updated.', data: { like } });
   } catch (error: any) {

@@ -70,6 +70,7 @@ import { AquiringStartup } from './api/entity/business-data/AquiringStartup';
 import { SellingStartup } from './api/entity/business-data/SellingStartup';
 import { SeekingConnections } from './api/entity/business-data/SeekingConnections';
 import { ExploringIdeas } from './api/entity/business-data/ExploringIdeas';
+import { Notify } from './api/entity/notify/Notify';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -116,9 +117,10 @@ const AppDataSource = new DataSource({
     AquiringStartup,
     SellingStartup,
     SeekingConnections,
-    ExploringIdeas
+    ExploringIdeas,
+    Notify
   ],
-  synchronize: false,
+  synchronize: true,
 });
 
 // Initialize the DataSource

@@ -343,7 +343,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOne({
       where: { id: id },
-      select: ['id', 'firstName', 'lastName', 'role', 'profilePictureUploadId', 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
+      select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId', 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
     });
 
     if (!user) {
@@ -466,7 +466,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             lastName: user.lastName || '',
             // timestamp: formatTimestamp(post.createdAt),
             createdAt: post.createdAt,
-            userRole: user.role,
+            userRole: user.userRole,
             avatar: imgUrl,
             isBadgeOn: user?.isBadgeOn,
             badgeName: user?.badgeName
@@ -477,7 +477,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             firstName: originalPUser?.firstName || '',
             lastName: originalPUser?.lastName || '',
             avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
-            userRole: originalPUser?.role,
+            userRole: originalPUser?.userRole,
             isBadgeOn: originalPUser?.isBadgeOn,
             badgeName: originalPUser?.badgeName
           }
@@ -693,7 +693,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
         timestamp: formatTimestamp(post.createdAt),
-        userRole: user?.role,
+        userRole: user?.userRole,
         avatar: imgUrl,
         isBadgeOn: user?.isBadgeOn,
         badgeName: user?.badgeName
@@ -704,7 +704,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         firstName: originalPUser?.firstName || '',
         lastName: originalPUser?.lastName || '',
         avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
-        userRole: originalPUser?.role,
+        userRole: originalPUser?.userRole,
         isBadgeOn: originalPUser?.isBadgeOn,
         badgeName: originalPUser?.badgeName
       }

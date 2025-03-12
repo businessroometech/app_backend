@@ -214,7 +214,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           lastName: user?.lastName || '',
           avatar: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
           timestamp: formatTimestamp(post.updatedAt || post.createdAt),
-          userRole: user?.role,
+          userRole: user?.userRole,
           connection: connectedUserIds.includes(post.userId),
           isBadgeOn: user?.isBadgeOn,
           badgeName: user?.badgeName
@@ -224,7 +224,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           firstName: originalPUser?.firstName || '',
           lastName: originalPUser?.lastName || '',
           avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
-          userRole: originalPUser?.role,
+          userRole: originalPUser?.userRole,
           isBadgeOn: originalPUser?.isBadgeOn,
           badgeName: originalPUser?.badgeName
         }

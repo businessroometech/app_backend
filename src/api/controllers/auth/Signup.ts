@@ -23,7 +23,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       mobileNumber,
       gender,
       dob,
-      role,
+      userRole,
       createdBy = 'system',
       updatedBy = 'system',
     } = req.body;
@@ -78,7 +78,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       countryCode,
       mobileNumber,
       gender,
-      role,
+      userRole,
       dob,
       active: 1,
       createdBy,

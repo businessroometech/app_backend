@@ -29,7 +29,7 @@ export const suggestUsersByEmail = async (req: Request, res: Response): Promise<
     if (!query || typeof query !== 'string') {
       // If query is empty, fetch all users (limit 10)
       users = await userRepository.find({
-        select: ['id', 'emailAddress', 'firstName', 'lastName', 'profilePictureUploadId', "role", "userName"],
+        select: ['id', 'emailAddress', 'firstName', 'lastName', 'profilePictureUploadId', "userRole", "userName"],
 
       });
     } else {
@@ -41,7 +41,7 @@ export const suggestUsersByEmail = async (req: Request, res: Response): Promise<
           { lastName: Like(`%${query}%`) },
           { userName: Like(`%${query}%`) },
         ],
-        select: ['id', 'emailAddress', 'firstName', 'lastName', 'profilePictureUploadId', "role", "userName"],
+        select: ['id', 'emailAddress', 'firstName', 'lastName', 'profilePictureUploadId', "userRole", "userName"],
 
       });
     }
@@ -68,7 +68,7 @@ export const suggestUsersByEmail = async (req: Request, res: Response): Promise<
           emailAddress: user.emailAddress,
           fullName: `${user.firstName} ${user.lastName}`.trim(),
           avatar: user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
-          userRole: user.role,
+          userRole: user.userRole,
           userName: user.userName
         }))
     );

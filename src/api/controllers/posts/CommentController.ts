@@ -15,6 +15,8 @@ import { In } from 'typeorm';
 import { Mention } from '@/api/entity/posts/Mention';
 import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 import multer from 'multer';
+import { createNotification } from '../notify/Notify';
+import { NotificationType } from '@/api/entity/notify/Notify';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -29,7 +31,7 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
     const { postId, text, commentId } = req.body;
 
     const userId = req.userId;
-    console.log(postId, text,userId,"*************************************")
+    console.log(postId, text, userId, "*************************************")
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
@@ -71,66 +73,110 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
     const savedComment = await newComment.save();
 
     // Fetch post and user details
+    // const postRepo = AppDataSource.getRepository(UserPost);
+    // const userPost = await postRepo.findOne({ where: { id: postId } });
+    // if (!userPost) {
+    //   return res.status(404).json({ status: 'error', message: 'Post not found.' });
+    // }
+
+    // const personalRepo = AppDataSource.getRepository(PersonalDetails);
+    // const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
+    // const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
+    // if (!userInfo || !commenterInfo) {
+    //   return res.status(404).json({ status: 'error', message: 'User information not found.' });
+    // }
+
+    // const media = commenterInfo.profilePictureUploadId || null;
+    // if (userPost.userId !== commenterInfo.id) {
+    //   await sendNotification(
+    //     userPost.userId,
+    //     `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
+    //     media,
+    //     `/feed/post/${postId}#${savedComment.id}`
+    //   );
+    // }
+
+    //Notify
+
     const postRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await postRepo.findOne({ where: { id: postId } });
-    if (!userPost) {
-      return res.status(404).json({ status: 'error', message: 'Post not found.' });
+    const commentedPost = await postRepo.findOne({ where: { id: postId } });
+
+    if (!commentedPost) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Post not found.',
+      });
     }
 
-    const personalRepo = AppDataSource.getRepository(PersonalDetails);
-    const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
-    const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
-    if (!userInfo || !commenterInfo) {
-      return res.status(404).json({ status: 'error', message: 'User information not found.' });
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+    const commentedOnUser = await userRepo.findOne({ where: { id: commentedPost.userId } });
+    const commentedByUser = await userRepo.findOne({ where: { id: userId } });
+
+    if (!commentedByUser || !commentedOnUser) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User information not found.',
+      });
     }
 
-    const media = commenterInfo.profilePictureUploadId || null;
-    if (userPost.userId !== commenterInfo.id) {
-      await sendNotification(
-        userPost.userId,
-        `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
-        media,
-        `/feed/post/${postId}#${savedComment.id}`
-      );
+    if (commentedPost.userId !== userId) {
+      try {
+        const likerImageUrl = commentedByUser.profilePictureUploadId
+          ? await generatePresignedUrl(commentedByUser.profilePictureUploadId)
+          : null;
+
+        await createNotification(
+          NotificationType.COMMENT,
+          commentedOnUser.id,
+          userId,
+          `${commentedByUser.firstName} ${commentedByUser.lastName} commented on your post`,
+          {
+            likerImageUrl,
+            postId: commentedPost.id,
+          }
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
     }
 
     // Extract mentions from comment text
-    const mentionPattern = /@([a-zA-Z0-9_]+)/g;
-    const mentions = [...text.matchAll(mentionPattern)].map(match => match[1]);
+    // const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+    // const mentions = [...text.matchAll(mentionPattern)].map(match => match[1]);
 
-    if (mentions.length > 0) {
-      const userRepository = AppDataSource.getRepository(PersonalDetails);
-      const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
-      const validMentionedUserIds = mentionedUsers.map(user => user.id);
+    // if (mentions.length > 0) {
+    //   const userRepository = AppDataSource.getRepository(PersonalDetails);
+    //   const mentionedUsers = await userRepository.find({ where: { userName: In(mentions) } });
+    //   const validMentionedUserIds = mentionedUsers.map(user => user.id);
 
-      if (validMentionedUserIds.length !== mentions.length) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'One or more mentioned users do not exist.',
-          invalidMentions: mentions.filter(m => !mentionedUsers.some(u => u.userName === m))
-        });
-      }
+    //   if (validMentionedUserIds.length !== mentions.length) {
+    //     return res.status(404).json({
+    //       status: 'error',
+    //       message: 'One or more mentioned users do not exist.',
+    //       invalidMentions: mentions.filter(m => !mentionedUsers.some(u => u.userName === m))
+    //     });
+    //   }
 
-      const mentionRepo = AppDataSource.getRepository(Mention);
-      const mentionResponses = [];
-      for (const mentionedUser of mentionedUsers) {
-        const mentionResponse = await mentionRepo.save({
-          userId,
-          postId,
-          commentId: savedComment.id,
-          mentionBy: userId,
-          mentionTo: mentionedUser.id,
-        });
-        mentionResponses.push(mentionResponse);
+    //   const mentionRepo = AppDataSource.getRepository(Mention);
+    //   const mentionResponses = [];
+    //   for (const mentionedUser of mentionedUsers) {
+    //     const mentionResponse = await mentionRepo.save({
+    //       userId,
+    //       postId,
+    //       commentId: savedComment.id,
+    //       mentionBy: userId,
+    //       mentionTo: mentionedUser.id,
+    //     });
+    //     mentionResponses.push(mentionResponse);
 
-        await sendNotification(
-          mentionedUser.id,
-          `${commenterInfo.firstName} mentioned you in a comment`,
-          commenterInfo.profilePictureUploadId,
-          `/feed/post/${postId}#${savedComment.id}`
-        );
-      }
-    }
+    //     await sendNotification(
+    //       mentionedUser.id,
+    //       `${commenterInfo.firstName} mentioned you in a comment`,
+    //       commenterInfo.profilePictureUploadId,
+    //       `/feed/post/${postId}#${savedComment.id}`
+    //     );
+    //   }
+    // }
 
     return res.status(201).json({
       status: 'success',
@@ -302,7 +348,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
 export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
 
-    const { postId, commentId, text, createdBy, nestedCommentId, mediaKeys, repliedTo, isChild = false } = req.body;
+    const { postId, commentId, text, createdBy, nestedCommentId, repliedTo, isChild = false } = req.body;
 
     const userId = req.userId;
 
@@ -333,6 +379,7 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
     }
 
     // Validate parent comment
+
     const parentComment = await parentCommentRepo.findOne({ where: { id: commentId } });
     if (!parentComment) {
       return res.status(404).json({ status: 'error', message: 'Parent comment not found.' });
@@ -355,134 +402,107 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
 
     console.log('Saved Comment:', savedComment);
 
-    const findUser = await userRepo.findOne({ where: { id: userId } });
+    const postRepo = AppDataSource.getRepository(UserPost);
+    const nestedCommentedPost = await postRepo.findOne({ where: { id: postId } });
 
-    let notification = null;
-    if (findUser && findUser.id !== parentComment.userId) {
-      notification = await sendNotification(
-        parentComment.userId,
-        `${findUser.firstName} ${findUser.lastName} replied to your comment`,
-        findUser.profilePictureUploadId,
-        `/feed/post/${postId}#${commentId}`
-      );
-      console.log('Notification sent:', notification);
+    if (!nestedCommentedPost) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Post not found.',
+      });
     }
 
-    // Extract mentions
-    const mentionPattern = /@([\w.]+)/g;
-    const mentionedUsernames = [...text.matchAll(mentionPattern)].map((match) => match[1]);
+    const repliedOnUser = await userRepo.findOne({ where: { id: nestedCommentedPost.userId } });
+    const repliedByUser = await userRepo.findOne({ where: { id: userId } });
 
-    let mentionResponses = [];
-    if (mentionedUsernames.length > 0) {
-      console.log('Extracted Mentions:', mentionedUsernames);
-
-      // Fetch mentioned users
-      const mentionedUsers = await userRepo.find({
-        where: { userName: In(mentionedUsernames) },
+    if (!repliedByUser || !repliedOnUser) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User information not found.',
       });
+    }
 
-      for (const mentionedUser of mentionedUsers) {
-        if (mentionedUser.id !== userId) {
-          const mentionResponse = await CreateMention({
-            userId,
-            commentId,
-            nestedCommentId: savedComment.id,
-            mentionBy: userId,
-            mentionTo: mentionedUser.id,
-          });
-          mentionResponses.push(mentionResponse);
-          console.log(`Mention created for @${mentionedUser.userName}:`, mentionResponse);
+    if (nestedCommentedPost.userId !== userId) {
+      try {
+        const likerImageUrl = repliedByUser.profilePictureUploadId
+          ? await generatePresignedUrl(repliedByUser.profilePictureUploadId)
+          : null;
 
-          await sendNotification(
-            mentionedUser.id,
-            `${findUser?.firstName} mentioned you in a reply to a comment`,
-            findUser?.profilePictureUploadId,
-            `/feed/post/${postId}#${commentId}`
-          );
-        }
+        await createNotification(
+          NotificationType.REPLY,
+          repliedOnUser.id,
+          userId,
+          `${repliedByUser.firstName} ${repliedByUser.lastName} replied to your comment`,
+          {
+            likerImageUrl,
+            postId: nestedCommentedPost.id,
+            commentId: commentId,
+            nestedCommentId: nestedCommentId
+          }
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
       }
     }
+
+    // const findUser = await userRepo.findOne({ where: { id: userId } });
+
+    // let notification = null;
+    // if (findUser && findUser.id !== parentComment.userId) {
+    //   notification = await sendNotification(
+    //     parentComment.userId,
+    //     `${findUser.firstName} ${findUser.lastName} replied to your comment`,
+    //     findUser.profilePictureUploadId,
+    //     `/feed/post/${postId}#${commentId}`
+    //   );
+    //   console.log('Notification sent:', notification);
+    // }
+
+    // Extract mentions
+    // const mentionPattern = /@([\w.]+)/g;
+    // const mentionedUsernames = [...text.matchAll(mentionPattern)].map((match) => match[1]);
+
+    // let mentionResponses = [];
+    // if (mentionedUsernames.length > 0) {
+    //   console.log('Extracted Mentions:', mentionedUsernames);
+
+    //   // Fetch mentioned users
+    //   const mentionedUsers = await userRepo.find({
+    //     where: { userName: In(mentionedUsernames) },
+    //   });
+
+    //   for (const mentionedUser of mentionedUsers) {
+    //     if (mentionedUser.id !== userId) {
+    //       const mentionResponse = await CreateMention({
+    //         userId,
+    //         commentId,
+    //         nestedCommentId: savedComment.id,
+    //         mentionBy: userId,
+    //         mentionTo: mentionedUser.id,
+    //       });
+    //       mentionResponses.push(mentionResponse);
+    //       console.log(`Mention created for @${mentionedUser.userName}:`, mentionResponse);
+
+    //       await sendNotification(
+    //         mentionedUser.id,
+    //         `${findUser?.firstName} mentioned you in a reply to a comment`,
+    //         findUser?.profilePictureUploadId,
+    //         `/feed/post/${postId}#${commentId}`
+    //       );
+    //     }
+    //   }
+    // }
 
     return res.status(201).json({
       status: 'success',
       message: 'Nested Comment created successfully.',
-      data: { savedComment, notification, mentions: mentionResponses },
+      data: { savedComment },
     });
   } catch (error) {
     console.error('Error in createOrUpdateNestedComment:', error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
   }
 };
-
-
-// export const createOrUpdateNestedComment = async (req: Request, res: Response) => {
-//   try {
-//     const { userId, postId, commentId, text, createdBy, nestedCommentId } = req.body;
-//     if (!userId || !postId || !text) {
-//       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
-//     }
-//     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
-
-//     if (nestedCommentId) {
-//       const nestedComment = await nestedCommentRepo.findOne({ where: { id: nestedCommentId } });
-
-//       if (!nestedComment) {
-//         return res.status(404).json({ status: 'error', message: 'Nested Comment not found.' });
-//       }
-
-//       nestedComment.text = text;
-//       nestedComment.updatedBy = createdBy || 'system';
-
-//       await nestedComment.save();
-
-//       return res
-//         .status(200)
-//         .json({ status: 'success', message: 'Nested Comment updated successfully.', data: { nestedComment } });
-//     }
-
-//     // Fetch the parent comment details
-//     const parentCommentRepo = AppDataSource.getRepository(Comment);
-//     const parentComment = await parentCommentRepo.findOne({ where: { id: commentId } });
-
-//     if (!parentComment) {
-//       return res.status(404).json({ status: 'error', message: 'Parent comment not found.' });
-//     }
-//     const comment = nestedCommentRepo.create({
-//       userId,
-//       postId,
-//       commentId,
-//       text,
-//       createdBy: createdBy || 'system',
-//       updatedBy: createdBy || 'system',
-//     });
-
-//     const savedComment = await nestedCommentRepo.save(comment);
-
-//     // Fetch user details
-//     const userRepo = AppDataSource.getRepository(PersonalDetails);
-//     const findUser = await userRepo.findOne({ where: { id: savedComment.userId } });
-
-//     let notification = null;
-//     // Send notification on comment
-//     if (findUser?.id !== parentComment.userId) {
-//       notification = await sendNotification(
-//         parentComment.userId,
-//         `${findUser?.firstName} ${findUser?.lastName} replied to your comment`,
-//         findUser?.profilePictureUploadId,
-//         `/feed/post/${commentId}`
-//       );
-//     }
-//     if (notification) {
-//       return res
-//         .status(201)
-//         .json({ status: 'success', message: 'Comment created successfully.', data: { savedComment, notification } });
-//     }
-//     return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({ status: 'error', message: 'Internal Server Error', error });
-//   }
-// };
 
 export const deleteNestedComment = async (req: Request, res: Response) => {
   const { nestedCommentId } = req.params;
@@ -593,7 +613,7 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
       commentLikes.map(async (like) => {
         const user = await personalDetailsRepository.findOne({
           where: { id: like.userId },
-          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId', 'role'],
+          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId', 'userRole'],
         });
 
         if (user) {
