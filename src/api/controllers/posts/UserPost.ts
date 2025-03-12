@@ -442,6 +442,12 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
           originalPUser = await userRepository.findOne({ where: { id: repostedPost?.userId } });
         }
 
+        // poll
+
+        const pollEntryRepo = AppDataSource.getRepository(PollEntry);
+        const pollEntry = await pollEntryRepo.findOne({ where: { postId: post.id, userId } });
+
+
         return {
           post: {
             Id: post.id,
@@ -457,6 +463,12 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
             createdAt: post.createdAt,
+            isDiscussion: post.isDiscussion,
+            discussionTopic: post.discussionTopic,
+            discussionContent: post.discussionContent,
+            isPoll: post.isPoll,
+            pollStatus: pollEntry?.status,
+            pollOption: pollEntry?.selectedOption,
             originalPostedAt: post.originalPostedAt,
             originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : ''
           },
@@ -668,6 +680,12 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
       }
     }
 
+    // poll
+
+    const pollEntryRepo = AppDataSource.getRepository(PollEntry);
+    const pollEntry = await pollEntryRepo.findOne({ where: { postId: post.id, userId } });
+
+
     // Format the post with related data
     const formattedPost = {
       post: {
@@ -685,6 +703,12 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
         createdAt: post.createdAt,
+        isDiscussion: post.isDiscussion,
+        discussionTopic: post.discussionTopic,
+        discussionContent: post.discussionContent,
+        isPoll: post.isPoll,
+        pollStatus: pollEntry?.status,
+        pollOption: pollEntry?.selectedOption,
         originalPostedAt: post.originalPostedAt,
         originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : ''
       },

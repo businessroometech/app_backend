@@ -10,6 +10,7 @@ import { formatTimestamp } from './UserPost';
 import { Request, Response } from 'express';
 import { Comment } from '@/api/entity/posts/Comment';
 import { BlockedUser } from '@/api/entity/posts/BlockedUser';
+import { PollEntry } from '@/api/entity/posts/PollEntry';
 
 // interface GetAllPostRequest extends Request {
 //   body: {
@@ -102,7 +103,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     // // Pagination
-      
+
     const startIndex = (Number(page) - 1) * Number(limit);
     const paginatedPosts = allPosts.slice(startIndex, Number(startIndex) + Number(limit));
     const totalPosts = allPosts.length;
@@ -182,6 +183,11 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
         originalPUser = await userRepository.findOne({ where: { id: repostedPost?.userId } });
       }
 
+      // poll
+
+      const pollEntryRepo = AppDataSource.getRepository(PollEntry);
+      const pollEntry = await pollEntryRepo.findOne({ where: { postId: post.id, userId } });
+
       return {
         post: {
           Id: post.id,
@@ -202,6 +208,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           discussionTopic: post.discussionTopic,
           discussionContent: post.discussionContent,
           isPoll: post.isPoll,
+          pollStatus: pollEntry?.status,
+          pollOption: pollEntry?.selectedOption,
           question: post.question,
           postOptions: post.pollOptions,
           originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
