@@ -7,12 +7,12 @@ import {
   getInvestorData,
   deleteInvestorData
 } from '../../controllers/business-data/BusinessData';
-import { uploadMiddleware } from '@/api/controllers/posts/UserPost';
+// import { uploadMiddleware } from '@/api/controllers/posts/UserPost';
 
 
 const router = Router();
 
-router.post('/investor-data', authenticate, uploadMiddleware, createOrUpdateInvestorData);
+router.post('/investor-data', authenticate, createOrUpdateInvestorData);
 router.get('/investor-data', authenticate, getInvestorData);
 router.delete('/investor-data/:id', authenticate, deleteInvestorData);
 

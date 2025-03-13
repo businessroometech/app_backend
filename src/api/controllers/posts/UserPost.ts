@@ -1,4 +1,9 @@
+import ffmpeg from 'fluent-ffmpeg';
+import path from 'path';
+import fs from 'fs';
+import { promisify } from 'util';
 import multer from 'multer';
+import hbjs, { Handbrake } from 'handbrake-js';
 import { Request, Response } from 'express';
 import { UserPost } from '../../entity/UserPost';
 import { AppDataSource } from '@/server';
@@ -41,12 +46,89 @@ export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
+const writeFile = promisify(fs.writeFile);
+const unlink = promisify(fs.unlink);
 
 const storage = multer.memoryStorage();
+export const uploadMiddleware = multer({ storage: storage }).array('files', 10);
+
+
+interface HandBrakeProcess {
+  on(event: 'start', callback: (command: string) => void): HandBrakeProcess;
+  on(event: 'progress', callback: (progress: { percentComplete: number; eta: string }) => void): HandBrakeProcess;
+  on(event: 'end', callback: () => void): HandBrakeProcess;
+  on(event: 'error', callback: (err: Error) => void): HandBrakeProcess;
+}
+
+
+async function compressVideo(videoBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
+  const tempInputPath = path.join(__dirname, `temp_input_${Date.now()}.mp4`);
+  const tempOutputPath = path.join(__dirname, `temp_output_${Date.now()}.mp4`);
+
+  try {
+    // Save the buffer as a temporary file
+    await writeFile(tempInputPath, videoBuffer);
+
+    return new Promise((resolve, reject) => {
+      const handbrakeProcess = hbjs.spawn({
+        input: tempInputPath,
+        output: tempOutputPath,
+        preset: 'Fast 1080p30',
+        quality: 22,
+        format: 'mp4',
+      });
+
+      (handbrakeProcess as unknown as HandBrakeProcess)
+        .on('start', (command: string) => {
+          console.log('HandBrake process started with command:', command);
+        })
+        .on('progress', (progress: { percentComplete: number; eta: string }) => {
+          console.log(
+            `Progress: ${Math.round(progress.percentComplete)}% complete, ETA: ${progress.eta}`
+          );
+        })
+        .on('end', async () => {
+          console.log('Compression completed:', tempOutputPath);
+
+          // Get the original and compressed file sizes
+          const originalSize = fs.statSync(tempInputPath).size;
+          const compressedSize = fs.statSync(tempOutputPath).size;
+
+          // Log the sizes
+          console.log(`Original Size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
+          console.log(`Compressed Size: ${(compressedSize / 1024 / 1024).toFixed(2)} MB`);
+
+          const compressedBuffer = fs.readFileSync(tempOutputPath);
+
+          const uploadedUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
+
+          await unlink(tempInputPath);
+          await unlink(tempOutputPath);
+
+          resolve(uploadedUrl);
+        })
+        .on('error', async (err: Error) => {
+          console.error('Error during compression:', err);
+
+          // Clean up temporary files in case of error
+          await unlink(tempInputPath).catch(() => { });
+          await unlink(tempOutputPath).catch(() => { });
+
+          reject(err);
+        });
+    });
+  } catch (error) {
+    console.error('Compression error:', error);
+    await unlink(tempInputPath).catch(() => { });
+    throw error;
+  }
+}
+
+// Rest of your code remains the same...
+
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-
     const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, topic, isPoll, question, pollOptions } = req.body;
     const userId = req.userId;
 
@@ -57,8 +139,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
     }
 
-    // ------------- REPOST ----------------------------------------------------------
-
     const postRepository = AppDataSource.getRepository(UserPost);
     let savedPost;
 
@@ -66,32 +146,28 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       const post = await postRepository.findOne({ where: { id: repostedFrom } });
 
       if (post) {
-
-        post.repostCount = post.repostCount + 1;
-
-        console.log(post);
+        post.repostCount += 1;
         const newPost = postRepository.create({
           userId,
-          title: post?.title,
-          content: post?.content,
-          hashtags: post?.hashtags,
-          mediaKeys: post?.mediaKeys,
+          title: post.title,
+          content: post.content,
+          hashtags: post.hashtags,
+          mediaKeys: post.mediaKeys,
           repostedFrom,
           repostText,
-          isRepost: Boolean(repostedFrom),
-          isDiscussion: post?.isDiscussion,
-          discussionContent: post?.discussionContent,
-          discussionTopic: post?.discussionTopic,
-          isPoll: post?.isPoll,
-          pollOptions: post?.pollOptions,
-          question: post?.question,
-          originalPostedAt: post?.createdAt,
+          isRepost: true,
+          isDiscussion: post.isDiscussion,
+          discussionContent: post.discussionContent,
+          discussionTopic: post.discussionTopic,
+          isPoll: post.isPoll,
+          pollOptions: post.pollOptions,
+          question: post.question,
+          originalPostedAt: post.createdAt,
         });
 
         savedPost = await postRepository.save(newPost);
       }
-    }
-    else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
+    } else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
       const newPost = postRepository.create({
         userId,
         isPoll,
@@ -101,26 +177,29 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         pollOptions: pollOptions.map((option) => ({ option, votes: 0 })),
       });
       savedPost = await postRepository.save(newPost);
-    }
-    else if (isDiscussion && discussionTopic) {
+    } else if (isDiscussion && discussionTopic) {
       const newPost = postRepository.create({
         userId,
         isDiscussion,
         discussionContent,
         discussionTopic
       });
-
       savedPost = await postRepository.save(newPost);
-    }
-    else {
-      // Upload files to S3
+    } else {
       const uploadedDocumentUrls: { key: string; type: string }[] = [];
 
       if (req.files && Array.isArray(req.files)) {
         for (const file of req.files as Express.Multer.File[]) {
           try {
-            console.log('Uploading file:', file.originalname);
-            const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            console.log('Processing file:', file.originalname);
+
+            let uploadedUrl;
+            if (file.mimetype.startsWith('video/')) {
+              uploadedUrl = await compressVideo(file.buffer, String(userId), file.mimetype);
+            } else {
+              uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            }
+
             uploadedDocumentUrls.push({
               key: uploadedUrl.fileKey,
               type: file.mimetype,
@@ -132,7 +211,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         }
       }
 
-      // Create new post entry
       const newPost = postRepository.create({
         userId,
         title,
@@ -147,43 +225,9 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       savedPost = await postRepository.save(newPost);
     }
 
-    // Notify
-
-    if (repostedFrom) {
-
-      const repostedByUser = await userRepository.findOne({ where: { id: userId } });
-      const repostedFromPost = await postRepository.findOne({ where: { id: repostedFrom } });
-      const repostedOfUser = await userRepository.findOne({ where: { id: repostedFromPost?.userId } });
-
-
-      if (!repostedByUser || !repostedOfUser) {
-        return res.status(400).json({ status: "error", message: "repostedByUser and repostedOfUser are required " });
-      }
-
-      try {
-        const reposterImageUrl = repostedByUser?.profilePictureUploadId
-          ? await generatePresignedUrl(repostedByUser?.profilePictureUploadId)
-          : null;
-
-        await createNotification(
-          NotificationType.REQUEST_RECEIVED,
-          repostedOfUser?.id,
-          repostedByUser?.id,
-          `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`,
-          {
-            reposterImageUrl,
-          }
-        );
-      } catch (error) {
-        console.error("Error creating notification:", error);
-      }
-
-    }
-
     return res.status(201).json({
       message: 'Post created successfully.',
       data: savedPost,
-      // mention,
     });
 
   } catch (error: any) {
@@ -195,7 +239,161 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
   }
 };
 
-export const uploadMiddleware = multer({ storage: storage }).array('files', 10);
+
+// const storage = multer.memoryStorage();
+
+// export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+//   try {
+
+//     const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, topic, isPoll, question, pollOptions } = req.body;
+//     const userId = req.userId;
+
+//     const userRepository = AppDataSource.getRepository(PersonalDetails);
+//     const user = await userRepository.findOneBy({ id: userId });
+
+//     if (!user) {
+//       return res.status(400).json({ message: 'User ID is invalid or does not exist.' });
+//     }
+
+//     // ------------- REPOST ----------------------------------------------------------
+
+//     const postRepository = AppDataSource.getRepository(UserPost);
+//     let savedPost;
+
+//     if (repostedFrom) {
+//       const post = await postRepository.findOne({ where: { id: repostedFrom } });
+
+//       if (post) {
+
+//         post.repostCount = post.repostCount + 1;
+
+//         console.log(post);
+//         const newPost = postRepository.create({
+//           userId,
+//           title: post?.title,
+//           content: post?.content,
+//           hashtags: post?.hashtags,
+//           mediaKeys: post?.mediaKeys,
+//           repostedFrom,
+//           repostText,
+//           isRepost: Boolean(repostedFrom),
+//           isDiscussion: post?.isDiscussion,
+//           discussionContent: post?.discussionContent,
+//           discussionTopic: post?.discussionTopic,
+//           isPoll: post?.isPoll,
+//           pollOptions: post?.pollOptions,
+//           question: post?.question,
+//           originalPostedAt: post?.createdAt,
+//         });
+
+//         savedPost = await postRepository.save(newPost);
+//       }
+//     }
+//     else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
+//       const newPost = postRepository.create({
+//         userId,
+//         isPoll,
+//         isDiscussion,
+//         discussionTopic: topic,
+//         question,
+//         pollOptions: pollOptions.map((option) => ({ option, votes: 0 })),
+//       });
+//       savedPost = await postRepository.save(newPost);
+//     }
+//     else if (isDiscussion && discussionTopic) {
+//       const newPost = postRepository.create({
+//         userId,
+//         isDiscussion,
+//         discussionContent,
+//         discussionTopic
+//       });
+
+//       savedPost = await postRepository.save(newPost);
+//     }
+//     else {
+//       // Upload files to S3
+//       const uploadedDocumentUrls: { key: string; type: string }[] = [];
+
+//       if (req.files && Array.isArray(req.files)) {
+//         for (const file of req.files as Express.Multer.File[]) {
+//           try {
+//             console.log('Uploading file:', file.originalname);
+//             const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+//             uploadedDocumentUrls.push({
+//               key: uploadedUrl.fileKey,
+//               type: file.mimetype,
+//             });
+
+//           } catch (uploadError) {
+//             console.error('S3 Upload Error:', uploadError);
+//           }
+//         }
+//       }
+
+//       // Create new post entry
+//       const newPost = postRepository.create({
+//         userId,
+//         title,
+//         content,
+//         hashtags,
+//         mediaKeys: uploadedDocumentUrls.length > 0 ? uploadedDocumentUrls : undefined,
+//         repostedFrom,
+//         repostText,
+//         isRepost: Boolean(repostedFrom),
+//       });
+
+//       savedPost = await postRepository.save(newPost);
+//     }
+
+//     // Notify
+
+//     if (repostedFrom) {
+
+//       const repostedByUser = await userRepository.findOne({ where: { id: userId } });
+//       const repostedFromPost = await postRepository.findOne({ where: { id: repostedFrom } });
+//       const repostedOfUser = await userRepository.findOne({ where: { id: repostedFromPost?.userId } });
+
+
+//       if (!repostedByUser || !repostedOfUser) {
+//         return res.status(400).json({ status: "error", message: "repostedByUser and repostedOfUser are required " });
+//       }
+
+//       try {
+//         const reposterImageUrl = repostedByUser?.profilePictureUploadId
+//           ? await generatePresignedUrl(repostedByUser?.profilePictureUploadId)
+//           : null;
+
+//         await createNotification(
+//           NotificationType.REQUEST_RECEIVED,
+//           repostedOfUser?.id,
+//           repostedByUser?.id,
+//           `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`,
+//           {
+//             reposterImageUrl,
+//           }
+//         );
+//       } catch (error) {
+//         console.error("Error creating notification:", error);
+//       }
+
+//     }
+
+//     return res.status(201).json({
+//       message: 'Post created successfully.',
+//       data: savedPost,
+//       // mention,
+//     });
+
+//   } catch (error: any) {
+//     console.error('CreateUserPost Error:', error);
+//     return res.status(500).json({
+//       message: 'Internal server error. Could not create post.',
+//       error: error.message,
+//     });
+//   }
+// };
+
+// export const uploadMiddleware = multer({ storage: storage }).array('files', 10);
 
 
 export const VoteInPoll = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
