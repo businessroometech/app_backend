@@ -478,7 +478,8 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             userRole: user.userRole,
             avatar: imgUrl,
             isBadgeOn: user?.isBadgeOn,
-            badgeName: user?.badgeName
+            badgeName: user?.badgeName,
+            bio: user?.bio
           },
           comments: formattedComments.filter((comment) => comment.postId === post.id),
           originalPostUser: {
@@ -719,7 +720,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         userRole: user?.userRole,
         avatar: imgUrl,
         isBadgeOn: user?.isBadgeOn,
-        badgeName: user?.badgeName
+        badgeName: user?.badgeName,
+        bio: user?.bio
       },
       comments: formattedComments,
       originalPostUser: {

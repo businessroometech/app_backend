@@ -226,7 +226,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           userRole: user?.userRole,
           connection: connectedUserIds.includes(post.userId),
           isBadgeOn: user?.isBadgeOn,
-          badgeName: user?.badgeName
+          badgeName: user?.badgeName,
+          bio: user?.bio
         },
         originalPostUser: {
           id: originalPUser?.id,
