@@ -12,6 +12,7 @@ import { Comment } from '@/api/entity/posts/Comment';
 import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 import { createNotification } from '../notify/Notify';
 import { NotificationType } from '@/api/entity/notify/Notify';
+import { getSocketInstance } from '@/socket';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -73,8 +74,8 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
 
     if (likedPost.userId !== userId && like.status) {
       try {
-        const likerImageUrl = likedByUser.profilePictureUploadId
-          ? await generatePresignedUrl(likedByUser.profilePictureUploadId)
+        const imageKey = likedByUser.profilePictureUploadId
+          ? likedByUser.profilePictureUploadId
           : null;
 
         await createNotification(
@@ -83,10 +84,15 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
           userId,
           `${likedByUser.firstName} ${likedByUser.lastName} reacted on your post`,
           {
-            likerImageUrl,
+            imageKey,
             postId: likedPost.id
           }
         );
+
+        const io = getSocketInstance();
+        const roomId = likedOnUser.id;
+        io.to(roomId).emit('newNotification', `${likedByUser.firstName} ${likedByUser.lastName} reacted on your post`);
+
       } catch (error) {
         console.error("Error creating notification:", error);
       }
@@ -225,8 +231,8 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
 
     if (likedCommentOfPost.userId !== userId && like.status) {
       try {
-        const likerImageUrl = likedByUser.profilePictureUploadId
-          ? await generatePresignedUrl(likedByUser.profilePictureUploadId)
+        const imageKey = likedByUser.profilePictureUploadId
+          ? likedByUser.profilePictureUploadId
           : null;
 
         await createNotification(
@@ -235,11 +241,17 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
           userId,
           `${likedByUser.firstName} ${likedByUser.lastName} reacted on your comment`,
           {
-            likerImageUrl,
+            imageKey,
             postId: likedCommentOfPost.id,
             commentId: commentId,
           }
         );
+
+        const io = getSocketInstance();
+        const roomId = likedOnUser.id;
+        io.to(roomId).emit('newNotification', `${likedByUser.firstName} ${likedByUser.lastName} reacted on your comment`);
+
+
       } catch (error) {
         console.error("Error creating notification:", error);
       }
@@ -436,8 +448,8 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
 
     if (likedNestedCommentOfPost.userId !== userId && like.status) {
       try {
-        const likerImageUrl = likedByUser.profilePictureUploadId
-          ? await generatePresignedUrl(likedByUser.profilePictureUploadId)
+        const imageKey = likedByUser.profilePictureUploadId
+          ? likedByUser.profilePictureUploadId
           : null;
 
         await createNotification(
@@ -446,12 +458,17 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
           userId,
           `${likedByUser.firstName} ${likedByUser.lastName} reacted on your reply`,
           {
-            likerImageUrl,
+            imageKey,
             postId: likedNestedCommentOfPost.id,
             commentId: commentId,
             nestedCommentId: nestedCommentId
           }
         );
+
+        const io = getSocketInstance();
+        const roomId = likedOnUser.id;
+        io.to(roomId).emit('newNotification', `${likedByUser.firstName} ${likedByUser.lastName} reacted on your reply`);
+
       } catch (error) {
         console.error("Error creating notification:", error);
       }

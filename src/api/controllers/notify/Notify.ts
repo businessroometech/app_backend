@@ -1,9 +1,9 @@
 import { Notify, NotificationType } from "../../entity/notify/Notify";
 import { Repository } from "typeorm";
 
-// Import AppDataSource dynamically to avoid premature access
 import { AppDataSource } from "../../../server";
 import { Request, Response } from "express";
+import { generatePresignedUrl } from "../s3/awsControllers";
 
 const getNotificationRepo = (): Repository<Notify> => {
     if (!AppDataSource.isInitialized) {
@@ -47,7 +47,25 @@ export const getUserNotifications = async (req: AuthenticatedRequest, res: Respo
             order: { createdAt: 'DESC' }
         });
 
-        return res.status(200).json({ status: "success", data: { notifications } });
+        const formattedNotifications = await Promise.all(
+            notifications.map(async (notification) => {
+                let imageUrl = null;
+
+                if (notification.metaData?.imageKey) {
+                    imageUrl = await generatePresignedUrl(notification?.metaData?.imageKey);
+                }
+
+                return {
+                    ...notification,
+                    metaData: {
+                        ...notification.metaData,
+                        imageUrl
+                    }
+                };
+            })
+        );
+
+        return res.status(200).json({ status: "success", data: { notifications: formattedNotifications } });
 
     } catch (error) {
         console.error('Error fetching notifications:', error);

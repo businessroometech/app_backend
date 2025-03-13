@@ -17,6 +17,7 @@ import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 import multer from 'multer';
 import { createNotification } from '../notify/Notify';
 import { NotificationType } from '@/api/entity/notify/Notify';
+import { getSocketInstance } from '@/socket';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -71,30 +72,6 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
 
     const savedComment = await newComment.save();
 
-    // Fetch post and user details
-    // const postRepo = AppDataSource.getRepository(UserPost);
-    // const userPost = await postRepo.findOne({ where: { id: postId } });
-    // if (!userPost) {
-    //   return res.status(404).json({ status: 'error', message: 'Post not found.' });
-    // }
-
-    // const personalRepo = AppDataSource.getRepository(PersonalDetails);
-    // const userInfo = await personalRepo.findOne({ where: { id: userPost.userId } });
-    // const commenterInfo = await personalRepo.findOne({ where: { id: userId } });
-    // if (!userInfo || !commenterInfo) {
-    //   return res.status(404).json({ status: 'error', message: 'User information not found.' });
-    // }
-
-    // const media = commenterInfo.profilePictureUploadId || null;
-    // if (userPost.userId !== commenterInfo.id) {
-    //   await sendNotification(
-    //     userPost.userId,
-    //     `${commenterInfo.firstName} ${commenterInfo.lastName} commented on your post`,
-    //     media,
-    //     `/feed/post/${postId}#${savedComment.id}`
-    //   );
-    // }
-
     //Notify
 
     const postRepo = AppDataSource.getRepository(UserPost);
@@ -120,8 +97,8 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
 
     if (commentedPost.userId !== userId) {
       try {
-        const likerImageUrl = commentedByUser.profilePictureUploadId
-          ? await generatePresignedUrl(commentedByUser.profilePictureUploadId)
+        const imageKey = commentedByUser.profilePictureUploadId
+          ? commentedByUser.profilePictureUploadId
           : null;
 
         await createNotification(
@@ -130,10 +107,16 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
           userId,
           `${commentedByUser.firstName} ${commentedByUser.lastName} commented on your post`,
           {
-            likerImageUrl,
+            imageKey,
             postId: commentedPost.id,
           }
         );
+
+        const io = getSocketInstance();
+        const roomId = commentedOnUser.id;
+        io.to(roomId).emit('newNotification', `${commentedByUser.firstName} ${commentedByUser.lastName} commented on your post`);
+
+
       } catch (error) {
         console.error("Error creating notification:", error);
       }
@@ -425,22 +408,27 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
 
     if (nestedCommentedPost.userId !== userId) {
       try {
-        const likerImageUrl = repliedByUser.profilePictureUploadId
-          ? await generatePresignedUrl(repliedByUser.profilePictureUploadId)
+        const imageKey = repliedByUser.profilePictureUploadId
+          ? repliedByUser.profilePictureUploadId
           : null;
 
         await createNotification(
           NotificationType.REPLY,
-          repliedOnUser.id,
+          repliedOnUser.id,    
           userId,
           `${repliedByUser.firstName} ${repliedByUser.lastName} replied to your comment`,
           {
-            likerImageUrl,
+            imageKey,
             postId: nestedCommentedPost.id,
             commentId: commentId,
             nestedCommentId: nestedCommentId
           }
         );
+
+        const io = getSocketInstance();
+        const roomId = repliedOnUser.id;
+        io.to(roomId).emit('newNotification', `${repliedByUser.firstName} ${repliedByUser.lastName} replied to your comment`);
+
       } catch (error) {
         console.error("Error creating notification:", error);
       }

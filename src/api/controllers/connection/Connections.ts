@@ -54,25 +54,32 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
     });
     await connectionRepository.save(newConnection);
 
-    // Notify
+    //------------------------------------ Notify ------------------------------------------------------------------------------------
     try {
-      const requesterImageUrl = requester.profilePictureUploadId
-        ? await generatePresignedUrl(requester.profilePictureUploadId)
+      const imageKey = requester.profilePictureUploadId
+        ? requester.profilePictureUploadId
         : null;
 
       await createNotification(
         NotificationType.REQUEST_RECEIVED,
-        requester.id,
         receiver.id,
+        requester.id,
         `${requester.firstName} ${requester.lastName} sent you a connection Request`,
         {
-          requesterImageUrl,
+          imageKey,
         }
       );
+
+      const io = getSocketInstance();
+      const roomId = receiver.id;
+      io.to(roomId).emit('newNotification', `${requester.firstName} ${requester.lastName} sent you a connection Request`);
+
+
     } catch (error) {
       console.error("Error creating notification:", error);
     }
 
+    //------------------------------------------------------------------------------------------------------------
     return res.status(201).json({
       message: 'Connection request sent successfully.',
       connection: newConnection,
@@ -117,27 +124,34 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
     connection.status = status as 'accepted' | 'rejected';
     const data = await connectionRepository.save(connection);
 
-    // Notify
+    //------------------------------------------------------------- Notify ------------------------------------------------------------------
 
     if (status === 'accepted') {
       try {
-        const requesterImageUrl = connection?.receiver?.profilePictureUploadId
-          ? await generatePresignedUrl(connection?.receiver?.profilePictureUploadId)
+        const imageKey = connection?.receiver?.profilePictureUploadId
+          ? connection?.receiver?.profilePictureUploadId
           : null;
 
         await createNotification(
           NotificationType.REQUEST_RECEIVED,
-          connection?.receiver?.id,
           connection?.requester?.id,
+          connection?.receiver?.id,
           `${connection?.receiver?.firstName} ${connection?.receiver?.lastName} accepted your connection request`,
           {
-            requesterImageUrl,
+            imageKey,
           }
         );
+
+        const io = getSocketInstance();
+        const roomId = connection?.requester?.id;
+        io.to(roomId).emit('newNotification', `${connection?.receiver?.firstName} ${connection?.receiver?.lastName} accepted your connection request`);
+
       } catch (error) {
         console.error("Error creating notification:", error);
       }
     }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
     return res.status(500).json({ message: 'Internal Server Error please retry' });
   } catch (error: any) {

@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, OneToMany } from 'typeorm';
+import { Wishlists } from '../WishLists/Wishlists';
 
 @Entity({ name: "SellingStartup" })
 export class SellingStartup extends BaseEntity {
@@ -107,4 +108,7 @@ export class SellingStartup extends BaseEntity {
 
     @Column({ type: 'varchar', nullable: true })
     additionalInfo!: string;
+
+    @OneToMany(() => Wishlists, (wishlist) => wishlist.sellingStartup) 
+    wishlists!: Wishlists[];
 }

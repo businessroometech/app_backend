@@ -3,6 +3,11 @@ import { getSocketInstance } from '../../../socket'; // Import your socket insta
 import { AppDataSource } from '../../../server'; // Import your data source
 import { Message } from '@/api/entity/chat/Message';
 import { ActiveUser } from '@/api/entity/chat/ActiveUser';
+import { Connection } from '@/api/entity/connection/Connections';
+
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
 
 export const sendMessage = async (req: Request, res: Response) => {
   try {
@@ -154,3 +159,49 @@ export const getOnlineUsers = async (req: Request, res: Response) => {
     return res.status(500).json({ status: "error", message: "Error fetching users" });
   }
 }
+
+export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const searchQuery = req.query.name as string;
+
+    const connectionRepository = AppDataSource.getRepository(Connection);
+
+    if (!searchQuery) {
+      return res.status(400).json({ status: 'fail', message: 'Search query is required' });
+    }
+
+    const connections = await connectionRepository.find({
+      where: [
+        { requesterId: userId, status: 'accepted' },
+        { receiverId: userId, status: 'accepted' }
+      ],
+      relations: ['requester', 'receiver']
+    });
+
+
+    const filteredConnections = connections.filter(conn => {
+      const requesterFullName = `${conn?.requester?.firstName} ${conn?.requester?.lastName}`
+      const receiverFullName = `${conn?.receiver?.firstName} ${conn?.receiver?.lastName}`
+
+      conn.requesterId !== userId
+        ? requesterFullName.toLowerCase().includes(searchQuery.toLowerCase())
+        : receiverFullName.toLowerCase().includes(searchQuery.toLowerCase())
+    }
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Connections retrieved successfully',
+      data: filteredConnections
+    });
+
+  } catch (error: any) {
+    console.error('Error searching connections:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};

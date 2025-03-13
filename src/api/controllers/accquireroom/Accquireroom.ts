@@ -24,13 +24,23 @@ export const getAllStartups = async (req: AuthenticatedRequest, res: Response) =
         }
 
         const [data, total] = await query
-            .skip((+page - 1) * +limit)
-            .take(+limit)
-            .getManyAndCount();
+        .skip((+page - 1) * +limit)
+        .take(+limit)
+        .getManyAndCount();
+        
+        const formattedData =  data.map((d) => {
 
+            // const 
+
+            return {
+                ...d,
+
+            }
+        })
+        
         return res.json({
             success: true,
-            data,
+            data: formattedData,
             pagination: {
                 total,
                 page: +page,
@@ -80,55 +90,35 @@ export const getMyStartups = async (req: AuthenticatedRequest, res: Response) =>
     }
 };
 
-// // Add a startup to the wishlist
 export const toggleWishlist = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const { seekingConnectionId } = req.body;
+        const { sellingStartupId } = req.body;
         const userId = req.userId;
 
         const wishlistRepo = AppDataSource.getRepository(Wishlists);
 
-        const existingWishlist = await wishlistRepo.findOne({ where: { seekingConnectionId, userId } });
+        let existingWishlist = await wishlistRepo.findOne({ where: { sellingStartupId, userId } });
 
         if (existingWishlist) {
             existingWishlist.isHidden = !existingWishlist.isHidden;
-        }
-        else {
-            const wishlist = Wishlists.create({
-                seekingConnectionId,
+            await wishlistRepo.save(existingWishlist);
+        } else {
+            const wishlist = wishlistRepo.create({
+                sellingStartupId,
                 userId,
                 isHidden: true
-            })
+            });
 
-            await wishlist.save();
+            await wishlistRepo.save(wishlist);
         }
 
         return res.status(200).json({ status: "success", message: "Done." });
     } catch (error) {
+        console.error("Error in toggleWishlist:", error);
         return res.status(500).json({ status: "error", message: "Server error", error });
     }
 };
 
-// // Remove a startup from the wishlist
-// export const removeFromWishlist = async (req: Request, res: Response) => {
-//     try {
-//         const { id } = req.params;
-//         const userId = req.user.id;
-
-//         const wishlistItem = await Wishlists.findOne({ where: { id, userId } });
-
-//         if (!wishlistItem) {
-//             return res.status(404).json({ success: false, message: "Item not found" });
-//         }
-
-//         await Wishlists.remove(wishlistItem);
-//         return res.json({ success: true, message: "Removed from wishlist" });
-//     } catch (error) {
-//         return res.status(500).json({ success: false, message: "Server error", error });
-//     }
-// };
-
-// Get my wishlist with pagination, businessType filter & search
 export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.userId;
@@ -137,7 +127,7 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
         const wishlistRepo = AppDataSource.getRepository(Wishlists);
 
         const query = wishlistRepo.createQueryBuilder("wishlist")
-            .leftJoinAndSelect("wishlist.seekingConnectionId", "startup")
+            .leftJoinAndSelect("wishlist.sellingStartup", "startup")
             .where("wishlist.userId = :userId", { userId })
             .andWhere("wishlist.isHidden = :isHidden", { isHidden: false });
 
@@ -157,7 +147,7 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
         return res.json({
             status: "success",
             data: {
-                data,
+                wishlists: data,
                 total,
                 page: +page,
                 limit: +limit,
@@ -165,6 +155,7 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
             },
         });
     } catch (error) {
+        console.error("Error in getMyWishlist:", error);
         return res.status(500).json({ status: "error", message: "Server error", error });
     }
 };

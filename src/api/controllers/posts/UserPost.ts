@@ -225,10 +225,48 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       savedPost = await postRepository.save(newPost);
     }
 
+    if (repostedFrom) {
+
+      const repostedByUser = await userRepository.findOne({ where: { id: userId } });
+      const repostedFromPost = await postRepository.findOne({ where: { id: repostedFrom } });
+      const repostedOfUser = await userRepository.findOne({ where: { id: repostedFromPost?.userId } });
+
+
+      if (!repostedByUser || !repostedOfUser) {
+        return res.status(400).json({ status: "error", message: "repostedByUser and repostedOfUser are required " });
+      }
+
+      try {
+        const imageUrl = repostedByUser?.profilePictureUploadId
+          ? repostedByUser?.profilePictureUploadId
+          : null;
+
+        await createNotification(
+          NotificationType.REQUEST_RECEIVED,
+          repostedOfUser?.id,
+          repostedByUser?.id,
+          `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`,
+          {
+            imageUrl,
+          }
+        );
+
+        const io = getSocketInstance();
+        const roomId = repostedOfUser?.id;
+        io.to(roomId).emit('newNotification', `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`);
+
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
+
+    }
+
     return res.status(201).json({
       message: 'Post created successfully.',
       data: savedPost,
     });
+
+
 
   } catch (error: any) {
     console.error('CreateUserPost Error:', error);

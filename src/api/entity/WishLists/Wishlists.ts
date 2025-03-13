@@ -1,19 +1,21 @@
-import { BaseEntity,  Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { SellingStartup } from '../business-data/SellingStartup';
 
 @Entity({ name: 'Wishlists' })
 export class Wishlists extends BaseEntity {
-
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-  
-  @Column({ type: "bool" , default: false})
-  isHidden !: boolean;
+
+  @Column({ type: "bool", default: false })
+  isHidden!: boolean;
 
   @Column({ type: "uuid" })
-  userId !: string;
+  userId!: string;
+
+  @ManyToOne(() => SellingStartup, (startup) => startup.wishlists, { eager: true }) 
+  @JoinColumn({ name: "sellingStartupId" }) 
+  sellingStartup!: SellingStartup;
 
   @Column({ type: "uuid" })
-  seekingConnectionId !: string;
-
+  sellingStartupId!: string;
 }
-
