@@ -3,7 +3,6 @@ import { Wishlists } from "@/api/entity/WishLists/Wishlists";
 import { AppDataSource } from "@/server";
 import { Request, Response } from "express";
 
-
 export interface AuthenticatedRequest extends Request {
     userId?: string;
 }

@@ -8,10 +8,16 @@ import { SeekingConnections } from '@/api/entity/business-data/SeekingConnection
 import { SellingStartup } from '@/api/entity/business-data/SellingStartup';
 import { Repository } from 'typeorm';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
+import multer from 'multer';
+import { uploadBufferDocumentToS3 } from '../s3/awsControllers';
 
 export interface AuthenticatedRequest extends Request {
     userId?: string;
 }
+
+
+const storage = multer.memoryStorage();
+export const uploadLogoMiddleware = multer({ storage: storage }).single('file');
 
 export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -39,6 +45,13 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
         let savedData;
 
         if (subRole === "sellingStartup") {
+
+            if (req.file) {
+                const file = req.file;
+                const uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+                data["businessLogo"] = uploadedUrl?.fileKey;
+            }
+
             if (id) {
                 const existingData = await repository.findOne({ where: { id, userId, isHidden: false } });
 
@@ -46,7 +59,14 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
                     return res.status(404).json({ status: "fail", message: "Record not found" });
                 }
 
-                Object.assign(existingData, data);
+                // Object.assign(existingData, data);
+
+                for (const key in data) {
+                    if (data[key] !== undefined) {
+                        (existingData as any)[key] = data[key];
+                    }
+                }
+
                 savedData = await repository.save(existingData);
 
                 user!.subRole = subRole;
@@ -60,7 +80,14 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
         } else {
             let existingData = await repository.findOne({ where: { userId, isHidden: false } });
             if (existingData) {
-                Object.assign(existingData, data);
+                // Object.assign(existingData, data);
+
+                for (const key in data) {
+                    if (data[key] !== undefined) {
+                        (existingData as any)[key] = data[key];
+                    }
+                }
+
                 savedData = await repository.save(existingData);
 
                 user!.subRole = subRole;
