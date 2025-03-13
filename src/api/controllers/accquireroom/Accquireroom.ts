@@ -31,14 +31,17 @@ export const getAllStartups = async (req: AuthenticatedRequest, res: Response) =
             .take(+limit)
             .getManyAndCount();
 
-        const formattedData = data.map(async (d) => {
-            const wishlistRepo = AppDataSource.getRepository(Wishlists);
-            const wishList = await wishlistRepo.findOne({ where: { userId, sellingStartupId: d.id } });
-            return {
-                ...d,
-                wishlistStatus: wishList ? wishList.isHidden : false
-            }
-        })
+        const formattedData = await Promise.all(
+            data.map(async (d) => {
+                const wishlistRepo = AppDataSource.getRepository(Wishlists);
+                const wishList = await wishlistRepo.findOne({ where: { userId, sellingStartupId: d.id } });
+                return {
+                    ...d,
+                    wishlistStatus: wishList ? wishList.isHidden : false
+                };
+            })
+        );
+
 
         return res.json({
             status: "success",
