@@ -9,6 +9,9 @@ export interface AuthenticatedRequest extends Request {
 
 export const getAllStartups = async (req: AuthenticatedRequest, res: Response) => {
     try {
+
+        const userId = req.userId;
+
         const { page = 1, limit = 10, businessType, search } = req.query;
 
         const sellingRepo = AppDataSource.getRepository(SellingStartup);
@@ -24,22 +27,21 @@ export const getAllStartups = async (req: AuthenticatedRequest, res: Response) =
         }
 
         const [data, total] = await query
-        .skip((+page - 1) * +limit)
-        .take(+limit)
-        .getManyAndCount();
-        
-        const formattedData =  data.map((d) => {
+            .skip((+page - 1) * +limit)
+            .take(+limit)
+            .getManyAndCount();
 
-            // const 
-
+        const formattedData = data.map(async (d) => {
+            const wishlistRepo = AppDataSource.getRepository(Wishlists);
+            const wishList = await wishlistRepo.findOne({ where: { userId, sellingStartupId: d.id } });
             return {
                 ...d,
-
+                wishlistStatus: wishList ? wishList.isHidden : false
             }
         })
-        
+
         return res.json({
-            success: true,
+            status: "success",
             data: formattedData,
             pagination: {
                 total,
@@ -49,7 +51,7 @@ export const getAllStartups = async (req: AuthenticatedRequest, res: Response) =
             },
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Server error", error });
+        return res.status(500).json({ status: "error", message: "Server error", error });
     }
 };
 
