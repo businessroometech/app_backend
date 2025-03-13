@@ -149,7 +149,7 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 // Get user's connections and mutual connections
 export const getUserConnections = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
 
-  const profileId = String(req.query.profileId);
+  let profileId = req.query.profileId;
   const userId = req.userId;
 
   if (!userId) {
@@ -157,13 +157,19 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
   }
 
   try {
+
+    console.log(profileId);
+    if (!profileId) {
+      profileId = userId;
+    }
+
     const connectionRepository = AppDataSource.getRepository(Connection);
-    const connections = await connectionRepository.find({
-      where: [
-        { requesterId: profileId, status: 'accepted' },
-        { receiverId: profileId, status: 'accepted' },
-      ],
-    });
+    const connections = await connectionRepository
+      .createQueryBuilder("connection")
+      .where("connection.requesterId = :profileId AND connection.status = 'accepted'", { profileId })
+      .orWhere("connection.receiverId = :profileId AND connection.status = 'accepted'", { profileId })
+      .getMany();
+
 
     if (!connections || connections.length === 0) {
       return res.status(400).json({ message: 'No accepted connections found.' });
