@@ -236,7 +236,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
           userRole: originalPUser?.userRole,
           isBadgeOn: originalPUser?.isBadgeOn,
-          badgeName: originalPUser?.badgeName
+          badgeName: originalPUser?.badgeName,
+          bio: originalPUser?.bio
         }
       };
     }));

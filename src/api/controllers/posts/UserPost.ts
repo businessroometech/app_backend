@@ -489,7 +489,8 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
             userRole: originalPUser?.userRole,
             isBadgeOn: originalPUser?.isBadgeOn,
-            badgeName: originalPUser?.badgeName
+            badgeName: originalPUser?.badgeName,
+            bio: originalPUser?.bio
           }
         };
       })
@@ -731,7 +732,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         avatar: originalPUser?.profilePictureUploadId ? await generatePresignedUrl(originalPUser.profilePictureUploadId) : null,
         userRole: originalPUser?.userRole,
         isBadgeOn: originalPUser?.isBadgeOn,
-        badgeName: originalPUser?.badgeName
+        badgeName: originalPUser?.badgeName,
+        bio: originalPUser?.bio
       }
     };
 
