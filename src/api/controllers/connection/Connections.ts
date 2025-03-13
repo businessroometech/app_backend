@@ -94,33 +94,28 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
 export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { connectionId, status } = req.body;
   const userId = req.userId;
-
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required.' });
   }
-
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connection = await connectionRepository.findOne({
-      where: [{ requesterId: connectionId, receiverId: userId }],
+      where: { requesterId: connectionId, receiverId: userId },
+      relations: ['receiver', 'requester']
     });
 
     if (!connection) {
       return res.status(404).json({ message: 'Connection not found.' });
     }
-
-    if (connection.status == 'accepted') {
+    if (connection.status === 'accepted') {
       return res.status(400).json({ message: 'Connection request already accepted' });
     }
-
-    if (connection.status == 'rejected') {
+    if (connection.status === 'rejected') {
       return res.status(400).json({ message: 'Connection request already rejected' });
     }
-
     if (!['accepted', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status.' });
     }
-
     connection.status = status as 'accepted' | 'rejected';
     const data = await connectionRepository.save(connection);
 
@@ -128,23 +123,23 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 
     if (status === 'accepted') {
       try {
-        const imageKey = connection?.receiver?.profilePictureUploadId
-          ? connection?.receiver?.profilePictureUploadId
+        const imageKey = connection.receiver?.profilePictureUploadId
+          ? connection.receiver.profilePictureUploadId
           : null;
 
         await createNotification(
           NotificationType.REQUEST_RECEIVED,
-          connection?.requester?.id,
-          connection?.receiver?.id,
-          `${connection?.receiver?.firstName} ${connection?.receiver?.lastName} accepted your connection request`,
+          connection.requester.id,
+          connection.receiver.id,
+          `${connection.receiver.firstName} ${connection.receiver.lastName} accepted your connection request`,
           {
             imageKey,
           }
         );
 
         const io = getSocketInstance();
-        const roomId = connection?.requester?.id;
-        io.to(roomId).emit('newNotification', `${connection?.receiver?.firstName} ${connection?.receiver?.lastName} accepted your connection request`);
+        const roomId = connection.requester.id;
+        io.to(roomId).emit('newNotification', `${connection.receiver.firstName} ${connection.receiver.lastName} accepted your connection request`);
 
       } catch (error) {
         console.error("Error creating notification:", error);
@@ -153,7 +148,10 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 
     //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-    return res.status(500).json({ message: 'Internal Server Error please retry' });
+    return res.status(200).json({ 
+      message: `Connection request ${status} successfully`,
+      connection: data 
+    });
   } catch (error: any) {
     console.error('Error updating connection status:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
@@ -335,7 +333,7 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
 };
 
 export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
-  const { requesterId, receiverId } = req.body;
+  const { receiverId } = req.body;
   const userId = req.userId;
 
   if (!userId) {
@@ -345,7 +343,7 @@ export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Re
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connection = await connectionRepository.findOne({
-      where: { requesterId, receiverId, status: 'pending' },
+      where: { requesterId:userId, receiverId, status: 'pending' },
     });
 
     if (!connection) {
@@ -476,17 +474,11 @@ export class ConnectionController {
         return res.status(400).json({ message: `Invalid status. Valid values are: ${validStatuses.join(', ')}` });
       }
 
-      // Properly structuring the where condition
-      let connections = await connectionRepository.find({
+      // Fetch connections from the database
+      const connections = await connectionRepository.find({
         where: { requesterId, status: status as ConnectionStatus },
         relations: ['receiver'],
       });
-
-      // Fetch connections from the database
-      // let connections  = await connectionRepository.find({
-      //   where: { requesterId, status: status as validStatuses},
-      //   relations: ['receiver'],
-      // });
 
       if (connections.length < 1) {
         return res.status(404).json({ message: 'No connections found.' });
