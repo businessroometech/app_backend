@@ -7,7 +7,7 @@ export class Wishlists extends BaseEntity {
   id!: string;
 
   @Column({ type: "bool", default: false })
-  isHidden!: boolean;
+  status!: boolean;
 
   @Column({ type: "uuid" })
   userId!: string;

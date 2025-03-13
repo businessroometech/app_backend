@@ -37,7 +37,7 @@ export const getAllStartups = async (req: AuthenticatedRequest, res: Response) =
                 const wishList = await wishlistRepo.findOne({ where: { userId, sellingStartupId: d.id } });
                 return {
                     ...d,
-                    wishlistStatus: wishList ? wishList.isHidden : false
+                    wishlistStatus: wishList ? wishList.status : false
                 };
             })
         );
@@ -100,18 +100,26 @@ export const toggleWishlist = async (req: AuthenticatedRequest, res: Response) =
         const { sellingStartupId } = req.body;
         const userId = req.userId;
 
+        const startupRepo = AppDataSource.getRepository(SellingStartup);
+
+        const startup = await startupRepo.findOne({ where: { id: sellingStartupId } });
+
+        if (!startup) {
+            return res.status(400).json({ status: "error", message: "Invalid sellingStartupId. Startup not found." });
+        }
+
         const wishlistRepo = AppDataSource.getRepository(Wishlists);
 
         let existingWishlist = await wishlistRepo.findOne({ where: { sellingStartupId, userId } });
 
         if (existingWishlist) {
-            existingWishlist.isHidden = !existingWishlist.isHidden;
+            existingWishlist.status = !existingWishlist.status;
             await wishlistRepo.save(existingWishlist);
         } else {
             const wishlist = wishlistRepo.create({
                 sellingStartupId,
                 userId,
-                isHidden: true
+                status: true
             });
 
             await wishlistRepo.save(wishlist);
@@ -149,10 +157,12 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
             .take(+limit)
             .getManyAndCount();
 
+        const startups = data.map((wishlist) => wishlist.sellingStartup);
+
         return res.json({
             status: "success",
             data: {
-                wishlists: data,
+                startups,
                 total,
                 page: +page,
                 limit: +limit,
