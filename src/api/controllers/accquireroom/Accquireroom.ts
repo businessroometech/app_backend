@@ -82,25 +82,33 @@ export const getMyStartups = async (req: AuthenticatedRequest, res: Response) =>
 };
 
 // // Add a startup to the wishlist
-// export const addToWishlist = async (req: Request, res: Response) => {
-//     try {
-//         const { seekingConnectionId } = req.body;
-//         const userId = req.user.id;
+export const toggleWishlist = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { seekingConnectionId } = req.body;
+        const userId = req.userId;
 
-//         const existingWishlist = await Wishlists.findOne({ where: { userId, seekingConnectionId } });
+        const wishlistRepo = AppDataSource.getRepository(Wishlists);
 
-//         if (existingWishlist) {
-//             return res.status(400).json({ success: false, message: "Already in wishlist" });
-//         }
+        const existingWishlist = await wishlistRepo.findOne({ where: { seekingConnectionId, userId } });
 
-//         const wishlist = Wishlists.create({ userId, seekingConnectionId });
-//         await wishlist.save();
+        if (existingWishlist) {
+            existingWishlist.isHidden = !existingWishlist.isHidden;
+        }
+        else {
+            const wishlist = Wishlists.create({
+                seekingConnectionId,
+                userId,
+                isHidden: true
+            })
 
-//         return res.json({ success: true, message: "Added to wishlist", data: wishlist });
-//     } catch (error) {
-//         return res.status(500).json({ success: false, message: "Server error", error });
-//     }
-// };
+            await wishlist.save();
+        }
+
+        return res.status(200).json({ status: "success", message: "Done." });
+    } catch (error) {
+        return res.status(500).json({ status: "error", message: "Server error", error });
+    }
+};
 
 // // Remove a startup from the wishlist
 // export const removeFromWishlist = async (req: Request, res: Response) => {
@@ -131,7 +139,8 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
 
         const query = wishlistRepo.createQueryBuilder("wishlist")
             .leftJoinAndSelect("wishlist.seekingConnectionId", "startup")
-            .where("wishlist.userId = :userId", { userId });
+            .where("wishlist.userId = :userId", { userId })
+            .andWhere("wishlist.isHidden = :isHidden", { isHidden: false });
 
         if (businessType) {
             query.andWhere("startup.businessType = :businessType", { businessType });

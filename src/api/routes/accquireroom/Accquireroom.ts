@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
 
 import {
-    getAllStartups, getMyStartups, getMyWishlist
+    getAllStartups, getMyStartups, getMyWishlist, toggleWishlist
 } from '../../controllers/accquireroom/Accquireroom';
 
 
@@ -11,7 +11,7 @@ const router = Router();
 
 router.get("/startups", authenticate, getAllStartups); // ?page=1&limit=10&businessType=Tech&search=Google
 router.get("/startups/my", authenticate, getMyStartups);
-// router.post("/wishlist/add", authenticate, addToWishlist);
+router.post("/wishlist/toggle", authenticate, toggleWishlist);
 // router.delete("/wishlist/remove/:id", authenticate, removeFromWishlist);
 router.get("/wishlist/my", authenticate, getMyWishlist);
 
