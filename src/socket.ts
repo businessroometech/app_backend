@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Express, Request, Response } from 'express';
 import { AppDataSource } from './server';
 import { ActiveUser } from './api/entity/chat/ActiveUser';
+import jwt from "jsonwebtoken";
 
 let io: Server;
 
@@ -31,20 +32,45 @@ export const initializeSocket = (app: Express) => {
     }
   }
 
+  const JWT_SECRET = process.env.ACCESS_SECRET_KEY as string;
+
+  const getUserIdFromToken = (token: string): string | null => {
+    if (!JWT_SECRET) {
+      console.error("JWT_SECRET is not defined in environment variables.");
+      return null;
+    }
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+      return decoded.userId;
+    } catch (error: any) {
+      console.error("Invalid token:", error.message);
+      return null;
+    }
+  };
+
   io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
 
-    socket.on('joinRoom', (userId) => {
+    socket.on('joinChatRoom', (userId) => {
       socket.join(userId);
       console.log(`User ${userId} joined their room`);
     });
 
-    socket.on('userOnline', (userId) => {
+    socket.on('joinNotificationRoom', (token) => {
+      const userId: any = getUserIdFromToken(token);
+      socket.join(userId);
+      console.log(`User ${userId} joined their room`);
+    });
+
+    socket.on('userOnline', (token) => {
+      const userId: any = getUserIdFromToken(token);
       toggleActive(true, userId);
       console.log(`User ${userId} is online`);
     });
 
-    socket.on('userOffline', (userId) => {
+    socket.on('userOffline', (token) => {
+      const userId: any = getUserIdFromToken(token);
       toggleActive(false, userId);
       console.log(`User ${userId} is online`);
     });
