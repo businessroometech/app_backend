@@ -125,8 +125,13 @@ export const deleteInvestorData = async (req: Request, res: Response) => {
 
 export const getInvestorData = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const userId = req.userId;
-        
+
+        const { profileId } = req.query;
+
+        let userId: any = req.userId;
+
+        if (profileId) userId = profileId;
+
         const userRepo = AppDataSource.getRepository(PersonalDetails);
         const user = await userRepo.findOne({ where: { id: userId } });
         const subRole: any = user?.subRole;
