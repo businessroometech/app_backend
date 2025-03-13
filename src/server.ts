@@ -28,6 +28,7 @@ import liveRouter from '../src/api/routes/live/LiveRoutes';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
 import WishlistsRoutes from '../src/api/routes/Wishlists/WishlistsRoutes';
+import acquireroomRoutes from  '../src/api/routes/accquireroom/Accquireroom';
 // import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
@@ -118,7 +119,7 @@ const AppDataSource = new DataSource({
     SellingStartup,
     SeekingConnections,
     ExploringIdeas,
-    Notify
+    Notify,
   ],
   synchronize: false,
 });
@@ -164,6 +165,7 @@ app.use('/v1/socket-notifications', SocketNotificationRouting);
 app.use('/v1/subrole', SubRoleRoutes);
 app.use('/v1/general', GeneralRoutes);
 app.use('/v1/business-data', BuisnessDataRoutes);
+app.use('/v1/acquireroom', acquireroomRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');
