@@ -428,20 +428,21 @@ export const ProfileVisitController = {
 // search user profile
 export const searchUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const searchQuery = req.query.search;
-
+    const searchQuery = req.query.search as string;
     const userId = req.userId;
 
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' });
     }
 
-    if (!searchQuery) {
-      return res.status(400).json({ message: 'Search query is required.' });
+    if (!searchQuery || typeof searchQuery !== 'string') {
+      return res.status(400).json({ message: 'Search query must be a valid string.' });
     }
 
+    console.log('Search Query:', searchQuery);
+    console.log('User ID:', userId);
+
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-    const blockedUserRepository = AppDataSource.getRepository(BlockedUser);
     const connectionRepository = AppDataSource.getRepository(Connection);
 
     // Fetch users matching the search query
@@ -449,59 +450,64 @@ export const searchUserProfile = async (req: AuthenticatedRequest, res: Response
       where: [
         { firstName: ILike(`%${searchQuery}%`) },
         { lastName: ILike(`%${searchQuery}%`) },
-        { emailAddress: ILike(`%${searchQuery}%`) },
       ],
     });
 
+    console.log('Search Results Count:', searchResults.length);
+
     if (searchResults.length === 0) {
-      return res.status(204).json({ message: 'No results found.' });
+      return res.status(200).json({ message: 'No results found.' });
     }
 
-    // Fetch blocked users where either userId is the blocker or is blocked
-    const blockedUsers = await blockedUserRepository.find({
-      where: [{ blockedBy: userId }, { blockedUser: userId }],
-    });
-
-    // Create a Set of users that are either blocked by the user or have blocked the user
-    const blockedUserIds = new Set(
-      blockedUsers.flatMap((block) => [block.blockedBy, block.blockedUser])
-    );
-
-    // Filter results: Remove blocked users and prevent self-inclusion
+    // Process the filtered results
     const filteredResults = await Promise.all(
-      searchResults
-        .filter((result) => result.id !== userId && !blockedUserIds.has(result.id)) // Remove blocked profiles
-        .map(async (result) => {
-          // Fetch mutual connections count
-          const mutualConnectionCount = await connectionRepository.count({
+      searchResults.map(async (result) => {
+        if (!result.id) {
+          console.error('Error: Result has no ID', result);
+          return null;
+        }
+
+        // Fetch mutual connection count
+        let mutualConnectionCount = 0;
+        try {
+          mutualConnectionCount = await connectionRepository.count({
             where: [
               { requesterId: userId, receiverId: result.id, status: 'accepted' },
               { requesterId: result.id, receiverId: userId, status: 'accepted' },
             ],
           });
+        } catch (countError) {
+          console.error('Error fetching mutual connection count:', countError);
+        }
 
-          // Generate profile image URL if available
-          const profileImgUrl = result.profilePictureUploadId
-            ? await generatePresignedUrl(result.profilePictureUploadId)
-            : null;
+        // Generate profile image URL
+        let profileImgUrl = null;
+        if (result.profilePictureUploadId) {
+          try {
+            profileImgUrl = await generatePresignedUrl(result.profilePictureUploadId);
+          } catch (presignedUrlError) {
+            console.error('Error generating presigned URL:', presignedUrlError);
+          }
+        }
 
-          return {
-            id: result.id,
-            firstName: result.firstName,
-            lastName: result.lastName,
-            emailAddress: result.emailAddress,
-            userRole: result.userRole,
-            profileImgUrl,
-            mutualConnectionCount,
-            isBadgeOn: result.isBadgeOn,
-            badgeName: result.badgeName
-          };
-        })
+        return {
+          id: result.id,
+          firstName: result.firstName,
+          lastName: result.lastName,
+          emailAddress: result.emailAddress,
+          userRole: result.userRole,
+          profileImgUrl,
+          mutualConnectionCount,
+          isBadgeOn: result.isBadgeOn,
+          badgeName: result.badgeName,
+          bio: result.bio,
+        };
+      })
     );
 
     return res.status(200).json({
       message: 'Search results fetched successfully.',
-      data: filteredResults,
+      data: filteredResults.filter(Boolean), // Remove null values
     });
   } catch (error: any) {
     console.error('Error searching user profile:', error);
@@ -511,6 +517,7 @@ export const searchUserProfile = async (req: AuthenticatedRequest, res: Response
     });
   }
 };
+
 
 
 // find user by userName
