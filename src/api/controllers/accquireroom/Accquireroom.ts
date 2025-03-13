@@ -142,7 +142,7 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
         const query = wishlistRepo.createQueryBuilder("wishlist")
             .leftJoinAndSelect("wishlist.sellingStartup", "startup")
             .where("wishlist.userId = :userId", { userId })
-            .andWhere("wishlist.isHidden = :isHidden", { isHidden: false });
+            .andWhere("wishlist.status = :status", { status: false });
 
         if (businessType) {
             query.andWhere("startup.businessType = :businessType", { businessType });
