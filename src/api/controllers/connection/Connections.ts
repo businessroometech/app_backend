@@ -148,7 +148,8 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 
 // Get user's connections and mutual connections
 export const getUserConnections = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
-  const { profileId } = req.params;
+
+  const profileId = String(req.query.profileId);
   const userId = req.userId;
 
   if (!userId) {

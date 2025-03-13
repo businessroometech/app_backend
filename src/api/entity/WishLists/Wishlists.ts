@@ -1,19 +1,19 @@
-/* eslint-disable prettier/prettier */
-
-
 import { BaseEntity,  Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'Wishlists' })
 export class Wishlists extends BaseEntity {
 
-  @PrimaryGeneratedColumn('uuid') // This auto-generates a UUID
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
   
-  @Column({ type: 'varchar', length: 100 })
-  Identity!: string;
+  @Column({ type: "bool" , default: false})
+  isHidden !: boolean;
 
-  @Column('json')
-  Wishlistdata!: any[]; // If you know the structure, consider being more specific
+  @Column({ type: "uuid" })
+  userId !: string;
+
+  @Column({ type: "uuid" })
+  seekingConnectionId !: string;
 
 }
 

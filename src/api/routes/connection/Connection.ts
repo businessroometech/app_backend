@@ -6,7 +6,7 @@ const Router = express.Router();
 
 Router.post('/send-connection-request', authenticate, sendConnectionRequest);
 Router.post('/update-connection-status', authenticate, updateConnectionStatus);
-// Router.get('/get-connection-list/:profileId', authenticate, getUserConnections);
+Router.get('/get-connection-list', authenticate, getUserConnections);
 Router.delete('/remove-connection/:connectionId', authenticate, removeConnection);
 Router.post('/unsend-connection-request', authenticate, unsendConnectionRequest);
 Router.get('/get-connection-request', authenticate, getUserConnectionRequests);
