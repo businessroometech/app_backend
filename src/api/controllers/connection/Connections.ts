@@ -166,7 +166,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     });
 
     if (!connections || connections.length === 0) {
-      return res.status(404).json({ message: 'No accepted connections found.' });
+      return res.status(400).json({ message: 'No accepted connections found.' });
     }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
