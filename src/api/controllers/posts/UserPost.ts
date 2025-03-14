@@ -21,7 +21,7 @@ import { Connection } from '../../entity/connection/Connections';
 import { uploadBufferDocumentToS3, getDocumentFromBucket } from "../s3/awsControllers";
 import { PollEntry } from '@/api/entity/posts/PollEntry';
 import { createNotification } from '../notify/Notify';
-import { NotificationType } from '@/api/entity/notify/Notify';
+import { NotificationType, Notify } from '@/api/entity/notify/Notify';
 
 export const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
@@ -237,7 +237,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       }
 
       try {
-        const imageUrl = repostedByUser?.profilePictureUploadId
+        const imageKey = repostedByUser?.profilePictureUploadId
           ? repostedByUser?.profilePictureUploadId
           : null;
 
@@ -247,13 +247,26 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
           repostedByUser?.id,
           `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`,
           {
-            imageUrl,
+            imageKey,
           }
         );
 
+        
+        const notifyRepo = AppDataSource.getRepository(Notify);
+        const notification = await notifyRepo.find({ where: { recieverId: repostedOfUser?.id, isRead: false } });
+        
+
+        const notify = {
+          message: `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`,
+          metaData: {
+            imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+            isReadCount: notification.length
+          }
+        }
+
         const io = getSocketInstance();
         const roomId = repostedOfUser?.id;
-        io.to(roomId).emit('newNotification', `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`);
+        io.to(roomId).emit('newNotification', notify);
 
       } catch (error) {
         console.error("Error creating notification:", error);

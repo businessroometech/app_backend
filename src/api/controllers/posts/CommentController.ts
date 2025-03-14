@@ -16,7 +16,7 @@ import { Mention } from '@/api/entity/posts/Mention';
 import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 import multer from 'multer';
 import { createNotification } from '../notify/Notify';
-import { NotificationType } from '@/api/entity/notify/Notify';
+import { NotificationType, Notify } from '@/api/entity/notify/Notify';
 import { getSocketInstance } from '@/socket';
 
 export interface AuthenticatedRequest extends Request {
@@ -112,9 +112,21 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
           }
         );
 
+        const notifyRepo = AppDataSource.getRepository(Notify);
+        const notification = await notifyRepo.find({ where: { recieverId: commentedOnUser?.id, isRead: false } });
+
+        const notify = {
+          message: `${commentedByUser.firstName} ${commentedByUser.lastName} commented on your post`,
+          metaData: {
+            imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+            postId: commentedPost.id,
+            isReadCount: notification.length,
+          }
+        }
+
         const io = getSocketInstance();
         const roomId = commentedOnUser.id;
-        io.to(roomId).emit('newNotification', `${commentedByUser.firstName} ${commentedByUser.lastName} commented on your post`);
+        io.to(roomId).emit('newNotification', notify);
 
 
       } catch (error) {
@@ -414,7 +426,7 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
 
         await createNotification(
           NotificationType.REPLY,
-          repliedOnUser.id,    
+          repliedOnUser.id,
           userId,
           `${repliedByUser.firstName} ${repliedByUser.lastName} replied to your comment`,
           {
@@ -425,9 +437,23 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
           }
         );
 
+        const notifyRepo = AppDataSource.getRepository(Notify);
+        const notification = await notifyRepo.find({ where: { recieverId: repliedOnUser?.id, isRead: false } });
+
+        const notify = {
+          message: `${repliedByUser.firstName} ${repliedByUser.lastName} replied to your comment`,
+          metaData: {
+            imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+            postId: nestedCommentedPost.id,
+            commentId: commentId,
+            nestedCommentId: nestedCommentId,
+            isReadCount: notification.length
+          }
+        }
+
         const io = getSocketInstance();
         const roomId = repliedOnUser.id;
-        io.to(roomId).emit('newNotification', `${repliedByUser.firstName} ${repliedByUser.lastName} replied to your comment`);
+        io.to(roomId).emit('newNotification', notify);
 
       } catch (error) {
         console.error("Error creating notification:", error);

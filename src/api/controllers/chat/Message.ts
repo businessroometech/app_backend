@@ -4,6 +4,7 @@ import { AppDataSource } from '../../../server'; // Import your data source
 import { Message } from '@/api/entity/chat/Message';
 import { ActiveUser } from '@/api/entity/chat/ActiveUser';
 import { Connection } from '@/api/entity/connection/Connections';
+import { MessageHistory } from '@/api/entity/chat/MessageHistory';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -23,6 +24,29 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     await messageRepository.save(message);
+
+    const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
+
+    let mh: any = await messageHistoryRepo.findOne({
+      where: {
+        senderId,
+        receiverId
+      }
+    });
+
+    if (!mh) {
+      mh = messageHistoryRepo.create({
+        receiverId,
+        senderId,
+        lastActive: new Date(),
+      });
+
+      await messageHistoryRepo.save(mh);
+    } else {
+      mh.lastActive = new Date();
+      await messageHistoryRepo.save(mh);
+    }
+
 
     // Emit to the recipient's room
     const io = getSocketInstance();
@@ -203,5 +227,28 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
       message: 'Internal server error',
       error: error.message
     });
+  }
+};
+
+export const getMessageHistory = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    // const { senderId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "Sender ID is required" });
+    }
+
+    const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
+
+    const history = await messageHistoryRepo.find({
+      where: { senderId: userId },
+      order: { createdAt: "DESC" },
+    });
+
+    return res.status(200).json({ status: "success", data: { history } });
+  } catch (error) {
+    console.error("Error fetching message history:", error);
+    return res.status(500).json({ status: "error", message: "Error fetching message history" });
   }
 };

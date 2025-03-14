@@ -12,7 +12,7 @@ import { filterInappropriateMedia } from '@/api/middlewares/post/InappropriatePo
 const Router = express.Router();
 
 Router.post('/create-userpost', authenticate, uploadMiddleware, CreateUserPost)
-Router.post('/vote-in-poll', authenticate, VoteInPoll); 
+Router.post('/vote-in-poll', authenticate, VoteInPoll);
 
 Router.get('/get-user-post', authenticate, FindUserPost)
 Router.post('/update-userpost-byPostId', authenticate, UpdateUserPost)

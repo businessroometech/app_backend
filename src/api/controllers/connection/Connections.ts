@@ -9,7 +9,7 @@ import { Brackets, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { getSocketInstance } from '@/socket';
 import { createNotification } from '../notify/Notify';
-import { NotificationType } from '@/api/entity/notify/Notify';
+import { NotificationType, Notify } from '@/api/entity/notify/Notify';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -69,6 +69,17 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
           imageKey,
         }
       );
+
+      const notifyRepo = AppDataSource.getRepository(Notify);
+      const notification = await notifyRepo.find({ where: { recieverId: receiver?.id, isRead: false } });
+
+      const notify = {
+        message: `${requester.firstName} ${requester.lastName} sent you a connection Request`,
+        metaData: {
+          imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+          isReadCount: notification.length
+        }
+      }
 
       const io = getSocketInstance();
       const roomId = receiver.id;
@@ -136,6 +147,18 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
             imageKey,
           }
         );
+
+        const notifyRepo = AppDataSource.getRepository(Notify);
+        const notification = await notifyRepo.find({ where: { recieverId: connection?.requester?.id, isRead: false } });
+
+
+        const notify = {
+          message: `${connection?.receiver?.firstName} ${connection?.receiver?.lastName} accepted your connection request`,
+          metaData: {
+            imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+            isReadCount: notification.length
+          }
+        }
 
         const io = getSocketInstance();
         const roomId = connection.requester.id;

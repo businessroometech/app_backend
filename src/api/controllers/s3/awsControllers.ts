@@ -102,7 +102,7 @@ export const uploadBufferDocumentToS3 = async (
         Bucket: process.env.AWS_BUCKET,
         Key: fileKey,
       }),
-      { expiresIn: 3600 }
+      { expiresIn: 7200 }
     );
 
     return { fileKey, signedUrl };

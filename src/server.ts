@@ -72,6 +72,7 @@ import { SellingStartup } from './api/entity/business-data/SellingStartup';
 import { SeekingConnections } from './api/entity/business-data/SeekingConnections';
 import { ExploringIdeas } from './api/entity/business-data/ExploringIdeas';
 import { Notify } from './api/entity/notify/Notify';
+import { MessageHistory } from './api/entity/chat/MessageHistory';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -120,6 +121,7 @@ const AppDataSource = new DataSource({
     SeekingConnections,
     ExploringIdeas,
     Notify,
+    MessageHistory
   ],
   synchronize: false,
 });

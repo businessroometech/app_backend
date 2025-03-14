@@ -47,6 +47,8 @@ export const getUserNotifications = async (req: AuthenticatedRequest, res: Respo
             order: { createdAt: 'DESC' }
         });
 
+        const notify = await notificationRepo.find({ where: { recieverId: userId, isRead: false } });
+
         const formattedNotifications = await Promise.all(
             notifications.map(async (notification) => {
                 let imageUrl = null;
@@ -60,7 +62,8 @@ export const getUserNotifications = async (req: AuthenticatedRequest, res: Respo
                     metaData: {
                         ...notification.metaData,
                         imageUrl
-                    }
+                    },
+                    isReadCount: notify.length
                 };
             })
         );
