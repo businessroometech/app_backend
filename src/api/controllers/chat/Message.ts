@@ -268,7 +268,7 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
 
         return {
           historyId: record.id,
-          id: userId,
+          id: record.receiverId,
           senderId: record.senderId,
           receiverId: record.receiverId,
           lastActive: record.lastActive,
