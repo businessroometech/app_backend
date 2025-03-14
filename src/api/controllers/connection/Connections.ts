@@ -27,7 +27,7 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
   try {
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
-    const requester = await userRepository.findOne({ where: { id: requesterId } });
+    const requester = await userRepository.findOne({ where: { id: userId } });
     const receiver = await userRepository.findOne({ where: { id: receiverId } });
 
     if (!requester) {
@@ -39,8 +39,8 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
 
     const existingConnection = await connectionRepository.findOne({
       where: [
-        { requesterId, receiverId },
-        { requesterId: receiverId, receiverId: requesterId },
+        { requesterId: userId, receiverId },
+        { requesterId: receiverId, receiverId: userId },
       ],
     });
 
@@ -48,7 +48,7 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
       return res.status(400).json({ message: 'Connection request already exists.' });
     }
     const newConnection = connectionRepository.create({
-      requesterId,
+      requesterId:userId,
       receiverId,
       status: 'pending',
     });
