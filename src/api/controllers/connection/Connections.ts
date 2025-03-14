@@ -187,6 +187,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
       return res.status(400).json({ message: 'No accepted connections found.' });
     }
 
+
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const userIds = [
       ...new Set(connections.map((connection) => connection.requesterId)),
@@ -215,6 +216,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
         connection.requesterId === userId ? connection.receiverId : connection.requesterId
       )
     );
+  
 
     const result = await Promise.all(
       connections.map(async (connection) => {
@@ -223,6 +225,15 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
         const isMutual = userConnectionIds.has(user?.id || '');
+
+        // Get the connection status between current user and this user
+        const userConnectionStatus = await connectionRepository.findOne({
+          where: [
+            { requesterId: userId, receiverId: user?.id },
+            { requesterId: user?.id, receiverId: userId }
+          ]
+        });
+
         return {
           connectionId: connection.id,
           userId: user?.id,
@@ -232,6 +243,8 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           profilePictureUrl: profilePictureUrl,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
           mutual: isMutual,
+          me: userId === connection.requesterId || userId === connection.receiverId,
+          status: userConnectionStatus?.status || null
         };
       })
     );
