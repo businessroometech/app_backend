@@ -267,7 +267,8 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
         const activeUser = await activeUserRepo.findOne({ where: { userId: record.receiverId } });
 
         return {
-          id: record.id,
+          historyId: record.id,
+          id: userId,
           senderId: record.senderId,
           receiverId: record.receiverId,
           lastActive: record.lastActive,
