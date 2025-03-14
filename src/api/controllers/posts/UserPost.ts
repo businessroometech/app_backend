@@ -584,7 +584,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOne({
       where: { id: id },
-      select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId', 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
+      // select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId', 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
     });
 
     if (!user) {
@@ -690,7 +690,9 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
         const pollEntryRepo = AppDataSource.getRepository(PollEntry);
         const pollEntry = await pollEntryRepo.findOne({ where: { postId: post.id, userId } });
 
+        console.log(user);
 
+        console.log("************************************************************************************2");
         return {
           post: {
             Id: post.id,
@@ -722,7 +724,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             postedId: user.id,
             firstName: user.firstName || '',
             lastName: user.lastName || '',
-            // timestamp: formatTimestamp(post.createdAt),
+            timestamp: formatTimestamp(post.createdAt),
             createdAt: post.createdAt,
             userRole: user.userRole,
             avatar: imgUrl,
@@ -779,7 +781,7 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
     // Check if the user exists
     const user = await userRepository.findOne({
       where: { id: userId },
-      select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', 'occupation'],
+      // select: ['profilePictureUploadId', 'firstName', 'lastName', 'bio', 'occupation'],
     });
 
     if (!user) {

@@ -59,11 +59,9 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
                     return res.status(404).json({ status: "fail", message: "Record not found" });
                 }
 
-                // Object.assign(existingData, data);
-
                 for (const key in data) {
-                    if (data[key] !== undefined) {
-                        (existingData as any)[key] = data[key];
+                    if (data[key] !== undefined && !(Array.isArray(data[key]) && data[key].length === 0) && data[key] !== '') {
+                        (existingData as any)[key] = data[key]; 
                     }
                 }
 
@@ -83,8 +81,8 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
                 // Object.assign(existingData, data);
 
                 for (const key in data) {
-                    if (data[key] !== undefined) {
-                        (existingData as any)[key] = data[key];
+                    if (data[key] !== undefined && !(Array.isArray(data[key]) && data[key].length === 0) && data[key] !== '') {
+                        (existingData as any)[key] = data[key]; 
                     }
                 }
 
