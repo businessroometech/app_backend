@@ -31,10 +31,10 @@ export const sendMessage = async (req: Request, res: Response) => {
     const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
 
     let mh: any = await messageHistoryRepo.findOne({
-      where: {
-        senderId,
-        receiverId
-      }
+      where: [
+        { senderId, receiverId },
+        { senderId: receiverId, receiverId: senderId }
+      ]
     });
 
     if (!mh) {
