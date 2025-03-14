@@ -123,9 +123,11 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllUnreadMessages = async (req: Request, res: Response) => {
+export const getAllUnreadMessages = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { receiverId } = req.body;
+    const userId = req.userId;
+
+    const receiverId = userId;
 
     if (!receiverId) {
       return res.status(400).json({ message: "ReceiverId are required." });
