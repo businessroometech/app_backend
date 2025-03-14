@@ -26,7 +26,8 @@ export const sendMessage = async (req: Request, res: Response) => {
     await messageRepository.save(message);
 
     const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
-    let mh: any = messageHistoryRepo.find({
+
+    let mh: any = await messageHistoryRepo.find({
       where: {
         senderId,
         receiverId
@@ -245,9 +246,9 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
       order: { lastActive: "DESC" },
     });
 
-    return res.status(200).json({ success: true, data: history });
+    return res.status(200).json({ status: "success", data: history });
   } catch (error) {
     console.error("Error fetching message history:", error);
-    return res.status(500).json({ success: false, message: "Error fetching message history" });
+    return res.status(500).json({ status: "error", message: "Error fetching message history" });
   }
 };
