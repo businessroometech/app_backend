@@ -243,10 +243,10 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
 
     const history = await messageHistoryRepo.find({
       where: { senderId: userId },
-      order: { lastActive: "DESC" },
+      order: { createdAt: "DESC" },
     });
 
-    return res.status(200).json({ status: "success", data: history });
+    return res.status(200).json({ status: "success", data: { history } });
   } catch (error) {
     console.error("Error fetching message history:", error);
     return res.status(500).json({ status: "error", message: "Error fetching message history" });
