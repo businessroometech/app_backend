@@ -5,6 +5,9 @@ import { Message } from '@/api/entity/chat/Message';
 import { ActiveUser } from '@/api/entity/chat/ActiveUser';
 import { Connection } from '@/api/entity/connection/Connections';
 import { MessageHistory } from '@/api/entity/chat/MessageHistory';
+import { promise } from 'zod';
+import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
+import { generatePresignedUrl } from '../s3/awsControllers';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -233,7 +236,6 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
 export const getMessageHistory = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId;
-    // const { senderId } = req.params;
 
     if (!userId) {
       return res.status(400).json({ success: false, message: "Sender ID is required" });
@@ -246,7 +248,24 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
       order: { createdAt: "DESC" },
     });
 
-    return res.status(200).json({ status: "success", data: { history } });
+    const formattedHistory = Promise.all(history.map(async (history) => {
+
+      const userRepo = AppDataSource.getRepository(PersonalDetails);
+      const activeUserRepo = AppDataSource.getRepository(ActiveUser);
+
+      const user = await userRepo.findOne({ where: { id: userId } });
+      const activeUser = await activeUserRepo.findOne({ where: { userId } });
+
+      return {
+        ...history,
+        isActive: activeUser?.isActive,
+        fullname: `${user?.firstName} ${user?.lastName}`,
+        imageUrl: user?.profilePictureUploadId ? await generatePresignedUrl(user?.profilePictureUploadId) : null,
+      };
+
+    }));
+
+    return res.status(200).json({ status: "success", data: { history: formattedHistory } });
   } catch (error) {
     console.error("Error fetching message history:", error);
     return res.status(500).json({ status: "error", message: "Error fetching message history" });
