@@ -248,22 +248,27 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
       order: { createdAt: "DESC" },
     });
 
-    const formattedHistory = Promise.all(history.map(async (history) => {
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+    const activeUserRepo = AppDataSource.getRepository(ActiveUser);
 
-      const userRepo = AppDataSource.getRepository(PersonalDetails);
-      const activeUserRepo = AppDataSource.getRepository(ActiveUser);
+    const formattedHistory = await Promise.all(
+      history.map(async (record) => {
+        const user = await userRepo.findOne({ where: { id: record.receiverId } });
+        const activeUser = await activeUserRepo.findOne({ where: { userId: record.receiverId } });
 
-      const user = await userRepo.findOne({ where: { id: userId } });
-      const activeUser = await activeUserRepo.findOne({ where: { userId } });
-
-      return {
-        ...history,
-        isActive: activeUser?.isActive,
-        fullname: `${user?.firstName} ${user?.lastName}`,
-        imageUrl: user?.profilePictureUploadId ? await generatePresignedUrl(user?.profilePictureUploadId) : null,
-      };
-
-    }));
+        return {
+          id: record.id,
+          senderId: record.senderId,
+          receiverId: record.receiverId,
+          lastActive: record.lastActive,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+          isActive: activeUser?.isActive || false,
+          fullname: user ? `${user.firstName} ${user.lastName}` : null,
+          imageUrl: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
+        };
+      })
+    );
 
     return res.status(200).json({ status: "success", data: { history: formattedHistory } });
   } catch (error) {
