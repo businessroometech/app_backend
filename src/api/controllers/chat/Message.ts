@@ -207,15 +207,25 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
     });
 
 
-    const filteredConnections = connections.filter(conn => {
-      const requesterFullName = `${conn?.requester?.firstName} ${conn?.requester?.lastName}`
-      const receiverFullName = `${conn?.receiver?.firstName} ${conn?.receiver?.lastName}`
+    // const filteredConnections = connections.filter(conn => {
+    //   const requesterFullName = `${conn?.requester?.firstName} ${conn?.requester?.lastName}`
+    //   const receiverFullName = `${conn?.receiver?.firstName} ${conn?.receiver?.lastName}`
 
-      conn.requesterId !== userId
-        ? requesterFullName.toLowerCase().includes(searchQuery.toLowerCase())
-        : receiverFullName.toLowerCase().includes(searchQuery.toLowerCase())
-    }
-    );
+    //   conn.requesterId !== userId
+    //     ? requesterFullName.toLowerCase().includes(searchQuery.toLowerCase())
+    //     : receiverFullName.toLowerCase().includes(searchQuery.toLowerCase())
+    // });
+
+    const filteredConnections = connections.filter((conn) => {
+      const requesterFullName = `${conn.requester?.firstName} ${conn.requester?.lastName}`.toLowerCase();
+      const receiverFullName = `${conn.receiver?.firstName} ${conn.receiver?.lastName}`.toLowerCase();
+
+      return (
+        (conn.requesterId !== userId && requesterFullName.includes(searchQuery.toLowerCase())) ||
+        (conn.receiverId !== userId && receiverFullName.includes(searchQuery.toLowerCase()))
+      );
+    });
+
 
     return res.status(200).json({
       status: 'success',
