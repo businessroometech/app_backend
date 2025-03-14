@@ -276,6 +276,8 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
           isActive: activeUser?.isActive || false,
           fullname: user ? `${user.firstName} ${user.lastName}` : null,
           imageUrl: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
+          userRole: user?.userRole,
+          bio: user?.bio
         };
       })
     );
