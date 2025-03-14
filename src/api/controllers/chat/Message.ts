@@ -55,7 +55,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     // Emit to the recipient's room
     const io = getSocketInstance();
-    const roomId = `${receiverId}-${senderId}`;
+    const roomId = [senderId, receiverId].sort().join('-');
     console.log("message sent to room :", roomId);
 
     io.to(roomId).emit('newMessage', { message, unReadCount: unread?.length });
