@@ -51,12 +51,14 @@ export const sendMessage = async (req: Request, res: Response) => {
     }
 
 
+    const unread = await messageRepository.find({ where: { isRead: false } });
+
     // Emit to the recipient's room
     const io = getSocketInstance();
     const roomId = `${receiverId}-${senderId}`;
     console.log("message sent to room :", roomId);
 
-    io.to(roomId).emit('newMessage', message);
+    io.to(roomId).emit('newMessage', { message, unReadCount: unread?.length });
     // io.to(receiverId).emit('messageCount', message);
 
     return res.status(201).json({ success: true, data: { message } });
