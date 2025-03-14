@@ -20,7 +20,6 @@ const s3 = new AWS.S3({
     region: process.env.AWS_REGION || "eu-north-1",
 });
 
-// Analyze image with AWS Rekognition
 const analyzeImage = async (filePath: string): Promise<boolean> => {
     try {
         const imageBytes = await fs.readFile(filePath);
@@ -28,10 +27,58 @@ const analyzeImage = async (filePath: string): Promise<boolean> => {
             Image: { Bytes: imageBytes },
         };
         const response = await rekognition.detectModerationLabels(params).promise();
-        return (response.ModerationLabels?.length || 0) > 0; // True if inappropriate content is detected
+        return (response.ModerationLabels?.length || 0) > 0;
     } catch (error) {
         console.error("Error analyzing image:", error);
-        throw error;
+        return false; // Assume no inappropriate content if analysis fails
+    }
+};
+
+export const filterInappropriateMedia = async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) return next();
+
+    try {
+        const files = req.files as Express.Multer.File[];
+
+        for (const file of files) {
+            if (!file.path) {
+                console.error(`❌ File ${file.originalname} has no path.`);
+                return res.status(400).json({ message: `File ${file.originalname} could not be processed.` });
+            }
+
+            const filePath = path.resolve(file.path);
+            const fileType = file.mimetype;
+            let isInappropriate = false;
+
+            try {
+                if (fileType.startsWith("image/")) {
+                    isInappropriate = await analyzeImage(filePath);
+                } else if (fileType.startsWith("video/")) {
+                    console.warn("Video analysis not implemented. Skipping video file:", file.originalname);
+                    continue;
+                } else {
+                    return res.status(400).json({ message: `Unsupported file type: ${fileType}` });
+                }
+            } finally {
+                await fs.unlink(filePath).catch(err => console.error("Error deleting file:", err));
+            }
+
+            if (isInappropriate) {
+                return res.status(403).json({ message: `Inappropriate content detected in ${file.originalname}. Upload rejected.` });
+            }
+        }
+
+        console.log("✅ All files verified successfully.");
+        next();
+    } catch (error) {
+        console.error("❌ Error during media analysis:", error);
+        if (error) {
+            return res.status(500).json({ message: "AWS service error during media analysis." });
+        } else if (error instanceof Error) {
+            return res.status(500).json({ message: `Internal server error: ${error.message}` });
+        } else {
+            return res.status(500).json({ message: "Unknown error during media analysis." });
+        }
     }
 };
 
@@ -140,43 +187,3 @@ const analyzeImage = async (filePath: string): Promise<boolean> => {
 //         });
 //     }
 // };
-
-export const filterInappropriateMedia = async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.files || !Array.isArray(req.files)) return next();
-
-    try {
-        const files = req.files as Express.Multer.File[];
-
-        for (const file of files) {
-            if (!file.path) {
-                console.error(`❌ File ${file.originalname} has no path.`);
-                return res.status(400).json({ message: `File ${file.originalname} could not be processed.` });
-            }
-
-            const filePath = path.join(__dirname, "../", file.path);
-            const fileType = file.mimetype;
-            let isInappropriate = false;
-
-            if (fileType.startsWith("image/")) {
-                isInappropriate = await analyzeImage(filePath);
-            } else if (fileType.startsWith("video/")) {
-                return res.status(400).json({ message: "Video analysis not implemented yet." });
-            } else {
-                return res.status(400).json({ message: `Unsupported file type: ${fileType}` });
-            }
-
-            if (isInappropriate) {
-                return res.status(403).json({ message: `Inappropriate content detected in ${file.originalname}. Upload rejected.` });
-            }
-
-            // Cleanup: Delete the file after analysis
-            await fs.unlink(filePath);
-        }
-
-        console.log("✅ All files verified successfully.");
-        next();
-    } catch (error) {
-        console.error("❌ Error during media analysis:", error);
-        return res.status(500).json({ message: "Internal server error during media analysis." });
-    }
-};

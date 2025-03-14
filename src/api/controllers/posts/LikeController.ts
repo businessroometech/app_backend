@@ -11,7 +11,7 @@ import { FindOptionsWhere, In } from 'typeorm';
 import { Comment } from '@/api/entity/posts/Comment';
 import { NestedCommentLike } from '@/api/entity/posts/NestedCommentLike';
 import { createNotification } from '../notify/Notify';
-import { NotificationType } from '@/api/entity/notify/Notify';
+import { NotificationType, Notify } from '@/api/entity/notify/Notify';
 import { getSocketInstance } from '@/socket';
 
 export interface AuthenticatedRequest extends Request {
@@ -89,9 +89,21 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
           }
         );
 
+        const notifyRepo = AppDataSource.getRepository(Notify);
+        const notification = await notifyRepo.find({ where: { recieverId: likedOnUser?.id, isRead: false } });
+
+        const notify = {
+          message: `${likedByUser.firstName} ${likedByUser.lastName} reacted on your post`,
+          metaData: {
+            imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+            postId: likedPost.id,
+            isReadCount: notification.length
+          }
+        }
+
         const io = getSocketInstance();
         const roomId = likedOnUser.id;
-        io.to(roomId).emit('newNotification', `${likedByUser.firstName} ${likedByUser.lastName} reacted on your post`);
+        io.to(roomId).emit('newNotification', notify);
 
       } catch (error) {
         console.error("Error creating notification:", error);
@@ -154,7 +166,10 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
 
         return {
           ...like,
-          user: user
+          user: {
+            ...user,
+            profilePictureUploadUrl: user?.profilePictureUploadId ? await generatePresignedUrl(user?.profilePictureUploadId) : null
+          }
         };
       })
     );
@@ -247,9 +262,23 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
           }
         );
 
+        const notifyRepo = AppDataSource.getRepository(Notify);
+        const notification = await notifyRepo.find({ where: { recieverId: likedOnUser?.id, isRead: false } });
+
+        const notify = {
+          message: `${likedByUser.firstName} ${likedByUser.lastName} reacted on your comment`,
+          metaData: {
+            imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+            postId: likedCommentOfPost.id,
+            commentId: commentId,
+            isReadCount: notification.length
+          }
+        }
+
+
         const io = getSocketInstance();
         const roomId = likedOnUser.id;
-        io.to(roomId).emit('newNotification', `${likedByUser.firstName} ${likedByUser.lastName} reacted on your comment`);
+        io.to(roomId).emit('newNotification', notify);
 
 
       } catch (error) {
@@ -465,9 +494,24 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
           }
         );
 
+        const notifyRepo = AppDataSource.getRepository(Notify);
+        const notification = await notifyRepo.find({ where: { recieverId: likedOnUser?.id, isRead: false } });
+
+
+        const notify = {
+          message: `${likedByUser.firstName} ${likedByUser.lastName} reacted on your reply`,
+          metaData: {
+            imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
+            postId: likedNestedCommentOfPost.id,
+            commentId: commentId,
+            nestedCommentId: nestedCommentId,
+            isReadCount: notification.length
+          }
+        }
+
         const io = getSocketInstance();
         const roomId = likedOnUser.id;
-        io.to(roomId).emit('newNotification', `${likedByUser.firstName} ${likedByUser.lastName} reacted on your reply`);
+        io.to(roomId).emit('newNotification', notify);
 
       } catch (error) {
         console.error("Error creating notification:", error);

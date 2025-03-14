@@ -57,9 +57,9 @@ export const initializeSocket = (app: Express) => {
       console.log(`User ${userId} joined their room`);
     });
 
-    socket.on('joinNotificationRoom', (token) => {
+    socket.on('joinNotificationRoom', (userId) => {
       // const userId: any = getUserIdFromToken(token);
-      socket.join(token);
+      socket.join(userId);
       // console.log(`User ${userId} joined their room`);
     });
 
