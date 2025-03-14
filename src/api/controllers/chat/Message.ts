@@ -27,7 +27,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
 
-    let mh: any = await messageHistoryRepo.find({
+    let mh: any = await messageHistoryRepo.findOne({
       where: {
         senderId,
         receiverId
