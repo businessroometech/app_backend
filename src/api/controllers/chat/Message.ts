@@ -147,6 +147,7 @@ export const getAllUnreadMessages = async (req: Request, res: Response) => {
       message: "Messages fetched successfully",
       data: {
         result,
+        unReadCount: result.length
       },
     });
   } catch (error) {
