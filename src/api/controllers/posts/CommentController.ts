@@ -21,6 +21,7 @@ import { getSocketInstance } from '@/socket';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
+  isAdmin?: boolean;
 }
 
 const storage = multer.memoryStorage();
@@ -183,21 +184,49 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
   }
 };
 
-export const deleteComment = async (req: Request, res: Response) => {
-  const { commentId } = req.params;
-  
-  if (!commentId) {
-    return res.status(400).json({ status: "fail", error: 'Comment ID is required' });
-  }
+// export const deleteComment = async (req: Request, res: Response) => {
+//   const { commentId } = req.params;
 
+//   if (!commentId) {
+//     return res.status(400).json({ status: "fail", error: 'Comment ID is required' });
+//   }
+
+//   try {
+//     const comment = await Comment.findOne({ where: { id: commentId } });
+
+//     if (!comment) {
+//       return res.status(400).json({ status: "fail", error: 'Comment not found' });
+//     }
+
+//     await comment.remove();
+
+//     return res.status(200).json({ status: "success", message: 'Comment deleted successfully' });
+//   } catch (error) {
+//     console.error('Error deleting comment:', error);
+//     return res.status(500).json({ status: "error", message: 'An error occurred while deleting the comment' });
+//   }
+// };
+
+export const deleteComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const comment = await Comment.findOne({ where: { id: commentId } });
+    const { commentId } = req.params;
 
-    if (!comment) {
-      return res.status(400).json({ status: "fail", error: 'Comment not found' });
+    if (!commentId) {
+      return res.status(400).json({ status: "fail", message: 'Comment ID is required' });
     }
 
-    await comment.remove();
+    const commentRepo = AppDataSource.getRepository(Comment);
+    const comment = await commentRepo.findOne({ where: { id: commentId } });
+
+    if (!comment) {
+      return res.status(404).json({ status: "fail", message: 'Comment not found' });
+    }
+
+    if (comment.userId !== req.userId && !req.isAdmin) {
+      return res.status(403).json({ status: "fail", message: 'You do not have permission to delete this comment' });
+    }
+
+    await commentRepo.delete(commentId);
 
     return res.status(200).json({ status: "success", message: 'Comment deleted successfully' });
   } catch (error) {
@@ -205,6 +234,8 @@ export const deleteComment = async (req: Request, res: Response) => {
     return res.status(500).json({ status: "error", message: 'An error occurred while deleting the comment' });
   }
 };
+
+
 
 export const getComments = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -521,26 +552,54 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
   }
 };
 
-export const deleteNestedComment = async (req: Request, res: Response) => {
-  const { nestedCommentId } = req.params;
+// export const deleteNestedComment = async (req: Request, res: Response) => {
+//   const { nestedCommentId } = req.params;
 
-  if (!nestedCommentId) {
-    return res.status(400).json({ status: "success", message: 'Nested Comment ID is required' });
-  }
+//   if (!nestedCommentId) {
+//     return res.status(400).json({ status: "success", message: 'Nested Comment ID is required' });
+//   }
 
+//   try {
+//     const nestedComment = await NestedComment.findOne({ where: { id: nestedCommentId } });
+
+//     if (!nestedComment) {
+//       return res.status(404).json({ status: "fail", message: 'Nested Comment not found' });
+//     }
+
+//     await nestedComment.remove();
+
+//     return res.status(200).json({ status: "success", message: 'Nested Comment deleted successfully' });
+//   } catch (error) {
+//     console.error('Error deleting nested comment:', error);
+//     return res.status(500).json({ status: "success", message: 'An error occurred while deleting the nested comment' });
+//   }
+// };
+
+export const deleteNestedComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const nestedComment = await NestedComment.findOne({ where: { id: nestedCommentId } });
+    const { nestedCommentId } = req.params;
+
+    if (!nestedCommentId) {
+      return res.status(400).json({ status: "fail", message: 'Nested Comment ID is required' });
+    }
+
+    const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
+    const nestedComment = await nestedCommentRepo.findOne({ where: { id: nestedCommentId } });
 
     if (!nestedComment) {
       return res.status(404).json({ status: "fail", message: 'Nested Comment not found' });
     }
 
-    await nestedComment.remove();
+    if (nestedComment.userId !== req.userId && !req.isAdmin) {
+      return res.status(403).json({ status: "fail", message: 'You do not have permission to delete this comment' });
+    }
+
+    await nestedCommentRepo.delete(nestedCommentId);
 
     return res.status(200).json({ status: "success", message: 'Nested Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting nested comment:', error);
-    return res.status(500).json({ status: "success", message: 'An error occurred while deleting the nested comment' });
+    return res.status(500).json({ status: "error", message: 'An error occurred while deleting the nested comment' });
   }
 };
 
