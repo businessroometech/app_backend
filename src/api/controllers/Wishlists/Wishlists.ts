@@ -28,39 +28,6 @@ export const CreateWishlist = async (req: Request, res: Response) => {
     }
 };
 
-export const GetallWishlists = async(req : Request  , res : Response) => {
-try {
-    const WishlistReposritry = AppDataSource.getRepository(Wishlists)
-    const Wishlistsdata = await WishlistReposritry.find({
-    where :{ Identity : req.params.Identity}
-
-    })
-    
-    if(!Wishlistsdata) {
-        return res.status(404).json({
-            success: false,
-            message: 'Wishlists not found'
-        });
-    }
-    return res.status(200).json({
-        success: true,
-        data: Wishlistsdata
-    });
-
-} catch (error) {
-    console.log("error in getting Wishlists" , error)
-    return res.status(500).json({
-        success: false,
-        message: 'Failed to create business for sale',
-        error: error instanceof Error ? error.message : 'Unknown error'
-    });
-}
-
-}
-
-
-
-
 export const geteveryWishlist = async (req: Request, res: Response) => {
     try {
         const WishlistRepository = AppDataSource.getRepository(Wishlists);

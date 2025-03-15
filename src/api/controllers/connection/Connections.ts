@@ -219,7 +219,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
 
     const users = await userRepository.find({
       where: { id: In(userIds) },
-      select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+      // select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
     });
 
     if (!users || users.length === 0) {
@@ -335,7 +335,6 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
 
     const users = await userRepository.find({
       where: { id: In(userIds) },
-      select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
     });
 
     // Create a response with connection requests and their respective user details

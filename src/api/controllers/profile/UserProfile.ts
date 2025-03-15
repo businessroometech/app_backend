@@ -60,7 +60,6 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       dob,
       bio,
       investorType,
-      isBadgeOn,
       badgeName,
       experience
     } = req.body;
@@ -86,11 +85,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     if (experience !== undefined) personalDetails.experience = experience;
     if (bio !== undefined) personalDetails.bio = bio;
     if (investorType !== undefined) personalDetails.investorType = investorType;
-
-    if (isBadgeOn !== undefined) {
-      personalDetails.isBadgeOn = isBadgeOn;
-      if (badgeName !== undefined) personalDetails.badgeName = badgeName;
-    }
+    if (badgeName !== undefined) personalDetails.badgeName = badgeName;
 
     // Ensure `req.files` is defined before accessing
     if (req.files && Object.keys(req.files).length > 0) {
@@ -500,7 +495,6 @@ export const searchUserProfile = async (req: AuthenticatedRequest, res: Response
           userRole: result.userRole,
           profileImgUrl,
           mutualConnectionCount,
-          isBadgeOn: result.isBadgeOn,
           badgeName: result.badgeName,
           bio: result.bio,
         };

@@ -147,9 +147,6 @@ export class PersonalDetails extends BaseEntity {
   })
   investorType !: string[];
 
-  @Column({ type: 'bool', default: false })
-  isBadgeOn !: boolean;
-
   @Column({ type: "varchar", nullable: true })
   badgeName !: string;
 
