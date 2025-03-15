@@ -259,7 +259,10 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
     const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
 
     const history = await messageHistoryRepo.find({
-      where: { senderId: userId },
+      where: [
+        { senderId: userId },
+        { receiverId: userId }
+      ],
       order: { createdAt: "DESC" },
     });
 
