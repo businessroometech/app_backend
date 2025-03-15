@@ -188,9 +188,9 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
       .where("receiverId = :receiverId AND senderId = :senderId", { receiverId, senderId })
       .execute();
 
-    // Emit event to notify about read messages
     const io = getSocketInstance();
-    io.emit('messageRead');
+    const roomId = [senderId, receiverId].sort().join('-');
+    io.to(roomId).emit('messageRead');
 
     return res.status(200).json({ success: true, message: 'Messages marked as read' });
   } catch (error) {
@@ -276,23 +276,6 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
 
     const userRepo = AppDataSource.getRepository(PersonalDetails);
     const activeUserRepo = AppDataSource.getRepository(ActiveUser);
-
-    // const unreadMessagesCount = await Promise.all(
-    //   (history || []).map(async (his) => {
-    // let myId = his.receiverId === userId ? his.receiverId : his.senderId;
-    // let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
-
-    // const count = await messageRepository.count({
-    //   where: { receiverId: myId, senderId: otherId, isRead: false },
-    // });
-
-    //     return {
-    //       senderId: otherId,
-    //       receiverId: myId,
-    //       unReadCount: count,
-    //     };
-    //   })
-    // );
 
     const messageRepository = AppDataSource.getRepository(Message);
 

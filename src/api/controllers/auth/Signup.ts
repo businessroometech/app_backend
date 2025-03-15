@@ -6,6 +6,132 @@ import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import { sendNotification } from '../notifications/SocketNotificationController';
 
+// export const signup = async (req: Request, res: Response): Promise<void> => {
+//   const queryRunner = AppDataSource.createQueryRunner();
+//   await queryRunner.connect();
+
+//   try {
+//     await queryRunner.startTransaction();
+
+//     const {
+//       firstName,
+//       lastName,
+//       emailAddress,
+//       password,
+//       country,
+//       countryCode,
+//       mobileNumber,
+//       gender,
+//       dob,
+//       userRole,
+//       createdBy = 'system',
+//       updatedBy = 'system',
+//     } = req.body;
+
+//     if (!firstName || !lastName || !emailAddress || !password || !country) {
+//       res.status(400).json({
+//         status: 'error',
+//         message: 'All fields are required',
+//       });
+//       return;
+//     }
+
+//     if (!validator.isEmail(emailAddress)) {
+//       res.status(400).json({
+//         status: 'error',
+//         message: 'Invalid email address format.',
+//       });
+//       return;
+//     }
+
+//     const passwordMinLength = 8;
+//     if (
+//       password.length < passwordMinLength ||
+//       !/[A-Z]/.test(password) ||
+//       !/[a-z]/.test(password) ||
+//       !/[0-9]/.test(password)
+//     ) {
+//       res.status(400).json({
+//         status: 'error',
+//         message:
+//           'Password must be at least 8 characters long and include uppercase letters, lowercase letters and digits.',
+//       });
+//       return;
+//     }
+
+//     if (firstName.length > 50 || lastName.length > 50) {
+//       res.status(400).json({
+//         status: 'error',
+//         message: 'First name and last name must not exceed 50 characters.',
+//       });
+//       return;
+//     }
+
+//     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
+
+//     const newUser = userLoginRepository.create({
+//       firstName,
+//       lastName,
+//       emailAddress,
+//       password,
+//       country,
+//       countryCode,
+//       mobileNumber,
+//       gender,
+//       userRole,
+//       dob,
+//       active: 1,
+//       createdBy,
+//       updatedBy,
+//     });
+
+//     const user = await userLoginRepository.save(newUser);
+
+//     // Generate a verification token
+//     // const verificationToken = jwt.sign({ userId: newUser.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
+
+//     // Send verification email
+//     // await sendVerificationEmail(newUser.emailAddress, verificationToken);
+
+//     await queryRunner.commitTransaction();
+
+//     res.status(201).json({
+//       status: 'success',
+//       message: 'Signup completed successfully. Please verify your email.',
+//       data: {
+//         user: newUser
+//       },
+//     });
+//     // }
+//   } catch (error: any) {
+//     if (queryRunner.isTransactionActive) {
+//       await queryRunner.rollbackTransaction();
+//     }
+//     console.error('Error during signup:', error);
+//     if (error.code === 'ER_DUP_ENTRY') {
+//       const sqlMessage = error.sqlMessage || '';
+
+//       if (sqlMessage.includes('mobileNumber')) {
+//         res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
+//         return;
+//       } else if (sqlMessage.includes('emailAddress')) {
+//         res.status(400).json({ status: 'error', message: 'Email already exists.' });
+//         return;
+//       } else {
+//         res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
+//         return;
+//       }
+//     }
+
+//     res.status(500).json({
+//       status: 'error',
+//       message: 'Something went wrong! Please try again later.',
+//     });
+//   } finally {
+//     await queryRunner.release();
+//   }
+// };
+
 export const signup = async (req: Request, res: Response): Promise<void> => {
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
@@ -29,18 +155,17 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     } = req.body;
 
     if (!firstName || !lastName || !emailAddress || !password || !country) {
-      res.status(400).json({
-        status: 'error',
-        message: 'All fields are required',
-      });
+      res.status(400).json({ status: 'error', message: 'All fields are required' });
       return;
     }
 
     if (!validator.isEmail(emailAddress)) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Invalid email address format.',
-      });
+      res.status(400).json({ status: 'error', message: 'Invalid email address format.' });
+      return;
+    }
+
+    if (dob && isNaN(Date.parse(dob))) {
+      res.status(400).json({ status: 'error', message: 'Invalid date of birth format.' });
       return;
     }
 
@@ -53,8 +178,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     ) {
       res.status(400).json({
         status: 'error',
-        message:
-          'Password must be at least 8 characters long and include uppercase letters, lowercase letters and digits.',
+        message: 'Password must be at least 8 characters long and include uppercase letters, lowercase letters, and digits.',
       });
       return;
     }
@@ -68,6 +192,22 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
 
     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
+
+    // Check for duplicate email
+    const existingUser = await userLoginRepository.findOne({ where: { emailAddress } });
+    if (existingUser) {
+      res.status(400).json({ status: 'error', message: 'Email already exists.' });
+      return;
+    }
+
+    // Check for duplicate mobile number
+    if (mobileNumber) {
+      const existingMobile = await userLoginRepository.findOne({ where: { mobileNumber } });
+      if (existingMobile) {
+        res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
+        return;
+      }
+    }
 
     const newUser = userLoginRepository.create({
       firstName,
@@ -87,35 +227,17 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const user = await userLoginRepository.save(newUser);
 
-    // Generate a verification token
-    // const verificationToken = jwt.sign({ userId: newUser.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
-
-    // Send verification email
-    // await sendVerificationEmail(newUser.emailAddress, verificationToken);
-
     await queryRunner.commitTransaction();
-    const media = null;
-    let notification = await sendNotification(
-      user.id,
-      `${firstName} ${lastName}, Welcome! to Businessroom.ai, let's complete your profile`,
-      media,
-      `/settings/account`
-    );
 
-    if (notification) {
-      res.status(201).json({
-        status: 'success',
-        message: 'Signup completed successfully. Please verify your email.',
-        data: {
-          user: newUser
-        },
-      });
-    }
+    res.status(201).json({
+      status: 'success',
+      message: 'Signup completed successfully. Please verify your email.',
+      data: { user },
+    });
   } catch (error: any) {
-    if (queryRunner.isTransactionActive) {
-      await queryRunner.rollbackTransaction();
-    }
+    await queryRunner.rollbackTransaction();
     console.error('Error during signup:', error);
+
     if (error.code === 'ER_DUP_ENTRY') {
       const sqlMessage = error.sqlMessage || '';
 
@@ -125,16 +247,12 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       } else if (sqlMessage.includes('emailAddress')) {
         res.status(400).json({ status: 'error', message: 'Email already exists.' });
         return;
-      } else {
-        res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
-        return;
       }
+      res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
+      return;
     }
 
-    res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong! Please try again later.',
-    });
+    res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
   } finally {
     await queryRunner.release();
   }
