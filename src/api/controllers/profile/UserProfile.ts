@@ -227,6 +227,8 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
         postsCount,
         likeCount,
         connectionsStatus: connectionsStatus ? connectionsStatus.status : null,
+        requiterId: connectionsStatus ? connectionsStatus.requesterId : null,
+        receiverId: connectionsStatus ? connectionsStatus.receiverId : null,
       },
     });
   } catch (error: any) {
