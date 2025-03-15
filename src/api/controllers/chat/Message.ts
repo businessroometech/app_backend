@@ -77,7 +77,8 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     );
 
     const io = getSocketInstance();
-    const roomId = [message.senderId, message.receiverId].sort().join('-');
+    const roomId = [senderId, receiverId].sort().join('-');
+    // const roomId = [message.senderId, message.receiverId].sort().join('-');
     io.to(roomId).emit('newMessage', {
       message,
       messageHistoryUnreadCount: unreadMessagesCount,
