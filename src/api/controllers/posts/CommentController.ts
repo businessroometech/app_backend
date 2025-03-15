@@ -238,7 +238,6 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         const userRepository = AppDataSource.getRepository(PersonalDetails);
         const commenter = await userRepository.findOne({
           where: { id: comment.userId },
-          select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const [commentLikes, totalCommentLikes] = await commentLikeRepository.findAndCount({ where: { commentId: comment.id, status: true, } });
@@ -262,7 +261,6 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
             const userRepository = AppDataSource.getRepository(PersonalDetails);
             const commenter = await userRepository.findOne({
               where: { id: comment.userId },
-              select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
             });
 
             const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
@@ -279,6 +277,8 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
             return {
               id: comment.id,
               commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
+              commenterBio: commenter?.bio,
+              commenterUserRole: commenter?.userRole,
               text: comment.text,
               timestamp: formatTimestamp(comment.createdAt),
               postId: comment.postId,
@@ -305,6 +305,8 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           id: comment.id,
           commentId: comment.id,
           commenterName: `${commenter?.firstName || ''} ${commenter?.lastName || ''}`.trim(),
+          commenterBio: commenter?.bio,
+          commenterUserRole: commenter?.userRole,
           text: comment.text,
           timestamp: formatTimestamp(comment.createdAt),
           postId: comment.postId,

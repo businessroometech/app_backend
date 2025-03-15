@@ -186,20 +186,25 @@ const transporter = nodemailer.createTransport({
   secure: true,
   auth: {
     user: 'ashutoshnegi196@gmail.com',
-    pass: 'eshq mhxh vmxo nqfe',
+    pass: 'eshqmhxhvmxonqfe',
   },
 });
 
 export const farmaan = async (req: Request, res: Response) => {
   try {
-    const { recipientEmail } = req.body;
-    if (!recipientEmail) {
-      return res.status(400).json({ message: 'Recipient email is required' });
+    const { recipients } = req.body;
+    if (!Array.isArray(recipients) || recipients.length === 0) {
+      return res.status(400).json({ message: 'Recipients array is required and cannot be empty' });
+    }
+
+    const emailAddresses = recipients.map(user => user.emailAddress).filter(email => email);
+    if (emailAddresses.length === 0) {
+      return res.status(400).json({ message: 'No valid email addresses found' });
     }
 
     const mailOptions = {
       from: 'businessroomai@gmail.com',
-      to: 'ashutoshnegi195@gmail.com',
+      to: emailAddresses,
       subject: 'BusinessRoom is Now Live!',
       html: `
         <h1>Exciting News!</h1>
@@ -209,9 +214,10 @@ export const farmaan = async (req: Request, res: Response) => {
     };
 
     await transporter.sendMail(mailOptions);
-    res.status(200).json({ status: "success", message: 'Notification email sent successfully' });
+    res.status(200).json({ status: "success", message: 'Notification email sent successfully to all recipients' });
   } catch (error) {
     console.error('Error sending email:', error);
     res.status(500).json({ status: "error", message: 'Failed to send notification email' });
   }
 };
+
