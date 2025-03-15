@@ -136,13 +136,14 @@ export const toggleWishlist = async (req: AuthenticatedRequest, res: Response) =
 export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.userId;
-        const { page = 1, limit = 10, businessType, search } = req.query;
+        const { page = 1, limit = 6, businessType, search } = req.query;
 
         const wishlistRepo = AppDataSource.getRepository(Wishlists);
         const startupRepo = AppDataSource.getRepository(SellingStartup);
 
         const wishlists = await wishlistRepo.find({ where: { userId, status: true } });
-        const startupIds = wishlists.map(wl => wl.id); 
+
+        const startupIds = wishlists.map(wl => wl.sellingStartupId); 
         if (startupIds.length === 0) {
             return res.json({
                 status: "success",
@@ -150,8 +151,9 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
             });
         }
 
+        
         let sellingStartups = await startupRepo.findBy({ id: In(startupIds) });
-
+        
         if (businessType) {
             sellingStartups = sellingStartups.filter(startup => startup.businessType === businessType);
         }
