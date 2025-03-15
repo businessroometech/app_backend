@@ -675,9 +675,9 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
-        const likeStatus = likes.some((like) => like.postId === post.id && like.userId === id);
+        // const likeStatus = likes.some((like) => like.postId === post.id && like.userId === id);
 
-        const like = await likeRepository.findOne({ where: { userId } });
+        const like = await likeRepository.findOne({ where: { postId: post.id, userId } });
 
         let originalPUser;
         if (post?.repostedFrom) {
@@ -704,7 +704,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             reactionCount: likeCount,
             reactionId: like?.reactionId,
             commentCount,
-            reactionStatus: likeStatus,
+            reactionStatus: like?.status,
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
@@ -916,10 +916,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     const user = await userRepos.findOne({ where: { id: userId } })
     const imgUrl = user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
 
-    const getReactionId = async () => {
-      const like = await likeRepository.findOne({ where: { userId } });
-      return like?.reactionId;
-    }
+    const like = await likeRepository.findOne({ where: { postId, userId} });
 
     let originalPUser;
     if (post && post.repostedFrom) {
@@ -947,8 +944,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         mediaUrls: documentsUrls,
         reactionCount: likes.length,
         commentCount: comments.length,
-        reactionStatus: likes.some((like) => like.userId === userId),
-        reactionId: await getReactionId(),
+        reactionStatus: like?.status,
+        reactionId: like?.reactionId,
         isRepost: post.isRepost,
         repostedFrom: post.repostedFrom,
         repostText: post.repostText,
