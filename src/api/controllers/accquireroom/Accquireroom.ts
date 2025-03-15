@@ -2,6 +2,7 @@ import { SellingStartup } from "@/api/entity/business-data/SellingStartup";
 import { Wishlists } from "@/api/entity/WishLists/Wishlists";
 import { AppDataSource } from "@/server";
 import { Request, Response } from "express";
+import { In } from "typeorm";
 
 export interface AuthenticatedRequest extends Request {
     userId?: string;
@@ -34,10 +35,10 @@ export const getAllStartups = async (req: AuthenticatedRequest, res: Response) =
         const formattedData = await Promise.all(
             data.map(async (d) => {
                 const wishlistRepo = AppDataSource.getRepository(Wishlists);
-                const wishList = await wishlistRepo.findOne({ where: { userId, sellingStartupId: d.id } });
+                const wishList = await wishlistRepo.findOne({ where: { userId, sellingStartupId: d.id, status: true } });
                 return {
                     ...d,
-                    wishlistStatus: wishList ? wishList.status : false
+                    wishlistStatus: wishList ? true : false
                 };
             })
         );
@@ -138,39 +139,42 @@ export const getMyWishlist = async (req: AuthenticatedRequest, res: Response) =>
         const { page = 1, limit = 10, businessType, search } = req.query;
 
         const wishlistRepo = AppDataSource.getRepository(Wishlists);
+        const startupRepo = AppDataSource.getRepository(SellingStartup);
 
-        const query = wishlistRepo.createQueryBuilder("wishlist")
-            .leftJoinAndSelect("wishlist.sellingStartup", "startup")
-            .where("wishlist.userId = :userId", { userId })
-            .andWhere("wishlist.status = :status", { status: false });
+        const wishlists = await wishlistRepo.find({ where: { userId, status: true } });
+        const startupIds = wishlists.map(wl => wl.id); 
+        if (startupIds.length === 0) {
+            return res.json({
+                status: "success",
+                data: { startups: [], total: 0, page: +page, limit: +limit, totalPages: 0 },
+            });
+        }
+
+        let sellingStartups = await startupRepo.findBy({ id: In(startupIds) });
 
         if (businessType) {
-            query.andWhere("startup.businessType = :businessType", { businessType });
+            sellingStartups = sellingStartups.filter(startup => startup.businessType === businessType);
         }
 
         if (search) {
-            query.andWhere("LOWER(startup.officialName) LIKE LOWER(:search)", { search: `%${search}%` });
+            const searchLower = search.toString().toLowerCase();
+            sellingStartups = sellingStartups.filter(startup => 
+                startup.officialName?.toLowerCase().includes(searchLower) ||
+                startup.businessDescription?.toLowerCase().includes(searchLower)
+            );
         }
 
-        const [data, total] = await query
-            .skip((+page - 1) * +limit)
-            .take(+limit)
-            .getManyAndCount();
-
-        const startups = data.map((wishlist) => wishlist.sellingStartup);
+        const total = sellingStartups.length;
+        const totalPages = Math.ceil(total / +limit);
+        const offset = (Number(page) - 1) * Number(limit);
+        const paginatedStartups = sellingStartups.slice(offset, offset + Number(limit));
 
         return res.json({
             status: "success",
-            data: {
-                startups,
-                total,
-                page: +page,
-                limit: +limit,
-                totalPages: Math.ceil(total / +limit),
-            },
+            data: { startups: paginatedStartups, total, page: +page, limit: +limit, totalPages },
         });
     } catch (error) {
         console.error("Error in getMyWishlist:", error);
-        return res.status(500).json({ status: "error", message: "Server error", error });
+        return res.status(500).json({ status: "error", message: "Server error" });
     }
 };

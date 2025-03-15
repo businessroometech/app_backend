@@ -169,10 +169,6 @@ export const getInvestorData = async (req: AuthenticatedRequest, res: Response) 
             sellingStartup: AppDataSource.getRepository(SellingStartup),
         };
 
-        if (subRole === 'sellingStartup') {
-            return res.status(200).json({ status: "fail", message: "Go to acquireroom to view these forms" })
-        }
-
         const repository = repositories[subRole];
 
         if (!repository) {
