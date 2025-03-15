@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { getSocketInstance } from '../../../socket'; // Import your socket instance
-import { AppDataSource } from '../../../server'; // Import your data source
+import { getSocketInstance } from '../../../socket'; 
+import { AppDataSource } from '../../../server'; 
 import { Message } from '@/api/entity/chat/Message';
 import { ActiveUser } from '@/api/entity/chat/ActiveUser';
 import { Connection } from '@/api/entity/connection/Connections';
@@ -52,16 +52,37 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       await messageHistoryRepo.save(mh);
     }
 
+    const history = await messageHistoryRepo.find({
+      where: [
+        { senderId: userId },
+        { receiverId: userId }
+      ],
+    });
 
-    const unread = await messageRepository.find({ where: { isRead: false } });
+    const unreadMessagesCount = await Promise.all(
+      (history || []).map(async (his) => {
+        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
 
-    // Emit to the recipient's room
+        const count = await messageRepository.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
+
+        return {
+          senderId: otherId,
+          receiverId: myId,
+          unReadCount: count,
+        };
+      })
+    );
+
     const io = getSocketInstance();
-    const roomId = [senderId, receiverId].sort().join('-');
-    console.log("message sent to room :", roomId);
-
-    io.to(roomId).emit('newMessage', { message, unReadCount: unread?.length });
-    // io.to(receiverId).emit('messageCount', message);
+    const roomId = [message.senderId, message.receiverId].sort().join('-');
+    io.to(roomId).emit('newMessage', {
+      message,
+      messageHistoryUnreadCount: unreadMessagesCount,
+      totalUnReadCount: unreadMessagesCount?.length,
+    });
 
     return res.status(201).json({ success: true, data: { message } });
   } catch (error) {
@@ -70,7 +91,6 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-// Modify getMessagesUserWise to use the existing Message instance
 export const getMessagesUserWise = async (req: Request, res: Response) => {
   try {
     const { senderId, receiverId } = req.body;
@@ -101,12 +121,6 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
       skip,
       take: numericLimit,
     });
-
-    // Decrypt messages safely
-    // const decryptedMessages = messages.map((msg) => ({
-    //   ...msg,
-    //   content: msg.content ? new Message().decryptMessage() : null,
-    // }));
 
     res.status(200).json({
       status: "success",
