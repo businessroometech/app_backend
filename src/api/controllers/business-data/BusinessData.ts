@@ -61,7 +61,7 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 for (const key in data) {
                     if (data[key] !== undefined && !(Array.isArray(data[key]) && data[key].length === 0) && data[key] !== '') {
-                        (existingData as any)[key] = data[key]; 
+                        (existingData as any)[key] = data[key];
                     }
                 }
 
@@ -82,7 +82,7 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 for (const key in data) {
                     if (data[key] !== undefined && !(Array.isArray(data[key]) && data[key].length === 0) && data[key] !== '') {
-                        (existingData as any)[key] = data[key]; 
+                        (existingData as any)[key] = data[key];
                     }
                 }
 
@@ -168,6 +168,10 @@ export const getInvestorData = async (req: AuthenticatedRequest, res: Response) 
             seekingConnection: AppDataSource.getRepository(SeekingConnections),
             sellingStartup: AppDataSource.getRepository(SellingStartup),
         };
+
+        if (subRole === 'sellingStartup') {
+            return res.status(200).json({ status: "fail", message: "Go to acquireroom to view these forms" })
+        }
 
         const repository = repositories[subRole];
 
