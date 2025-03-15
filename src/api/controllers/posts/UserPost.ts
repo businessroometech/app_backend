@@ -146,7 +146,9 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       const post = await postRepository.findOne({ where: { id: repostedFrom } });
 
       if (post) {
-        post.repostCount += 1;
+        post.repostCount = (post.repostCount || 0) + 1;
+        await postRepository.save(post);
+
         const newPost = postRepository.create({
           userId,
           title: post.title,
@@ -251,10 +253,10 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
           }
         );
 
-        
+
         const notifyRepo = AppDataSource.getRepository(Notify);
         const notification = await notifyRepo.find({ where: { recieverId: repostedOfUser?.id, isRead: false } });
-        
+
 
         const notify = {
           message: `${repostedByUser?.firstName} ${repostedByUser?.lastName} accepted your connection request`,
@@ -916,7 +918,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     const user = await userRepos.findOne({ where: { id: userId } })
     const imgUrl = user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
 
-    const like = await likeRepository.findOne({ where: { postId, userId} });
+    const like = await likeRepository.findOne({ where: { postId, userId } });
 
     let originalPUser;
     if (post && post.repostedFrom) {
