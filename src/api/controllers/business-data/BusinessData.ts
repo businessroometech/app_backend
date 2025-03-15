@@ -15,7 +15,6 @@ export interface AuthenticatedRequest extends Request {
     userId?: string;
 }
 
-
 const storage = multer.memoryStorage();
 export const uploadLogoMiddleware = multer({ storage: storage }).single('file');
 
@@ -67,12 +66,12 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 savedData = await repository.save(existingData);
 
-                user!.subRole = subRole;
+                // user!.subRole = subRole;
                 await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
-                user!.subRole = subRole;
+                // user!.subRole = subRole;
                 await user?.save();
             }
         } else {
@@ -166,7 +165,7 @@ export const getInvestorData = async (req: AuthenticatedRequest, res: Response) 
             aquiringStartup: AppDataSource.getRepository(AquiringStartup),
             exploringIdeas: AppDataSource.getRepository(ExploringIdeas),
             seekingConnection: AppDataSource.getRepository(SeekingConnections),
-            sellingStartup: AppDataSource.getRepository(SellingStartup),
+            // sellingStartup: AppDataSource.getRepository(SellingStartup),
         };
 
         const repository = repositories[subRole];
