@@ -185,7 +185,7 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
 
 export const deleteComment = async (req: Request, res: Response) => {
   const { commentId } = req.params;
-
+  
   if (!commentId) {
     return res.status(400).json({ status: "fail", error: 'Comment ID is required' });
   }

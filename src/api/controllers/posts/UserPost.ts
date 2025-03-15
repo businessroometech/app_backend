@@ -44,6 +44,7 @@ export const formatTimestamp = (createdAt: Date): string => {
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
+  isAdmin: boolean;
 }
 
 const writeFile = promisify(fs.writeFile);
@@ -719,6 +720,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             isPoll: post.isPoll,
             pollStatus: pollEntry?.status,
             pollOption: pollEntry?.selectedOption,
+            postOptions: post.pollOptions,
             originalPostedAt: post.originalPostedAt,
             originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : ''
           },
@@ -816,22 +818,30 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
 export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { postId } = req.params;
+    const { userId, isAdmin } = req; 
 
-    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ status: "fail", message: 'Unauthorized' });
+    }
 
     const userRepos = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepos.findOneBy({ id: userId });
+
     if (!user) {
       return res.status(400).json({ status: "fail", message: 'User Id is invalid or does not exist.' });
     }
 
     const userPostRepo = AppDataSource.getRepository(UserPost);
     const userPost = await userPostRepo.findOne({
-      where: { id: postId, userId },
+      where: { id: postId },
     });
 
     if (!userPost) {
       return res.status(400).json({ status: "fail", message: 'Post not found. Invalid Post Id.' });
+    }
+
+    if (userPost.userId !== userId && !isAdmin) {
+      return res.status(403).json({ status: "fail", message: 'Unauthorized to delete this post' });
     }
 
     await userPostRepo.delete(postId);

@@ -175,6 +175,9 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: "varchar", nullable: true })
   linkedIn !: string;
 
+  @Column({ type: "bool", default: false })
+  isAdmin !: boolean;
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
