@@ -212,15 +212,6 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
     });
 
 
-    // const filteredConnections = connections.filter(conn => {
-    //   const requesterFullName = `${conn?.requester?.firstName} ${conn?.requester?.lastName}`
-    //   const receiverFullName = `${conn?.receiver?.firstName} ${conn?.receiver?.lastName}`
-
-    //   conn.requesterId !== userId
-    //     ? requesterFullName.toLowerCase().includes(searchQuery.toLowerCase())
-    //     : receiverFullName.toLowerCase().includes(searchQuery.toLowerCase())
-    // });
-
     const filteredConnections = connections.filter((conn) => {
       const requesterFullName = `${conn.requester?.firstName} ${conn.requester?.lastName}`.toLowerCase();
       const receiverFullName = `${conn.receiver?.firstName} ${conn.receiver?.lastName}`.toLowerCase();
@@ -271,22 +262,32 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
 
     const formattedHistory = await Promise.all(
       history.map(async (record) => {
-        const user = await userRepo.findOne({ where: { id: record.receiverId } });
-        const activeUser = await activeUserRepo.findOne({ where: { userId: record.receiverId } });
+
+        const userR = await userRepo.findOne({ where: { id: record.receiverId } });
+        const activeUserR = await activeUserRepo.findOne({ where: { userId: record.receiverId } });
+
+        const userS = await userRepo.findOne({ where: { id: record.senderId } });
+        const activeUserS = await activeUserRepo.findOne({ where: { userId: record.senderId } });
 
         return {
-          historyId: record.id,
-          id: record.receiverId,
+          id: record.id,
           senderId: record.senderId,
           receiverId: record.receiverId,
           lastActive: record.lastActive,
           createdAt: record.createdAt,
           updatedAt: record.updatedAt,
-          isActive: activeUser?.isActive || false,
-          fullname: user ? `${user.firstName} ${user.lastName}` : null,
-          imageUrl: user?.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
-          userRole: user?.userRole,
-          bio: user?.bio
+
+          isActiveS: activeUserS?.isActive || false,
+          fullnameS: userS ? `${userS.firstName} ${userS.lastName}` : null,
+          imageUrlS: userS?.profilePictureUploadId ? await generatePresignedUrl(userS.profilePictureUploadId) : null,
+          userRoleS: userS?.userRole,
+          bioS: userS?.bio,
+
+          isActiveR: activeUserR?.isActive || false,
+          fullnameR: userR ? `${userR.firstName} ${userR.lastName}` : null,
+          imageUrlR: userR?.profilePictureUploadId ? await generatePresignedUrl(userR.profilePictureUploadId) : null,
+          userRoleR: userR?.userRole,
+          bioR: userR?.bio
         };
       })
     );
