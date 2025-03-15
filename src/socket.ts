@@ -4,6 +4,9 @@ import { Express, Request, Response } from 'express';
 import { AppDataSource } from './server';
 import { ActiveUser } from './api/entity/chat/ActiveUser';
 import jwt from "jsonwebtoken";
+import { Notify } from './api/entity/notify/Notify';
+import { Message } from './api/entity/chat/Message';
+import { MessageHistory } from './api/entity/chat/MessageHistory';
 
 let io: Server;
 
@@ -63,10 +66,45 @@ export const initializeSocket = (app: Express) => {
       // console.log(`User ${userId} joined their room`);
     });
 
-    socket.on('userOnline', (token) => {
+    socket.on('userOnline', async (token) => {
       const userId: any = getUserIdFromToken(token);
-      toggleActive(true, userId);
-      console.log(`User ${userId} is online`);
+      if (userId) {
+        await toggleActive(true, userId);
+        console.log(`User ${userId} is online`);
+
+        const NotifyRepo = AppDataSource.getRepository(Notify);
+        const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
+
+        const messageRepo = AppDataSource.getRepository(Message);
+        const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
+
+        const history = await messageHistoryRepo.find({
+          where: [
+            { senderId: userId },
+            { receiverId: userId }
+          ],
+        });
+
+        const unreadMessagesCount = (await Promise.all(
+          (history || []).map(async (his) => {
+            let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+            let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+            const count = await messageRepo.count({
+              where: { receiverId: myId, senderId: otherId, isRead: false },
+            });
+
+            return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+          })
+        )).filter((item) => item !== null);
+
+        socket.emit('initialize', {
+          userId,
+          welcomeMessage: 'Welcome to BusinessRoom!',
+          unreadNotificationsCount: notifyCount ? notifyCount : 0,
+          unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
+        });
+      }
     });
 
     socket.on('userOffline', (token) => {

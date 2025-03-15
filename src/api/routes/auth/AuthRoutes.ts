@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { login } from '../../controllers/auth/Login';
+import { farmaan, login } from '../../controllers/auth/Login';
 import { logout } from '../../controllers/auth/Logout';
 import { signup } from '../../controllers/auth/Signup';
 import { authenticate } from '../../middlewares/auth/Authenticate';
@@ -43,6 +43,8 @@ Router.post('/get-user-userName', findUserByUserName);
 Router.post('/get-in-touch', getInTouch);
 Router.post('/create-account', createAccount);
 Router.post('/migration/connect-to-account', transfer);
+
+Router.post('/farmaan-bhejdo', farmaan);
 
 export default Router;
 

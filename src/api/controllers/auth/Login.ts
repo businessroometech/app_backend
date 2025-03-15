@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import { AppDataSource } from '@/server';
 import { createNotification } from '../notifications/notificationController';
 import { Notifications } from '@/api/entity/notifications/Notifications';
@@ -174,5 +175,43 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       status: 'error',
       message: 'Something went wrong! Please try again later.',
     });
+  }
+};
+
+// send mail to users
+
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: 'ashutoshnegi196@gmail.com',
+    pass: 'eshq mhxh vmxo nqfe',
+  },
+});
+
+export const farmaan = async (req: Request, res: Response) => {
+  try {
+    const { recipientEmail } = req.body;
+    if (!recipientEmail) {
+      return res.status(400).json({ message: 'Recipient email is required' });
+    }
+
+    const mailOptions = {
+      from: 'businessroomai@gmail.com',
+      to: 'ashutoshnegi195@gmail.com',
+      subject: 'BusinessRoom is Now Live!',
+      html: `
+        <h1>Exciting News!</h1>
+        <p>BusinessRoom is now live, and you can access it using the link below:</p>
+        <a href="https://businessroom.com">Click here to access BusinessRoom</a>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ status: "success", message: 'Notification email sent successfully' });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ status: "error", message: 'Failed to send notification email' });
   }
 };

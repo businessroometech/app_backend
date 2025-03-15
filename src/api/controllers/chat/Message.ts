@@ -276,8 +276,20 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
 
     const userRepo = AppDataSource.getRepository(PersonalDetails);
     const activeUserRepo = AppDataSource.getRepository(ActiveUser);
-
     const messageRepository = AppDataSource.getRepository(Message);
+
+    const unreadMessagesCount = (await Promise.all(
+      (history || []).map(async (his) => {
+        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+        const count = await messageRepository.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
+
+        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+      })
+    )).filter((item) => item !== null);
 
     const formattedHistory = await Promise.all(
       history.map(async (record) => {
@@ -320,7 +332,7 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
       })
     );
 
-    return res.status(200).json({ status: "success", data: { history: formattedHistory } });
+    return res.status(200).json({ status: "success", data: { history: formattedHistory, unreadUserCount: unreadMessagesCount ? unreadMessagesCount.length : 0 } });
   } catch (error) {
     console.error("Error fetching message history:", error);
     return res.status(500).json({ status: "error", message: "Error fetching message history" });
