@@ -166,6 +166,15 @@ export class PersonalDetails extends BaseEntity {
   })
   subRole!: string;
 
+  @Column({ type: "varchar", nullable: true })
+  city !: string;
+
+  @Column({ type: "varchar", nullable: true })
+  state !: string;
+
+  @Column({ type: "varchar", nullable: true })
+  linkedIn !: string;
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();

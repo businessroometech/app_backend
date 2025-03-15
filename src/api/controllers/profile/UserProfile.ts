@@ -54,12 +54,16 @@ export const uploadProfileAndCover = multer({
 export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
-      // occupation,
       firstName,
       lastName,
       dob,
       bio,
-      investorType,
+      city,
+      state,
+      country,
+      gender,
+      userRole,
+      linkedIn,
       badgeName,
       experience
     } = req.body;
@@ -77,17 +81,19 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Update fields if they are provided
-    // if (occupation !== undefined) personalDetails.occupation = occupation;
     if (firstName !== undefined) personalDetails.firstName = firstName;
     if (lastName !== undefined) personalDetails.lastName = lastName;
     if (dob !== undefined) personalDetails.dob = dob;
     if (experience !== undefined) personalDetails.experience = experience;
     if (bio !== undefined) personalDetails.bio = bio;
-    if (investorType !== undefined) personalDetails.investorType = investorType;
+    if (city !== undefined) personalDetails.city = city;
+    if (state !== undefined) personalDetails.state = state;
+    if (country !== undefined) personalDetails.country = country;
+    if (gender !== undefined) personalDetails.gender = gender;
+    if (userRole !== undefined) personalDetails.userRole = userRole;
+    if (linkedIn !== undefined) personalDetails.linkedIn = linkedIn;
     if (badgeName !== undefined) personalDetails.badgeName = badgeName;
 
-    // Ensure `req.files` is defined before accessing
     if (req.files && Object.keys(req.files).length > 0) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
