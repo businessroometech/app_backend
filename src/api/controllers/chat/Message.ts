@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { getSocketInstance } from '../../../socket'; 
-import { AppDataSource } from '../../../server'; 
+import { getSocketInstance } from '../../../socket';
+import { AppDataSource } from '../../../server';
 import { Message } from '@/api/entity/chat/Message';
 import { ActiveUser } from '@/api/entity/chat/ActiveUser';
 import { Connection } from '@/api/entity/connection/Connections';
@@ -277,6 +277,25 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
     const userRepo = AppDataSource.getRepository(PersonalDetails);
     const activeUserRepo = AppDataSource.getRepository(ActiveUser);
 
+    // const unreadMessagesCount = await Promise.all(
+    //   (history || []).map(async (his) => {
+    // let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+    // let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+    // const count = await messageRepository.count({
+    //   where: { receiverId: myId, senderId: otherId, isRead: false },
+    // });
+
+    //     return {
+    //       senderId: otherId,
+    //       receiverId: myId,
+    //       unReadCount: count,
+    //     };
+    //   })
+    // );
+
+    const messageRepository = AppDataSource.getRepository(Message);
+
     const formattedHistory = await Promise.all(
       history.map(async (record) => {
 
@@ -285,6 +304,13 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
 
         const userS = await userRepo.findOne({ where: { id: record.senderId } });
         const activeUserS = await activeUserRepo.findOne({ where: { userId: record.senderId } });
+
+        let myId = record.receiverId === userId ? record.receiverId : record.senderId;
+        let otherId = record.receiverId === userId ? record.senderId : record.receiverId;
+
+        const count = await messageRepository.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
 
         return {
           id: record.id,
@@ -304,7 +330,9 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
           fullnameR: userR ? `${userR.firstName} ${userR.lastName}` : null,
           imageUrlR: userR?.profilePictureUploadId ? await generatePresignedUrl(userR.profilePictureUploadId) : null,
           userRoleR: userR?.userRole,
-          bioR: userR?.bio
+          bioR: userR?.bio,
+
+          unReadCount: count
         };
       })
     );
