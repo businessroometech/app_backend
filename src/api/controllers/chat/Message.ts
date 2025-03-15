@@ -13,8 +13,9 @@ export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
-export const sendMessage = async (req: Request, res: Response) => {
+export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = req.userId;
     const { senderId, receiverId, content, documentKeys } = req.body;
 
     const messageRepository = AppDataSource.getRepository(Message);
@@ -22,6 +23,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     const message = messageRepository.create({
       senderId,
       receiverId,
+      isSender: senderId === userId ? true : false,
       content,
       documentKeys,
     });

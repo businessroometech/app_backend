@@ -20,6 +20,9 @@ export class Message extends BaseEntity{
   @Column({ type: 'uuid' })
   receiverId!: string;
 
+  @Column({ type: "bool", default: false })
+  isSender !: boolean
+
   @Column({ type: 'text' })
   content!: string; // Encrypted content will be stored here
 
