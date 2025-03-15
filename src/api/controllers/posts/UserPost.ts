@@ -44,7 +44,7 @@ export const formatTimestamp = (createdAt: Date): string => {
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
-  isAdmin: boolean;
+  // isAdmin: boolean;
 }
 
 const writeFile = promisify(fs.writeFile);
@@ -818,7 +818,7 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
 export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { postId } = req.params;
-    const { userId, isAdmin } = req; 
+    const { userId } = req; 
 
     if (!userId) {
       return res.status(401).json({ status: "fail", message: 'Unauthorized' });
@@ -840,7 +840,7 @@ export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): 
       return res.status(400).json({ status: "fail", message: 'Post not found. Invalid Post Id.' });
     }
 
-    if (userPost.userId !== userId && !isAdmin) {
+    if (userPost.userId !== userId) {
       return res.status(403).json({ status: "fail", message: 'Unauthorized to delete this post' });
     }
 
