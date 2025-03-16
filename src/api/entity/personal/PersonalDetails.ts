@@ -178,6 +178,9 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: "bool", default: false })
   isAdmin !: boolean;
 
+  @Column({ type: 'int', default: 0 })
+  stage !: number | null;
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();

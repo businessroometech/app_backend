@@ -65,7 +65,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       userRole,
       linkedIn,
       badgeName,
-      experience
+      experience,
     } = req.body;
 
     const userId = req.userId;
@@ -122,6 +122,8 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       }
     }
 
+    if(personalDetails.stage === 0) personalDetails.stage = 1;
+    
     personalDetails.updatedBy = "system";
     await userRepository.save(personalDetails);
 

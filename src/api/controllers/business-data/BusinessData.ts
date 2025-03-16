@@ -37,6 +37,7 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
         const userRepo = AppDataSource.getRepository(PersonalDetails);
         const user = await userRepo.findOne({ where: { id: userId } });
 
+
         if (!repository) {
             return res.status(400).json({ status: "fail", message: "Invalid subRole provided" });
         }
@@ -66,12 +67,15 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 savedData = await repository.save(existingData);
 
+                user!.stage = null;
                 // user!.subRole = subRole;
                 await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
                 // user!.subRole = subRole;
+                user!.stage = null;
+
                 await user?.save();
             }
         } else {
@@ -87,12 +91,14 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 savedData = await repository.save(existingData);
 
+                user!.stage = null;
                 user!.subRole = subRole;
                 await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
 
+                user!.stage = null;
                 user!.subRole = subRole;
                 await user?.save();
             }
