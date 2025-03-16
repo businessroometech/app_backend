@@ -71,12 +71,24 @@ async function compressVideo(videoBuffer: Buffer, userId: string, mimetype: stri
     await writeFile(tempInputPath, videoBuffer);
 
     return new Promise((resolve, reject) => {
+      // const handbrakeProcess = hbjs.spawn({
+      //   input: tempInputPath,
+      //   output: tempOutputPath,
+      //   preset: 'Fast 1080p30',
+      //   quality: 22,
+      //   format: 'mp4',
+      // });
+
       const handbrakeProcess = hbjs.spawn({
         input: tempInputPath,
         output: tempOutputPath,
-        preset: 'Fast 1080p30',
-        quality: 22,
-        format: 'mp4',
+        preset: 'VerySlow', // More compression efficiency
+        quality: 26, // Higher value means better compression
+        encoder: 'x265', // Better compression than x264
+        bitrate: 1000, // Adjusted for lower file size
+        width: 1280, // Reduce to 720p if possible
+        height: 720,
+        rate: 24, // Lower frame rate
       });
 
       (handbrakeProcess as unknown as HandBrakeProcess)
@@ -818,7 +830,7 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
 export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { postId } = req.params;
-    const { userId } = req; 
+    const { userId } = req;
 
     if (!userId) {
       return res.status(401).json({ status: "fail", message: 'Unauthorized' });

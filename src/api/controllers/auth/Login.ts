@@ -185,31 +185,40 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: 'ashutoshnegi196@gmail.com',
+    user: 'businessroom.ai@gmail.com',
     pass: 'eshqmhxhvmxonqfe',
   },
 });
 
 export const farmaan = async (req: Request, res: Response) => {
   try {
-    const { recipients } = req.body;
+    // const { recipients } = req.body;
+    const recipients = ['govravmahobeofficial@gmail.com', 'ashutoshnegi195@gmail.com']
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res.status(400).json({ message: 'Recipients array is required and cannot be empty' });
     }
 
-    const emailAddresses = recipients.map(user => user.emailAddress).filter(email => email);
-    if (emailAddresses.length === 0) {
-      return res.status(400).json({ message: 'No valid email addresses found' });
-    }
-
     const mailOptions = {
       from: 'businessroomai@gmail.com',
-      to: emailAddresses,
-      subject: 'BusinessRoom is Now Live!',
+      to: recipients,
+      subject: 'BusinessRoom is Now Live! 🎉',
       html: `
-        <h1>Exciting News!</h1>
-        <p>BusinessRoom is now live, and you can access it using the link below:</p>
-        <a href="https://businessroom.com">Click here to access BusinessRoom</a>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h1 style="color: #2c3e50;">Dear User,</h1>
+          <p>We are excited to announce that <strong>BusinessRoom</strong> is now live! 🎉</p>
+          <p>BusinessRoom is a social media platform for startups. We invite you to sign up today and start exploring all the incredible features that will help you grow and connect with other businesses.</p>
+          <h3>How to sign up:</h3>
+          <ul>
+            <li>Visit <a href="https://www.businessroom.ai" style="color: #3498db; text-decoration: none;">www.businessroom.ai</a>.</li>
+            <li>Create your account.</li>
+            <li>Start using BusinessRoom to enhance your business connections.</li>
+          </ul>
+          <p>Don’t miss out on this exciting opportunity. <strong>Sign up now</strong> and take your business to the next level!</p>
+          <p>If you have any questions, please reply to this email.</p>
+          <br>
+          <p>Best regards,</p>
+          <p><strong>The BusinessRoom Team</strong></p>
+        </div>
       `,
     };
 
@@ -220,4 +229,3 @@ export const farmaan = async (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: 'Failed to send notification email' });
   }
 };
-
