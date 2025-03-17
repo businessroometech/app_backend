@@ -228,12 +228,12 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const user = await userLoginRepository.save(newUser);
 
-    const restrictionRepository = queryRunner.manager.getRepository(Ristriction);
-    const restriction = restrictionRepository.create({
-      userId: user.id,
-    });
+    // const restrictionRepository = queryRunner.manager.getRepository(Ristriction);
+    // const restriction = restrictionRepository.create({
+    //   userId: user.id,
+    // });
 
-    await restrictionRepository.save(restriction);
+    // await restrictionRepository.save(restriction);
 
     await queryRunner.commitTransaction();
 
