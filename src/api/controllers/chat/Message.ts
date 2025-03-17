@@ -53,10 +53,6 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       await messageHistoryRepo.save(mh);
     }
 
-    const NotifyRepo = AppDataSource.getRepository(Notify);
-    const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
-
-
     const history = await messageHistoryRepo.find({
       where: [
         { senderId: userId },
@@ -64,7 +60,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       ],
     });
 
-    const unreadMessagesCount = await Promise.all(
+    const unreadMessagesCount1 = await Promise.all(
       (history || []).map(async (his) => {
         let myId = his.receiverId === userId ? his.receiverId : his.senderId;
         let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
@@ -86,15 +82,34 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     // const roomId = [message.senderId, message.receiverId].sort().join('-');
     io.to(roomId).emit('newMessage', {
       message,
-      messageHistoryUnreadCount: unreadMessagesCount,
-      totalUnReadCount: unreadMessagesCount?.length,
+      messageHistoryUnreadCount: unreadMessagesCount1,
+      totalUnReadCount: unreadMessagesCount1?.length,
     });
+
+
+    const NotifyRepo = AppDataSource.getRepository(Notify);
+    const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
+
+    const messageRepo = AppDataSource.getRepository(Message);
+
+    const unreadMessagesCount2 = (await Promise.all(
+      (history || []).map(async (his) => {
+        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+        const count = await messageRepo.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
+
+        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+      })
+    )).filter((item) => item !== null);
 
     io.emit('initialize', {
       userId,
       welcomeMessage: 'Welcome to BusinessRoom!',
       unreadNotificationsCount: notifyCount ? notifyCount : 0,
-      unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
+      unreadMessagesCount: unreadMessagesCount2 ? unreadMessagesCount2.length : 0,
     });
 
     return res.status(201).json({ success: true, data: { message } });
