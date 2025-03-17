@@ -76,11 +76,11 @@ export const restrict = async (req: Request, res: Response, next: NextFunction) 
     const restriction = await restrictionRepo.findOne({ where: { userId } });
 
     if (!restriction) {
-      return res.status(404).json({ error: "Restriction record not found" });
+      return res.status(400).json({ error: "Restriction record not found" });
     }
 
     if (restriction.connectionCount <= 0) {
-      return res.status(403).json({ status: "error", message: "We are currently verifying the profiles. Please wait 24h - 48h to resume sending the connection request." });
+      return res.status(403).json({ status: "error", statusCode: 403, message: "We are currently verifying the profiles. Please wait 24h - 48h to resume sending the connection request." });
     }
 
     next();
