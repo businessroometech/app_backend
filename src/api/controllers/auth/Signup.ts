@@ -233,7 +233,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       userId: user.id,
     });
 
-    await queryRunner.manager.save(restriction);
+    await restrictionRepository.save(restriction);
 
     await queryRunner.commitTransaction();
 
