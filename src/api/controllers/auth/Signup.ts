@@ -193,6 +193,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
 
     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
+    const restrictionRepository = queryRunner.manager.getRepository(Ristriction);
 
     // Check for duplicate email
     const existingUser = await userLoginRepository.findOne({ where: { emailAddress } });
@@ -228,12 +229,11 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const user = await userLoginRepository.save(newUser);
 
-    // const restrictionRepository = queryRunner.manager.getRepository(Ristriction);
-    // const restriction = restrictionRepository.create({
-    //   userId: user.id,
-    // });
+    const restriction = restrictionRepository.create({
+      userId: user?.id,
+    });
 
-    // await restrictionRepository.save(restriction);
+    const restrict = await restrictionRepository.save(restriction);
 
     await queryRunner.commitTransaction();
 

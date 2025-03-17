@@ -1,15 +1,13 @@
-import { BaseEntity, Column, Entity, PrimaryColumn } from 'typeorm';
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'Ristriction' })
 export class Ristriction extends BaseEntity {
-
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @Column({  type: "int", default: 5})
-  connectionCount !: number;
-  
+  @Column({ type: 'int', default: 5 })
+  connectionCount!: number;
 }
