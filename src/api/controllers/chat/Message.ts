@@ -8,6 +8,7 @@ import { MessageHistory } from '@/api/entity/chat/MessageHistory';
 import { promise } from 'zod';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { generatePresignedUrl } from '../s3/awsControllers';
+import { Notify } from '@/api/entity/notify/Notify';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -15,7 +16,7 @@ export interface AuthenticatedRequest extends Request {
 
 export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.userId;
+    const userId: any = req.userId;
     const { senderId, receiverId, content, documentKeys } = req.body;
 
     const messageRepository = AppDataSource.getRepository(Message);
@@ -52,6 +53,10 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       await messageHistoryRepo.save(mh);
     }
 
+    const NotifyRepo = AppDataSource.getRepository(Notify);
+    const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
+
+
     const history = await messageHistoryRepo.find({
       where: [
         { senderId: userId },
@@ -83,6 +88,13 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       message,
       messageHistoryUnreadCount: unreadMessagesCount,
       totalUnReadCount: unreadMessagesCount?.length,
+    });
+
+    io.emit('initialize', {
+      userId,
+      welcomeMessage: 'Welcome to BusinessRoom!',
+      unreadNotificationsCount: notifyCount ? notifyCount : 0,
+      unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
     });
 
     return res.status(201).json({ success: true, data: { message } });
