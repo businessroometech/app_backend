@@ -143,7 +143,7 @@ const AppDataSource = new DataSource({
     Notify,
     MessageHistory
   ],
-  synchronize: false,
+  synchronize: true,
 });
 
 // Initialize the DataSource

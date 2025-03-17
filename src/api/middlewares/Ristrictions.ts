@@ -6,7 +6,7 @@ interface AuthenticatedRequest extends Request {
     userId: string;
 }
 
-export const checkConnectionLimit = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const restriction = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId; 
 
@@ -22,7 +22,7 @@ export const checkConnectionLimit = async (req: AuthenticatedRequest, res: Respo
     }
 
     if (restriction.connectionCount <= 0) {
-      return res.status(403).json({ error: "Limit reached" });
+      return res.status(403).json({ status: "error", message: "We are currently verifying the profiles. Please wait 24h - 48h to resume sending the connection request." });
     }
 
     next(); 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '@/server';
 import validator from 'validator';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
+import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import { sendNotification } from '../notifications/SocketNotificationController';
@@ -226,6 +227,12 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     });
 
     const user = await userLoginRepository.save(newUser);
+
+    const restrictionRepository = queryRunner.manager.getRepository(Ristriction);
+
+    const restriction = Ristriction.create({
+      userId: user.id,
+    });
 
     await queryRunner.commitTransaction();
 

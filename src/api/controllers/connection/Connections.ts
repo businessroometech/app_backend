@@ -10,6 +10,7 @@ import { sendNotification } from '../notifications/SocketNotificationController'
 import { getSocketInstance } from '@/socket';
 import { createNotification } from '../notify/Notify';
 import { NotificationType, Notify } from '@/api/entity/notify/Notify';
+import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -48,11 +49,22 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
       return res.status(400).json({ message: 'Connection request already exists.' });
     }
     const newConnection = connectionRepository.create({
-      requesterId:userId,
+      requesterId: userId,
       receiverId,
       status: 'pending',
     });
     await connectionRepository.save(newConnection);
+
+    const restrictionRepo = AppDataSource.getRepository(Ristriction);
+
+    const restrict = await restrictionRepo.findOne({ where: { userId } });
+
+    if (restrict) {
+
+      restrict.connectionCount -= 1;
+      await restrictionRepo.save(restrict);
+
+    }
 
     //------------------------------------ Notify ------------------------------------------------------------------------------------
     try {
@@ -171,9 +183,9 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 
     //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: `Connection request ${status} successfully`,
-      connection: data 
+      connection: data
     });
   } catch (error: any) {
     console.error('Error updating connection status:', error);
@@ -239,7 +251,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
         connection.requesterId === userId ? connection.receiverId : connection.requesterId
       )
     );
-  
+
 
     const result = await Promise.all(
       connections.map(async (connection) => {
@@ -378,7 +390,7 @@ export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Re
   try {
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connection = await connectionRepository.findOne({
-      where: { requesterId:userId, receiverId, status: 'pending' },
+      where: { requesterId: userId, receiverId, status: 'pending' },
     });
 
     if (!connection) {
