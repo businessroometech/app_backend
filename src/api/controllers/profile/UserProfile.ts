@@ -12,6 +12,10 @@ import { sendNotification } from '../notifications/SocketNotificationController'
 import { Like } from '@/api/entity/posts/Like';
 import { BlockedUser } from '@/api/entity/posts/BlockedUser';
 import multer from 'multer';
+import { Notify } from '@/api/entity/notify/Notify';
+import { Message } from '@/api/entity/chat/Message';
+import { MessageHistory } from '@/api/entity/chat/MessageHistory';
+import { getSocketInstance } from '@/socket';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -122,8 +126,8 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       }
     }
 
-    if(personalDetails.stage === 0) personalDetails.stage = 1;
-    
+    if (personalDetails.stage === 0) personalDetails.stage = 1;
+
     personalDetails.updatedBy = "system";
     await userRepository.save(personalDetails);
 
@@ -219,6 +223,40 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
         });
       }
     }
+
+    const NotifyRepo = AppDataSource.getRepository(Notify);
+    const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
+
+    const messageRepo = AppDataSource.getRepository(Message);
+    const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
+
+    const history = await messageHistoryRepo.find({
+      where: [
+        { senderId: userId },
+        { receiverId: userId }
+      ],
+    });
+
+    const unreadMessagesCount = (await Promise.all(
+      (history || []).map(async (his) => {
+        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+        const count = await messageRepo.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
+
+        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+      })
+    )).filter((item) => item !== null);
+
+    const io = getSocketInstance();
+    io.emit('initialize', {
+      userId,
+      welcomeMessage: 'Welcome to BusinessRoom!',
+      unreadNotificationsCount: notifyCount ? notifyCount : 0,
+      unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
+    });
 
     return res.status(200).json({
       message: 'User profile fetched successfully.',

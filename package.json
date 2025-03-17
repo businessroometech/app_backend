@@ -50,6 +50,7 @@
     "handbrake-js": "^7.1.0",
     "helmet": "^7.2.0",
     "http-status-codes": "^2.3.0",
+    "ioredis": "^5.6.0",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.11.4",
     "multer": "^1.4.5-lts.1",

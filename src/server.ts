@@ -28,7 +28,7 @@ import liveRouter from '../src/api/routes/live/LiveRoutes';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
 import WishlistsRoutes from '../src/api/routes/Wishlists/WishlistsRoutes';
-import acquireroomRoutes from  '../src/api/routes/accquireroom/Accquireroom';
+import acquireroomRoutes from '../src/api/routes/accquireroom/Accquireroom';
 // import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
@@ -76,7 +76,27 @@ import { MessageHistory } from './api/entity/chat/MessageHistory';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
-// Create a DataSource instance
+// import Redis from "ioredis";
+
+// const client = new Redis({
+//   host: 'master.businessroom-prod-redis.mdzadx.use1.cache.amazonaws.com',
+//   port: 6379,
+//   tls: {}, // Enables TLS
+// });
+
+// (async () => {
+//   // Set and assert
+//   const setResult = await client.set("key", "value");
+//   console.assert(setResult === "OK");
+
+//   // Get and assert
+//   const getResult = await client.get("key");
+//   console.assert(getResult === "value");
+
+//   // Close the connection
+//   client.disconnect();
+// })();
+
 const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.NODE_ENV === 'production' ? process.env.DEV_AWS_HOST : process.env.DEV_AWS_HOST,
