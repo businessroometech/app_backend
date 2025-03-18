@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import multer from 'multer';
 import { uploadBufferDocumentToS3 } from '../s3/awsControllers';
+import { BasicSelling } from '@/api/entity/business-data/BasicSelling';
 
 export interface AuthenticatedRequest extends Request {
     userId?: string;
@@ -30,6 +31,7 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
             exploringIdeas: AppDataSource.getRepository(ExploringIdeas),
             seekingConnection: AppDataSource.getRepository(SeekingConnections),
             sellingStartup: AppDataSource.getRepository(SellingStartup),
+            basicSelling: AppDataSource.getRepository(BasicSelling)
         };
 
         const repository = repositories[subRole];
@@ -131,6 +133,7 @@ export const deleteInvestorData = async (req: Request, res: Response) => {
             exploringIdeas: AppDataSource.getRepository(ExploringIdeas),
             seekingConnection: AppDataSource.getRepository(SeekingConnections),
             sellingStartup: AppDataSource.getRepository(SellingStartup),
+            basicSelling: AppDataSource.getRepository(BasicSelling)
         };
 
         const repository = repositories[subRole];
@@ -171,6 +174,7 @@ export const getInvestorData = async (req: AuthenticatedRequest, res: Response) 
             aquiringStartup: AppDataSource.getRepository(AquiringStartup),
             exploringIdeas: AppDataSource.getRepository(ExploringIdeas),
             seekingConnection: AppDataSource.getRepository(SeekingConnections),
+            basicSelling: AppDataSource.getRepository(BasicSelling)
             // sellingStartup: AppDataSource.getRepository(SellingStartup),
         };
 

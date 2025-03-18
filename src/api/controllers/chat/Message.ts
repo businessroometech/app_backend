@@ -268,15 +268,17 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
 
 
     const filteredConnectionsFinal = filteredConnections.map((fil) => {
-      return (userId !== fil?.receiverId) ? fil?.receiver : fil?.requester;
-    })
+      const obj = {
+        ...(userId !== fil?.receiverId ? fil?.receiver : fil?.requester),
+        profileImgUrl: generatePresignedUrl(userId !== fil?.receiverId ? fil?.receiver?.profilePictureUploadId : fil?.requester?.profilePictureUploadId),
+      };
+      return obj;
+    });
 
     return res.status(200).json({
       status: 'success',
       message: 'Connections retrieved successfully',
-      data: {
-        filteredConnectionsFinal
-      }
+      data: filteredConnectionsFinal
     });
 
   } catch (error: any) {

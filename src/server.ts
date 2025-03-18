@@ -74,6 +74,7 @@ import { ExploringIdeas } from './api/entity/business-data/ExploringIdeas';
 import { Notify } from './api/entity/notify/Notify';
 import { MessageHistory } from './api/entity/chat/MessageHistory';
 import { Ristriction } from './api/entity/ristrictions/Ristriction';
+import { BasicSelling } from './api/entity/business-data/BasicSelling';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -141,6 +142,7 @@ const AppDataSource = new DataSource({
     SellingStartup,
     SeekingConnections,
     ExploringIdeas,
+    BasicSelling,
     Notify,
     MessageHistory,
     Ristriction
