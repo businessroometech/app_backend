@@ -852,7 +852,7 @@ export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): 
       return res.status(400).json({ status: "fail", message: 'Post not found. Invalid Post Id.' });
     }
 
-    if (userPost.userId !== userId) {
+    if (userPost.userId !== userId && user?.isAdmin !== true) {
       return res.status(403).json({ status: "fail", message: 'Unauthorized to delete this post' });
     }
 
