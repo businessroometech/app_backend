@@ -267,10 +267,16 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
     });
 
 
+    const filteredConnectionsFinal = filteredConnections.map((fil) => {
+      return (userId !== fil?.receiverId) ? fil?.receiver : fil?.requester;
+    })
+
     return res.status(200).json({
       status: 'success',
       message: 'Connections retrieved successfully',
-      data: filteredConnections
+      data: {
+        filteredConnectionsFinal
+      }
     });
 
   } catch (error: any) {
