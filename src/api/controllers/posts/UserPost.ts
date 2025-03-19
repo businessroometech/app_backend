@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { promisify } from 'util';
 import multer from 'multer';
+import sharp from 'sharp';
 import hbjs, { Handbrake } from 'handbrake-js';
 import { Request, Response } from 'express';
 import { UserPost } from '../../entity/UserPost';
@@ -75,21 +76,9 @@ async function compressVideo(videoBuffer: Buffer, userId: string, mimetype: stri
         input: tempInputPath,
         output: tempOutputPath,
         preset: 'Fast 1080p30',
-        quality: 22,
+        quality: 24,
         format: 'mp4',
       });
-
-      // const handbrakeProcess = hbjs.spawn({
-      //   input: tempInputPath,
-      //   output: tempOutputPath,
-      //   preset: 'VerySlow', // More compression efficiency
-      //   quality: 26, // Higher value means better compression
-      //   encoder: 'x265', // Better compression than x264
-      //   bitrate: 1000, // Adjusted for lower file size
-      //   width: 1280, // Reduce to 720p if possible
-      //   height: 720,
-      //   rate: 24, // Lower frame rate
-      // });
 
       (handbrakeProcess as unknown as HandBrakeProcess)
         .on('start', (command: string) => {
@@ -136,8 +125,34 @@ async function compressVideo(videoBuffer: Buffer, userId: string, mimetype: stri
     throw error;
   }
 }
+// import { uploadBufferDocumentToS3 } from './s3Upload'; // Adjust based on your structure
 
-// Rest of your code remains the same...
+async function compressMedia(fileBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
+  if (mimetype.startsWith('video/')) {
+    return compressVideo(fileBuffer, userId, mimetype);
+  } else if (mimetype.startsWith('image/')) {
+    return compressImage(fileBuffer, userId, mimetype);
+  } else {
+    throw new Error('Unsupported file type');
+  }
+}
+
+async function compressImage(imageBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
+  try {
+    const compressedBuffer = await sharp(imageBuffer)
+      .resize({ width: 1200 }) // Reduce resolution
+      .jpeg({ quality: 70 }) // Compress JPEG images
+      .png({ compressionLevel: 8 }) // Compress PNG images
+      .webp({ quality: 70 }) // Convert to WebP if needed
+      .toBuffer();
+
+    const uploadUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
+    return uploadUrl;
+  } catch (error) {
+    console.error('Image compression error:', error);
+    throw error;
+  }
+}
 
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
@@ -209,11 +224,13 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
             console.log('Processing file:', file.originalname);
 
             let uploadedUrl;
-            if (file.mimetype.startsWith('video/')) {
-              uploadedUrl = await compressVideo(file.buffer, String(userId), file.mimetype);
-            } else {
-              uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
-            }
+            // if (file.mimetype.startsWith('video/')) {
+            //   uploadedUrl = await compressVideo(file.buffer, String(userId), file.mimetype);
+            // } else {
+            //   uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            // }
+
+            uploadedUrl = await compressMedia(file.buffer, String(userId), file.mimetype);
 
             uploadedDocumentUrls.push({
               key: uploadedUrl.fileKey,
