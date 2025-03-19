@@ -3,7 +3,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { BlockedPost } from '@/api/entity/posts/BlockedPost';
 import { Like } from '@/api/entity/posts/Like';
 import { UserPost } from '@/api/entity/UserPost';
-import { AppDataSource } from '@/server';
+import { AppDataSource, client } from '@/server';
 import { Between, In, Not } from 'typeorm';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { formatTimestamp } from './UserPost';
@@ -28,8 +28,15 @@ export interface AuthenticatedRequest extends Request {
 export const getAllPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { page = 1, limit = 100, isDiscussion = false } = req.query;
-
     const userId = req.userId;
+
+    const cacheKey = `posts:${userId}:${page}:${limit}:${isDiscussion}`;
+    const cachedData = await client.get(cacheKey);
+    if (cachedData) {
+      console.log("*********************************************************CACHE***HIT**************************************************");
+      return res.status(200).json(JSON.parse(cachedData));
+    }
+
 
     let discuss = false;
     if (isDiscussion === 'true') discuss = true;
@@ -240,11 +247,17 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       };
     }));
 
-    return res.status(200).json({
+    // Cache the formatted posts data in Redis
+    const responseData = {
       status: 'success',
       message: 'Posts retrieved successfully.',
       data: { posts: formattedPosts, page, limit, totalPosts },
-    });
+    };
+
+    await client.set(cacheKey, JSON.stringify(responseData), 'EX', 60 * 5);
+
+    return res.status(200).json(responseData);
+
   } catch (error: any) {
     return res.status(500).json({ message: 'Internal server error', error: error.message });
   }

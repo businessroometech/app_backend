@@ -266,7 +266,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
           }
         );
 
-
         const notifyRepo = AppDataSource.getRepository(Notify);
         const notification = await notifyRepo.find({ where: { recieverId: repostedOfUser?.id, isRead: false } });
 
@@ -283,6 +282,8 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         const roomId = repostedOfUser?.id;
         io.to(roomId).emit('newNotification', notify);
 
+        io.except(userId!).emit('newPost', { post: savedPost, userId });
+
       } catch (error) {
         console.error("Error creating notification:", error);
       }
@@ -293,8 +294,6 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       message: 'Post created successfully.',
       data: savedPost,
     });
-
-
 
   } catch (error: any) {
     console.error('CreateUserPost Error:', error);
