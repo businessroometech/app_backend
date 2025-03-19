@@ -55,6 +55,8 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
     });
     await connectionRepository.save(newConnection);
 
+    // --------------------------------------restriction---------------------------------------
+
     const restrictionRepo = AppDataSource.getRepository(Ristriction);
 
     const restrict = await restrictionRepo.findOne({ where: { userId } });
@@ -142,22 +144,22 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
     connection.status = status as 'accepted' | 'rejected';
     const data = await connectionRepository.save(connection);
 
-    // ------------------------------------------Ristrictions--------------------------------
+    // ------------------------------------------Ristrictions-----not needed---------------------------
 
-    if (status === 'rejected') {
+    // if (status === 'rejected') {
 
-      const restrictionRepo = AppDataSource.getRepository(Ristriction);
+    //   const restrictionRepo = AppDataSource.getRepository(Ristriction);
 
-      const restrict = await restrictionRepo.findOne({ where: { userId: connectionId } });
+    //   const restrict = await restrictionRepo.findOne({ where: { userId: connectionId } });
 
-      if (restrict) {
+    //   if (restrict) {
 
-        restrict.connectionCount += 1;
-        await restrictionRepo.save(restrict);
+    //     restrict.connectionCount += 1;
+    //     await restrictionRepo.save(restrict);
 
-      }
+    //   }
 
-    }
+    // }
 
     //------------------------------------------------------------- Notify ------------------------------------------------------------------
 
@@ -328,20 +330,22 @@ export const removeConnection = async (req: AuthenticatedRequest, res: Response)
 
     await connectionRepository.remove(connection);
 
-    const restrictionRepo = AppDataSource.getRepository(Ristriction);
-    const restrictConn = await restrictionRepo.findOne({ where: { userId: connectionId } });
-    const restrictMy = await restrictionRepo.findOne({ where: { userId } });
+    //----------------------restriction----not-needed------------------------------------------------------
 
-    if (restrictConn) {
-      restrictConn.connectionCount += 1;
-      await restrictionRepo.save(restrictConn);
-    }
+    // const restrictionRepo = AppDataSource.getRepository(Ristriction);
+    // const restrictConn = await restrictionRepo.findOne({ where: { userId: connectionId } });
+    // const restrictMy = await restrictionRepo.findOne({ where: { userId } });
 
-    if (restrictMy) {
-      restrictMy.connectionCount += 1;
-      await restrictionRepo.save(restrictMy);
-    }
+    // if (restrictConn) {
+    //   restrictConn.connectionCount += 1;
+    //   await restrictionRepo.save(restrictConn);
+    // }
 
+    // if (restrictMy) {
+    //   restrictMy.connectionCount += 1;
+    //   await restrictionRepo.save(restrictMy);
+    // }
+    //---------------------------------------------------------------------------------------
 
     return res.status(200).json({ message: 'Connection removed successfully.' });
   } catch (error: any) {
@@ -433,6 +437,8 @@ export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Re
 
     await connectionRepository.remove(connection);
 
+    // ----------------------------------------restriction------------------------------
+
     const restrictionRepo = AppDataSource.getRepository(Ristriction);
     const restrictMy = await restrictionRepo.findOne({ where: { userId } });
 
@@ -440,6 +446,8 @@ export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Re
       restrictMy.connectionCount += 1;
       await restrictionRepo.save(restrictMy);
     }
+
+    //----------------------------------------------------------------------------------
 
     return res.status(200).json({
       message: 'Connection request unsent successfully.',
