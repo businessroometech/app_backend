@@ -142,6 +142,23 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
     connection.status = status as 'accepted' | 'rejected';
     const data = await connectionRepository.save(connection);
 
+    // ------------------------------------------Ristrictions--------------------------------
+
+    if (status === 'rejected') {
+
+      const restrictionRepo = AppDataSource.getRepository(Ristriction);
+
+      const restrict = await restrictionRepo.findOne({ where: { userId: connectionId } });
+
+      if (restrict) {
+
+        restrict.connectionCount += 1;
+        await restrictionRepo.save(restrict);
+
+      }
+
+    }
+
     //------------------------------------------------------------- Notify ------------------------------------------------------------------
 
     if (status === 'accepted') {
@@ -311,6 +328,21 @@ export const removeConnection = async (req: AuthenticatedRequest, res: Response)
 
     await connectionRepository.remove(connection);
 
+    const restrictionRepo = AppDataSource.getRepository(Ristriction);
+    const restrictConn = await restrictionRepo.findOne({ where: { userId: connectionId } });
+    const restrictMy = await restrictionRepo.findOne({ where: { userId } });
+
+    if (restrictConn) {
+      restrictConn.connectionCount += 1;
+      await restrictionRepo.save(restrictConn);
+    }
+
+    if (restrictMy) {
+      restrictMy.connectionCount += 1;
+      await restrictionRepo.save(restrictMy);
+    }
+
+
     return res.status(200).json({ message: 'Connection removed successfully.' });
   } catch (error: any) {
     console.error('Error removing connection:', error);
@@ -401,6 +433,14 @@ export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Re
 
     await connectionRepository.remove(connection);
 
+    const restrictionRepo = AppDataSource.getRepository(Ristriction);
+    const restrictMy = await restrictionRepo.findOne({ where: { userId } });
+
+    if (restrictMy) {
+      restrictMy.connectionCount += 1;
+      await restrictionRepo.save(restrictMy);
+    }
+
     return res.status(200).json({
       message: 'Connection request unsent successfully.',
     });
@@ -412,6 +452,7 @@ export const unsendConnectionRequest = async (req: AuthenticatedRequest, res: Re
     });
   }
 };
+
 export const ConnectionsSuggestionController = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { page = 1, limit = 5 } = req.query;
