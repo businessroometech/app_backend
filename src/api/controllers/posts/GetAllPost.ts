@@ -3,7 +3,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { BlockedPost } from '@/api/entity/posts/BlockedPost';
 import { Like } from '@/api/entity/posts/Like';
 import { UserPost } from '@/api/entity/UserPost';
-import { AppDataSource, client } from '@/server';
+import { AppDataSource } from '@/server';
 import { Between, In, Not } from 'typeorm';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { formatTimestamp } from './UserPost';
@@ -30,12 +30,12 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const { page = 1, limit = 100, isDiscussion = false } = req.query;
     const userId = req.userId;
 
-    const cacheKey = `posts:${userId}:${page}:${limit}:${isDiscussion}`;
-    const cachedData = await client.get(cacheKey);
-    if (cachedData) {
-      console.log("*********************************************************CACHE***HIT**************************************************");
-      return res.status(200).json(JSON.parse(cachedData));
-    }
+    // const cacheKey = `posts:${userId}:${page}:${limit}:${isDiscussion}`;
+    // const cachedData = await client.get(cacheKey);
+    // if (cachedData) {
+    //   console.log("*********************************************************CACHE***HIT**************************************************");
+    //   return res.status(200).json(JSON.parse(cachedData));
+    // }
 
 
     let discuss = false;
@@ -254,7 +254,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       data: { posts: formattedPosts, page, limit, totalPosts },
     };
 
-    await client.set(cacheKey, JSON.stringify(responseData), 'EX', 60 * 5);
+    // await client.set(cacheKey, JSON.stringify(responseData), 'EX', 60 * 5);
 
     return res.status(200).json(responseData);
 
