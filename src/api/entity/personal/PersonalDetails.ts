@@ -178,7 +178,7 @@ export class PersonalDetails extends BaseEntity {
   @Column({ type: "bool", default: false })
   isAdmin !: boolean;
 
-  @Column({ type: 'int', default: 0 , nullable: true})
+  @Column({ type: 'int', nullable: true })
   stage !: number | null;
 
   @BeforeInsert()
