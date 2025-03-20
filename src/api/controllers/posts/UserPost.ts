@@ -753,7 +753,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : ''
           },
           userDetails: {
-            postedId: user.id,
+            id: user.id,
             firstName: user.firstName || '',
             lastName: user.lastName || '',
             timestamp: formatTimestamp(post.createdAt),
