@@ -8,6 +8,9 @@ export class BasicSelling extends BaseEntity {
     @Column({ type: 'uuid' })
     userId !: string;
 
+    @Column({ type: "bool", default: false })
+    isHidden !: boolean;
+
     @Column({ type: "varchar", nullable: true })
     businessType!: string;
 
