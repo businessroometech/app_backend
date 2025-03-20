@@ -126,7 +126,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       }
     }
 
-    if (personalDetails.stage === 0) personalDetails.stage = 1;
+    // if (personalDetails.stage === 0) personalDetails.stage = 1;
 
     personalDetails.updatedBy = "system";
     await userRepository.save(personalDetails);
