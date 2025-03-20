@@ -75,14 +75,14 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is missing or invalid." });
+      return res.status(400).json({ status: "error", message: "User ID is missing or invalid." });
     }
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const personalDetails = await userRepository.findOneBy({ id: userId });
 
     if (!personalDetails) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({status: "error", message: "User not found." });
     }
 
     if (firstName !== undefined) personalDetails.firstName = firstName;
@@ -132,12 +132,14 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     await userRepository.save(personalDetails);
 
     return res.status(200).json({
+      status: "success",
       message: "User profile updated successfully.",
       data: personalDetails,
     });
   } catch (error: any) {
     console.error("Error updating user profile:", error);
     return res.status(500).json({
+      status: "error",
       message: "Internal Server Error",
       error: error.message,
     });
