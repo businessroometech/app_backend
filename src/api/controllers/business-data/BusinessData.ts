@@ -69,14 +69,12 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 savedData = await repository.save(existingData);
 
-                user!.stage = null;
                 // user!.subRole = subRole;
                 await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
                 // user!.subRole = subRole;
-                user!.stage = null;
 
                 await user?.save();
             }
@@ -93,14 +91,12 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
 
                 savedData = await repository.save(existingData);
 
-                user!.stage = null;
                 user!.subRole = subRole;
                 await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
 
-                user!.stage = null;
                 user!.subRole = subRole;
                 await user?.save();
             }

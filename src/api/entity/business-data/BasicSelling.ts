@@ -5,6 +5,9 @@ export class BasicSelling extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
+    @Column({ type: 'uuid' })
+    userId !: string;
+
     @Column({ type: "varchar", nullable: true })
     businessType!: string;
 
