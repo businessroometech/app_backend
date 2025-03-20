@@ -153,6 +153,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
 
     if (!userId) {
       return res.status(400).json({
+        status: "error",
         message: 'User ID and Profile ID are required.',
       });
     }
@@ -178,6 +179,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
 
     if (!personalDetails) {
       return res.status(400).json({
+        status: "error",
         message: 'User profile not found.',
       });
     }
@@ -212,11 +214,13 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     if (blockedEntry) {
       if (blockedEntry.blockedBy === userId) {
         return res.status(200).json({
+          status: "success",
           message: 'You have blocked this user.',
           data: { personalDetails, connectionsStatus: "Blocked", unblockOption: true, }
         });
       } else {
         return res.status(200).json({
+          status: "success",
           message: 'You are blocked from viewing this profile.',
           data: { personalDetails, connectionsStatus: "Blocked", }
         });
@@ -258,6 +262,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     });
 
     return res.status(200).json({
+      status: "success",
       message: 'User profile fetched successfully.',
       data: {
         personalDetails,
@@ -274,6 +279,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
   } catch (error: any) {
     console.error('Error fetching user profile:', error);
     return res.status(500).json({
+      status: "error",
       message: 'Internal Server Error',
       error: error.message,
     });
