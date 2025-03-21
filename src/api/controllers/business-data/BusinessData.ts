@@ -188,7 +188,7 @@ export const getInvestorData = async (req: AuthenticatedRequest, res: Response) 
             data = await repository.find();
         }
 
-        return res.status(200).json({ status: "success", message: "business profile fetched", data: { businessData: data, subRole: user?.subRole } });
+        return res.status(200).json({ status: "success", message: "business profile fetched", data: { businessData: data, subRole: user?.subRole, userName: `${user?.firstName} ${user?.lastName}` } });
     } catch (error: any) {
         return res.status(500).json({ status: "error", message: "Internal server error", error: error.message });
     }
