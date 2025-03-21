@@ -11,6 +11,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import multer from 'multer';
 import { uploadBufferDocumentToS3 } from '../s3/awsControllers';
 import { BasicSelling } from '@/api/entity/business-data/BasicSelling';
+import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 
 export interface AuthenticatedRequest extends Request {
     userId?: string;
@@ -96,7 +97,21 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
                 user!.subRole = subRole;
                 await user?.save();
             }
+
+            // ----------------------------------------restriction------------------------------
+
+            const restrictionRepo = AppDataSource.getRepository(Ristriction);
+            const restrictMy = await restrictionRepo.findOne({ where: { userId } });
+
+            if (restrictMy) {
+                restrictMy.isBusinessProfileCompleted = true;
+                await restrictionRepo.save(restrictMy);
+            }
+
+            //----------------------------------------------------------------------------------
+
         }
+
 
         return res.status(200).json({
             status: "success",
