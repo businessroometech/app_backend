@@ -78,7 +78,6 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
         } else {
             let existingData = await repository.findOne({ where: { userId, isHidden: false } });
             if (existingData) {
-                // Object.assign(existingData, data);
 
                 for (const key in data) {
                     if (data[key] !== undefined && !(Array.isArray(data[key]) && data[key].length === 0) && data[key] !== '') {

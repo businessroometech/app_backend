@@ -267,13 +267,26 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
     });
 
 
-    const filteredConnectionsFinal = filteredConnections.map((fil) => {
-      const obj = {
-        ...(userId !== fil?.receiverId ? fil?.receiver : fil?.requester),
-        profileImgUrl: generatePresignedUrl(userId !== fil?.receiverId ? fil?.receiver?.profilePictureUploadId : fil?.requester?.profilePictureUploadId),
-      };
-      return obj;
-    });
+    // const filteredConnectionsFinal = filteredConnections.map(async (fil) => {
+    //   const obj = {
+    //     ...(userId !== fil?.receiverId ? fil?.receiver : fil?.requester),
+    //     profileImgUrl: await generatePresignedUrl(userId !== fil?.receiverId ? fil?.receiver?.profilePictureUploadId : fil?.requester?.profilePictureUploadId),
+    //   };
+    //   return obj;
+    // });
+
+    const filteredConnectionsFinal = await Promise.all(
+      filteredConnections.map(async (fil) => {
+        const user = userId !== fil?.receiverId ? fil?.receiver : fil?.requester;
+        const profilePictureUploadId = userId !== fil?.receiverId ? fil?.receiver?.profilePictureUploadId : fil?.requester?.profilePictureUploadId;
+
+        const obj = {
+          ...user,
+          profileImgUrl: await generatePresignedUrl(profilePictureUploadId).catch(() => null), // Handle potential errors
+        };
+        return obj;
+      })
+    );
 
     return res.status(200).json({
       status: 'success',
