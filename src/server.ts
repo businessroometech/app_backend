@@ -13,21 +13,15 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { env } from '@/common/utils/envConfig';
 
 import authRouter from '../src/api/routes/auth/AuthRoutes';
-import BusinessBuyerRoute from '../src/api/routes/BusinessBuyer/BusinessBuyerRoute';
-import BuisnessSeller from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
 
 import BuisnessDataRoutes from '../src/api/routes/business-data/BusinessRoutes';
 
 import chatRouter from '../src/api/routes/chat/MessageRoutes';
 // import chatRouter from '../src/api/routes/chat/MessageRoutes';
 import connectionRouter from '../src/api/routes/connection/Connection';
-import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoutes';
-import GeneralRoutes from '../src/api/routes/GneralRoutes/GeneralRoutes';
-import InvestorRoute from '../src/api/routes/InvestorRoute/InvestorRoute';
 import liveRouter from '../src/api/routes/live/LiveRoutes';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
-import WishlistsRoutes from '../src/api/routes/Wishlists/WishlistsRoutes';
 import acquireroomRoutes from '../src/api/routes/accquireroom/Accquireroom';
 // import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
@@ -57,7 +51,6 @@ import { SubRole } from './api/entity/SubRole/Subrole';
 import { UserPost } from './api/entity/UserPost';
 import { Wishlists } from './api/entity/WishLists/Wishlists';
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
-import SubRoleRoutes from './api/routes/SubRole/SubRoleRoutes';
 import { initializeSocket } from './socket';
 
 import { ReportedPost } from './api/entity/posts/ReportedPost';
@@ -115,10 +108,10 @@ const AppDataSource = new DataSource({
     NestedComment,
     Notifications,
     Connection,
-    BusinessForSale,
-    BusinessBuyer,
+    // BusinessForSale,
+    // BusinessBuyer,
     Investor,
-    Entrepreneur,
+    // Entrepreneur,
     PersonalDetails,
     Message,
     ProfileVisit,
@@ -132,7 +125,7 @@ const AppDataSource = new DataSource({
     BlockedUser,
     ReportedPost,
     ReportedUser,
-    General,
+    // General,
     Account,
     Connect,
     NestedCommentLike,
@@ -181,15 +174,15 @@ app.use('/v1/post', userPost);
 app.use('/v1/notification', notifications);
 app.use('/v1/connection', connectionRouter);
 app.use('/v1/chat', chatRouter);
-app.use('/v1/businessseller', BuisnessSeller);
-app.use('/v1/investor', InvestorRoute);
-app.use('/v1/businessbuyer', BusinessBuyerRoute);
-app.use('/v1/entrepreneur', EntrepreneurRoutes);
+// app.use('/v1/businessseller', BuisnessSeller);
+// app.use('/v1/investor', InvestorRoute);
+// app.use('/v1/businessbuyer', BusinessBuyerRoute);
+// app.use('/v1/entrepreneur', EntrepreneurRoutes);
 app.use('/v1/live', liveRouter);
-app.use('/v1/wishlists', WishlistsRoutes);
+// app.use('/v1/wishlists', WishlistsRoutes);
 app.use('/v1/socket-notifications', SocketNotificationRouting);
-app.use('/v1/subrole', SubRoleRoutes);
-app.use('/v1/general', GeneralRoutes);
+// app.use('/v1/subrole', SubRoleRoutes);
+// app.use('/v1/general', GeneralRoutes);
 app.use('/v1/business-data', BuisnessDataRoutes);
 app.use('/v1/acquireroom', acquireroomRoutes);
 // Test route
