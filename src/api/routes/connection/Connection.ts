@@ -1,11 +1,11 @@
 import {  ConnectionController, ConnectionsSuggestionController, getUserConnectionRequests, getUserConnections, removeConnection, sendConnectionRequest, unsendConnectionRequest, updateConnectionStatus } from '@/api/controllers/connection/Connections';
 import { authenticate } from '@/api/middlewares/auth/Authenticate';
-import { restrict } from '@/api/middlewares/auth/Authenticate';
+import { connectionRestrict } from '@/api/middlewares/auth/Authenticate';
 import express from 'express';
 
 const Router = express.Router();
 
-Router.post('/send-connection-request', authenticate, restrict,  sendConnectionRequest);
+Router.post('/send-connection-request', authenticate, connectionRestrict,  sendConnectionRequest);
 Router.post('/update-connection-status', authenticate, updateConnectionStatus);
 Router.get('/get-connection-list', authenticate, getUserConnections);
 Router.delete('/remove-connection/:connectionId', authenticate, removeConnection);

@@ -63,7 +63,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   });
 };
 
-export const restrict = async (req: Request, res: Response, next: NextFunction) => {
+export const connectionRestrict = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authenticatedReq = req as AuthenticatedRequest;
     const userId = authenticatedReq.userId;
@@ -80,7 +80,7 @@ export const restrict = async (req: Request, res: Response, next: NextFunction) 
     }
 
     if (restriction.connectionCount <= 0) {
-      return res.status(403).json({ status: "error", statusCode: 403, message: "We are currently verifying the profiles. Please wait 24h - 48h to resume sending the connection request." });
+      return res.status(403).json({ status: "error", statusCode: 403, message: "We are currently verifying the profiles. Please wait 24h - 48h to send more connection requests." });
     }
 
     next();
@@ -90,50 +90,30 @@ export const restrict = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-// import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
-// import { AppDataSource } from '@/server';
-// import { Request, Response, NextFunction } from 'express';
-// import jwt from 'jsonwebtoken';
+export const createPostRestrict = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authenticatedReq = req as AuthenticatedRequest;
+    const userId = authenticatedReq.userId;
 
-// export interface AuthenticatedRequest extends Request {
-//   userId?: string;
-//   isAdmin?: boolean;
-// }
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
 
-// export const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-//   try {
-//     const authHeader = req.headers['authorization'];
+    const restrictionRepo = AppDataSource.getRepository(Ristriction);
+    const restriction = await restrictionRepo.findOne({ where: { userId } });
 
-//     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-//       return res.status(401).json({ status: 'error', message: 'You are not logged in' });
-//     }
+    if (!restriction) {
+      return res.status(400).json({ error: "Restriction record not found" });
+    }
 
-//     const accessToken = authHeader.split(' ')[1];
+    if (!restriction.isBusinessProfileCompleted) {
+      return res.status(403).json({ status: "error", statusCode: 403, message: "Please fill your business profile to post your thoughts." });
+    }
 
-//     jwt.verify(accessToken, process.env.ACCESS_SECRET_KEY || '', async (err: jwt.VerifyErrors | null, payload: any) => {
-//       if (err) {
-//         return res.status(403).json({ status: 'error', message: 'Need to login again' });
-//       }
+    next();
+  } catch (error) {
+    console.error("Error checking connection limit:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
-//       if (!payload || !payload.id) {
-//         return res.status(403).json({ status: 'error', message: 'Invalid token' });
-//       }
-
-//       const userRepo = AppDataSource.getRepository(PersonalDetails);
-//       const user = await userRepo.findOne({ where: { id: payload.id } });
-
-//       if (!user) {
-//         return res.status(401).json({ status: 'error', message: 'User does not exist' });
-//       }
-
-//       req.userId = user.id;
-//       req.isAdmin = user.isAdmin || false; 
-
-//       console.log('Authentication payload: ', payload);
-//       next();
-//     });
-//   } catch (error) {
-//     console.error('Authentication error:', error);
-//     return res.status(500).json({ status: 'error', message: 'Internal server error' });
-//   }
-// };

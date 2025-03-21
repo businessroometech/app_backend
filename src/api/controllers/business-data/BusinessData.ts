@@ -68,14 +68,10 @@ export const createOrUpdateInvestorData = async (req: AuthenticatedRequest, res:
                 }
 
                 savedData = await repository.save(existingData);
-
-                // user!.subRole = subRole;
                 await user?.save();
             } else {
                 const newData = repository.create({ userId, ...data });
                 savedData = await repository.save(newData);
-                // user!.subRole = subRole;
-
                 await user?.save();
             }
         } else {

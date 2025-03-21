@@ -7,132 +7,6 @@ import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import { sendNotification } from '../notifications/SocketNotificationController';
 
-// export const signup = async (req: Request, res: Response): Promise<void> => {
-//   const queryRunner = AppDataSource.createQueryRunner();
-//   await queryRunner.connect();
-
-//   try {
-//     await queryRunner.startTransaction();
-
-//     const {
-//       firstName,
-//       lastName,
-//       emailAddress,
-//       password,
-//       country,
-//       countryCode,
-//       mobileNumber,
-//       gender,
-//       dob,
-//       userRole,
-//       createdBy = 'system',
-//       updatedBy = 'system',
-//     } = req.body;
-
-//     if (!firstName || !lastName || !emailAddress || !password || !country) {
-//       res.status(400).json({
-//         status: 'error',
-//         message: 'All fields are required',
-//       });
-//       return;
-//     }
-
-//     if (!validator.isEmail(emailAddress)) {
-//       res.status(400).json({
-//         status: 'error',
-//         message: 'Invalid email address format.',
-//       });
-//       return;
-//     }
-
-//     const passwordMinLength = 8;
-//     if (
-//       password.length < passwordMinLength ||
-//       !/[A-Z]/.test(password) ||
-//       !/[a-z]/.test(password) ||
-//       !/[0-9]/.test(password)
-//     ) {
-//       res.status(400).json({
-//         status: 'error',
-//         message:
-//           'Password must be at least 8 characters long and include uppercase letters, lowercase letters and digits.',
-//       });
-//       return;
-//     }
-
-//     if (firstName.length > 50 || lastName.length > 50) {
-//       res.status(400).json({
-//         status: 'error',
-//         message: 'First name and last name must not exceed 50 characters.',
-//       });
-//       return;
-//     }
-
-//     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
-
-//     const newUser = userLoginRepository.create({
-//       firstName,
-//       lastName,
-//       emailAddress,
-//       password,
-//       country,
-//       countryCode,
-//       mobileNumber,
-//       gender,
-//       userRole,
-//       dob,
-//       active: 1,
-//       createdBy,
-//       updatedBy,
-//     });
-
-//     const user = await userLoginRepository.save(newUser);
-
-//     // Generate a verification token
-//     // const verificationToken = jwt.sign({ userId: newUser.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
-
-//     // Send verification email
-//     // await sendVerificationEmail(newUser.emailAddress, verificationToken);
-
-//     await queryRunner.commitTransaction();
-
-//     res.status(201).json({
-//       status: 'success',
-//       message: 'Signup completed successfully. Please verify your email.',
-//       data: {
-//         user: newUser
-//       },
-//     });
-//     // }
-//   } catch (error: any) {
-//     if (queryRunner.isTransactionActive) {
-//       await queryRunner.rollbackTransaction();
-//     }
-//     console.error('Error during signup:', error);
-//     if (error.code === 'ER_DUP_ENTRY') {
-//       const sqlMessage = error.sqlMessage || '';
-
-//       if (sqlMessage.includes('mobileNumber')) {
-//         res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
-//         return;
-//       } else if (sqlMessage.includes('emailAddress')) {
-//         res.status(400).json({ status: 'error', message: 'Email already exists.' });
-//         return;
-//       } else {
-//         res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
-//         return;
-//       }
-//     }
-
-//     res.status(500).json({
-//       status: 'error',
-//       message: 'Something went wrong! Please try again later.',
-//     });
-//   } finally {
-//     await queryRunner.release();
-//   }
-// };
-
 export const signup = async (req: Request, res: Response): Promise<void> => {
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
@@ -151,11 +25,12 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       gender,
       dob,
       userRole,
+      linkedIn,
       createdBy = 'system',
       updatedBy = 'system',
     } = req.body;
 
-    if (!firstName || !lastName || !emailAddress || !password || !country) {
+    if (!firstName || !lastName || !emailAddress || !password || !country || !linkedIn) {
       res.status(400).json({ status: 'error', message: 'All fields are required' });
       return;
     }
@@ -223,17 +98,25 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       userRole,
       dob,
       active: 1,
+      linkedIn,
       createdBy,
       updatedBy,
     });
 
     const user = await userLoginRepository.save(newUser);
 
-    const restriction = restrictionRepository.create({
-      userId: user?.id,
-    });
+    try {
+      const restriction = restrictionRepository.create({
+        userId: user?.id,
+      });
 
-    const restrict = await restrictionRepository.save(restriction);
+      await restrictionRepository.save(restriction);
+    } catch (restrictionError) {
+      console.error('Error creating restriction:', restrictionError);
+      await queryRunner.rollbackTransaction();
+      res.status(500).json({ status: 'error', message: 'Failed to create restriction. Please try again later.' });
+      return;
+    }
 
     await queryRunner.commitTransaction();
 
@@ -265,6 +148,142 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     await queryRunner.release();
   }
 };
+
+
+// export const signup = async (req: Request, res: Response): Promise<void> => {
+//   const queryRunner = AppDataSource.createQueryRunner();
+//   await queryRunner.connect();
+
+//   try {
+//     await queryRunner.startTransaction();
+
+//     const {
+//       firstName,
+//       lastName,
+//       emailAddress,
+//       password,
+//       country,
+//       countryCode,
+//       mobileNumber,
+//       gender,
+//       dob,
+//       userRole,
+//       linkedIn,
+//       createdBy = 'system',
+//       updatedBy = 'system',
+//     } = req.body;
+
+//     if (!firstName || !lastName || !emailAddress || !password || !country || !linkedIn) {
+//       res.status(400).json({ status: 'error', message: 'All fields are required' });
+//       return;
+//     }
+
+//     if (!validator.isEmail(emailAddress)) {
+//       res.status(400).json({ status: 'error', message: 'Invalid email address format.' });
+//       return;
+//     }
+
+//     if (dob && isNaN(Date.parse(dob))) {
+//       res.status(400).json({ status: 'error', message: 'Invalid date of birth format.' });
+//       return;
+//     }
+
+//     const passwordMinLength = 8;
+//     if (
+//       password.length < passwordMinLength ||
+//       !/[A-Z]/.test(password) ||
+//       !/[a-z]/.test(password) ||
+//       !/[0-9]/.test(password)
+//     ) {
+//       res.status(400).json({
+//         status: 'error',
+//         message: 'Password must be at least 8 characters long and include uppercase letters, lowercase letters, and digits.',
+//       });
+//       return;
+//     }
+
+//     if (firstName.length > 50 || lastName.length > 50) {
+//       res.status(400).json({
+//         status: 'error',
+//         message: 'First name and last name must not exceed 50 characters.',
+//       });
+//       return;
+//     }
+
+//     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
+//     const restrictionRepository = queryRunner.manager.getRepository(Ristriction);
+
+//     // Check for duplicate email
+//     const existingUser = await userLoginRepository.findOne({ where: { emailAddress } });
+//     if (existingUser) {
+//       res.status(400).json({ status: 'error', message: 'Email already exists.' });
+//       return;
+//     }
+
+//     // Check for duplicate mobile number
+//     if (mobileNumber) {
+//       const existingMobile = await userLoginRepository.findOne({ where: { mobileNumber } });
+//       if (existingMobile) {
+//         res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
+//         return;
+//       }
+//     }
+
+//     const newUser = userLoginRepository.create({
+//       firstName,
+//       lastName,
+//       emailAddress,
+//       password,
+//       country,
+//       countryCode,
+//       mobileNumber,
+//       gender,
+//       userRole,
+//       dob,
+//       active: 1,
+//       linkedIn,
+//       createdBy,
+//       updatedBy,
+//     });
+
+//     const user = await userLoginRepository.save(newUser);
+
+//     const restriction = restrictionRepository.create({
+//       userId: user?.id,
+//     });
+
+//     const restrict = await restrictionRepository.save(restriction);
+
+//     await queryRunner.commitTransaction();
+
+//     res.status(201).json({
+//       status: 'success',
+//       message: 'Signup completed successfully. Please verify your email.',
+//       data: { user },
+//     });
+//   } catch (error: any) {
+//     await queryRunner.rollbackTransaction();
+//     console.error('Error during signup:', error);
+
+//     if (error.code === 'ER_DUP_ENTRY') {
+//       const sqlMessage = error.sqlMessage || '';
+
+//       if (sqlMessage.includes('mobileNumber')) {
+//         res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
+//         return;
+//       } else if (sqlMessage.includes('emailAddress')) {
+//         res.status(400).json({ status: 'error', message: 'Email already exists.' });
+//         return;
+//       }
+//       res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
+//       return;
+//     }
+
+//     res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
+//   } finally {
+//     await queryRunner.release();
+//   }
+// };
 
 // Send the verification email
 const sendVerificationEmail = async (email: string, verificationToken: string) => {

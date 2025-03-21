@@ -10,4 +10,7 @@ export class Ristriction extends BaseEntity {
 
   @Column({ type: 'int', default: 5 })
   connectionCount!: number;
+
+  @Column({ type: "bool", default: false })
+  isBusinessProfileCompleted !: boolean;
 }
