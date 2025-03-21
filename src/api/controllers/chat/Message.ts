@@ -368,12 +368,14 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
           imageUrlS: userS?.profilePictureUploadId ? await generatePresignedUrl(userS.profilePictureUploadId) : null,
           userRoleS: userS?.userRole,
           bioS: userS?.bio,
+          badgeNameS: userS?.badgeName,
 
           isActiveR: activeUserR?.isActive || false,
           fullnameR: userR ? `${userR.firstName} ${userR.lastName}` : null,
           imageUrlR: userR?.profilePictureUploadId ? await generatePresignedUrl(userR.profilePictureUploadId) : null,
           userRoleR: userR?.userRole,
           bioR: userR?.bio,
+          badgeNameR: userR?.badgeName,
 
           unReadCount: count
         };
