@@ -735,7 +735,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             reactionCount: likeCount,
             reactionId: like?.reactionId,
             commentCount,
-            reactionStatus: like?.status,
+            reactionStatus: like ? like.status : false,
             isRepost: post.isRepost,
             repostedFrom: post.repostedFrom,
             repostText: post.repostText,
