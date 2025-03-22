@@ -4,6 +4,9 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../../../server";
 import { Request, Response } from "express";
 import { generatePresignedUrl } from "../s3/awsControllers";
+import { getSocketInstance } from "@/socket";
+import { Message } from "@/api/entity/chat/Message";
+import { MessageHistory } from "@/api/entity/chat/MessageHistory";
 
 const getNotificationRepo = (): Repository<Notify> => {
     if (!AppDataSource.isInitialized) {
@@ -80,6 +83,8 @@ export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Res
     try {
         const { notificationId } = req.params;
 
+        const userId = req.userId;
+
         const notificationRepo = AppDataSource.getRepository(Notify);
 
         const notification = await notificationRepo.findOne({ where: { id: notificationId } });
@@ -91,7 +96,41 @@ export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Res
         notification.isRead = true;
         await notificationRepo.save(notification);
 
-        
+
+        const NotifyRepo = AppDataSource.getRepository(Notify);
+        const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
+
+        const messageRepo = AppDataSource.getRepository(Message);
+        const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
+
+        const history = await messageHistoryRepo.find({
+            where: [
+                { senderId: userId },
+                { receiverId: userId }
+            ],
+        });
+
+        const unreadMessagesCount = (await Promise.all(
+            (history || []).map(async (his) => {
+                let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+                let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+                const count = await messageRepo.count({
+                    where: { receiverId: myId, senderId: otherId, isRead: false },
+                });
+
+                return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+            })
+        )).filter((item) => item !== null);
+
+        const io = getSocketInstance();
+        io.to(userId!).emit('initialize', {
+            userId,
+            welcomeMessage: 'Welcome to BusinessRoom!',
+            unreadNotificationsCount: notifyCount ? notifyCount : 0,
+            unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
+        });
+
 
         return res.status(200).json({ success: true, message: 'Notification marked as read' });
     } catch (error) {
@@ -113,8 +152,41 @@ export const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res:
             .where("recieverId = :userId AND isRead = false", { userId })
             .execute();
 
-        return res.status(200).json({ status: "success", message: 'All notifications marked as read' });
+        const NotifyRepo = AppDataSource.getRepository(Notify);
+        const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
 
+        const messageRepo = AppDataSource.getRepository(Message);
+        const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
+
+        const history = await messageHistoryRepo.find({
+            where: [
+                { senderId: userId },
+                { receiverId: userId }
+            ],
+        });
+
+        const unreadMessagesCount = (await Promise.all(
+            (history || []).map(async (his) => {
+                let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+                let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+                const count = await messageRepo.count({
+                    where: { receiverId: myId, senderId: otherId, isRead: false },
+                });
+
+                return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+            })
+        )).filter((item) => item !== null);
+
+        const io = getSocketInstance();
+        io.to(userId!).emit('initialize', {
+            userId,
+            welcomeMessage: 'Welcome to BusinessRoom!',
+            unreadNotificationsCount: notifyCount ? notifyCount : 0,
+            unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
+        });
+
+        return res.status(200).json({ status: "success", message: 'All notifications marked as read' });
 
 
     } catch (error) {
