@@ -126,7 +126,7 @@ export class PersonalDetails extends BaseEntity {
   })
   updatedAt!: Date;
 
-  @Column({ type: 'int', default: 0, nullable: true })
+  @Column({ type: 'int', default: 1, nullable: true })
   active!: number;
 
   @Column({ type: 'float', nullable: true })

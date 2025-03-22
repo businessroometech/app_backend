@@ -239,13 +239,13 @@ export const getOnlineUsers = async (req: Request, res: Response) => {
 export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const searchQuery = req.query.name as string;
-
-    const connectionRepository = AppDataSource.getRepository(Connection);
+    const searchQuery = (req.query.name as string)?.toLowerCase().trim();
 
     if (!searchQuery) {
       return res.status(400).json({ status: 'fail', message: 'Search query is required' });
     }
+
+    const connectionRepository = AppDataSource.getRepository(Connection);
 
     const connections = await connectionRepository.find({
       where: [
@@ -255,36 +255,34 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
       relations: ['requester', 'receiver']
     });
 
-
     const filteredConnections = connections.filter((conn) => {
-      const requesterFullName = `${conn.requester?.firstName} ${conn.requester?.lastName}`.toLowerCase();
-      const receiverFullName = `${conn.receiver?.firstName} ${conn.receiver?.lastName}`.toLowerCase();
+      const requester = conn.requester;
+      const receiver = conn.receiver;
 
-      return (
-        (conn.requesterId !== userId && requesterFullName.includes(searchQuery.toLowerCase())) ||
-        (conn.receiverId !== userId && receiverFullName.includes(searchQuery.toLowerCase()))
-      );
+      if (!requester || !receiver) return false;
+
+      const requesterFullName = `${requester.firstName} ${requester.lastName}`.toLowerCase();
+      const receiverFullName = `${receiver.firstName} ${receiver.lastName}`.toLowerCase();
+
+      const isRequesterValid = requester.active === 1 && conn.requesterId !== userId && requesterFullName.includes(searchQuery);
+      const isReceiverValid = receiver.active === 1 && conn.receiverId !== userId && receiverFullName.includes(searchQuery);
+
+      return isRequesterValid || isReceiverValid;
     });
-
-
-    // const filteredConnectionsFinal = filteredConnections.map(async (fil) => {
-    //   const obj = {
-    //     ...(userId !== fil?.receiverId ? fil?.receiver : fil?.requester),
-    //     profileImgUrl: await generatePresignedUrl(userId !== fil?.receiverId ? fil?.receiver?.profilePictureUploadId : fil?.requester?.profilePictureUploadId),
-    //   };
-    //   return obj;
-    // });
 
     const filteredConnectionsFinal = await Promise.all(
       filteredConnections.map(async (fil) => {
-        const user = userId !== fil?.receiverId ? fil?.receiver : fil?.requester;
-        const profilePictureUploadId = userId !== fil?.receiverId ? fil?.receiver?.profilePictureUploadId : fil?.requester?.profilePictureUploadId;
+        const user = userId !== fil.receiverId ? fil.receiver : fil.requester;
+        const profilePictureUploadId = user.profilePictureUploadId;
 
-        const obj = {
-          ...user,
-          profileImgUrl: await generatePresignedUrl(profilePictureUploadId).catch(() => null), // Handle potential errors
+        return {
+          id: user?.id,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          email: user?.emailAddress,
+          profileImgUrl: profilePictureUploadId ? await generatePresignedUrl(profilePictureUploadId).catch(() => null) : null,
+          badgeName: user?.badgeName
         };
-        return obj;
       })
     );
 
@@ -303,6 +301,7 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
     });
   }
 };
+
 
 export const getMessageHistory = async (req: AuthenticatedRequest, res: Response) => {
   try {

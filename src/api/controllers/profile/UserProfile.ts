@@ -524,8 +524,8 @@ export const searchUserProfile = async (req: AuthenticatedRequest, res: Response
     // Fetch users matching the search query
     const searchResults = await personalDetailsRepository.find({
       where: [
-        { firstName: ILike(`%${searchQuery}%`) },
-        { lastName: ILike(`%${searchQuery}%`) },
+        { firstName: ILike(`%${searchQuery}%`), active: 1 },
+        { lastName: ILike(`%${searchQuery}%`), active: 1 },
       ],
     });
 

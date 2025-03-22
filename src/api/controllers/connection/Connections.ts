@@ -249,8 +249,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     ].filter((id) => id !== profileId);
 
     const users = await userRepository.find({
-      where: { id: In(userIds) },
-      // select: ['id', 'firstName', 'lastName', 'profilePictureUploadId', 'userRole'],
+      where: { id: In(userIds), active: 1},
     });
 
     if (!users || users.length === 0) {
@@ -497,7 +496,8 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
     // Find users not connected with yet
     const [users, total] = await userRepository.findAndCount({
       where: {
-        id: Not(In([userId, ...Array.from(connectedUserIds)])) // Exclude self and connected users
+        id: Not(In([userId, ...Array.from(connectedUserIds)])), // Exclude self and connected users
+        active: 1
       },
       skip: offset,
       take: Number(limit),

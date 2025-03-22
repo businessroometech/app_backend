@@ -229,3 +229,33 @@ export const farmaan = async (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: 'Failed to send notification email' });
   }
 };
+
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
+export const disable = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+
+    const user = await userRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      return res.status(400).json({ status: "error", message: "User not found" });
+    }
+
+    if (user.active === 0) {
+      return res.status(400).json({ status: "error", message: "User is already disabled" });
+    }
+
+    user.active = 0;
+
+    await userRepo.save(user);
+
+    return res.status(200).json({ status: "success", message: "User disabled successfully" });
+  } catch (error) {
+    console.error("Error disabling user:", error);
+    return res.status(500).json({ status: "error", message: "Something went wrong" });
+  }
+};
