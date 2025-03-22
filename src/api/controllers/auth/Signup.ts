@@ -120,6 +120,40 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     await queryRunner.commitTransaction();
 
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'businessroom.ai@gmail.com',
+        pass: 'eshqmhxhvmxonqfe',
+      },
+    });
+
+    try {
+      const mailOptions = {
+        from: 'businessroomai@gmail.com',
+        to: 'arunmanchanda9999@gmail.com',
+        subject: 'New Signup 🎉',
+        html: `<h3>Hello Arun,</h3>
+               <p>A new user has signed up!</p>
+               <ul>
+                 <li><strong>Name:</strong>${user.firstName} ${user.lastName}</li>
+                 <li><strong>Email:</strong>${user.emailAddress}</li>
+                 <li><strong>Mobile:</strong>${user.mobileNumber}</li>
+                 <li><strong>Linked Profile:</strong>${user.linkedIn}</li>
+                 <li><strong>Role:</strong>${user.userRole}</li>
+                 </ul>
+              <p>Best,<br>Your Team</p>`
+      };
+
+      await transporter.sendMail(mailOptions);
+      res.status(200).json({ status: "success", message: 'New registration' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).json({ status: "error", message: 'Failed to send email' });
+    }
+
     res.status(201).json({
       status: 'success',
       message: 'Signup completed successfully. Please verify your email.',

@@ -295,6 +295,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           lastName: user?.lastName,
           userRole: user?.userRole,
           profilePictureUrl: profilePictureUrl,
+          bagdeName: user?.badgeName,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
           mutual: isMutual,
           me: userId === connection.requesterId || userId === connection.receiverId,
@@ -519,11 +520,12 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
     // Map user details and get profile pictures
     const result = await Promise.all(
       users.map(async (user) => ({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        occupation: user.occupation,
-        userRole: user.userRole,
+        id: user?.id,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        occupation: user?.occupation,
+        userRole: user?.userRole,
+        badgeName: user?.badgeName,
         profilePictureUrl: user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
       }))
     );

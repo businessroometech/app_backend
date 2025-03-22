@@ -281,7 +281,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     )).filter((item) => item !== null);
 
     const io = getSocketInstance();
-    io.emit('initialize', {
+    io.to(userId).emit('initialize', {
       userId,
       welcomeMessage: 'Welcome to BusinessRoom!',
       unreadNotificationsCount: notifyCount ? notifyCount : 0,
@@ -303,6 +303,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
         receiverId: connectionsStatus ? connectionsStatus.receiverId : null,
       },
     });
+
   } catch (error: any) {
     console.error('Error fetching user profile:', error);
     return res.status(500).json({
