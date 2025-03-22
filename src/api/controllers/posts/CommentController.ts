@@ -322,6 +322,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               likeStatus: nestedCommentLike?.status,
               commenterId: commenter?.id,
               profilePic: profilePictureUrl,
+              badgeName: commenter?.badgeName,
               isChild: comment.isChild,
               repliedTo: comment.repliedTo
             };
@@ -349,6 +350,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
           likeCount: totalCommentLikes,
           commenterId: commenter?.id,
           profilePic: profilePictureUrl,
+          badgeName: commenter?.badgeName,
           replyCount: formattedNestedComments.length,
           replies: formattedNestedComments,
           mediaUrls: comment.mediaKeys ? await generatePresignedUrl(comment.mediaKeys.key) : [],
