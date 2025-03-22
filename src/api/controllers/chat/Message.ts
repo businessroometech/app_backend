@@ -105,7 +105,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       })
     )).filter((item) => item !== null);
 
-    io.emit('initialize', {
+    io.to(userId).emit('initialize', {
       userId,
       welcomeMessage: 'Welcome to BusinessRoom!',
       unreadNotificationsCount: notifyCount ? notifyCount : 0,

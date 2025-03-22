@@ -170,7 +170,7 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
           : null;
 
         await createNotification(
-          NotificationType.REQUEST_RECEIVED,
+          NotificationType.REQUEST_ACCEPTED,
           connection.requester.id,
           connection.receiver.id,
           `${connection.receiver.firstName} ${connection.receiver.lastName} accepted your connection request`,

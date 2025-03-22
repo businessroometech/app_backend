@@ -91,6 +91,8 @@ export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Res
         notification.isRead = true;
         await notificationRepo.save(notification);
 
+        
+
         return res.status(200).json({ success: true, message: 'Notification marked as read' });
     } catch (error) {
         console.error('Error marking notification as read:', error);
@@ -112,6 +114,9 @@ export const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res:
             .execute();
 
         return res.status(200).json({ status: "success", message: 'All notifications marked as read' });
+
+
+
     } catch (error) {
         console.error('Error marking all notifications as read:', error);
         return res.status(500).json({ status: "error", message: 'Internal server error' });
