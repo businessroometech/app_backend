@@ -11,7 +11,7 @@ import { authenticate, createPostRestrict } from '@/api/middlewares/auth/Authent
 
 const Router = express.Router();
 
-Router.post('/create-userpost', authenticate, createPostRestrict, uploadMiddleware, CreateUserPost)
+Router.post('/create-userpost', authenticate,  uploadMiddleware, CreateUserPost)
 Router.post('/vote-in-poll', authenticate, VoteInPoll);
 
 Router.get('/get-user-post', authenticate, FindUserPost)
