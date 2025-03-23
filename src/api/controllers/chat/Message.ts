@@ -202,9 +202,11 @@ export const getAllUnreadMessages = async (req: AuthenticatedRequest, res: Respo
   }
 };
 
-export const markMessageAsRead = async (req: Request, res: Response) => {
+export const markMessageAsRead = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { receiverId, senderId } = req.body;
+
+    const userId = req.userId;
 
     const messageRepository = AppDataSource.getRepository(Message);
 
@@ -218,6 +220,39 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
     const io = getSocketInstance();
     const roomId = [senderId, receiverId].sort().join('-');
     io.to(roomId).emit('messageRead');
+
+    const NotifyRepo = AppDataSource.getRepository(Notify);
+    const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
+
+    const messageRepo = AppDataSource.getRepository(Message);
+    const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
+
+    const history = await messageHistoryRepo.find({
+      where: [
+        { senderId: userId },
+        { receiverId: userId }
+      ],
+    });
+
+    const unreadMessagesCount = (await Promise.all(
+      (history || []).map(async (his) => {
+        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+
+        const count = await messageRepo.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
+
+        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+      })
+    )).filter((item) => item !== null);
+
+    io.to(userId!).emit('initialize', {
+      userId,
+      welcomeMessage: 'Welcome to BusinessRoom!',
+      unreadNotificationsCount: notifyCount ? notifyCount : 0,
+      unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
+    });
 
     return res.status(200).json({ success: true, message: 'Messages marked as read' });
   } catch (error) {

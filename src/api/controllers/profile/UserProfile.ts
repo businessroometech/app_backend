@@ -17,6 +17,7 @@ import { Message } from '@/api/entity/chat/Message';
 import { MessageHistory } from '@/api/entity/chat/MessageHistory';
 import { getSocketInstance } from '@/socket';
 import sharp from 'sharp';
+import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -204,6 +205,9 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
       where: { id: String(profileId) },
     });
 
+    const ristrictionRepo = AppDataSource.getRepository(Ristriction);
+    const ristrict = await ristrictionRepo.findOne({ where: { userId: personalDetails?.id } });
+
     if (!personalDetails) {
       return res.status(400).json({
         status: "error",
@@ -292,7 +296,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
       status: "success",
       message: 'User profile fetched successfully.',
       data: {
-        personalDetails,
+        personalDetails: { ...personalDetails, isBusinessProfileFilled: ristrict?.isBusinessProfileCompleted },
         profileImgUrl,
         coverImgUrl,
         connectionsCount,
