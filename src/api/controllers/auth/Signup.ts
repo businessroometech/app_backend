@@ -30,7 +30,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       updatedBy = 'system',
     } = req.body;
 
-    if (!firstName || !lastName || !emailAddress || !password || !country || !linkedIn) {
+    if (!firstName || !lastName || !emailAddress || !password || !country ) {
       res.status(400).json({ status: 'error', message: 'All fields are required' });
       return;
     }
