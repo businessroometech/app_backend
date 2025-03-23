@@ -103,6 +103,10 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       return res.status(404).json({ status: "error", message: "User not found." });
     }
 
+    if (bio?.length > 60) {
+      return res.status(400).json({ status: "error", message: "Bio must be under 60 characters" });
+    }
+
     if (firstName !== undefined) personalDetails.firstName = firstName;
     if (lastName !== undefined) personalDetails.lastName = lastName;
     if (dob !== undefined) personalDetails.dob = dob;
