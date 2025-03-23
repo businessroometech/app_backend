@@ -843,46 +843,92 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
 };
 
 // find and delete user post
+// export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+//   try {
+//     const { postId } = req.params;
+//     const { userId } = req;
+
+//     if (!userId) {
+//       return res.status(401).json({ status: "fail", message: 'Unauthorized' });
+//     }
+
+//     const userRepos = AppDataSource.getRepository(PersonalDetails);
+//     const user = await userRepos.findOneBy({ id: userId });
+
+//     if (!user) {
+//       return res.status(400).json({ status: "fail", message: 'User Id is invalid or does not exist.' });
+//     }
+
+//     const userPostRepo = AppDataSource.getRepository(UserPost);
+//     const userPost = await userPostRepo.findOne({
+//       where: { id: postId },
+//     });
+
+//     if (!userPost) {
+//       return res.status(400).json({ status: "fail", message: 'Post not found. Invalid Post Id.' });
+//     }
+
+//     if (userPost.userId !== userId && user?.isAdmin !== true) {
+//       return res.status(403).json({ status: "fail", message: 'Unauthorized to delete this post' });
+//     }
+
+//     await userPostRepo.delete(postId);
+
+//     return res.status(200).json({ status: "success", message: 'User post deleted successfully.' });
+
+//   } catch (error: any) {
+//     return res.status(500).json({
+//       message: 'Internal server error. Could not delete user post.',
+//       status: "error",
+//     });
+//   }
+// };
+
+
 export const DeleteUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { postId } = req.params;
     const { userId } = req;
 
     if (!userId) {
-      return res.status(401).json({ status: "fail", message: 'Unauthorized' });
+      return res.status(401).json({ status: "fail", message: "Unauthorized" });
     }
 
     const userRepos = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepos.findOneBy({ id: userId });
 
     if (!user) {
-      return res.status(400).json({ status: "fail", message: 'User Id is invalid or does not exist.' });
+      return res.status(400).json({ status: "fail", message: "User Id is invalid or does not exist." });
     }
 
     const userPostRepo = AppDataSource.getRepository(UserPost);
-    const userPost = await userPostRepo.findOne({
-      where: { id: postId },
-    });
+    const userPost = await userPostRepo.findOne({ where: { id: postId } });
 
     if (!userPost) {
-      return res.status(400).json({ status: "fail", message: 'Post not found. Invalid Post Id.' });
+      return res.status(400).json({ status: "fail", message: "Post not found. Invalid Post Id." });
     }
 
     if (userPost.userId !== userId && user?.isAdmin !== true) {
-      return res.status(403).json({ status: "fail", message: 'Unauthorized to delete this post' });
+      return res.status(403).json({ status: "fail", message: "Unauthorized to delete this post" });
     }
 
+    // Delete all reposts of this post
+    await userPostRepo.delete({ repostedFrom: postId });
+
+    // Delete the original post
     await userPostRepo.delete(postId);
 
-    return res.status(200).json({ status: "success", message: 'User post deleted successfully.' });
+    return res.status(200).json({ status: "success", message: "User post and its reposts deleted successfully." });
 
   } catch (error: any) {
+    console.error("Error deleting post:", error);
     return res.status(500).json({
-      message: 'Internal server error. Could not delete user post.',
+      message: "Internal server error. Could not delete user post.",
       status: "error",
     });
   }
 };
+
 
 // get user post by postId
 export const GetUserPostById = async (req: Request, res: Response): Promise<Response> => {
