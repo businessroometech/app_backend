@@ -49,144 +49,144 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const blockPostRepo = AppDataSource.getRepository(BlockedPost);
     const blockUserRepo = AppDataSource.getRepository(BlockedUser);
 
-    const activeUsers = await userRepository.find({
-      where: { active: 1 },
-      select: ['id']
-    });
-    const activeUserIds = activeUsers.map(user => user.id);
+    // const activeUsers = await userRepository.find({
+    //   where: { active: 1 },
+    //   select: ['id']
+    // });
+    // const activeUserIds = activeUsers.map(user => user.id);
 
-    // Fetch active connections
-    const connections = await connectionRepository.find({
-      where: [
-        { receiverId: userId, requesterId: In(activeUserIds) },
-        { receiverId: In(activeUserIds), requesterId: userId }
-      ]
-    });
-
-    const connectedUserIds = connections.map(conn =>
-      conn.requesterId === userId ? conn.receiverId : conn.requesterId
-    );
-
-    // Fetch public posts first (no pagination yet)
-    const publicPosts = await userPostRepository.find({
-      where: {
-        userId: In(activeUserIds),
-        isDiscussion: discuss,
-        isHidden: false
-      },
-      order: { updatedAt: 'DESC', createdAt: 'DESC' }
-    });
-
-    // Extract post IDs for engagement filtering
-    const publicPostIds = publicPosts.map(post => post.id);
-    const activeConnectedUserIds = connectedUserIds.filter(id => activeUserIds.includes(id));
-
-    // Fetch likes and comments from active connections
-    const [connectionLikes, connectionComments] = await Promise.all([
-      likeRepository.find({ where: { userId: In(activeConnectedUserIds), postId: In(publicPostIds) } }),
-      commentRepository.find({ where: { userId: In(activeConnectedUserIds), postId: In(publicPostIds) } })
-    ]);
-
-    // Filter public posts that have engagement from active connections
-    const engagedPublicPostIds = new Set(
-      [...connectionLikes, ...connectionComments].map(item => item.postId)
-    );
-
-    // Fetch priority posts (User + Connections' Posts)
-    const connectedPosts = await userPostRepository.find({
-      where: {
-        userId: In([...connectedUserIds, userId].filter(id => activeUserIds.includes(id!))),
-        isDiscussion: discuss,
-        isHidden: false
-      },
-      order: { updatedAt: 'DESC', createdAt: 'DESC' }
-    });
-
-    // Combine all post IDs and remove duplicates
-    const allPostIds = new Set([
-      ...connectedPosts.map(post => post.id),
-      ...publicPosts.filter(post => engagedPublicPostIds.has(post.id)).map(post => post.id)
-    ]);
-
-    const offest = (Number(page) - 1) * Number(limit);
-    // Fetch final post objects
-    let [ allPosts, countAllPost ] = await userPostRepository.findAndCount({
-      where: { id: In([...allPostIds]) },
-      order: { updatedAt: 'DESC', createdAt: 'DESC' },
-      take: Number(limit),
-      skip: offest
-    });
-
-
-    // // Fetch blocked posts and users
-    // const blockedPostIds = (await blockPostRepo.find({ where: { blockedBy: userId } })).map(bp => bp.blockedPost);
-    // const blockedUserIds = (await blockUserRepo.find({ where: { blockedBy: userId } })).map(bu => bu.blockedUser);
-
-    // // Fetch user details
-    // const currentUser = await userRepository.findOne({ where: { id: userId } });
-    // if (!currentUser) return res.status(400).json({ message: 'User not found.' });
-
-
+    // // Fetch active connections
     // const connections = await connectionRepository.find({
-    //   where: { receiverId: userId, requesterId: userId }
+    //   where: [
+    //     { receiverId: userId, requesterId: In(activeUserIds) },
+    //     { receiverId: In(activeUserIds), requesterId: userId }
+    //   ]
     // });
 
-    // const connectedUserIds = connections.map(conn => conn.requesterId === userId ? conn.receiverId : conn.requesterId);
+    // const connectedUserIds = connections.map(conn =>
+    //   conn.requesterId === userId ? conn.receiverId : conn.requesterId
+    // );
+
+    // // Fetch public posts first (no pagination yet)
+    // const publicPosts = await userPostRepository.find({
+    //   where: {
+    //     userId: In(activeUserIds),
+    //     isDiscussion: discuss,
+    //     isHidden: false
+    //   },
+    //   order: { updatedAt: 'DESC', createdAt: 'DESC' }
+    // });
+
+    // // Extract post IDs for engagement filtering
+    // const publicPostIds = publicPosts.map(post => post.id);
+    // const activeConnectedUserIds = connectedUserIds.filter(id => activeUserIds.includes(id));
+
+    // // Fetch likes and comments from active connections
+    // const [connectionLikes, connectionComments] = await Promise.all([
+    //   likeRepository.find({ where: { userId: In(activeConnectedUserIds), postId: In(publicPostIds) } }),
+    //   commentRepository.find({ where: { userId: In(activeConnectedUserIds), postId: In(publicPostIds) } })
+    // ]);
+
+    // // Filter public posts that have engagement from active connections
+    // const engagedPublicPostIds = new Set(
+    //   [...connectionLikes, ...connectionComments].map(item => item.postId)
+    // );
 
     // // Fetch priority posts (User + Connections' Posts)
     // const connectedPosts = await userPostRepository.find({
-    //   where: { userId: In([...connectedUserIds, userId]), isDiscussion: discuss, isHidden: false },
-    //   order: { updatedAt: 'DESC', createdAt: 'DESC' },
+    //   where: {
+    //     userId: In([...connectedUserIds, userId].filter(id => activeUserIds.includes(id!))),
+    //     isDiscussion: discuss,
+    //     isHidden: false
+    //   },
+    //   order: { updatedAt: 'DESC', createdAt: 'DESC' }
     // });
 
-    // // // Fetch public posts
-    // const publicPosts = await userPostRepository.find({
-    //   where: { userId: Not(In([...connectedUserIds])), isDiscussion: discuss, isHidden: false },
-    //   order: { updatedAt: 'DESC', createdAt: 'DESC' },
-    // });
-
-    // // // Identify posts that connections engaged with (liked or commented)
-    // const publicPostIds = publicPosts.map(post => post.id);
-    // const [connectionLikes, connectionComments] = await Promise.all([
-    //   likeRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
-    //   commentRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
+    // // Combine all post IDs and remove duplicates
+    // const allPostIds = new Set([
+    //   ...connectedPosts.map(post => post.id),
+    //   ...publicPosts.filter(post => engagedPublicPostIds.has(post.id)).map(post => post.id)
     // ]);
 
-    // const engagedPublicPosts = publicPosts.filter(post =>
-    //   connectionLikes.some(like => like.postId === post.id) ||
-    //   connectionComments.some(comment => comment.postId === post.id)
-    // );
-
-    // // Fetch all user posts
-    // const userPost = await userPostRepository.find({ where: { userId: In([userId]), isDiscussion: discuss } });
-
-    // // Remaining public posts (not engaged by connections)
-    // const remainingPublicPosts = publicPosts.filter(post => !engagedPublicPosts.includes(post));
-
-    // // Merge all prioritized posts
-    // let allPosts = [...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
+    // const offest = (Number(page) - 1) * Number(limit);
+    // // Fetch final post objects
+    // let [ allPosts, countAllPost ] = await userPostRepository.findAndCount({
+    //   where: { id: In([...allPostIds]) },
+    //   order: { updatedAt: 'DESC', createdAt: 'DESC' },
+    //   take: Number(limit),
+    //   skip: offest
+    // });
 
 
-    // // Filter out blocked posts and users
-    // allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
-    // allPosts = allPosts
-    //   .filter((post, index, self) =>
-    //     self.findIndex(p => p.id === post.id) === index
-    //   )
-    //   .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
+    // Fetch blocked posts and users
+    const blockedPostIds = (await blockPostRepo.find({ where: { blockedBy: userId } })).map(bp => bp.blockedPost);
+    const blockedUserIds = (await blockUserRepo.find({ where: { blockedBy: userId } })).map(bu => bu.blockedUser);
 
-    // // // Sort posts by date (latest first)
-    // allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Fetch user details
+    const currentUser = await userRepository.findOne({ where: { id: userId } });
+    if (!currentUser) return res.status(400).json({ message: 'User not found.' });
 
-    // // Pagination
 
-    // const startIndex = (Number(page) - 1) * Number(limit);
-    // const paginatedPosts = allPosts.slice(startIndex, Number(startIndex) + Number(limit));
-    // const totalPosts = allPosts.length;
+    const connections = await connectionRepository.find({
+      where: { receiverId: userId, requesterId: userId }
+    });
+
+    const connectedUserIds = connections.map(conn => conn.requesterId === userId ? conn.receiverId : conn.requesterId);
+
+    // Fetch priority posts (User + Connections' Posts)
+    const connectedPosts = await userPostRepository.find({
+      where: { userId: In([...connectedUserIds, userId]), isDiscussion: discuss, isHidden: false },
+      order: { updatedAt: 'DESC', createdAt: 'DESC' },
+    });
+
+    // // Fetch public posts
+    const publicPosts = await userPostRepository.find({
+      where: { userId: Not(In([...connectedUserIds])), isDiscussion: discuss, isHidden: false },
+      order: { updatedAt: 'DESC', createdAt: 'DESC' },
+    });
+
+    // // Identify posts that connections engaged with (liked or commented)
+    const publicPostIds = publicPosts.map(post => post.id);
+    const [connectionLikes, connectionComments] = await Promise.all([
+      likeRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
+      commentRepository.find({ where: { userId: In(connectedUserIds), postId: In(publicPostIds) } }),
+    ]);
+
+    const engagedPublicPosts = publicPosts.filter(post =>
+      connectionLikes.some(like => like.postId === post.id) ||
+      connectionComments.some(comment => comment.postId === post.id)
+    );
+
+    // Fetch all user posts
+    const userPost = await userPostRepository.find({ where: { userId: In([userId]), isDiscussion: discuss } });
+
+    // Remaining public posts (not engaged by connections)
+    const remainingPublicPosts = publicPosts.filter(post => !engagedPublicPosts.includes(post));
+
+    // Merge all prioritized posts
+    let allPosts = [...connectedPosts, ...engagedPublicPosts, ...remainingPublicPosts];
+
+
+    // Filter out blocked posts and users
+    allPosts = allPosts.filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId));
+    allPosts = allPosts
+      .filter((post, index, self) =>
+        self.findIndex(p => p.id === post.id) === index
+      )
+      .filter(post => !blockedPostIds.includes(post.id) && !blockedUserIds.includes(post.userId)); // Remove blocked posts
+
+    // // Sort posts by date (latest first)
+    allPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    // Pagination
+
+    const startIndex = (Number(page) - 1) * Number(limit);
+    const paginatedPosts = allPosts.slice(startIndex, Number(startIndex) + Number(limit));
+    const totalPosts = allPosts.length;
 
     // console.log(startIndex, page, limit);
 
-    const paginatedPosts = allPosts;
+    // const paginatedPosts = allPosts;
 
     if (!paginatedPosts.length) {
       return res.status(200).json({
@@ -322,7 +322,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     const responseData = {
       status: 'success',
       message: 'Posts retrieved successfully.',
-      data: { posts: formattedPosts, page, limit, totalPosts: countAllPost },
+      data: { posts: formattedPosts, page, limit, totalPosts },
     };
 
     // await client.set(cacheKey, JSON.stringify(responseData), 'EX', 60 * 5);
