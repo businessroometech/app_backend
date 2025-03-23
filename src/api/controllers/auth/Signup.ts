@@ -133,7 +133,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     try {
       const mailOptions = {
         from: 'businessroomai@gmail.com',
-        to: 'ashutoshnegi195@gmail.com',
+        to: 'arunmanchanda9999@gmail.com',
         subject: 'New Signup 🎉',
         html: `<h3>Hello Arun,</h3>
                <p>A new user has signed up!</p>
