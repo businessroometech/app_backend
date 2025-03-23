@@ -300,7 +300,7 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
 
             let repliedToUser;
 
-            if (repliedToUser) {
+            if (comment?.repliedTo) {
               repliedToUser = await userRepository.findOne({
                 where: { id: comment.repliedTo },
               });
@@ -655,7 +655,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
 
         let repliedToUser;
 
-        if (repliedToUser) {
+        if (comment?.repliedTo) {
           repliedToUser = await userRepository.findOne({
             where: { id: comment.repliedTo },
           });
