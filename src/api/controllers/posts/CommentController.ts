@@ -298,6 +298,14 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               where: { id: comment.userId },
             });
 
+            let repliedToUser;
+
+            if (repliedToUser) {
+              repliedToUser = await userRepository.findOne({
+                where: { id: comment.repliedTo },
+              });
+            }
+
             const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
             const [nestedCommentLikes, totalNestedCommentLikes] = await nestedCommentLikeRepository.findAndCount({ where: { nestedCommentId: comment.id, commentId: comment.commentId, status: true } });
             const nestedCommentLike = await nestedCommentLikeRepository.findOne({ where: { userId, commentId: comment.commentId, nestedCommentId: comment.id } });
@@ -324,7 +332,8 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
               profilePic: profilePictureUrl,
               badgeName: commenter?.badgeName,
               isChild: comment.isChild,
-              repliedTo: comment.repliedTo
+              repliedTo: comment.repliedTo,
+              repliedToName: `${repliedToUser?.firstName} ${repliedToUser?.lastName}`
             };
           })
         );
@@ -644,6 +653,15 @@ export const getNestedComments = async (req: Request, res: Response) => {
           select: ['firstName', 'lastName', 'id', 'profilePictureUploadId'],
         });
 
+        let repliedToUser;
+
+        if (repliedToUser) {
+          repliedToUser = await userRepository.findOne({
+            where: { id: comment.repliedTo },
+          });
+        }
+
+
         if (!commenter) {
           return res.status(400).json({ status: "error", message: "user for this comment not found" });
         }
@@ -668,6 +686,9 @@ export const getNestedComments = async (req: Request, res: Response) => {
           commentId: comment.commentId,
           commenterId: commenter?.id,
           profilePic: profilePictureUrl,
+          isChild: comment.isChild,
+          repliedTo: comment.repliedTo,
+          repliedToName: `${repliedToUser?.firstName} ${repliedToUser?.lastName}`
         };
       })
     );
