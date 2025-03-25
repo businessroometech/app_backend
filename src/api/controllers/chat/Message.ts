@@ -373,48 +373,83 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
       })
     )).filter((item) => item !== null);
 
+    // const formattedHistory = await Promise.all(
+    //   history.map(async (record) => {
+
+    //     const userR = await userRepo.findOne({ where: { id: record.receiverId } });
+    //     const activeUserR = await activeUserRepo.findOne({ where: { userId: record.receiverId } });
+
+    //     const userS = await userRepo.findOne({ where: { id: record.senderId } });
+    //     const activeUserS = await activeUserRepo.findOne({ where: { userId: record.senderId } });
+
+    //     let myId = record.receiverId === userId ? record.receiverId : record.senderId;
+    //     let otherId = record.receiverId === userId ? record.senderId : record.receiverId;
+
+    //     const count = await messageRepository.count({
+    //       where: { receiverId: myId, senderId: otherId, isRead: false },
+    //     });
+
+    //     return {
+    //       id: record.id,
+    //       senderId: record.senderId,
+    //       receiverId: record.receiverId,
+    //       lastActive: record.lastActive,
+    //       createdAt: record.createdAt,
+    //       updatedAt: record.updatedAt,
+
+    //       isActiveS: activeUserS?.isActive || false,
+    //       fullnameS: userS ? `${userS.firstName} ${userS.lastName}` : null,
+    //       imageUrlS: userS?.profilePictureUploadId ? await generatePresignedUrl(userS.profilePictureUploadId) : null,
+    //       userRoleS: userS?.userRole,
+    //       bioS: userS?.bio,
+    //       badgeNameS: userS?.badgeName,
+
+    //       isActiveR: activeUserR?.isActive || false,
+    //       fullnameR: userR ? `${userR.firstName} ${userR.lastName}` : null,
+    //       imageUrlR: userR?.profilePictureUploadId ? await generatePresignedUrl(userR.profilePictureUploadId) : null,
+    //       userRoleR: userR?.userRole,
+    //       bioR: userR?.bio,
+    //       badgeNameR: userR?.badgeName,
+
+    //       unReadCount: count
+    //     };
+    //   })
+    // );
+
     const formattedHistory = await Promise.all(
       history.map(async (record) => {
+        // Determine the opposite user
+        const isUserReceiver = record.receiverId === userId;
+        const myId = isUserReceiver ? record.receiverId : record.senderId;
+        const otherId = isUserReceiver ? record.senderId : record.receiverId;
 
-        const userR = await userRepo.findOne({ where: { id: record.receiverId } });
-        const activeUserR = await activeUserRepo.findOne({ where: { userId: record.receiverId } });
+        // Fetch the opposite user's details
+        const otherUser = await userRepo.findOne({ where: { id: otherId } });
+        const activeOtherUser = await activeUserRepo.findOne({ where: { userId: otherId } });
 
-        const userS = await userRepo.findOne({ where: { id: record.senderId } });
-        const activeUserS = await activeUserRepo.findOne({ where: { userId: record.senderId } });
-
-        let myId = record.receiverId === userId ? record.receiverId : record.senderId;
-        let otherId = record.receiverId === userId ? record.senderId : record.receiverId;
-
+        // Count unread messages where the opposite user is the sender
         const count = await messageRepository.count({
           where: { receiverId: myId, senderId: otherId, isRead: false },
         });
 
         return {
           id: record.id,
-          senderId: record.senderId,
-          receiverId: record.receiverId,
+          userId: otherId,
+          isActive: activeOtherUser?.isActive || false,
+          userName: otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : null,
+          userImg: otherUser?.profilePictureUploadId ? await generatePresignedUrl(otherUser.profilePictureUploadId) : null,
+          userEmail: otherUser?.emailAddress ? otherUser?.emailAddress : null,
+          userRole: otherUser?.userRole,
+          userBio: otherUser?.bio,
+          badgeName: otherUser?.badgeName,
           lastActive: record.lastActive,
           createdAt: record.createdAt,
           updatedAt: record.updatedAt,
-
-          isActiveS: activeUserS?.isActive || false,
-          fullnameS: userS ? `${userS.firstName} ${userS.lastName}` : null,
-          imageUrlS: userS?.profilePictureUploadId ? await generatePresignedUrl(userS.profilePictureUploadId) : null,
-          userRoleS: userS?.userRole,
-          bioS: userS?.bio,
-          badgeNameS: userS?.badgeName,
-
-          isActiveR: activeUserR?.isActive || false,
-          fullnameR: userR ? `${userR.firstName} ${userR.lastName}` : null,
-          imageUrlR: userR?.profilePictureUploadId ? await generatePresignedUrl(userR.profilePictureUploadId) : null,
-          userRoleR: userR?.userRole,
-          bioR: userR?.bio,
-          badgeNameR: userR?.badgeName,
-
-          unReadCount: count
+          unReadCount: count,
         };
       })
     );
+
 
     return res.status(200).json({ status: "success", data: { history: formattedHistory, unreadUserCount: unreadMessagesCount ? unreadMessagesCount.length : 0 } });
   } catch (error) {
