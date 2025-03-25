@@ -249,7 +249,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     ].filter((id) => id !== profileId);
 
     const users = await userRepository.find({
-      where: { id: In(userIds), active: 1},
+      where: { id: In(userIds), active: 1 },
     });
 
     if (!users || users.length === 0) {
@@ -295,6 +295,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           userRole: user?.userRole,
           profilePictureUrl: profilePictureUrl,
           bagdeName: user?.badgeName,
+          bio: user?.bio,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
           mutual: isMutual,
           me: userId === connection.requesterId || userId === connection.receiverId,
