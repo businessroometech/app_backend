@@ -19,8 +19,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     const userId: any = req.userId;
     const { senderId, receiverId, content, documentKeys } = req.body;
 
-    if( !senderId || !receiverId || !content )
-    {
+    if (!senderId || !receiverId || !content) {
       return res.status(400).json({ status: "error", message: "sender id, receiverId and content is required" });
     }
 
@@ -317,9 +316,10 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
 
         return {
           id: user?.id,
-          firstName: user?.firstName,
-          lastName: user?.lastName,
+          fullName: `${user?.firstName} ${user?.lastName}`,
+          userRole: user?.userRole,
           email: user?.emailAddress,
+          bio: user?.bio,
           profileImgUrl: profilePictureUploadId ? await generatePresignedUrl(profilePictureUploadId).catch(() => null) : null,
           badgeName: user?.badgeName
         };
