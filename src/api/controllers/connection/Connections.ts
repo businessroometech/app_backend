@@ -11,6 +11,7 @@ import { getSocketInstance } from '@/socket';
 import { createNotification } from '../notify/Notify';
 import { NotificationType, Notify } from '@/api/entity/notify/Notify';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
+import { Message } from '@/api/entity/chat/Message';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -230,6 +231,9 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     }
 
     const connectionRepository = AppDataSource.getRepository(Connection);
+    const messageRepository = AppDataSource.getRepository(Message);
+
+
     const connections = await connectionRepository
       .createQueryBuilder("connection")
       .where("connection.requesterId = :profileId AND connection.status = 'accepted'", { profileId })
@@ -287,6 +291,14 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           ]
         });
 
+        const isUserReceiver = connection?.receiverId === userId;
+        const myId = isUserReceiver ? connection?.receiverId : connection?.requesterId;
+        const otherId = isUserReceiver ? connection?.requesterId : connection?.receiverId;
+
+        const count = await messageRepository.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
+
         return {
           connectionId: connection.id,
           userId: user?.id,
@@ -300,7 +312,8 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
           mutual: isMutual,
           me: userId === connection.requesterId || userId === connection.receiverId,
-          status: userConnectionStatus?.status || null
+          status: userConnectionStatus?.status || null,
+          unreadMessageCount: count
         };
       })
     );
