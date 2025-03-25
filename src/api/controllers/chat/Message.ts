@@ -210,7 +210,7 @@ export const markMessageAsRead = async (req: AuthenticatedRequest, res: Response
   try {
     const { receiverId, senderId } = req.body;
 
-    const userId = req.userId;
+    const userId: any = req.userId;
 
     const messageRepository = AppDataSource.getRepository(Message);
 
@@ -222,8 +222,6 @@ export const markMessageAsRead = async (req: AuthenticatedRequest, res: Response
       .execute();
 
     const io = getSocketInstance();
-    const roomId = [senderId, receiverId].sort().join('-');
-    io.to(roomId).emit('messageRead');
 
     const NotifyRepo = AppDataSource.getRepository(Notify);
     const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
@@ -251,12 +249,15 @@ export const markMessageAsRead = async (req: AuthenticatedRequest, res: Response
       })
     )).filter((item) => item !== null);
 
-    io.to(userId!).emit('initialize', {
+    io.to(userId).emit('initialize', {
       userId,
       welcomeMessage: 'Welcome to BusinessRoom!',
       unreadNotificationsCount: notifyCount ? notifyCount : 0,
       unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
     });
+
+    const roomId = [senderId, receiverId].sort().join('-');
+    io.to(roomId).emit('messageRead');
 
     return res.status(200).json({ success: true, message: 'Messages marked as read' });
   } catch (error) {
