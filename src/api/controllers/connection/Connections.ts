@@ -296,6 +296,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           profilePictureUrl: profilePictureUrl,
           bagdeName: user?.badgeName,
           bio: user?.bio,
+          email: user?.emailAddress,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
           mutual: isMutual,
           me: userId === connection.requesterId || userId === connection.receiverId,
