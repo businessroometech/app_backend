@@ -161,12 +161,13 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
     .header {
-      background-color: #007bff; /* Primary blue */
+      // background-color: #007bff; /* Primary blue */
+            background:rgba(255, 255, 255, 0.78);
       padding: 20px;
       text-align: center;
     }
     .header img {
-      max-width: 120px;
+      width: 170px;
     }
     .content {
       padding: 30px;
