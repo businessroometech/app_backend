@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '@/server';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import validator from 'validator';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import nodemailer from 'nodemailer';
-import jwt from 'jsonwebtoken';
-import { sendNotification } from '../notifications/SocketNotificationController';
 
 export const signup = async (req: Request, res: Response): Promise<void> => {
   const queryRunner = AppDataSource.createQueryRunner();
@@ -30,6 +29,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       updatedBy = 'system',
     } = req.body;
 
+    // Validation checks
     if (!firstName || !lastName || !emailAddress || !password || !country) {
       res.status(400).json({ status: 'error', message: 'All fields are required' });
       return;
@@ -86,6 +86,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
+    // Create new user (initially inactive)
     const newUser = userLoginRepository.create({
       firstName,
       lastName,
@@ -97,7 +98,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       gender,
       userRole,
       dob,
-      active: 1,
+      active: 0, 
       linkedIn,
       createdBy,
       updatedBy,
@@ -105,70 +106,251 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const user = await userLoginRepository.save(newUser);
 
-    try {
-      const restriction = restrictionRepository.create({
-        userId: user?.id,
-      });
+    // Create restriction
+    const restriction = restrictionRepository.create({
+      userId: user?.id,
+    });
+    await restrictionRepository.save(restriction);
 
-      await restrictionRepository.save(restriction);
-    } catch (restrictionError) {
-      console.error('Error creating restriction:', restrictionError);
-      await queryRunner.rollbackTransaction();
-      res.status(500).json({ status: 'error', message: 'Failed to create restriction. Please try again later.' });
-      return;
-    }
+    // Generate verification token
+    const verificationToken = jwt.sign(
+      { userId: user.id },
+      process.env.ACCESS_SECRET_KEY!,
+      { expiresIn: '1h' }
+    );
 
-    await queryRunner.commitTransaction();
+    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/signin?token=${verificationToken}`;
 
+    // Configure email transporter
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '465'),
       secure: true,
       auth: {
-        user: 'businessroom.ai@gmail.com',
-        pass: 'eshqmhxhvmxonqfe',
+        user: process.env.EMAIL_USER || 'businessroom.ai@gmail.com',
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
-    try {
-      const mailOptions = {
-        from: 'businessroomai@gmail.com',
+    await Promise.all([
+      transporter.sendMail({
+        from: process.env.EMAIL_FROM || 'businessroomai@gmail.com',
+        to: user.emailAddress,
+        subject: "Verify Your Email Address - Businessroom.ai",
+        html: `
+          <html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Verification | Businessroom.ai</title>
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7fafc;
+      font-family: 'Poppins', Arial, sans-serif;
+      color: #4a5568;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      padding: 30px 0;
+      text-align: center;
+    }
+    
+    .logo {
+      display: inline-block;
+      width: 60px;
+      height: 60px;
+      background-color: white;
+      color: #2563eb;
+      font-size: 36px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 60px;
+      border-radius: 16px;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+    
+    .content {
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #1a365d;
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 20px;
+      text-align: center;
+    }
+    
+    .greeting {
+      font-size: 18px;
+      margin-bottom: 25px;
+    }
+    
+    .action-button {
+      display: inline-block;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      margin: 25px 0;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+      transition: all 0.3s ease;
+    }
+    
+    .action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+    }
+    
+    .divider {
+      height: 1px;
+      background-color: #e2e8f0;
+      margin: 30px 0;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #f8fafc;
+      font-size: 14px;
+      color: #718096;
+    }
+    
+    .expiry-note {
+      background-color: #fffaf0;
+      border-left: 4px solid #ed8936;
+      padding: 12px;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    
+    .social-links {
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .social-icon {
+      display: inline-block;
+      margin: 0 10px;
+      color: #4a5568;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="https://businessroom.ai" class="logo">b</a>
+    </div>
+    
+    <div class="content">
+      <h1>Welcome to Businessroom.ai!</h1>
+      
+      <p class="greeting">Hi ${user.firstName},</p>
+      
+      <p>Thank you for joining Businessroom.ai! We're excited to have you on board. To get started, please verify your email address by clicking the button below:</p>
+      
+      <div style="text-align: center;">
+        <a href="${verificationLink}" class="action-button">Verify Email Address</a>
+      </div>
+      
+      <div class="expiry-note">
+        <p><strong>Note:</strong> This verification link will expire in 1 hour. If you didn't create an account with us, please disregard this email.</p>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <p>If you're having trouble clicking the button, copy and paste the following URL into your browser:</p>
+      <p style="word-break: break-all; font-size: 14px; color: #4a5568; background-color: #f8fafc; padding: 10px; border-radius: 4px;">${verificationLink}</p>
+      
+      <div class="social-links">
+        <p>Connect with us:</p>
+        <a href="#" class="social-icon">LinkedIn</a>
+        <a href="#" class="social-icon">Twitter</a>
+        <a href="#" class="social-icon">Facebook</a>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>&copy; ${new Date().getFullYear()} Businessroom.ai. All rights reserved.</p>
+      <p>
+        <a href="https://businessroom.ai" style="color: #4299e1; text-decoration: none;">Visit our website</a> | 
+        <a href="#" style="color: #4299e1; text-decoration: none;">Privacy Policy</a> | 
+        <a href="#" style="color: #4299e1; text-decoration: none;">Terms of Service</a>
+      </p>
+      <p style="font-size: 12px; margin-top: 10px;">Businessroom.ai, 123 Business Street, Tech City, TC 10001</p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+      }),
+
+      // Admin notification email
+      transporter.sendMail({
+        from: process.env.EMAIL_FROM || 'businessroomai@gmail.com',
         to: 'arunmanchanda9999@gmail.com',
         subject: 'New Signup 🎉',
-        html: `<h3>Hello Arun,</h3>
-               <p>A new user has signed up!</p>
-               <ul>
-                 <li><strong>Name:</strong>${user.firstName} ${user.lastName}</li>
-                 <li><strong>Email:</strong>${user.emailAddress}</li>
-                 <li><strong>Mobile:</strong>${user.mobileNumber}</li>
-                 <li><strong>Linked Profile:</strong>${user.linkedIn}</li>
-                 <li><strong>Role:</strong>${user.userRole}</li>
-                 </ul>
-              <p>Best,<br>Your Team</p>`
-      };
+        html: `
+          <h3>Hello Admin,</h3>
+          <p>A new user has signed up!</p>
+          <ul>
+            <li><strong>Name:</strong> ${user.firstName} ${user.lastName}</li>
+            <li><strong>Email:</strong> ${user.emailAddress}</li>
+            <li><strong>Mobile:</strong> ${user.mobileNumber || 'Not provided'}</li>
+            <li><strong>LinkedIn Profile:</strong> ${user.linkedIn || 'Not provided'}</li>
+            <li><strong>Role:</strong> ${user.userRole}</li>
+          </ul>
+          <p>Best,<br>Your Team</p>
+        `
+      })
+    ]);
 
-      await transporter.sendMail(mailOptions);
-      res.status(200).json({ status: "success", message: 'New registration' });
-    } catch (error) {
-      console.error('Error sending email:', error);
-      res.status(500).json({ status: "error", message: 'Failed to send email' });
-    }
+    await queryRunner.commitTransaction();
 
     res.status(201).json({
       status: 'success',
-      message: 'Signup completed successfully. Please verify your email.',
-      data: { user },
+      message: 'Signup completed successfully. Please check your email to verify your account.',
+      data: {
+        id: user.id,
+        email: user.emailAddress,
+        firstName: user.firstName,
+        lastName: user.lastName
+      },
     });
+
   } catch (error: any) {
     await queryRunner.rollbackTransaction();
     console.error('Error during signup:', error);
 
-    res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.', error });
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Something went wrong! Please try again later.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   } finally {
     await queryRunner.release();
   }
 };
-
 
 // export const signup = async (req: Request, res: Response): Promise<void> => {
 //   const queryRunner = AppDataSource.createQueryRunner();
@@ -193,7 +375,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 //       updatedBy = 'system',
 //     } = req.body;
 
-//     if (!firstName || !lastName || !emailAddress || !password || !country || !linkedIn) {
+//     if (!firstName || !lastName || !emailAddress || !password || !country) {
 //       res.status(400).json({ status: 'error', message: 'All fields are required' });
 //       return;
 //     }
@@ -256,7 +438,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 //       password,
 //       country,
 //       countryCode,
-//       mobileNumber,
+//       mobileNumber: mobileNumber?.trim() ? mobileNumber : null,
 //       gender,
 //       userRole,
 //       dob,
@@ -268,13 +450,121 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
 //     const user = await userLoginRepository.save(newUser);
 
-//     const restriction = restrictionRepository.create({
-//       userId: user?.id,
-//     });
+//     try {
+//       const restriction = restrictionRepository.create({
+//         userId: user?.id,
+//       });
 
-//     const restrict = await restrictionRepository.save(restriction);
+//       await restrictionRepository.save(restriction);
+//     } catch (restrictionError) {
+//       console.error('Error creating restriction:', restrictionError);
+//       await queryRunner.rollbackTransaction();
+//       res.status(500).json({ status: 'error', message: 'Failed to create restriction. Please try again later.' });
+//       return;
+//     }
 
 //     await queryRunner.commitTransaction();
+
+//     const transporter = nodemailer.createTransport({
+//       host: 'smtp.gmail.com',
+//       port: 465,
+//       secure: true,
+//       auth: {
+//         user: 'businessroom.ai@gmail.com',
+//         pass: 'eshqmhxhvmxonqfe',
+//       },
+//     });
+
+//     try {
+//       const mailOptions = {
+//         from: 'businessroomai@gmail.com',
+//         to: 'arunmanchanda9999@gmail.com',
+//         subject: 'New Signup 🎉',
+//         html: `<h3>Hello Arun,</h3>
+//                <p>A new user has signed up!</p>
+//                <ul>
+//                  <li><strong>Name:</strong>${user.firstName} ${user.lastName}</li>
+//                  <li><strong>Email:</strong>${user.emailAddress}</li>
+//                  <li><strong>Mobile:</strong>${user.mobileNumber}</li>
+//                  <li><strong>Linked Profile:</strong>${user.linkedIn}</li>
+//                  <li><strong>Role:</strong>${user.userRole}</li>
+//                  </ul>
+//               <p>Best,<br>Your Team</p>`
+//       };
+
+//       await transporter.sendMail(mailOptions);
+//       res.status(200).json({ status: "success", message: 'New registration' });
+//     } catch (error) {
+//       console.error('Error sending email:', error);
+//       res.status(500).json({ status: "error", message: 'Failed to send email' });
+//     }
+
+//     try {
+
+//       const verificationToken = jwt.sign(
+//         { userId: user.id },
+//         process.env.ACCESS_SECRET_KEY!,
+//         { expiresIn: '1h' }
+//       );
+
+//       const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/signin?token=${verificationToken}`;
+
+//       // Email content
+//       const mailOptions = {
+//         from: process.env.EMAIL_FROM || 'businessroomai@gmail.com',
+//         to: user.emailAddress,
+//         subject: "Businessroom.ai - Verify Your Email Address",
+//         html: `
+//             <html lang="en">
+//               <head>
+//                 <meta charset="UTF-8" />
+//                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+//                 <title>Email Verification</title>
+//               </head>
+//               <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
+//                 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+//                   <div style="text-align: center; margin-bottom: 30px;">
+//                     <a href="https://businessroom.ai" style="display: inline-block; background-color: #2196F3; color: white; 
+//                       font-size: 32px; font-weight: 600; width: 50px; height: 50px; line-height: 50px; 
+//                       border-radius: 12px; text-decoration: none;">
+//                       b
+//                     </a>
+//                   </div>
+                  
+//                   <h1 style="color: #007bff; text-align: center;">Welcome to Businessroom.ai!</h1>
+                  
+//                   <p>Hi there,</p>
+                  
+//                   <p>Thank you for signing up. Please verify your email address by clicking the button below:</p>
+                  
+//                   <div style="text-align: center; margin: 25px 0;">
+//                     <a href="${verificationLink}" 
+//                        style="display: inline-block; padding: 12px 24px; background-color: #007bff; 
+//                        color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+//                       Verify Email Address
+//                     </a>
+//                   </div>
+                  
+//                   <p style="color: #666; font-size: 14px;">
+//                     This link will expire in 1 hour. If you didn't request this, please ignore this email.
+//                   </p>
+                  
+//                   <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+//                     <p style="color: #999; font-size: 12px;">
+//                       &copy; ${new Date().getFullYear()} Businessroom.ai. All rights reserved.
+//                     </p>
+//                   </div>
+//                 </div>
+//               </body>
+//             </html>
+//             `,
+//       };
+
+//       await transporter.sendMail(mailOptions);
+
+//     } catch (error) {
+
+//     }
 
 //     res.status(201).json({
 //       status: 'success',
@@ -285,281 +575,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 //     await queryRunner.rollbackTransaction();
 //     console.error('Error during signup:', error);
 
-//     if (error.code === 'ER_DUP_ENTRY') {
-//       const sqlMessage = error.sqlMessage || '';
-
-//       if (sqlMessage.includes('mobileNumber')) {
-//         res.status(400).json({ status: 'error', message: 'Mobile number already exists.' });
-//         return;
-//       } else if (sqlMessage.includes('emailAddress')) {
-//         res.status(400).json({ status: 'error', message: 'Email already exists.' });
-//         return;
-//       }
-//       res.status(400).json({ status: 'error', message: 'Duplicate entry found.' });
-//       return;
-//     }
-
-//     res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.' });
-//   } finally {
-//     await queryRunner.release();
-//   }
-// };
-
-// Send the verification email
-const sendVerificationEmail = async (email: string, verificationToken: string) => {
-  try {
-    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173/auth/sign-in'}?token=${verificationToken}`;
-
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: 'ashutoshnegi196@gmail.com',
-        pass: 'ctcbnmvlouaildzd',
-      },
-    });
-
-    // Email content
-    const mailOptions = {
-      from: 'ashutoshnegi196@gmail.com',
-      to: email,
-      subject: 'Verify Your Email Address',
-      html: `
-       
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email Verification</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #e3f2fd; /* Light sky-blue background */
-      font-family: Arial, sans-serif;
-      color: #333333;
-    }
-    .email-container {
-      max-width: 600px;
-      margin: 50px auto;
-      background: #ffffff;
-      border-radius: 8px;
-      border: 4px solid #007bff; /* Border color matching logo */
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background-color: #007bff; /* Primary blue */
-      padding: 20px;
-      text-align: center;
-    }
-    .header img {
-      max-width: 120px;
-    }
-    .content {
-      padding: 30px;
-      text-align: center;
-    }
-    .content h1 {
-      font-size: 24px;
-      color: #007bff;
-      margin-bottom: 10px;
-    }
-    .content p {
-      line-height: 1.6;
-      font-size: 16px;
-    }
-    .verify-button {
-      display: inline-block;
-      margin: 20px 0;
-      padding: 12px 20px;
-      background-color: #007bff;
-      color: #ffffff;
-      text-decoration: none;
-      font-size: 16px;
-      border-radius: 6px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    .verify-button:hover {
-      background-color: #0056b3;
-     
-    }
-    .timer {
-      margin: 20px 0;
-      font-size: 18px;
-      color: #ff0000;
-    }
-    .footer {
-      text-align: center;
-      padding: 20px;
-      background: #f1f1f1;
-      font-size: 14px;
-      color: #777777;
-    }
-    .footer a {
-      color: #007bff;
-      text-decoration: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <img src="https://businessroom-test-bucket.s3.eu-north-1.amazonaws.com/posts/6ba58706c40cc59ea8c56a316d19d466/1737328121539.image/png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIASFIXCQIX37GASBKD%2F20250119%2Feu-north-1%2Fs3%2Faws4_request&X-Amz-Date=20250119T230845Z&X-Amz-Expires=3600&X-Amz-Signature=c1f4749ac77f824a339981216964bde63baf76163758ece159efe54f431cf91c&X-Amz-SignedHeaders=host&x-id=GetObject" alt="BusinessRoom Logo">
-    </div>
-    <div class="content">
-      <h1>Welcome to BusinessRoom!</h1>
-      <p>Hi,</p>
-      <p>Thank you for signing up. Please verify your email by clicking the link below:</p>
-      <a href="${verificationLink}" class="verify-button">Verify Email</a>
-      <p class="timer" id="timer">This link will expire in 1 hour.</p>
-      <p>If you did not sign up, please ignore this email.</p>
-      <p>Thank you,</p>
-      <p>The BusinessRoom Team</p>
-    </div>
-    <div class="footer">
-      <p>&copy; <span id="year"></span> BusinessRoom. All rights reserved.</p>
-
-<script>
-  // Dynamically set the current year
-  document.getElementById("year").textContent = new Date().getFullYear();
-</script>
-      <p>
-        <a href="https://businessroom.ai">Visit our website</a>
-      </p>
-    </div>
-  </div>
-
-  <script>
-    // Timer script to show the countdown
-    function startTimer(duration, display) {
-      let timer = duration, minutes, seconds;
-      const interval = setInterval(function () {
-        minutes = parseInt(timer / 60, 10);
-        seconds = parseInt(timer % 60, 10);
-
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
-
-        display.textContent = "This link will expire in " + minutes + ":" + seconds;
-
-        if (--timer < 0) {
-          clearInterval(interval);
-          display.textContent = "This link has expired.";
-        }
-      }, 1000);
-    }
-
-    window.onload = function () {
-      const oneHour = 60 * 60; // 1 hour in seconds
-      const display = document.getElementById("timer");
-      startTimer(oneHour, display);
-    };
-  </script>
-</body>
-</html>
-      `,
-    };
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    console.error('Error sending verification email:', error);
-  }
-};
-
-// import { Request, Response } from 'express';
-// import { UserLogin } from '../../entity/user/UserLogin';
-// import { AppDataSource } from '@/server';
-
-// export const signup = async (req: Request, res: Response): Promise<void> => {
-//   const queryRunner = AppDataSource.createQueryRunner();
-//   await queryRunner.connect();
-
-//   try {
-//     await queryRunner.startTransaction();
-
-//     const {
-//       firstName,
-//       lastName,
-//       emailAddress,
-//       password,
-//       createdBy = 'system',
-//       updatedBy = 'system',
-//     } = req.body;
-
-//     // Validate required fields
-//     if (!emailAddress || !password || !firstName || !lastName) {
-//       res.status(400).json({
-//         status: 'error',
-//         message: 'Please provide a full name, email address, and password.',
-//       });
-//       return;
-//     }
-
-//     const userLoginRepository = queryRunner.manager.getRepository(UserLogin);
-
-//     // Check if the user already exists
-//     const existingUser = await userLoginRepository.findOne({
-//       where: { email: emailAddress },
-//     });
-
-//     if (existingUser) {
-//       res.status(400).json({
-//         status: 'error',
-//         message: 'User with this email already exists.',
-//       });
-//       return;
-//     }
-
-//     // Create a new user instance
-//     const newUser = userLoginRepository.create({
-//       firstName,
-//       lastName,
-//       email: emailAddress,
-//       password,
-//       createdBy,
-//       updatedBy,
-//     });
-
-//     // Save the new user
-//     await userLoginRepository.save(newUser);
-
-//     // Commit transaction
-//     await queryRunner.commitTransaction();
-
-//     res.status(201).json({
-//       status: 'success',
-//       message: 'Signup completed successfully.',
-//       data: {
-//         user: {
-//           id: newUser.id,
-//           firstName: newUser.firstName,
-//           lastName: newUser.lastName,
-//           email: newUser.email,
-//           createdAt: newUser.createdAt,
-//           updatedAt: newUser.updatedAt,
-//         },
-//       },
-//     });
-//   } catch (error: any) {
-//     // Rollback transaction on error
-//     if (queryRunner.isTransactionActive) {
-//       await queryRunner.rollbackTransaction();
-//     }
-//     console.error('Error during signup:', error);
-
-//     if (error.code === 'ER_DUP_ENTRY') {
-//       res.status(400).json({
-//         status: 'error',
-//         message: 'This email is already in use.',
-//       });
-//       return;
-//     }
-
-//     res.status(500).json({
-//       status: 'error',
-//       message: 'Something went wrong! Please try again later.',
-//     });
+//     res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.', error });
 //   } finally {
 //     await queryRunner.release();
 //   }

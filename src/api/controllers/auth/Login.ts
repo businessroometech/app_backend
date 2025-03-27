@@ -185,7 +185,7 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: 'businessroom.ai@gmail.com',
+    user: 'businessroomai@gmail.com',
     pass: 'eshqmhxhvmxonqfe',
   },
 });
