@@ -165,7 +165,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     }
     
     .header {
-      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      background: #0281fb;
       padding: 30px 0;
       text-align: center;
     }
@@ -175,7 +175,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       width: 60px;
       height: 60px;
       background-color: white;
-      color: #2563eb;
+      color: #0281fb;
       font-size: 36px;
       font-weight: 700;
       text-align: center;
@@ -205,7 +205,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     .action-button {
       display: inline-block;
       padding: 14px 28px;
-      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      background: #0281fb;
       color: #ffffff;
       text-decoration: none;
       font-size: 16px;
@@ -218,6 +218,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     
     .action-button:hover {
       transform: translateY(-2px);
+      color: #ffffff;
       box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
     }
     
