@@ -299,6 +299,15 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           where: { receiverId: myId, senderId: otherId, isRead: false },
         });
 
+        const lastMessage = await messageRepository.findOne({
+          where: [
+            { receiverId: myId, senderId: otherId },
+            { receiverId: otherId, senderId: myId }
+          ],
+          order: { createdAt: 'DESC' },
+          select: ['createdAt']
+        });
+          
         return {
           connectionId: connection.id,
           userId: user?.id,
@@ -313,10 +322,13 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           mutual: isMutual,
           me: userId === connection.requesterId || userId === connection.receiverId,
           status: userConnectionStatus?.status || null,
-          unreadMessageCount: count
+          unreadMessageCount: count,
+          lastMessageTime: lastMessage?.createdAt || connection?.createdAt
         };
       })
     );
+
+    result.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
 
     return res.status(200).json({ connections: result });
   } catch (error: any) {
