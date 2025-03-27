@@ -217,7 +217,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 <body>
   <div class="email-container">
     <div class="header">
-      <img src="../../../assets/logo2.png" alt="BusinessRoom Logo">
+      <img src="https://i.ibb.co/jkLMQZT3/title-logo.png" alt="BusinessRoom Logo">
     </div>
     <div class="content">
       <h1>Welcome to BusinessRoom!</h1>
