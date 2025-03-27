@@ -167,7 +167,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       text-align: center;
     }
     .header img {
-      width: 170px;
+      width: 130px;
     }
     .content {
       padding: 30px;
