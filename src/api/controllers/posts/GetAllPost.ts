@@ -203,7 +203,6 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       likeRepository.find({ where: { postId: In(postIds), status: true } }),
     ]);
 
-
     const likedByConnections = connectionLikes.reduce((acc, like) => {
       if (!acc[like.postId]) acc[like.postId] = [];
       acc[like.postId].push(like.userId);
@@ -226,6 +225,16 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           documentsUrls.push({ url: dUrl, type: media.type });
         })
       );
+
+      const likesByReactionId = await likeRepository
+        .createQueryBuilder("like")
+        .select("like.reactionId", "reactionId")
+        .addSelect("COUNT(like.id)", "count")
+        .where("like.postId = :postId", { postId: post.id })
+        .groupBy("like.reactionId")
+        .orderBy("count", "DESC")
+        .limit(3)
+        .getRawMany();
 
       const likeCount = likes.filter(like => like.postId === post.id).length;
       const commentCount = comments.filter(comment => comment.postId === post.id).length;
@@ -262,7 +271,6 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       }
 
       // poll
-
       const pollEntryRepo = AppDataSource.getRepository(PollEntry);
       const pollEntry = await pollEntryRepo.findOne({ where: { postId: post.id, userId } });
 
@@ -276,6 +284,7 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
           originalPostedAt: post.originalPostedAt,
           mediaUrls: documentsUrls,
           reactionCount: likeCount,
+          topReactions: likesByReactionId,
           reactionStatus: like ? like.status : false,
           reactionId: like?.reactionId,
           commentCount,

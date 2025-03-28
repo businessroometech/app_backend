@@ -704,6 +704,16 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
           })
         );
 
+        const likesByReactionId = await likeRepository
+          .createQueryBuilder("like")
+          .select("like.reactionId", "reactionId")
+          .addSelect("COUNT(like.id)", "count")
+          .where("like.postId = :postId", { postId: post.id })
+          .groupBy("like.reactionId")
+          .orderBy("count", "DESC")
+          .limit(3)
+          .getRawMany();
+
         const likeCount = likes.filter((like) => like.postId === post.id).length;
         const commentCount = comments.filter((comment) => comment.postId === post.id).length;
         // const likeStatus = likes.some((like) => like.postId === post.id && like.userId === id);
@@ -733,6 +743,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
             hashtags: post.hashtags,
             mediaUrls: documentsUrls,
             reactionCount: likeCount,
+            topReactions: likesByReactionId,
             reactionId: like?.reactionId,
             commentCount,
             reactionStatus: like ? like.status : false,
@@ -1011,6 +1022,16 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
       }
     }
 
+    const likesByReactionId = await likeRepository
+        .createQueryBuilder("like")
+        .select("like.reactionId", "reactionId")
+        .addSelect("COUNT(like.id)", "count")
+        .where("like.postId = :postId", { postId: post.id })
+        .groupBy("like.reactionId")
+        .orderBy("count", "DESC")
+        .limit(3)
+        .getRawMany();
+
     // poll
 
     const pollEntryRepo = AppDataSource.getRepository(PollEntry);
@@ -1027,6 +1048,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         hashtags: post.hashtags,
         mediaUrls: documentsUrls,
         reactionCount: likes.length,
+        topReactions: likesByReactionId,
         commentCount: comments.length,
         reactionStatus: like?.status,
         reactionId: like?.reactionId,
