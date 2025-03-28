@@ -19,6 +19,98 @@ const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false)
   });
 };
 
+// export const login = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const { email, password, rememberMe = false } = req.body;
+//     const { token } = req.query;
+
+//     if (!email || !password) {
+//       res.status(400).json({
+//         status: 'fail',
+//         message: 'Please provide an email and password.',
+//       });
+//       return;
+//     }
+
+//     const userLoginRepository = AppDataSource.getRepository(PersonalDetails);
+//     let user: PersonalDetails | null = null;
+
+//     if (token) {
+//       let payload: any;
+//       try {
+//         payload = jwt.verify(token as string, process.env.ACCESS_SECRET_KEY!);
+//       } catch (err) {
+//         res.status(400).json({
+//           status: 'error',
+//           message: 'Invalid or expired token.',
+//         });
+//         return;
+//       }
+
+//       const { userId } = payload;
+//       user = await userLoginRepository.findOne({ where: { id: userId } });
+
+//       if (!user) {
+//         res.status(404).json({
+//           status: 'error',
+//           message: 'User not found.',
+//         });
+//         return;
+//       }
+
+//       if (user.active === 0) {
+//         user.active = 1;
+//         await userLoginRepository.save(user);
+//       }
+//     } else {
+
+//       user = await userLoginRepository.findOne({ where: { emailAddress: email } });
+
+//       if (!user || !(await PersonalDetails.validatePassword(password, user.password))) {
+//         res.status(401).json({
+//           status: 'error',
+//           message: 'Invalid email or password.',
+//         });
+//         return;
+//       }
+
+//       if (user.active === 0) {
+//         res.status(403).json({
+//           status: 'fail',
+//           message: 'Account not verified. Please check your email for verification link.',
+//         });
+//         return;
+//       }
+
+//       if (user.active === -1) {
+//         res.status(403).json({
+//           status: 'fail',
+//           message: 'Account is blocked. Please contact support.',
+//         });
+//         return;
+//       }
+//     }
+
+//     const accessToken = generateAccessToken(user, rememberMe);
+
+//     res.status(200).json({
+//       status: 'success',
+//       message: 'Logged in successfully.',
+//       data: {
+//         accessToken,
+//         user,
+//       },
+//     });
+
+//   } catch (error) {
+//     console.error('Login error:', error);
+//     res.status(500).json({
+//       status: 'error',
+//       message: 'Something went wrong! Please try again later.',
+//     });
+//   }
+// };
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, rememberMe = false } = req.body;
@@ -110,6 +202,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
   }
 };
+
 
 // export const login = async (req: Request, res: Response): Promise<void> => {
 //   try {
