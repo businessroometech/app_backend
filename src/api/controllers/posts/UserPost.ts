@@ -158,7 +158,7 @@ async function compressImage(imageBuffer: Buffer, userId: string, mimetype: stri
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const { title, content, hashtags, repostedFrom, repostText, isDiscussion, discussionTopic, discussionContent, topic, isPoll, question, pollOptions } = req.body;
-    const userId = req.userId;
+    const userId: any = req.userId;
 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOneBy({ id: userId });
@@ -298,8 +298,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         const io = getSocketInstance();
         const roomId = repostedOfUser?.id;
         io.to(roomId).emit('newNotification', notify);
-
-        io.except(userId!).emit('newPost', { post: savedPost, userId });
+        io.emit('newPost', { userId });
 
       } catch (error) {
         console.error("Error creating notification:", error);
@@ -1023,14 +1022,14 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     }
 
     const likesByReactionId = await likeRepository
-        .createQueryBuilder("like")
-        .select("like.reactionId", "reactionId")
-        .addSelect("COUNT(like.id)", "count")
-        .where("like.postId = :postId", { postId: post.id })
-        .groupBy("like.reactionId")
-        .orderBy("count", "DESC")
-        .limit(3)
-        .getRawMany();
+      .createQueryBuilder("like")
+      .select("like.reactionId", "reactionId")
+      .addSelect("COUNT(like.id)", "count")
+      .where("like.postId = :postId", { postId: post.id })
+      .groupBy("like.reactionId")
+      .orderBy("count", "DESC")
+      .limit(3)
+      .getRawMany();
 
     // poll
 
