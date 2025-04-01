@@ -5,6 +5,7 @@ import validator from 'validator';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import nodemailer from 'nodemailer';
+import bcrypt from 'bcryptjs';
 
 // export const signup = async (req: Request, res: Response): Promise<void> => {
 //   const queryRunner = AppDataSource.createQueryRunner();
@@ -122,15 +123,15 @@ import nodemailer from 'nodemailer';
 //     // const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/signin?token=${verificationToken}`;
 
 //     // Configure email transporter
-//     const transporter = nodemailer.createTransport({
-//       host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-//       port: parseInt(process.env.EMAIL_PORT || '465'),
-//       secure: true,
-//       auth: {
-//         user: process.env.EMAIL_USER || 'businessroom.ai@gmail.com',
-//         pass: process.env.EMAIL_PASSWORD,
-//       },
-//     });
+// const transporter = nodemailer.createTransport({
+//   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+//   port: parseInt(process.env.EMAIL_PORT || '465'),
+//   secure: true,
+//   auth: {
+//     user: process.env.EMAIL_USER || 'businessroom.ai@gmail.com',
+//     pass: process.env.EMAIL_PASSWORD,
+//   },
+// });
 
 //     await Promise.all([
 // //       transporter.sendMail({
@@ -344,6 +345,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       updatedBy = 'system',
     } = req.body;
 
+    // Validate required fields
     if (!firstName || !lastName || !emailAddress || !password || !country) {
       res.status(400).json({ status: 'error', message: 'All fields are required' });
       return;
@@ -359,6 +361,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Validate password
     const passwordMinLength = 8;
     if (
       password.length < passwordMinLength ||
@@ -384,14 +387,14 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const userLoginRepository = queryRunner.manager.getRepository(PersonalDetails);
     const restrictionRepository = queryRunner.manager.getRepository(Ristriction);
 
-    // Check for duplicate email
+    // Check if email exists
     const existingUser = await userLoginRepository.findOne({ where: { emailAddress } });
     if (existingUser) {
       res.status(400).json({ status: 'error', message: 'Email already exists.' });
       return;
     }
 
-    // Check for duplicate mobile number
+    // Check if mobile number exists
     if (mobileNumber) {
       const existingMobile = await userLoginRepository.findOne({ where: { mobileNumber } });
       if (existingMobile) {
@@ -400,18 +403,22 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
     const newUser = userLoginRepository.create({
       firstName,
       lastName,
       emailAddress,
-      password,
+      password: hashedPassword,
       country,
       countryCode,
       mobileNumber: mobileNumber?.trim() ? mobileNumber : null,
       gender,
       userRole,
       dob,
-      active: 1,
+      active: 0, 
       linkedIn,
       createdBy,
       updatedBy,
@@ -419,65 +426,69 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const user = await userLoginRepository.save(newUser);
 
-    try {
-      const restriction = restrictionRepository.create({
-        userId: user?.id,
-        connectionCount: 50
-      });
+    // Create restriction entry
+    const restriction = restrictionRepository.create({
+      userId: user.id,
+      connectionCount: 50,
+    });
 
-      await restrictionRepository.save(restriction);
-    } catch (restrictionError) {
-      console.error('Error creating restriction:', restrictionError);
-      await queryRunner.rollbackTransaction();
-      res.status(500).json({ status: 'error', message: 'Failed to create restriction. Please try again later.' });
-      return;
-    }
+    await restrictionRepository.save(restriction);
+
+    // Generate verification token
+    const verificationToken = jwt.sign(
+      { userId: user.id },
+      process.env.ACCESS_SECRET_KEY!,
+      { expiresIn: '1h' }
+    );
+
+    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/signin?token=${verificationToken}`;
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '465'),
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER || 'businessroom.ai@gmail.com',
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+
+    // Send verification email
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'businessroomai@gmail.com',
+      to: user.emailAddress,
+      subject: 'Verify Your Email Address - Businessroom.ai',
+      html: `
+        <html>
+          <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; text-align: center;">
+            <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px;">
+              <h2>Welcome to BusinessRoom!</h2>
+              <p>Thank you for signing up. Please verify your email by clicking the button below:</p>
+              <a href="${verificationLink}" 
+                 style="display: inline-block; background: #007bff; color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px;">
+                Verify Email
+              </a>
+              <p style="color: red;">This link will expire in 1 hour.</p>
+              <p>If you did not sign up, please ignore this email.</p>
+              <p>Thanks,</p>
+              <p>The BusinessRoom Team</p>
+            </div>
+          </body>
+        </html>
+      `,
+    });
 
     await queryRunner.commitTransaction();
 
-    // const transporter = nodemailer.createTransport({
-    //   host: 'smtp.gmail.com',
-    //   port: 465,
-    //   secure: true,
-    //   auth: {
-    //     user: 'businessroom.ai@gmail.com',
-    //     pass: 'eshqmhxhvmxonqfe',
-    //   },
-    // });
-
-    // try {
-    //   const mailOptions = {
-    //     from: 'businessroomai@gmail.com',
-    //     to: 'arunmanchanda9999@gmail.com',
-    //     subject: 'New Signup 🎉',
-    //     html: `<h3>Hello Arun,</h3>
-    //            <p>A new user has signed up!</p>
-    //            <ul>
-    //              <li><strong>Name:</strong>${user.firstName} ${user.lastName}</li>
-    //              <li><strong>Email:</strong>${user.emailAddress}</li>
-    //              <li><strong>Mobile:</strong>${user.mobileNumber}</li>
-    //              <li><strong>Linked Profile:</strong>${user.linkedIn}</li>
-    //              <li><strong>Role:</strong>${user.userRole}</li>
-    //              </ul>
-    //           <p>Best,<br>Your Team</p>`
-    //   };
-
-    //   await transporter.sendMail(mailOptions);
-    //   res.status(200).json({ status: "success", message: 'New registration' });
-    // } catch (error) {
-    //   console.error('Error sending email:', error);
-    //   res.status(500).json({ status: "error", message: 'Failed to send email' });
-    // }
-
     res.status(201).json({
       status: 'success',
-      message: 'Signup completed successfully. Please verify your email.',
+      message: 'Signup successful. Please verify your email.',
       data: { user },
     });
   } catch (error: any) {
     await queryRunner.rollbackTransaction();
     console.error('Error during signup:', error);
-
     res.status(500).json({ status: 'error', message: 'Something went wrong! Please try again later.', error });
   } finally {
     await queryRunner.release();
