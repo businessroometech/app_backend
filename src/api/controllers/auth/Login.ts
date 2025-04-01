@@ -158,10 +158,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
       user = await userLoginRepository.findOne({ where: { emailAddress: email } });
 
-      if (!user || !(await PersonalDetails.validatePassword(password, user.password))) {
-        res.status(401).json({
+      if (!user) {
+        res.status(400).json({
           status: 'error',
-          message: 'Invalid email or password.',
+          message: 'User not found.',
         });
         return;
       }
@@ -170,6 +170,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         res.status(403).json({
           status: 'fail',
           message: 'Account not verified. Please check your email for verification link.',
+        });
+        return;
+      }
+
+      if (!(await PersonalDetails.validatePassword(password, user.password))) {
+        res.status(401).json({
+          status: 'error',
+          message: 'Invalid email or password.',
         });
         return;
       }
