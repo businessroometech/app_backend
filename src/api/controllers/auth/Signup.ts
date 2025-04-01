@@ -195,7 +195,7 @@ import nodemailer from 'nodemailer';
 // //     }
 // //     .verify-button:hover {
 // //       background-color: #0056b3;
-     
+
 // //     }
 // //     .timer {
 // //       margin: 20px 0;
@@ -422,6 +422,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     try {
       const restriction = restrictionRepository.create({
         userId: user?.id,
+        connectionCount: 50
       });
 
       await restrictionRepository.save(restriction);

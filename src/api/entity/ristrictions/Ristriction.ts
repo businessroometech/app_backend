@@ -8,7 +8,7 @@ export class Ristriction extends BaseEntity {
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'int', default: 5 })
+  @Column({ type: 'int', default: 50 })
   connectionCount!: number;
 
   @Column({ type: "bool", default: false })
