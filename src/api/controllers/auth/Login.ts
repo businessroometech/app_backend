@@ -111,108 +111,15 @@ const generateRefreshToken = (user: { id: string }, rememberMe: boolean = false)
 //   }
 // };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, password, rememberMe = false } = req.body;
-    const { token } = req.query;
-
-    if (!email || !password) {
-      res.status(400).json({
-        status: 'fail',
-        message: 'Please provide an email and password.',
-      });
-      return;
-    }
-
-    const userLoginRepository = AppDataSource.getRepository(PersonalDetails);
-    let user: PersonalDetails | null = null;
-
-    if (token) {
-      let payload: any;
-      try {
-        payload = jwt.verify(token as string, process.env.ACCESS_SECRET_KEY!);
-      } catch (err) {
-        res.status(400).json({
-          status: 'error',
-          message: 'Invalid or expired token.',
-        });
-        return;
-      }
-
-      const { userId } = payload;
-      user = await userLoginRepository.findOne({ where: { id: userId } });
-
-      if (!user) {
-        res.status(404).json({
-          status: 'error',
-          message: 'User not found.',
-        });
-        return;
-      }
-
-      if (user.active === 0) {
-        user.active = 1;
-        await userLoginRepository.save(user);
-      }
-    } else {
-
-      user = await userLoginRepository.findOne({ where: { emailAddress: email } });
-
-      if (!user || !(await PersonalDetails.validatePassword(password, user.password))) {
-        res.status(401).json({
-          status: 'error',
-          message: 'Invalid email or password.',
-        });
-        return;
-      }
-
-      if (user.active === 0) {
-        res.status(403).json({
-          status: 'fail',
-          message: 'Account not verified. Please check your email for verification link.',
-        });
-        return;
-      }
-
-      if (user.active === -1) {
-        res.status(403).json({
-          status: 'fail',
-          message: 'Account is blocked. Please contact support.',
-        });
-        return;
-      }
-    }
-
-    const accessToken = generateAccessToken(user, rememberMe);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Logged in successfully.',
-      data: {
-        accessToken,
-        user,
-      },
-    });
-
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong! Please try again later.',
-    });
-  }
-};
-
-
 // export const login = async (req: Request, res: Response): Promise<void> => {
 //   try {
 //     const { email, password, rememberMe = false } = req.body;
 //     const { token } = req.query;
 
-//     if (!email && !token) {
+//     if (!email || !password) {
 //       res.status(400).json({
 //         status: 'fail',
-//         message: 'Please provide either email/password or a valid token',
+//         message: 'Please provide an email and password.',
 //       });
 //       return;
 //     }
@@ -221,59 +128,40 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 //     let user: PersonalDetails | null = null;
 
 //     if (token) {
+//       let payload: any;
 //       try {
-//         const payload = jwt.verify(token as string, process.env.ACCESS_SECRET_KEY!);
-//         const { userId }: any = payload;
-
-//         user = await userLoginRepository.findOne({
-//           where: { id: userId }
-//         });
-
-//         if (!user) {
-//           res.status(400).json({
-//             status: 'fail',
-//             message: 'User not found with the provided token',
-//           });
-//           return;
-//         }
-
-//         if (user.active === 0) {
-//           user.active = 1;
-//           await userLoginRepository.save(user);
-//         }
+//         payload = jwt.verify(token as string, process.env.ACCESS_SECRET_KEY!);
 //       } catch (err) {
-//         if (err instanceof jwt.TokenExpiredError) {
-//           res.status(401).json({
-//             status: 'fail',
-//             message: 'Token has expired. Please request a new verification email.',
-//           });
-//         } else {
-//           res.status(401).json({
-//             status: 'fail',
-//             message: 'Invalid authentication token',
-//           });
-//         }
-//         return;
-//       }
-//     }
-//     else {
-//       if (!password) {
 //         res.status(400).json({
-//           status: 'fail',
-//           message: 'Password is required for email login',
+//           status: 'error',
+//           message: 'Invalid or expired token.',
 //         });
 //         return;
 //       }
 
-//       user = await userLoginRepository.findOne({
-//         where: { emailAddress: email },
-//         select: ['id', 'emailAddress', 'firstName', 'lastName', 'password', 'active', 'userRole']
-//       });
+//       const { userId } = payload;
+//       user = await userLoginRepository.findOne({ where: { id: userId } });
+
+//       if (!user) {
+//         res.status(404).json({
+//           status: 'error',
+//           message: 'User not found.',
+//         });
+//         return;
+//       }
+
+//       if (user.active === 0) {
+//         user.active = 1;
+//         await userLoginRepository.save(user);
+//       }
+//     } else {
+
+//       user = await userLoginRepository.findOne({ where: { emailAddress: email } });
 
 //       if (!user || !(await PersonalDetails.validatePassword(password, user.password))) {
 //         res.status(401).json({
-//           status: 'fail',
-//           message: 'Invalid email or password',
+//           status: 'error',
+//           message: 'Invalid email or password.',
 //         });
 //         return;
 //       }
@@ -297,33 +185,145 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 //     const accessToken = generateAccessToken(user, rememberMe);
 
-//     const userResponse = {
-//       id: user.id,
-//       email: user.emailAddress,
-//       firstName: user.firstName,
-//       lastName: user.lastName,
-//       role: user.userRole,
-//       isVerified: user.active === 1
-//     };
-
 //     res.status(200).json({
 //       status: 'success',
-//       message: 'Login successful',
+//       message: 'Logged in successfully.',
 //       data: {
 //         accessToken,
-//         user: userResponse
+//         user,
 //       },
 //     });
 
-//   } catch (error: any) {
+//   } catch (error) {
 //     console.error('Login error:', error);
 //     res.status(500).json({
 //       status: 'error',
-//       message: 'An unexpected error occurred. Please try again later.',
-//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//       message: 'Something went wrong! Please try again later.',
 //     });
 //   }
 // };
+
+
+export const login = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password, rememberMe = false } = req.body;
+    const { token } = req.query;
+
+    if (!email && !token) {
+      res.status(400).json({
+        status: 'fail',
+        message: 'Please provide either email/password or a valid token',
+      });
+      return;
+    }
+
+    const userLoginRepository = AppDataSource.getRepository(PersonalDetails);
+    let user: PersonalDetails | null = null;
+
+    if (token) {
+      try {
+        const payload = jwt.verify(token as string, process.env.ACCESS_SECRET_KEY!);
+        const { userId }: any = payload;
+
+        user = await userLoginRepository.findOne({
+          where: { id: userId }
+        });
+
+        if (!user) {
+          res.status(400).json({
+            status: 'fail',
+            message: 'User not found with the provided token',
+          });
+          return;
+        }
+
+        if (user.active === 0) {
+          user.active = 1;
+          await userLoginRepository.save(user);
+        }
+      } catch (err) {
+        if (err instanceof jwt.TokenExpiredError) {
+          res.status(401).json({
+            status: 'fail',
+            message: 'Token has expired. Please request a new verification email.',
+          });
+        } else {
+          res.status(401).json({
+            status: 'fail',
+            message: 'Invalid authentication token',
+          });
+        }
+        return;
+      }
+    }
+    else {
+      if (!password) {
+        res.status(400).json({
+          status: 'fail',
+          message: 'Password is required for email login',
+        });
+        return;
+      }
+
+      user = await userLoginRepository.findOne({
+        where: { emailAddress: email },
+        select: ['id', 'emailAddress', 'firstName', 'lastName', 'password', 'active', 'userRole']
+      });
+
+      if (!user || !(await PersonalDetails.validatePassword(password, user.password))) {
+        res.status(401).json({
+          status: 'fail',
+          message: 'Invalid email or password',
+        });
+        return;
+      }
+
+      if (user.active === 0) {
+        res.status(403).json({
+          status: 'fail',
+          message: 'Account not verified. Please check your email for verification link.',
+        });
+        return;
+      }
+
+      if (user.active === -1) {
+        res.status(403).json({
+          status: 'fail',
+          message: 'Account is blocked. Please contact support.',
+        });
+        return;
+      }
+    }
+
+    const accessToken = generateAccessToken(user, rememberMe);
+
+    const userResponse = {
+      id: user.id,
+      email: user.emailAddress,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.userRole,
+      isVerified: user.active === 1
+    };
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Login successful',
+      data: {
+        accessToken,
+        user: userResponse
+      },
+    });
+
+  } catch (error: any) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An unexpected error occurred. Please try again later.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
