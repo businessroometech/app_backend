@@ -416,7 +416,7 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
     const response = await Promise.all(
       connectionRequests.map(async (connection) => {
         const user = users.find((u) => u.id === connection.requesterId);
-        const profilePictureUploadUrl = user?.profilePictureUploadId
+        const profilePictureUrl = user?.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
 
@@ -428,7 +428,7 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
           createdAt: connection.createdAt,
           updatedAt: connection.updatedAt,
           requesterDetails: user,
-          profilePictureUploadUrl,
+          profilePictureUrl,
         };
       })
     );
