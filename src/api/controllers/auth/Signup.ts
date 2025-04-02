@@ -403,15 +403,12 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     // Create new user
     const newUser = userLoginRepository.create({
       firstName,
       lastName,
       emailAddress,
-      password: hashedPassword,
+      password,
       country,
       countryCode,
       mobileNumber: mobileNumber?.trim() ? mobileNumber : null,
