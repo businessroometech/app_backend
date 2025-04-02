@@ -46,10 +46,10 @@ export const sendResetEmail = async (req: Request, res: Response) => {
 
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent: %s", info.messageId);
-    res.status(200).json({ success: true, message: "Email sent successfully." });
+    res.status(200).json({ status: "success", message: "Email sent successfully." });
   } catch (error) {
     console.error("Error sending email:", error);
-    res.status(500).json({ success: false, message: "Failed to send email." });
+    res.status(500).json({ status: "error", message: "Failed to send email." });
   }
 };
 
@@ -83,9 +83,9 @@ export const resetPassword = async (req: Request, res: Response) => {
     user.password = hashedPassword;
     await personalDetailsRepo.save(user);
 
-    res.status(200).json({ success: true, message: "Password has been reset successfully" });
+    res.status(200).json({ status: "success", message: "Password has been reset successfully" });
   } catch (error) {
     console.error("Error resetting password:", error);
-    res.status(500).json({ success: false, message: "Failed to reset password" });
+    res.status(500).json({ status: "error", message: "Failed to reset password" });
   }
 };
