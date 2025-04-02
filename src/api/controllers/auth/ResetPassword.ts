@@ -19,19 +19,19 @@ export const sendResetEmail = async (req: Request, res: Response) => {
     }
 
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '465'),
       secure: true,
       auth: {
-        user: "ashutoshnegi196@gmail.com",
-        pass: "ctcbnmvlouaildzd"
+        user: process.env.EMAIL_USER || 'businessroom.ai@gmail.com',
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
     const resetToken = jwt.sign({ userId: user.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: "1h" });
-    const newResetLink = `${resetLink}?token=${resetToken}`;
+    const newResetLink = `${process.env.FRONTEND_URL}${resetLink}?token=${resetToken}`;
     const mailOptions = {
-      from: 'ashutoshnegi196@gmail.com',
+      from: process.env.EMAIL_FROM || 'businessroomai@gmail.com',
       to: toEmail,
       subject: "Reset Your Password",
       html: `
@@ -44,7 +44,6 @@ export const sendResetEmail = async (req: Request, res: Response) => {
       `,
     };
 
-    // Send the email
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent: %s", info.messageId);
     res.status(200).json({ success: true, message: "Email sent successfully." });
