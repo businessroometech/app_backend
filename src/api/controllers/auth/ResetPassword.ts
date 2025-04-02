@@ -18,6 +18,10 @@ export const sendResetEmail = async (req: Request, res: Response) => {
       return res.status(400).json({ status: "error", message: "User with this email doesn't exist" });
     }
 
+    if (user && user.active === 0) {
+      return res.status(400).json({ status: "error", message: "Email is not verified yet" });
+    }
+
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.EMAIL_PORT || '465'),
