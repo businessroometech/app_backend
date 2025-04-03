@@ -178,382 +178,137 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
 
 
 // get user profile
-// export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
-//   try {
-//     const userId = req.userId;
-//     let { profileId = userId } = req.query;
-
-//     if (!userId) {
-//       return res.status(400).json({
-//         status: "error",
-//         message: 'User ID and Profile ID are required.',
-//       });
-//     }
-
-//     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
-//     const connectionRepository = AppDataSource.getRepository(Connection);
-//     const postRepository = AppDataSource.getRepository(UserPost);
-//     const likeRepository = AppDataSource.getRepository(Like);
-//     const blockedUserRepository = AppDataSource.getRepository(BlockedUser);
-
-//     // Check if the user is blocked or has blocked the profile
-//     const blockedEntry = await blockedUserRepository.findOne({
-//       where: [
-//         { blockedBy: userId, blockedUser: String(profileId) },
-//         { blockedBy: String(profileId), blockedUser: userId },
-//       ],
-//     });
-
-//     // Fetch user details
-//     const personalDetails = await personalDetailsRepository.findOne({
-//       where: { id: String(profileId) },
-//     });
-
-//     const ristrictionRepo = AppDataSource.getRepository(Ristriction);
-//     const ristrict = await ristrictionRepo.findOne({ where: { userId: personalDetails?.id } });
-
-//     if (!personalDetails) {
-//       return res.status(400).json({
-//         status: "error",
-//         message: 'User profile not found.',
-//       });
-//     }
-
-//     // Generate image URLs
-//     const profileImgUrl = personalDetails.profilePictureUploadId
-//       ? await generatePresignedUrl(personalDetails.profilePictureUploadId)
-//       : null;
-
-//     const coverImgUrl = personalDetails.bgPictureUploadId
-//       ? await generatePresignedUrl(personalDetails.bgPictureUploadId)
-//       : null;
-
-//     // Fetch connection, post, and like counts
-//     const connectionsCount = await connectionRepository.count({
-//       where: [
-//         { requesterId: String(profileId), status: 'accepted' },
-//         { receiverId: String(profileId), status: 'accepted' },
-//       ],
-//     });
-
-//     const postsCount = await postRepository.count({ where: { userId: String(profileId) } });
-//     const likeCount = await likeRepository.count({ where: { userId: String(profileId) } });
-
-//     const connectionsStatus = await connectionRepository.findOne({
-//       where: [
-//         { requesterId: userId, receiverId: String(profileId) },
-//         { receiverId: userId, requesterId: String(profileId) },
-//       ],
-//     });
-
-//     if (blockedEntry) {
-//       if (blockedEntry.blockedBy === userId) {
-//         return res.status(200).json({
-//           status: "success",
-//           message: 'You have blocked this user.',
-//           data: { personalDetails, connectionsStatus: "Blocked", unblockOption: true, }
-//         });
-//       } else {
-//         return res.status(200).json({
-//           status: "success",
-//           message: 'You are blocked from viewing this profile.',
-//           data: { personalDetails, connectionsStatus: "Blocked", }
-//         });
-//       }
-//     }
-
-//     const NotifyRepo = AppDataSource.getRepository(Notify);
-//     const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
-
-//     const messageRepo = AppDataSource.getRepository(Message);
-//     const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
-
-//     const history = await messageHistoryRepo.find({
-//       where: [
-//         { senderId: userId },
-//         { receiverId: userId }
-//       ],
-//     });
-
-//     const unreadMessagesCount = (await Promise.all(
-//       (history || []).map(async (his) => {
-//         let myId = his.receiverId === userId ? his.receiverId : his.senderId;
-//         let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
-
-//         const count = await messageRepo.count({
-//           where: { receiverId: myId, senderId: otherId, isRead: false },
-//         });
-
-//         return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
-//       })
-//     )).filter((item) => item !== null);
-
-//     const io = getSocketInstance();
-//     io.to(userId).emit('initialize', {
-//       userId,
-//       welcomeMessage: 'Welcome to BusinessRoom!',
-//       unreadNotificationsCount: notifyCount ? notifyCount : 0,
-//       unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
-//     });
-
-//     return res.status(200).json({
-//       status: "success",
-//       message: 'User profile fetched successfully.',
-//       data: {
-//         personalDetails: { ...personalDetails, isBusinessProfileFilled: ristrict?.isBusinessProfileCompleted },
-//         profileImgUrl,
-//         coverImgUrl,
-//         connectionsCount,
-//         postsCount,
-//         likeCount,
-//         connectionsStatus: connectionsStatus ? connectionsStatus.status : null,
-//         requiterId: connectionsStatus ? connectionsStatus.requesterId : null,
-//         receiverId: connectionsStatus ? connectionsStatus.receiverId : null,
-//       },
-//     });
-
-//   } catch (error: any) {
-//     console.error('Error fetching user profile:', error);
-//     return res.status(500).json({
-//       status: "error",
-//       message: 'Internal Server Error',
-//       error: error.message,
-//     });
-//   }
-// };
-
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const userId = req.userId;
-    const { profileId = userId } = req.query;
-    const profileIdStr = String(profileId);
+    let { profileId = userId } = req.query;
 
     if (!userId) {
       return res.status(400).json({
         status: "error",
-        message: 'User ID is required.',
+        message: 'User ID and Profile ID are required.',
       });
     }
 
-    // Initialize repositories
-    const repos = {
-      personalDetails: AppDataSource.getRepository(PersonalDetails),
-      connection: AppDataSource.getRepository(Connection),
-      post: AppDataSource.getRepository(UserPost),
-      like: AppDataSource.getRepository(Like),
-      blockedUser: AppDataSource.getRepository(BlockedUser),
-      restriction: AppDataSource.getRepository(Ristriction),
-      notify: AppDataSource.getRepository(Notify),
-      message: AppDataSource.getRepository(Message),
-      messageHistory: AppDataSource.getRepository(MessageHistory)
-    };
+    const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
+    const connectionRepository = AppDataSource.getRepository(Connection);
+    const postRepository = AppDataSource.getRepository(UserPost);
+    const likeRepository = AppDataSource.getRepository(Like);
+    const blockedUserRepository = AppDataSource.getRepository(BlockedUser);
 
-    // First get all active users
-    const activeUsers = await repos.personalDetails.find({
-      where: { active: 1 },
-      select: ['id']
+    // Check if the user is blocked or has blocked the profile
+    const blockedEntry = await blockedUserRepository.findOne({
+      where: [
+        { blockedBy: userId, blockedUser: String(profileId) },
+        { blockedBy: String(profileId), blockedUser: userId },
+      ],
     });
-    const activeUserIds = activeUsers.map(user => user.id);
 
-    // Check if requested profile is active
-    if (!activeUserIds.includes(profileIdStr)) {
-      return res.status(404).json({
-        status: "error",
-        message: 'User profile not found or inactive.',
-      });
-    }
+    // Fetch user details
+    const personalDetails = await personalDetailsRepository.findOne({
+      where: { id: String(profileId) },
+    });
 
-    // Check blocking status (only between active users)
-    const [blockedEntry, personalDetails, restriction] = await Promise.all([
-      repos.blockedUser.findOne({
-        where: [
-          { blockedBy: userId, blockedUser: profileIdStr },
-          { blockedBy: profileIdStr, blockedUser: userId },
-        ],
-      }),
-      repos.personalDetails.findOne({
-        where: {
-          id: profileIdStr,
-          active: 1
-        }
-      }),
-      repos.restriction.findOne({ where: { userId: profileIdStr } })
-    ]);
+    const ristrictionRepo = AppDataSource.getRepository(Ristriction);
+    const ristrict = await ristrictionRepo.findOne({ where: { userId: personalDetails?.id } });
 
     if (!personalDetails) {
-      return res.status(404).json({
+      return res.status(400).json({
         status: "error",
         message: 'User profile not found.',
       });
     }
 
-    // Handle blocked users
+    // Generate image URLs
+    const profileImgUrl = personalDetails.profilePictureUploadId
+      ? await generatePresignedUrl(personalDetails.profilePictureUploadId)
+      : null;
+
+    const coverImgUrl = personalDetails.bgPictureUploadId
+      ? await generatePresignedUrl(personalDetails.bgPictureUploadId)
+      : null;
+
+    // Fetch connection, post, and like counts
+    const connectionsCount = await connectionRepository.count({
+      where: [
+        { requesterId: String(profileId), status: 'accepted' },
+        { receiverId: String(profileId), status: 'accepted' },
+      ],
+    });
+
+    const postsCount = await postRepository.count({ where: { userId: String(profileId) } });
+    const likeCount = await likeRepository.count({ where: { userId: String(profileId) } });
+
+    const connectionsStatus = await connectionRepository.findOne({
+      where: [
+        { requesterId: userId, receiverId: String(profileId) },
+        { receiverId: userId, requesterId: String(profileId) },
+      ],
+    });
+
     if (blockedEntry) {
-      return res.status(200).json({
-        status: "success",
-        message: blockedEntry.blockedBy === userId ?
-          'You have blocked this user.' :
-          'You are blocked from viewing this profile.',
-        data: {
-          personalDetails,
-          connectionsStatus: "Blocked",
-          ...(blockedEntry.blockedBy === userId && { unblockOption: true })
-        }
-      });
+      if (blockedEntry.blockedBy === userId) {
+        return res.status(200).json({
+          status: "success",
+          message: 'You have blocked this user.',
+          data: { personalDetails, connectionsStatus: "Blocked", unblockOption: true, }
+        });
+      } else {
+        return res.status(200).json({
+          status: "success",
+          message: 'You are blocked from viewing this profile.',
+          data: { personalDetails, connectionsStatus: "Blocked", }
+        });
+      }
     }
 
-    // Generate image URLs in parallel
-    const [profileImgUrl, coverImgUrl] = await Promise.all([
-      personalDetails.profilePictureUploadId ?
-        generatePresignedUrl(personalDetails.profilePictureUploadId).catch(() => null) :
-        null,
-      personalDetails.bgPictureUploadId ?
-        generatePresignedUrl(personalDetails.bgPictureUploadId).catch(() => null) :
-        null
-    ]);
+    const NotifyRepo = AppDataSource.getRepository(Notify);
+    const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
 
-    // Fetch counts in parallel (only from active users)
-    const [connectionsCount, postsCount, likeCount, connectionsStatus, notificationData] = await Promise.all([
-      repos.connection.count({
-        where: [
-          {
-            status: 'accepted',
-            requesterId: And(
-              Equal(profileIdStr),
-              In(activeUserIds)
-            ),
-            receiverId: In(activeUserIds)
-          },
-          {
-            status: 'accepted',
-            requesterId: In(activeUserIds),
-            receiverId: And(
-              Equal(profileIdStr),
-              In(activeUserIds)
-            ),
-          },
-        ],
-      }),
-      repos.post.count({
-        where: {
-          userId: And(
-            Equal(profileIdStr),
-            In(activeUserIds)
-          ),
-        }
-      }),
-      repos.like.count({
-        where: {
-          userId: And(
-            Equal(profileIdStr),
-            In(activeUserIds)
-          ),
-        }
-      }),
-      repos.connection.findOne({
-        where: [
-          {
-            requesterId: And(
-              Equal(userId),
-              In(activeUserIds)
-            ),
-            receiverId: And(
-              Equal(profileIdStr),
-              In(activeUserIds)
-            ),
-          },
-          {
-            requesterId: And(
-              Equal(profileIdStr),
-              In(activeUserIds)
-            ),
-            receiverId: And(
-              Equal(userId),
-              In(activeUserIds)
-            ),
-          },
-        ],
-      }),
-      repos.notify.findAndCount({
-        where: {
-          recieverId: And(
-            Equal(userId),
-            In(activeUserIds)
-          ),
-        }
-      })
-    ]);
+    const messageRepo = AppDataSource.getRepository(Message);
+    const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
 
-    // Get unread messages count (only between active users)
-    const history = await repos.messageHistory.find({
+    const history = await messageHistoryRepo.find({
       where: [
-        {
-          senderId: And(
-            Equal(userId),
-            In(activeUserIds)
-          ),
-        },
-        {
-          receiverId: And(
-            Equal(userId),
-            In(activeUserIds)
-          ),
-        }
+        { senderId: userId },
+        { receiverId: userId }
       ],
     });
 
     const unreadMessagesCount = (await Promise.all(
-      history.map(async (his) => {
-        const isReceiver = his.receiverId === userId;
-        const count = await repos.message.count({
-          where: {
-            isRead: false,
-            senderId: And(
-              Equal(isReceiver ? his.senderId : his.receiverId,),
-              In(activeUserIds)
-            ),
-            receiverId: And(
-              Equal(isReceiver ? his.receiverId : his.senderId),
-              In(activeUserIds)
-            ),
-          },
-        });
-        return count > 0 ? {
-          senderId: isReceiver ? his.senderId : his.receiverId,
-          unReadCount: count
-        } : null;
-      })
-    )).filter(Boolean);
+      (history || []).map(async (his) => {
+        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
 
-    // Emit socket event
+        const count = await messageRepo.count({
+          where: { receiverId: myId, senderId: otherId, isRead: false },
+        });
+
+        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+      })
+    )).filter((item) => item !== null);
+
     const io = getSocketInstance();
     io.to(userId).emit('initialize', {
       userId,
       welcomeMessage: 'Welcome to BusinessRoom!',
-      unreadNotificationsCount: notificationData[1] || 0,
-      unreadMessagesCount: unreadMessagesCount.length || 0,
+      unreadNotificationsCount: notifyCount ? notifyCount : 0,
+      unreadMessagesCount: unreadMessagesCount ? unreadMessagesCount.length : 0,
     });
 
     return res.status(200).json({
       status: "success",
       message: 'User profile fetched successfully.',
       data: {
-        personalDetails: {
-          ...personalDetails,
-          isBusinessProfileFilled: restriction?.isBusinessProfileCompleted
-        },
+        personalDetails: { ...personalDetails, isBusinessProfileFilled: ristrict?.isBusinessProfileCompleted },
         profileImgUrl,
         coverImgUrl,
-        counts: {
-          connections: connectionsCount,
-          posts: postsCount,
-          likes: likeCount
-        },
-        connectionStatus: {
-          status: connectionsStatus?.status || null,
-          requesterId: connectionsStatus?.requesterId || null,
-          receiverId: connectionsStatus?.receiverId || null
-        }
+        connectionsCount,
+        postsCount,
+        likeCount,
+        connectionsStatus: connectionsStatus ? connectionsStatus.status : null,
+        requiterId: connectionsStatus ? connectionsStatus.requesterId : null,
+        receiverId: connectionsStatus ? connectionsStatus.receiverId : null,
       },
     });
 
@@ -566,6 +321,251 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     });
   }
 };
+
+// export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+//   try {
+//     const userId = req.userId;
+//     const { profileId = userId } = req.query;
+//     const profileIdStr = String(profileId);
+
+//     if (!userId) {
+//       return res.status(400).json({
+//         status: "error",
+//         message: 'User ID is required.',
+//       });
+//     }
+
+//     // Initialize repositories
+//     const repos = {
+//       personalDetails: AppDataSource.getRepository(PersonalDetails),
+//       connection: AppDataSource.getRepository(Connection),
+//       post: AppDataSource.getRepository(UserPost),
+//       like: AppDataSource.getRepository(Like),
+//       blockedUser: AppDataSource.getRepository(BlockedUser),
+//       restriction: AppDataSource.getRepository(Ristriction),
+//       notify: AppDataSource.getRepository(Notify),
+//       message: AppDataSource.getRepository(Message),
+//       messageHistory: AppDataSource.getRepository(MessageHistory)
+//     };
+
+//     // First get all active users
+//     const activeUsers = await repos.personalDetails.find({
+//       where: { active: 1 },
+//       select: ['id']
+//     });
+//     const activeUserIds = activeUsers.map(user => user.id);
+
+//     // Check if requested profile is active
+//     if (!activeUserIds.includes(profileIdStr)) {
+//       return res.status(404).json({
+//         status: "error",
+//         message: 'User profile not found or inactive.',
+//       });
+//     }
+
+//     // Check blocking status (only between active users)
+//     const [blockedEntry, personalDetails, restriction] = await Promise.all([
+//       repos.blockedUser.findOne({
+//         where: [
+//           { blockedBy: userId, blockedUser: profileIdStr },
+//           { blockedBy: profileIdStr, blockedUser: userId },
+//         ],
+//       }),
+//       repos.personalDetails.findOne({
+//         where: {
+//           id: profileIdStr,
+//           active: 1
+//         }
+//       }),
+//       repos.restriction.findOne({ where: { userId: profileIdStr } })
+//     ]);
+
+//     if (!personalDetails) {
+//       return res.status(404).json({
+//         status: "error",
+//         message: 'User profile not found.',
+//       });
+//     }
+
+//     // Handle blocked users
+//     if (blockedEntry) {
+//       return res.status(200).json({
+//         status: "success",
+//         message: blockedEntry.blockedBy === userId ?
+//           'You have blocked this user.' :
+//           'You are blocked from viewing this profile.',
+//         data: {
+//           personalDetails,
+//           connectionsStatus: "Blocked",
+//           ...(blockedEntry.blockedBy === userId && { unblockOption: true })
+//         }
+//       });
+//     }
+
+//     // Generate image URLs in parallel
+//     const [profileImgUrl, coverImgUrl] = await Promise.all([
+//       personalDetails.profilePictureUploadId ?
+//         generatePresignedUrl(personalDetails.profilePictureUploadId).catch(() => null) :
+//         null,
+//       personalDetails.bgPictureUploadId ?
+//         generatePresignedUrl(personalDetails.bgPictureUploadId).catch(() => null) :
+//         null
+//     ]);
+
+//     // Fetch counts in parallel (only from active users)
+//     const [connectionsCount, postsCount, likeCount, connectionsStatus, notificationData] = await Promise.all([
+//       repos.connection.count({
+//         where: [
+//           {
+//             status: 'accepted',
+//             requesterId: And(
+//               Equal(profileIdStr),
+//               In(activeUserIds)
+//             ),
+//             receiverId: In(activeUserIds)
+//           },
+//           {
+//             status: 'accepted',
+//             requesterId: In(activeUserIds),
+//             receiverId: And(
+//               Equal(profileIdStr),
+//               In(activeUserIds)
+//             ),
+//           },
+//         ],
+//       }),
+//       repos.post.count({
+//         where: {
+//           userId: And(
+//             Equal(profileIdStr),
+//             In(activeUserIds)
+//           ),
+//         }
+//       }),
+//       repos.like.count({
+//         where: {
+//           userId: And(
+//             Equal(profileIdStr),
+//             In(activeUserIds)
+//           ),
+//         }
+//       }),
+//       repos.connection.findOne({
+//         where: [
+//           {
+//             requesterId: And(
+//               Equal(userId),
+//               In(activeUserIds)
+//             ),
+//             receiverId: And(
+//               Equal(profileIdStr),
+//               In(activeUserIds)
+//             ),
+//           },
+//           {
+//             requesterId: And(
+//               Equal(profileIdStr),
+//               In(activeUserIds)
+//             ),
+//             receiverId: And(
+//               Equal(userId),
+//               In(activeUserIds)
+//             ),
+//           },
+//         ],
+//       }),
+//       repos.notify.findAndCount({
+//         where: {
+//           recieverId: And(
+//             Equal(userId),
+//             In(activeUserIds)
+//           ),
+//         }
+//       })
+//     ]);
+
+//     // Get unread messages count (only between active users)
+//     const history = await repos.messageHistory.find({
+//       where: [
+//         {
+//           senderId: And(
+//             Equal(userId),
+//             In(activeUserIds)
+//           ),
+//         },
+//         {
+//           receiverId: And(
+//             Equal(userId),
+//             In(activeUserIds)
+//           ),
+//         }
+//       ],
+//     });
+
+//     const unreadMessagesCount = (await Promise.all(
+//       history.map(async (his) => {
+//         const isReceiver = his.receiverId === userId;
+//         const count = await repos.message.count({
+//           where: {
+//             isRead: false,
+//             senderId: And(
+//               Equal(isReceiver ? his.senderId : his.receiverId,),
+//               In(activeUserIds)
+//             ),
+//             receiverId: And(
+//               Equal(isReceiver ? his.receiverId : his.senderId),
+//               In(activeUserIds)
+//             ),
+//           },
+//         });
+//         return count > 0 ? {
+//           senderId: isReceiver ? his.senderId : his.receiverId,
+//           unReadCount: count
+//         } : null;
+//       })
+//     )).filter(Boolean);
+
+//     // Emit socket event
+//     const io = getSocketInstance();
+//     io.to(userId).emit('initialize', {
+//       userId,
+//       welcomeMessage: 'Welcome to BusinessRoom!',
+//       unreadNotificationsCount: notificationData[1] || 0,
+//       unreadMessagesCount: unreadMessagesCount.length || 0,
+//     });
+
+//     return res.status(200).json({
+//       status: "success",
+//       message: 'User profile fetched successfully.',
+//       data: {
+//         personalDetails: {
+//           ...personalDetails,
+//           isBusinessProfileFilled: restriction?.isBusinessProfileCompleted
+//         },
+//         profileImgUrl,
+//         coverImgUrl,
+//         counts: {
+//           connections: connectionsCount,
+//           posts: postsCount,
+//           likes: likeCount
+//         },
+//         connectionStatus: {
+//           status: connectionsStatus?.status || null,
+//           requesterId: connectionsStatus?.requesterId || null,
+//           receiverId: connectionsStatus?.receiverId || null
+//         }
+//       },
+//     });
+
+//   } catch (error: any) {
+//     console.error('Error fetching user profile:', error);
+//     return res.status(500).json({
+//       status: "error",
+//       message: 'Internal Server Error',
+//       error: error.message,
+//     });
+//   }
+// };
 
 export const ProfileVisitController = {
   /**
