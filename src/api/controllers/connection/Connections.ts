@@ -5,7 +5,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { request } from 'node:http';
 import { formatTimestamp } from '../posts/UserPost';
 import { generatePresignedUrl } from '../s3/awsControllers';
-import { Brackets, In, Not } from 'typeorm';
+import { And, Brackets, Equal, FindOptionsWhere, In, Not } from 'typeorm';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { getSocketInstance } from '@/socket';
 import { createNotification } from '../notify/Notify';
@@ -214,9 +214,132 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 };
 
 // Get user's connections and mutual connections
-export const getUserConnections = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+// export const getUserConnections = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
 
-  let profileId = req.query.profileId;
+//   let profileId = req.query.profileId;
+//   const userId = req.userId;
+
+//   if (!userId) {
+//     return res.status(400).json({ message: 'User ID is required.' });
+//   }
+
+//   try {
+
+//     console.log(profileId);
+//     if (!profileId) {
+//       profileId = userId;
+//     }
+
+//     const connectionRepository = AppDataSource.getRepository(Connection);
+//     const messageRepository = AppDataSource.getRepository(Message);
+
+
+//     const connections = await connectionRepository
+//       .createQueryBuilder("connection")
+//       .where("connection.requesterId = :profileId AND connection.status = 'accepted'", { profileId })
+//       .orWhere("connection.receiverId = :profileId AND connection.status = 'accepted'", { profileId })
+//       .getMany();
+
+
+//     if (!connections || connections.length === 0) {
+//       return res.status(400).json({ message: 'No accepted connections found.' });
+//     }
+
+
+//     const userRepository = AppDataSource.getRepository(PersonalDetails);
+//     const userIds = [
+//       ...new Set(connections.map((connection) => connection.requesterId)),
+//       ...new Set(connections.map((connection) => connection.receiverId)),
+//     ].filter((id) => id !== profileId);
+
+//     const users = await userRepository.find({
+//       where: { id: In(userIds), active: 1 },
+//     });
+
+//     if (!users || users.length === 0) {
+//       return res.status(404).json({ message: 'No users found.' });
+//     }
+
+//     // Fetch all connections of the requesting user to check for mutual connections
+//     const userConnections = await connectionRepository.find({
+//       where: [
+//         { requesterId: userId, status: 'accepted' },
+//         { receiverId: userId, status: 'accepted' },
+//       ],
+//     });
+
+//     const userConnectionIds = new Set(
+//       userConnections.map((connection) =>
+//         connection.requesterId === userId ? connection.receiverId : connection.requesterId
+//       )
+//     );
+
+
+//     const result = await Promise.all(
+//       connections.map(async (connection) => {
+//         const user = users.find((user) => user.id === connection.requesterId || user.id === connection.receiverId);
+//         const profilePictureUrl = user?.profilePictureUploadId
+//           ? await generatePresignedUrl(user.profilePictureUploadId)
+//           : null;
+//         const isMutual = userConnectionIds.has(user?.id || '');
+
+//         // Get the connection status between current user and this user
+//         const userConnectionStatus = await connectionRepository.findOne({
+//           where: [
+//             { requesterId: userId, receiverId: user?.id },
+//             { requesterId: user?.id, receiverId: userId }
+//           ]
+//         });
+
+//         const isUserReceiver = connection?.receiverId === userId;
+//         const myId = isUserReceiver ? connection?.receiverId : connection?.requesterId;
+//         const otherId = isUserReceiver ? connection?.requesterId : connection?.receiverId;
+
+//         const count = await messageRepository.count({
+//           where: { receiverId: myId, senderId: otherId, isRead: false },
+//         });
+
+//         const lastMessage = await messageRepository.findOne({
+//           where: [
+//             { receiverId: myId, senderId: otherId },
+//             { receiverId: otherId, senderId: myId }
+//           ],
+//           order: { createdAt: 'DESC' },
+//           select: ['createdAt']
+//         });
+
+//         return {
+//           connectionId: connection.id,
+//           userId: user?.id,
+//           firstName: user?.firstName,
+//           lastName: user?.lastName,
+//           userRole: user?.userRole,
+//           profilePictureUrl: profilePictureUrl,
+//           bagdeName: user?.badgeName,
+//           bio: user?.bio,
+//           email: user?.emailAddress,
+//           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
+//           mutual: isMutual,
+//           me: userId === connection.requesterId || userId === connection.receiverId,
+//           status: userConnectionStatus?.status || null,
+//           unreadMessageCount: count,
+//           lastMessageTime: lastMessage?.createdAt || connection?.createdAt
+//         };
+//       })
+//     );
+
+//     result.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+
+//     return res.status(200).json({ connections: result });
+//   } catch (error: any) {
+//     console.error('Error fetching user connections:', error);
+//     return res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// };
+
+export const getUserConnections = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+  // Explicitly type profileId as string
+  const profileId = typeof req.query.profileId === 'string' ? req.query.profileId : undefined;
   const userId = req.userId;
 
   if (!userId) {
@@ -224,113 +347,162 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
   }
 
   try {
+    const targetUserId = profileId || userId;
 
-    console.log(profileId);
-    if (!profileId) {
-      profileId = userId;
-    }
-
+    // Initialize repositories
     const connectionRepository = AppDataSource.getRepository(Connection);
     const messageRepository = AppDataSource.getRepository(Message);
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
 
+    // First verify the profile user is active with proper typing
+    const profileUser = await userRepository.findOne({
+      where: {
+        id: targetUserId,
+        active: 1
+      } as FindOptionsWhere<PersonalDetails>
+    });
 
-    const connections = await connectionRepository
-      .createQueryBuilder("connection")
-      .where("connection.requesterId = :profileId AND connection.status = 'accepted'", { profileId })
-      .orWhere("connection.receiverId = :profileId AND connection.status = 'accepted'", { profileId })
-      .getMany();
-
-
-    if (!connections || connections.length === 0) {
-      return res.status(400).json({ message: 'No accepted connections found.' });
+    if (!profileUser) {
+      return res.status(404).json({ message: 'Profile user not found or inactive.' });
     }
 
+    // Get all active users upfront with proper typing
+    const activeUsers = await userRepository.find({
+      where: {
+        active: 1
+      } as FindOptionsWhere<PersonalDetails>,
+      select: ['id']
+    });
+    const activeUserIds = activeUsers.map(user => user.id);
 
-    const userRepository = AppDataSource.getRepository(PersonalDetails);
-    const userIds = [
-      ...new Set(connections.map((connection) => connection.requesterId)),
-      ...new Set(connections.map((connection) => connection.receiverId)),
-    ].filter((id) => id !== profileId);
+    // Get connections where both users are active
+    const connections = await connectionRepository
+      .createQueryBuilder("connection")
+      .where(`(
+        (connection.requesterId = :targetUserId AND connection.status = 'accepted') 
+        OR 
+        (connection.receiverId = :targetUserId AND connection.status = 'accepted')
+      )`, { targetUserId })
+      .andWhere("connection.requesterId IN (:...activeUserIds)", { activeUserIds })
+      .andWhere("connection.receiverId IN (:...activeUserIds)", { activeUserIds })
+      .getMany();
 
+    if (!connections || connections.length === 0) {
+      return res.status(200).json({ connections: [] });
+    }
+
+    // Get all unique connection user IDs (excluding targetUserId)
+    const connectionUserIds = [
+      ...new Set(
+        connections.flatMap(connection =>
+          [connection.requesterId, connection.receiverId].filter(id => id !== targetUserId)
+        ))
+    ];
+
+    // Get active user details for these connections with proper typing
     const users = await userRepository.find({
-      where: { id: In(userIds), active: 1 },
+      where: {
+        id: In(connectionUserIds),
+        active: 1
+      } as FindOptionsWhere<PersonalDetails>,
     });
 
     if (!users || users.length === 0) {
-      return res.status(404).json({ message: 'No users found.' });
+      return res.status(200).json({ connections: [] });
     }
 
-    // Fetch all connections of the requesting user to check for mutual connections
+    // Get current user's connections to check for mutual connections
     const userConnections = await connectionRepository.find({
       where: [
-        { requesterId: userId, status: 'accepted' },
-        { receiverId: userId, status: 'accepted' },
-      ],
+        { requesterId: userId, status: 'accepted', receiverId: In(activeUserIds) },
+        { receiverId: userId, status: 'accepted', requesterId: In(activeUserIds) }
+      ] as FindOptionsWhere<Connection>[],
     });
 
     const userConnectionIds = new Set(
-      userConnections.map((connection) =>
+      userConnections.map(connection =>
         connection.requesterId === userId ? connection.receiverId : connection.requesterId
       )
     );
 
-
-    const result = await Promise.all(
+    // Format the response with proper active user checks
+    const connectionResults = await Promise.all(
       connections.map(async (connection) => {
-        const user = users.find((user) => user.id === connection.requesterId || user.id === connection.receiverId);
-        const profilePictureUrl = user?.profilePictureUploadId
+        const otherUserId = connection.requesterId === targetUserId ? connection.receiverId : connection.requesterId;
+        const user = users.find(u => u.id === otherUserId);
+
+        if (!user) return null;
+
+        const profilePictureUrl = user.profilePictureUploadId
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
-        const isMutual = userConnectionIds.has(user?.id || '');
 
-        // Get the connection status between current user and this user
+        const isMutual = userConnectionIds.has(user.id);
+
+        // Get connection status between current user and this user
         const userConnectionStatus = await connectionRepository.findOne({
           where: [
-            { requesterId: userId, receiverId: user?.id },
-            { requesterId: user?.id, receiverId: userId }
-          ]
+            { requesterId: userId, receiverId: user.id },
+            { requesterId: user.id, receiverId: userId }
+          ] as FindOptionsWhere<Connection>[]
         });
 
-        const isUserReceiver = connection?.receiverId === userId;
-        const myId = isUserReceiver ? connection?.receiverId : connection?.requesterId;
-        const otherId = isUserReceiver ? connection?.requesterId : connection?.receiverId;
+        const isUserReceiver = connection.receiverId === userId;
+        const myId = isUserReceiver ? connection.receiverId : connection.requesterId;
+        const otherId = isUserReceiver ? connection.requesterId : connection.receiverId;
 
-        const count = await messageRepository.count({
-          where: { receiverId: myId, senderId: otherId, isRead: false },
-        });
+        // Get unread message count using query builder to avoid type issues
+        const count = await messageRepository
+          .createQueryBuilder("message")
+          .where("message.receiverId = :myId", { myId })
+          .andWhere("message.senderId = :otherId", { otherId })
+          .andWhere("message.isRead = false")
+          .andWhere("message.senderId IN (:...activeUserIds)", { activeUserIds })
+          .getCount();
 
-        const lastMessage = await messageRepository.findOne({
-          where: [
-            { receiverId: myId, senderId: otherId },
-            { receiverId: otherId, senderId: myId }
-          ],
-          order: { createdAt: 'DESC' },
-          select: ['createdAt']
-        });
-          
+        // Get last message using query builder
+        const lastMessage = await messageRepository
+          .createQueryBuilder("message")
+          .where(`(
+            (message.receiverId = :myId AND message.senderId = :otherId)
+            OR
+            (message.receiverId = :otherId AND message.senderId = :myId)
+          )`, { myId, otherId })
+          .andWhere("message.senderId IN (:...activeUserIds)", { activeUserIds })
+          .orderBy("message.createdAt", "DESC")
+          .select(["message.createdAt"])
+          .getOne();
+
         return {
           connectionId: connection.id,
-          userId: user?.id,
-          firstName: user?.firstName,
-          lastName: user?.lastName,
-          userRole: user?.userRole,
-          profilePictureUrl: profilePictureUrl,
-          bagdeName: user?.badgeName,
-          bio: user?.bio,
-          email: user?.emailAddress,
+          userId: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          userRole: user.userRole,
+          profilePictureUrl,
+          bagdeName: user.badgeName,
+          bio: user.bio,
+          email: user.emailAddress,
           meeted: connection.updatedAt ? formatTimestamp(connection.updatedAt) : formatTimestamp(connection.createdAt),
           mutual: isMutual,
           me: userId === connection.requesterId || userId === connection.receiverId,
           status: userConnectionStatus?.status || null,
           unreadMessageCount: count,
-          lastMessageTime: lastMessage?.createdAt || connection?.createdAt
+          lastMessageTime: lastMessage?.createdAt || connection.createdAt
         };
       })
     );
 
-    result.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+    // Filter out null entries and sort
+    const validResults = connectionResults.filter((result): result is NonNullable<typeof result> => result !== null);
 
-    return res.status(200).json({ connections: result });
+    validResults.sort((a, b) => {
+      const dateA = a.lastMessageTime instanceof Date ? a.lastMessageTime : new Date(a.lastMessageTime);
+      const dateB = b.lastMessageTime instanceof Date ? b.lastMessageTime : new Date(b.lastMessageTime);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    return res.status(200).json({ connections: validResults });
   } catch (error: any) {
     console.error('Error fetching user connections:', error);
     return res.status(500).json({ message: 'Internal Server Error' });

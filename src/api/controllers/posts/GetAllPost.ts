@@ -477,8 +477,8 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
     // Get all necessary related data
     const postIds = paginatedPosts.map(post => post.id);
     const [comments, likes, allPollEntries] = await Promise.all([
-      commentRepository.find({ where: { postId: In(postIds) } }),
-      likeRepository.find({ where: { postId: In(postIds), status: true } }),
+      commentRepository.find({ where: { postId: In(postIds), userId: In(activeUserIds) } }),
+      likeRepository.find({ where: { postId: In(postIds), userId: In(activeUserIds), status: true } }),
       pollEntryRepo.find({ where: { userId, postId: In(postIds) } })
     ]);
 
@@ -545,9 +545,15 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
       }
 
       // Prepare connection engagement details
-      const uniqueLikedByConnections = Array.from(new Set(likedByConnections[post.id] || []));
+      // const uniqueLikedByConnections = Array.from(new Set(likedByConnections[post.id] || []));
+      // const uniqueCommentedByConnections = Array.from(new Set(commentedByConnections[post.id] || []))
+      //   .filter(id => !uniqueLikedByConnections.includes(id));
+
+      const uniqueLikedByConnections = Array.from(new Set(likedByConnections[post.id] || []))
+        .filter(id => activeUserIds.includes(id));
+
       const uniqueCommentedByConnections = Array.from(new Set(commentedByConnections[post.id] || []))
-        .filter(id => !uniqueLikedByConnections.includes(id));
+        .filter(id => !uniqueLikedByConnections.includes(id) && activeUserIds.includes(id)); 
 
       const [likedUsers, commentedUsers] = await Promise.all([
         userRepository.findByIds(uniqueLikedByConnections),
