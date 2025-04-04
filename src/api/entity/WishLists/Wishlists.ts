@@ -16,6 +16,6 @@ export class Wishlists extends BaseEntity {
   @JoinColumn({ name: "sellingStartupId" }) 
   sellingStartup!: SellingStartup;
 
-  @Column({ type: "uuid" })
-  sellingStartupId!: string;
+  // @Column({ type: "uuid" })
+  // sellingStartupId!: string;
 }
