@@ -1,4 +1,5 @@
 import express from 'express';
+import { Request, Response } from 'express';
 
 import { login } from '../../controllers/auth/Login';
 import { logout } from '../../controllers/auth/Logout';
@@ -11,6 +12,7 @@ import { getOnlineUsers } from '@/api/controllers/chat/Message';
 import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
 // import { getOnlineUsers } from "../../../socket";
 // import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
+import passport from "../../controllers/auth/LinkedinAuth";
 
 const Router = express.Router();
 
@@ -37,6 +39,16 @@ Router.post('/get-profile-visited', ProfileVisitController.getProfilesIVisited)
 Router.post('/online-users', getOnlineUsers);
 Router.post('/get-users', searchUserProfile);
 Router.post('/get-user-userName', findUserByUserName);
+
+Router.get("/linkedin", passport.authenticate("linkedin"));
+Router.get("/linkedin/callback", passport.authenticate("linkedin", { session: false }),
+    (req: Request, res: Response): void => {
+        // const { user, token } = req.user;
+
+        // Redirect to frontend with token
+        // res.redirect(`http://localhost:3000/login-success?token=${token}`);
+    }
+);
 
 export default Router;
 

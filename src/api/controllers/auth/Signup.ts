@@ -90,7 +90,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const media = null;
     let notification = await sendNotification(
       user.id,
-     `${firstName} ${lastName}, Welcome! to Businessroom.ai, let's complete your profile`,
+      `${firstName} ${lastName}, Welcome! to Businessroom.ai, let's complete your profile`,
       media,
       `/settings/account`
     );

@@ -17,6 +17,7 @@ import { Connection } from '../connection/Connections';
 import { ProfileVisit } from '../notifications/ProfileVisit';
 import { Mention } from '../posts/Mention';
 import { Reaction } from '../posts/Reaction';
+import { UserActivity } from "../UserActivity/UserActivity";
 
 interface Address {
   addressLine1: string;
@@ -189,4 +190,7 @@ export class PersonalDetails extends BaseEntity {
 
   @ManyToMany(() => Mention, (mention) => mention.user)
   mentions!: Mention[];
+
+  @OneToMany(() => UserActivity, (useractivity) => useractivity.user)
+  userActivity!: UserActivity[];
 }

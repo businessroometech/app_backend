@@ -15,6 +15,7 @@ import authRouter from '../src/api/routes/auth/AuthRoutes';
 import BusinessBuyerRoute from '../src/api/routes/BusinessBuyer/BusinessBuyerRoute';
 import BuisnessSeller from '../src/api/routes/BusinessSellerRoutes/BusinessSellerRoutes';
 import chatRouter from '../src/api/routes/chat/MessageRoutes';
+// import userActivityRouter from "../src/api/routes/UserActivity/userActivity";
 // import chatRouter from '../src/api/routes/chat/MessageRoutes';
 import connectionRouter from '../src/api/routes/connection/Connection';
 import EntrepreneurRoutes from '../src/api/routes/Entrepreneur/EntrepreneurRoutes';
@@ -47,6 +48,7 @@ import { Reaction } from './api/entity/posts/Reaction';
 import { SubRole } from './api/entity/SubRole/Subrole';
 import { UserPost } from './api/entity/UserPost';
 import { Wishlists } from './api/entity/WishLists/Wishlists';
+import { UserActivity } from "./api/entity/UserActivity/UserActivity";
 import SocketNotificationRouting from './api/routes/notification/SocketNotificationRouting';
 import SubRoleRoutes from './api/routes/SubRole/SubRoleRoutes';
 import { initializeSocket } from './socket';
@@ -83,8 +85,9 @@ const AppDataSource = new DataSource({
     Wishlists,
     ActiveUser,
     SubRole,
+    UserActivity
   ],
-  synchronize: false,
+  synchronize: true,
 });
 
 // Initialize the DataSource
@@ -107,7 +110,7 @@ app.use(
 );
 app.use(helmet());
 // app.use(rateLimiter);
-app.use(requestLogger);
+// app.use(requestLogger);
 app.use(express.json());
 
 // Routes mounting
@@ -124,6 +127,7 @@ app.use('/v1/live', liveRouter);
 app.use('/v1/wishlists', WishlistsRoutes);
 app.use('/v1/socket-notifications', SocketNotificationRouting);
 app.use('/v1/subrole', SubRoleRoutes);
+// app.use("/v1/activity", userActivityRouter);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');
