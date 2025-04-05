@@ -87,7 +87,7 @@ const AppDataSource = new DataSource({
     SubRole,
     UserActivity
   ],
-  synchronize: true,
+  synchronize: false,
 });
 
 // Initialize the DataSource

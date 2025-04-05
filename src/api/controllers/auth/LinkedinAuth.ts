@@ -8,7 +8,7 @@ passport.use(
             clientID: process.env.LINKEDIN_CLIENT_ID as string,
             clientSecret: process.env.LINKEDIN_CLIENT_SECRET as string,
             callbackURL: "https://strengthholdings.com/api/auth/linkedin/callback", // set same server URL in LinkedIn app settings
-            scope: ["r_emailaddress", "r_liteprofile"],
+            scope: ["openid", "profile", "email"],
             // state: true,
         },
         async (accessToken: string, refreshToken: string, profile: any, done: any) => {
