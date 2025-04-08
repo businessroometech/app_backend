@@ -16,6 +16,7 @@ import {
 import { Connection } from '../connection/Connections';
 import { ProfileVisit } from '../notifications/ProfileVisit';
 import { Mention } from '../posts/Mention';
+import { MentionUser } from '../mention/mention';
 import { Reaction } from '../posts/Reaction';
 import { Like } from '../posts/Like';
 import { BlockedUser } from '../posts/BlockedUser';
@@ -49,7 +50,7 @@ export class PersonalDetails extends BaseEntity {
   countryCode!: string;
 
   @Column({ type: 'varchar', default: '', nullable: true })
-  gender !: string;
+  gender!: string;
 
   @Column({ type: 'varchar', nullable: true })
   profilePictureUploadId!: string;
@@ -130,27 +131,27 @@ export class PersonalDetails extends BaseEntity {
   active!: number;
 
   @Column({ type: 'float', nullable: true })
-  zoom !: number;
-
-  @Column({ type: "float", nullable: true })
-  rotate !: number;
+  zoom!: number;
 
   @Column({ type: 'float', nullable: true })
-  zoomProfile !: number;
+  rotate!: number;
 
-  @Column({ type: "float", nullable: true })
-  rotateProfile !: number;
+  @Column({ type: 'float', nullable: true })
+  zoomProfile!: number;
+
+  @Column({ type: 'float', nullable: true })
+  rotateProfile!: number;
 
   @Column({
     type: 'simple-array',
-    nullable: true
+    nullable: true,
   })
-  investorType !: string[];
+  investorType!: string[];
 
-  @Column({ type: "varchar", nullable: true })
-  badgeName !: string;
+  @Column({ type: 'varchar', nullable: true })
+  badgeName!: string;
 
-  @Column({ type: "json", nullable: true })
+  @Column({ type: 'json', nullable: true })
   experience!: {
     current: boolean;
     startDate: string;
@@ -166,20 +167,20 @@ export class PersonalDetails extends BaseEntity {
   })
   subRole!: string;
 
-  @Column({ type: "varchar", nullable: true })
-  city !: string;
+  @Column({ type: 'varchar', nullable: true })
+  city!: string;
 
-  @Column({ type: "varchar", nullable: true })
-  state !: string;
+  @Column({ type: 'varchar', nullable: true })
+  state!: string;
 
-  @Column({ type: "varchar", nullable: true })
-  linkedIn !: string;
+  @Column({ type: 'varchar', nullable: true })
+  linkedIn!: string;
 
-  @Column({ type: "bool", default: false })
-  isAdmin !: boolean;
+  @Column({ type: 'bool', default: false })
+  isAdmin!: boolean;
 
   @Column({ type: 'int', nullable: true })
-  stage !: number | null;
+  stage!: number | null;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
@@ -234,11 +235,15 @@ export class PersonalDetails extends BaseEntity {
   @ManyToMany(() => Mention, (mention) => mention.user)
   mentions!: Mention[];
 
-
   @OneToMany(() => BlockedUser, (blockedUser) => blockedUser.blocker)
   blockedUsers!: BlockedUser[];
 
   @OneToMany(() => BlockedUser, (blockedUser) => blockedUser.blocked)
   blockedByOthers!: BlockedUser[];
 
+  @OneToMany(() => MentionUser, (mention) => mention.mentionTo)
+  mentionsReceived!: MentionUser[];
+
+  @OneToMany(() => MentionUser, (mention) => mention.mentionBy)
+  mentionsMade!: MentionUser[];
 }

@@ -30,7 +30,6 @@
     "@aws-sdk/lib-storage": "^3.600.0",
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@swc/core": "^1.7.26",
-    "@tensorflow/tfjs-node": "^4.22.0",
     "aws-sdk": "^2.1652.0",
     "axios": "^1.7.9",
     "bad-words": "^4.0.0",

@@ -23,6 +23,7 @@ import liveRouter from '../src/api/routes/live/LiveRoutes';
 import notifications from '../src/api/routes/notification/Notifications';
 import userPost from '../src/api/routes/userPost/UserPost';
 import acquireroomRoutes from '../src/api/routes/accquireroom/Accquireroom';
+import mentionRouter from '../src/api/routes/mention/Mention';
 // import { WebSocketNotification } from './api/controllers/notifications/SocketNotificationController';
 import { BusinessForSale } from './api/entity/BuisnessSeller/BuisnessSeller';
 import { BusinessBuyer } from './api/entity/BusinessBuyer/BusinessBuyer';
@@ -68,6 +69,8 @@ import { Notify } from './api/entity/notify/Notify';
 import { MessageHistory } from './api/entity/chat/MessageHistory';
 import { Ristriction } from './api/entity/ristrictions/Ristriction';
 import { BasicSelling } from './api/entity/business-data/BasicSelling';
+import { MentionUser } from './api/entity/mention/mention';
+
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -77,7 +80,7 @@ const app: Express = express();
 //   host: "127.0.0.1",
 //   port: 6379,
 //   tls: {
-//     rejectUnauthorized: false, 
+//     rejectUnauthorized: false,
 //   },
 // });
 
@@ -90,7 +93,6 @@ const app: Express = express();
 
 //   client.disconnect();
 // })();
-
 
 const AppDataSource = new DataSource({
   type: 'mysql',
@@ -138,7 +140,8 @@ const AppDataSource = new DataSource({
     BasicSelling,
     Notify,
     MessageHistory,
-    Ristriction
+    Ristriction,
+    MentionUser,
   ],
   synchronize: false,
 });
@@ -163,10 +166,9 @@ app.use(
 );
 app.use(helmet());
 // app.use(rateLimiter);
-app.use(requestLogger);
+// app.use(requestLogger);
 app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
-
 
 // Routes mounting
 app.use('/v1/auth', authRouter);
@@ -185,6 +187,7 @@ app.use('/v1/socket-notifications', SocketNotificationRouting);
 // app.use('/v1/general', GeneralRoutes);
 app.use('/v1/business-data', BuisnessDataRoutes);
 app.use('/v1/acquireroom', acquireroomRoutes);
+app.use('/v1', mentionRouter);
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');

@@ -13,6 +13,7 @@ import {
 import { Reaction } from './posts/Reaction';
 import { Mention } from './posts/Mention';
 import { nullable } from 'zod';
+// import { Hashtag } from './Hashtag/Hashtag';
 
 @Entity({ name: 'UserPost' })
 export class UserPost extends BaseEntity {
@@ -52,49 +53,49 @@ export class UserPost extends BaseEntity {
 
   // for repost
 
-  @Column({ type: "boolean", default: false })
-  isRepost !: boolean;
+  @Column({ type: 'boolean', default: false })
+  isRepost!: boolean;
 
-  @Column({ type: "uuid", default: null })
-  repostedFrom !: string;
+  @Column({ type: 'uuid', default: null })
+  repostedFrom!: string;
 
-  @Column({ type: "text", default: null })
-  repostText !: string;
+  @Column({ type: 'text', default: null })
+  repostText!: string;
 
   @CreateDateColumn({ type: 'timestamp' })
-  originalPostedAt !: Date;
+  originalPostedAt!: Date;
 
   @Column({ type: 'varchar' })
-  originalPostedTimeline !: String;
+  originalPostedTimeline!: String;
 
   @Column({ type: 'int' })
-  repostCount !: number;
+  repostCount!: number;
 
-  @Column({ type: "boolean", default: false })
-  isHidden !: boolean;
+  @Column({ type: 'boolean', default: false })
+  isHidden!: boolean;
 
   // for discussion
 
   @Column({ type: 'bool', default: false })
-  isDiscussion !: boolean;
+  isDiscussion!: boolean;
 
-  @Column({ type: "varchar", nullable: true })
-  discussionTopic !: string;
+  @Column({ type: 'varchar', nullable: true })
+  discussionTopic!: string;
 
-  @Column({ type: "text", nullable: true })
-  discussionContent !: string;
+  @Column({ type: 'text', nullable: true })
+  discussionContent!: string;
 
-  @Column({ type: "boolean", default: false })
-  isPoll !: boolean;
+  @Column({ type: 'boolean', default: false })
+  isPoll!: boolean;
 
-  @Column({ type: "text" })
-  question !: string;
+  @Column({ type: 'text' })
+  question!: string;
 
   @Column({ type: 'json', nullable: true })
   pollOptions?: { option: string; votes: number }[];
 
   @Column({ type: 'varchar', nullable: true })
-  pollDuration !: string;
+  pollDuration!: string;
 
   @BeforeInsert()
   private async beforeInsert() {
@@ -115,4 +116,6 @@ export class UserPost extends BaseEntity {
   })
   mentions!: Mention[];
 
+  // @ManyToMany(() => Hashtag, (hashtag) => hashtag.posts)
+  // hashtag!: Hashtag[];
 }
