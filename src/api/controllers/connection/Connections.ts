@@ -116,8 +116,7 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
 // Accept or reject a connection request
 export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { connectionId, status } = req.body;
-  // const userId = req.userId;
-  const userId = '29d459abf5b2f6cb5f2a200b4703b263';
+  const userId = req.userId;
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required.' });
   }
