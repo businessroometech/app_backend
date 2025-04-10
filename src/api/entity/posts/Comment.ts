@@ -27,6 +27,9 @@ export class Comment extends BaseEntity {
   @Column({ type: 'text' })
   text!: string;
 
+  @Column({ type: 'simple-array', nullable: true })
+  hashtags?: string[];
+
   @Column({ type: 'json', nullable: true })
   mediaKeys?: { key: string; type: string };
 

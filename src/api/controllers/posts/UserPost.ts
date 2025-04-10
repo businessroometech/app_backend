@@ -14,7 +14,7 @@ import { Like } from '../../entity/posts/Like';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { In, Not } from 'typeorm';
 import { Reaction } from '../../entity/posts/Reaction';
-import { Mention } from '../../entity/posts/Mention';
+// import { Mention } from '../../entity/posts/Mention';
 import { broadcastMessage, getSocketInstance } from '@/socket';
 import { sendNotification } from '../notifications/SocketNotificationController';
 import { BlockedPost } from '../../entity/posts/BlockedPost';
