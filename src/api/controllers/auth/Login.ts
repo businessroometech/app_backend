@@ -155,7 +155,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         await userLoginRepository.save(user);
       }
     } else {
-
       user = await userLoginRepository.findOne({ where: { emailAddress: email } });
 
       if (!user) {
@@ -201,7 +200,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         user,
       },
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
@@ -224,7 +222,7 @@ const transporter = nodemailer.createTransport({
 export const farmaan = async (req: Request, res: Response) => {
   try {
     // const { recipients } = req.body;
-    const recipients = ['govravmahobeofficial@gmail.com', 'ashutoshnegi195@gmail.com']
+    const recipients = ['govravmahobeofficial@gmail.com', 'ashutoshnegi195@gmail.com'];
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res.status(400).json({ message: 'Recipients array is required and cannot be empty' });
     }
@@ -254,10 +252,10 @@ export const farmaan = async (req: Request, res: Response) => {
     };
 
     await transporter.sendMail(mailOptions);
-    res.status(200).json({ status: "success", message: 'Notification email sent successfully to all recipients' });
+    res.status(200).json({ status: 'success', message: 'Notification email sent successfully to all recipients' });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).json({ status: "error", message: 'Failed to send notification email' });
+    res.status(500).json({ status: 'error', message: 'Failed to send notification email' });
   }
 };
 
@@ -273,20 +271,72 @@ export const disable = async (req: AuthenticatedRequest, res: Response) => {
     const user = await userRepo.findOne({ where: { id: userId } });
 
     if (!user) {
-      return res.status(400).json({ status: "error", message: "User not found" });
+      return res.status(400).json({ status: 'error', message: 'User not found' });
     }
 
     if (user.active === 0) {
-      return res.status(400).json({ status: "error", message: "User is already disabled" });
+      return res.status(400).json({ status: 'error', message: 'User is already disabled' });
     }
 
     user.active = 0;
 
     await userRepo.save(user);
 
-    return res.status(200).json({ status: "success", message: "User disabled successfully" });
+    return res.status(200).json({ status: 'success', message: 'User disabled successfully' });
   } catch (error) {
-    console.error("Error disabling user:", error);
-    return res.status(500).json({ status: "error", message: "Something went wrong" });
+    console.error('Error disabling user:', error);
+    return res.status(500).json({ status: 'error', message: 'Something went wrong' });
+  }
+};
+
+export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+
+    const user = await userRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      return res.status(400).json({ status: 'error', message: 'User not found' });
+    }
+
+    if (user.active === -2) {
+      return res.status(400).json({ status: 'error', message: 'User is already deleted' });
+    }
+
+    user.active = -2;
+
+    await userRepo.save(user);
+
+    return res.status(200).json({ status: 'success', message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return res.status(500).json({ status: 'error', message: 'Something went wrong' });
+  }
+};
+
+export const blockUser = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.body.userId;
+    const userRepo = AppDataSource.getRepository(PersonalDetails);
+
+    const user = await userRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      return res.status(400).json({ status: 'error', message: 'User not found' });
+    }
+
+    if (user.active === -1) {
+      return res.status(400).json({ status: 'error', message: 'User is already blocked' });
+    }
+
+    user.active = -1;
+
+    await userRepo.save(user);
+
+    return res.status(200).json({ status: 'success', message: 'User blocked successfully' });
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    return res.status(500).json({ status: 'error', message: 'Something went wrong' });
   }
 };

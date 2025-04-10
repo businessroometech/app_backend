@@ -29,8 +29,8 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
   try {
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
-    const requester = await userRepository.findOne({ where: { id: userId } });
-    const receiver = await userRepository.findOne({ where: { id: receiverId } });
+    const requester = await userRepository.findOne({ where: { id: userId, active: 1 } });
+    const receiver = await userRepository.findOne({ where: { id: receiverId, active: 1 } });
 
     if (!requester) {
       return res.status(404).json({ message: 'Requester not found.' });
@@ -63,17 +63,13 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
     const restrict = await restrictionRepo.findOne({ where: { userId } });
 
     if (restrict) {
-
       restrict.connectionCount -= 1;
       await restrictionRepo.save(restrict);
-
     }
 
     //------------------------------------ Notify ------------------------------------------------------------------------------------
     try {
-      const imageKey = requester.profilePictureUploadId
-        ? requester.profilePictureUploadId
-        : null;
+      const imageKey = requester.profilePictureUploadId ? requester.profilePictureUploadId : null;
 
       await createNotification(
         NotificationType.REQUEST_RECEIVED,
@@ -92,17 +88,18 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
         message: `${requester.firstName} ${requester.lastName} sent you a connection Request`,
         metaData: {
           imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
-          isReadCount: notification.length
-        }
-      }
+          isReadCount: notification.length,
+        },
+      };
 
       const io = getSocketInstance();
       const roomId = receiver.id;
-      io.to(roomId).emit('newNotification', `${requester.firstName} ${requester.lastName} sent you a connection Request`);
-
-
+      io.to(roomId).emit(
+        'newNotification',
+        `${requester.firstName} ${requester.lastName} sent you a connection Request`
+      );
     } catch (error) {
-      console.error("Error creating notification:", error);
+      console.error('Error creating notification:', error);
     }
 
     //------------------------------------------------------------------------------------------------------------
@@ -119,7 +116,8 @@ export const sendConnectionRequest = async (req: AuthenticatedRequest, res: Resp
 // Accept or reject a connection request
 export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   const { connectionId, status } = req.body;
-  const userId = req.userId;
+  // const userId = req.userId;
+  const userId = '29d459abf5b2f6cb5f2a200b4703b263';
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required.' });
   }
@@ -127,7 +125,7 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
     const connectionRepository = AppDataSource.getRepository(Connection);
     const connection = await connectionRepository.findOne({
       where: { requesterId: connectionId, receiverId: userId },
-      relations: ['receiver', 'requester']
+      // relations: ['receiver', 'requester'], // not needed if "eager:true" used in entity schema
     });
 
     if (!connection) {
@@ -141,6 +139,10 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
     }
     if (!['accepted', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status.' });
+    }
+
+    if (connection.requester.active !== 1) {
+      return res.status(400).json({ message: 'Requester deactivated his/her account' });
     }
     connection.status = status as 'accepted' | 'rejected';
     const data = await connectionRepository.save(connection);
@@ -183,21 +185,22 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
         const notifyRepo = AppDataSource.getRepository(Notify);
         const notification = await notifyRepo.find({ where: { recieverId: connection?.requester?.id, isRead: false } });
 
-
         const notify = {
           message: `${connection?.receiver?.firstName} ${connection?.receiver?.lastName} accepted your connection request`,
           metaData: {
             imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
-            isReadCount: notification.length
-          }
-        }
+            isReadCount: notification.length,
+          },
+        };
 
         const io = getSocketInstance();
         const roomId = connection.requester.id;
-        io.to(roomId).emit('newNotification', `${connection.receiver.firstName} ${connection.receiver.lastName} accepted your connection request`);
-
+        io.to(roomId).emit(
+          'newNotification',
+          `${connection.receiver.firstName} ${connection.receiver.lastName} accepted your connection request`
+        );
       } catch (error) {
-        console.error("Error creating notification:", error);
+        console.error('Error creating notification:', error);
       }
     }
 
@@ -205,7 +208,7 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 
     return res.status(200).json({
       message: `Connection request ${status} successfully`,
-      connection: data
+      connection: data,
     });
   } catch (error: any) {
     console.error('Error updating connection status:', error);
@@ -233,18 +236,15 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 //     const connectionRepository = AppDataSource.getRepository(Connection);
 //     const messageRepository = AppDataSource.getRepository(Message);
 
-
 //     const connections = await connectionRepository
 //       .createQueryBuilder("connection")
 //       .where("connection.requesterId = :profileId AND connection.status = 'accepted'", { profileId })
 //       .orWhere("connection.receiverId = :profileId AND connection.status = 'accepted'", { profileId })
 //       .getMany();
 
-
 //     if (!connections || connections.length === 0) {
 //       return res.status(400).json({ message: 'No accepted connections found.' });
 //     }
-
 
 //     const userRepository = AppDataSource.getRepository(PersonalDetails);
 //     const userIds = [
@@ -273,7 +273,6 @@ export const updateConnectionStatus = async (req: AuthenticatedRequest, res: Res
 //         connection.requesterId === userId ? connection.receiverId : connection.requesterId
 //       )
 //     );
-
 
 //     const result = await Promise.all(
 //       connections.map(async (connection) => {
@@ -358,8 +357,8 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     const profileUser = await userRepository.findOne({
       where: {
         id: targetUserId,
-        active: 1
-      } as FindOptionsWhere<PersonalDetails>
+        active: 1,
+      } as FindOptionsWhere<PersonalDetails>,
     });
 
     if (!profileUser) {
@@ -369,22 +368,25 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     // Get all active users upfront with proper typing
     const activeUsers = await userRepository.find({
       where: {
-        active: 1
+        active: 1,
       } as FindOptionsWhere<PersonalDetails>,
-      select: ['id']
+      select: ['id'],
     });
-    const activeUserIds = activeUsers.map(user => user.id);
+    const activeUserIds = activeUsers.map((user) => user.id);
 
     // Get connections where both users are active
     const connections = await connectionRepository
-      .createQueryBuilder("connection")
-      .where(`(
+      .createQueryBuilder('connection')
+      .where(
+        `(
         (connection.requesterId = :targetUserId AND connection.status = 'accepted') 
         OR 
         (connection.receiverId = :targetUserId AND connection.status = 'accepted')
-      )`, { targetUserId })
-      .andWhere("connection.requesterId IN (:...activeUserIds)", { activeUserIds })
-      .andWhere("connection.receiverId IN (:...activeUserIds)", { activeUserIds })
+      )`,
+        { targetUserId }
+      )
+      .andWhere('connection.requesterId IN (:...activeUserIds)', { activeUserIds })
+      .andWhere('connection.receiverId IN (:...activeUserIds)', { activeUserIds })
       .getMany();
 
     if (!connections || connections.length === 0) {
@@ -394,16 +396,17 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     // Get all unique connection user IDs (excluding targetUserId)
     const connectionUserIds = [
       ...new Set(
-        connections.flatMap(connection =>
-          [connection.requesterId, connection.receiverId].filter(id => id !== targetUserId)
-        ))
+        connections.flatMap((connection) =>
+          [connection.requesterId, connection.receiverId].filter((id) => id !== targetUserId)
+        )
+      ),
     ];
 
     // Get active user details for these connections with proper typing
     const users = await userRepository.find({
       where: {
         id: In(connectionUserIds),
-        active: 1
+        active: 1,
       } as FindOptionsWhere<PersonalDetails>,
     });
 
@@ -415,12 +418,12 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     const userConnections = await connectionRepository.find({
       where: [
         { requesterId: userId, status: 'accepted', receiverId: In(activeUserIds) },
-        { receiverId: userId, status: 'accepted', requesterId: In(activeUserIds) }
+        { receiverId: userId, status: 'accepted', requesterId: In(activeUserIds) },
       ] as FindOptionsWhere<Connection>[],
     });
 
     const userConnectionIds = new Set(
-      userConnections.map(connection =>
+      userConnections.map((connection) =>
         connection.requesterId === userId ? connection.receiverId : connection.requesterId
       )
     );
@@ -429,7 +432,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
     const connectionResults = await Promise.all(
       connections.map(async (connection) => {
         const otherUserId = connection.requesterId === targetUserId ? connection.receiverId : connection.requesterId;
-        const user = users.find(u => u.id === otherUserId);
+        const user = users.find((u) => u.id === otherUserId);
 
         if (!user) return null;
 
@@ -443,8 +446,8 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
         const userConnectionStatus = await connectionRepository.findOne({
           where: [
             { requesterId: userId, receiverId: user.id },
-            { requesterId: user.id, receiverId: userId }
-          ] as FindOptionsWhere<Connection>[]
+            { requesterId: user.id, receiverId: userId },
+          ] as FindOptionsWhere<Connection>[],
         });
 
         const isUserReceiver = connection.receiverId === userId;
@@ -453,24 +456,27 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
 
         // Get unread message count using query builder to avoid type issues
         const count = await messageRepository
-          .createQueryBuilder("message")
-          .where("message.receiverId = :myId", { myId })
-          .andWhere("message.senderId = :otherId", { otherId })
-          .andWhere("message.isRead = false")
-          .andWhere("message.senderId IN (:...activeUserIds)", { activeUserIds })
+          .createQueryBuilder('message')
+          .where('message.receiverId = :myId', { myId })
+          .andWhere('message.senderId = :otherId', { otherId })
+          .andWhere('message.isRead = false')
+          .andWhere('message.senderId IN (:...activeUserIds)', { activeUserIds })
           .getCount();
 
         // Get last message using query builder
         const lastMessage = await messageRepository
-          .createQueryBuilder("message")
-          .where(`(
+          .createQueryBuilder('message')
+          .where(
+            `(
             (message.receiverId = :myId AND message.senderId = :otherId)
             OR
             (message.receiverId = :otherId AND message.senderId = :myId)
-          )`, { myId, otherId })
-          .andWhere("message.senderId IN (:...activeUserIds)", { activeUserIds })
-          .orderBy("message.createdAt", "DESC")
-          .select(["message.createdAt"])
+          )`,
+            { myId, otherId }
+          )
+          .andWhere('message.senderId IN (:...activeUserIds)', { activeUserIds })
+          .orderBy('message.createdAt', 'DESC')
+          .select(['message.createdAt'])
           .getOne();
 
         return {
@@ -488,7 +494,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
           me: userId === connection.requesterId || userId === connection.receiverId,
           status: userConnectionStatus?.status || null,
           unreadMessageCount: count,
-          lastMessageTime: lastMessage?.createdAt || connection.createdAt
+          lastMessageTime: lastMessage?.createdAt || connection.createdAt,
         };
       })
     );
@@ -581,7 +587,7 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
 
     const users = await userRepository.find({
-      where: { id: In(userIds) },
+      where: { id: In(userIds), active: 1 },
     });
 
     // Create a response with connection requests and their respective user details
@@ -605,9 +611,7 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
       })
     );
 
-
     return res.status(200).json(response);
-
   } catch (error) {
     console.error('Error fetching connection requests:', error);
     return res.status(500).json({ message: 'Server error. Please try again later.' });
@@ -668,7 +672,7 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
     if (!userId) {
       return res.status(400).json({
         success: false,
-        message: "User ID is required"
+        message: 'User ID is required',
       });
     }
 
@@ -679,10 +683,7 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
 
     // Get all connections for this user
     const connections = await connectionRepository.find({
-      where: [
-        { requesterId: userId },
-        { receiverId: userId }
-      ],
+      where: [{ requesterId: userId }, { receiverId: userId }],
     });
 
     // Get IDs of users already connected with
@@ -696,23 +697,23 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
     const [users, total] = await userRepository.findAndCount({
       where: {
         id: Not(In([userId, ...Array.from(connectedUserIds)])), // Exclude self and connected users
-        active: 1
+        active: 1,
       },
       skip: offset,
       take: Number(limit),
       order: {
-        createdAt: 'DESC' // Order by newest first
-      }
+        createdAt: 'DESC', // Order by newest first
+      },
     });
 
     if (!users.length) {
       return res.status(200).json({
         success: true,
-        message: "No suggestions available at this time",
+        message: 'No suggestions available at this time',
         data: [],
         total: 0,
         page: Number(page),
-        limit: Number(limit)
+        limit: Number(limit),
       });
     }
 
@@ -731,19 +732,18 @@ export const ConnectionsSuggestionController = async (req: AuthenticatedRequest,
 
     return res.status(200).json({
       success: true,
-      message: "Suggested users fetched successfully",
+      message: 'Suggested users fetched successfully',
       data: result,
       total,
       page: Number(page),
       limit: Number(limit),
     });
-
   } catch (error: any) {
-    console.error("Error fetching connection suggestions:", error);
+    console.error('Error fetching connection suggestions:', error);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
-      error: error.message
+      message: 'Internal Server Error',
+      error: error.message,
     });
   }
 };
@@ -781,15 +781,17 @@ export class ConnectionController {
         return res.status(404).json({ message: 'No connections found.' });
       }
 
-      const connectionsWithImages = await Promise.all(connections.map(async (connection) => {
-        const receiverImage = connection.receiver.profilePictureUploadId
-          ? await generatePresignedUrl(connection.receiver.profilePictureUploadId)
-          : null;
-        return {
-          ...connection,
-          receiverImage
-        };
-      }));
+      const connectionsWithImages = await Promise.all(
+        connections.map(async (connection) => {
+          const receiverImage = connection.receiver.profilePictureUploadId
+            ? await generatePresignedUrl(connection.receiver.profilePictureUploadId)
+            : null;
+          return {
+            ...connection,
+            receiverImage,
+          };
+        })
+      );
 
       return res.status(200).json(connectionsWithImages);
     } catch (error: any) {
