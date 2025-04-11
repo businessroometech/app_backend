@@ -570,12 +570,15 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
     const connectionRepository = AppDataSource.getRepository(Connection);
 
     // Fetch pending connection requests
-    const connectionRequests = await connectionRepository.find({
+
+    const connectionReq = await connectionRepository.find({
       where: {
         receiverId: userId,
         status: 'pending',
       },
     });
+
+    const connectionRequests = connectionReq.filter((element) => element.requester.active === 1);
 
     if (!connectionRequests || connectionRequests.length === 0) {
       return res.status(204).json({ message: 'No connection requests found.' });
@@ -586,10 +589,11 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
     const userRepository = AppDataSource.getRepository(PersonalDetails);
 
     const users = await userRepository.find({
-      where: { id: In(userIds), active: 1 },
+      where: { id: In(userIds) },
     });
 
     // Create a response with connection requests and their respective user details
+
     const response = await Promise.all(
       connectionRequests.map(async (connection) => {
         const user = users.find((u) => u.id === connection.requesterId);
