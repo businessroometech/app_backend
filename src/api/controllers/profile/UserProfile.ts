@@ -159,7 +159,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     // if (personalDetails.stage === 0) personalDetails.stage = 1;
 
     personalDetails.updatedBy = "system";
-    personalDetails.active = 1;
+    // personalDetails.active = 1;
 
     await userRepository.save(personalDetails);
 
