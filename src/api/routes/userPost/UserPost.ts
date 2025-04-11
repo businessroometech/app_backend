@@ -32,12 +32,12 @@ import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
 import { blockPost, blockUser, reportedPost, reportedUser, unblockUser } from '@/api/controllers/posts/Blocked';
 import { getAllPost } from '@/api/controllers/posts/GetAllPost';
 import { authenticate, createPostRestrict } from '@/api/middlewares/auth/Authenticate';
-// import { checkExplicitText } from '@/api/middlewares/post/ExplictContent';
+import { checkExplicitText } from '@/api/middlewares/post/ExplictContent';
 // import { filterInappropriateMedia } from '@/api/middlewares/post/InappropriatePostDetection';
 
 const Router = express.Router();
 
-Router.post('/create-userpost', authenticate, uploadMiddleware, CreateUserPost);
+Router.post('/create-userpost', authenticate, uploadMiddleware, checkExplicitText, CreateUserPost);
 Router.post('/vote-in-poll', authenticate, VoteInPoll);
 
 Router.get('/get-user-post', authenticate, FindUserPost);
