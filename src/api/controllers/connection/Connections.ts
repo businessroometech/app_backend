@@ -775,10 +775,12 @@ export class ConnectionController {
       }
 
       // Fetch connections from the database
-      const connections = await connectionRepository.find({
+      const conn = await connectionRepository.find({
         where: { requesterId, status: status as ConnectionStatus },
         relations: ['receiver'],
       });
+
+      const connections = conn.filter((element) => element.receiver.active === 1);
 
       if (connections.length < 1) {
         return res.status(404).json({ message: 'No connections found.' });
