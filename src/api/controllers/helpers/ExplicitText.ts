@@ -75,7 +75,7 @@ export const analyzeTextContent = async (content: string): Promise<{
 }> => {
     try {
         if (!content) {
-            return { allowed: false, reason: "Text is required" };
+            return { allowed: true };
         }
 
         const normalize = (text: string): string => {
