@@ -56,36 +56,6 @@ export const flaggedWords = [
     'allahu akbar'
 ];
 
-// export const checkExplicitText = async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//         const { content } = req.body;
-//         if (!content) return res.status(400).json({ message: "Text is required" });
-
-//         const lowerContent = content.toLowerCase();
-//         const hasFlaggedWord = flaggedWords.some(word => lowerContent.includes(word));
-//         if (hasFlaggedWord) {
-//             return res.status(400).json({ message: "Explicit or threatening content detected" });
-//         }
-
-//         const params = {
-//             TextList: [content],
-//             LanguageCode: "en"
-//         };
-
-//         const result = await comprehend.batchDetectSentiment(params).promise();
-//         const sentiment = result.ResultList[0].Sentiment;
-
-//         if (sentiment === "NEGATIVE") {
-//             return res.status(400).json({ message: "Negative sentiment detected in text" });
-//         }
-
-//         next();
-//     } catch (error) {
-//         console.error("Error in text moderation:", error);
-//         res.status(500).json({ message: "Error checking text content" });
-//     }
-// };
-
 const leetMap: Record<string, string> = {
     '0': 'o',
     '1': 'i',
@@ -99,10 +69,14 @@ const leetMap: Record<string, string> = {
     '!': 'i'
 };
 
-export const checkExplicitText = async (req: Request, res: Response, next: NextFunction) => {
+export const analyzeTextContent = async (content: string): Promise<{
+    allowed: boolean;
+    reason?: string;
+}> => {
     try {
-        const { content } = req.body;
-        if (!content) return res.status(400).json({ message: "Text is required" });
+        if (!content) {
+            return { allowed: false, reason: "Text is required" };
+        }
 
         const normalize = (text: string): string => {
             return text.toLowerCase().split('').map(char => leetMap[char] || char).join('');
@@ -113,13 +87,11 @@ export const checkExplicitText = async (req: Request, res: Response, next: NextF
 
         const hasFlaggedWord = flaggedWords.some(word => {
             const pattern = new RegExp(`\\b${word}\\b`, 'i');
-            const normalizedPattern = new RegExp(`\\b${word}\\b`, 'i');
-
-            return pattern.test(original) || normalizedPattern.test(normalized);
+            return pattern.test(original) || pattern.test(normalized);
         });
 
         if (hasFlaggedWord) {
-            return res.status(400).json({ message: "Explicit or threatening content detected" });
+            return { allowed: false, reason: "Explicit or threatening content detected" };
         }
 
         const params = {
@@ -131,36 +103,12 @@ export const checkExplicitText = async (req: Request, res: Response, next: NextF
         const sentiment = result.ResultList[0].Sentiment;
 
         if (sentiment === "NEGATIVE") {
-            return res.status(400).json({ message: "Negative sentiment detected in text" });
+            return { allowed: false, reason: "Negative sentiment detected in text" };
         }
 
-        next();
+        return { allowed: true };
     } catch (error) {
-        console.error("Error in text moderation:", error);
-        res.status(500).json({ message: "Error checking text content" });
+        console.error("Error analyzing text content:", error);
+        return { allowed: false, reason: "Error checking text content" };
     }
 };
-
-
-// Middleware to check for explicit images
-// export const checkExplicitImage = async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//         if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-
-//         const params = {
-//             Image: { Bytes: req.file.buffer }
-//         };
-
-//         const result = await rekognition.detectModerationLabels(params).promise();
-//         const hasExplicitContent = result.ModerationLabels.some(label => label.Confidence > 80);
-
-//         if (hasExplicitContent) {
-//             return res.status(400).json({ message: "Explicit image detected" });
-//         }
-
-//         next();
-//     } catch (error) {
-//         console.error("Error in image moderation:", error);
-//         res.status(500).json({ message: "Error checking image content" });
-//     }
-// };

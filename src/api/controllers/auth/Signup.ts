@@ -6,6 +6,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 
 // export const signup = async (req: Request, res: Response): Promise<void> => {
 //   const queryRunner = AppDataSource.createQueryRunner();
@@ -376,6 +377,23 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    //------------------------ explict text -----------------------------------
+
+    const firstNameCheck = await analyzeTextContent(firstName);
+    const lastNameCheck = await analyzeTextContent(lastName);
+
+    if (!firstNameCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: firstNameCheck?.reason });
+      return;
+    }
+
+    if (!lastNameCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: lastNameCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
+
     if (firstName.length > 50 || lastName.length > 50) {
       res.status(400).json({
         status: 'error',
@@ -415,7 +433,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       gender,
       userRole,
       dob,
-      active: 0, 
+      active: 0,
       linkedIn,
       createdBy,
       updatedBy,

@@ -19,6 +19,7 @@ import { createNotification } from '../notify/Notify';
 import { NotificationType, Notify } from '@/api/entity/notify/Notify';
 import { getSocketInstance } from '@/socket';
 import { MentionUser } from '../../entity/mention/mention';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -36,6 +37,19 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
+
+
+    //------------------------ explict text -----------------------------------
+
+    const textCheck = await analyzeTextContent(text);
+
+    if (!textCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: textCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
+
 
     const mentionRepository = AppDataSource.getRepository(MentionUser);
 
@@ -660,6 +674,18 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
     if (!userId || !postId || !text) {
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
+
+    //------------------------ explict text -----------------------------------
+
+    const textCheck = await analyzeTextContent(text);
+
+    if (!textCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: textCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
+
 
     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
     const userRepo = AppDataSource.getRepository(PersonalDetails);

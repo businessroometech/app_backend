@@ -18,6 +18,7 @@ import { MessageHistory } from '@/api/entity/chat/MessageHistory';
 import { getSocketInstance } from '@/socket';
 import sharp from 'sharp';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -102,6 +103,17 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     if (!personalDetails) {
       return res.status(404).json({ status: "error", message: "User not found." });
     }
+
+    //------------------------ explict text -----------------------------------
+
+    const bioCheck = await analyzeTextContent(bio);
+
+    if (!bioCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: bioCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
 
     if (bio && bio?.length > 60) {
       return res.status(400).json({ status: "error", message: "Bio must be under 60 characters." });
