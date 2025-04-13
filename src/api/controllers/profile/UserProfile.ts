@@ -230,13 +230,13 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     if (!isMyProfile) {
       personalDetails = await personalDetailsRepository.findOne({
         where: { id: String(profileId) },
-        select: ["firstName", "lastName", "bio", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender"]
+        select: ["firstName", "lastName", "bio", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender", "isAdmin", "active", "userRole", "subRole"]
       });
     }
     else {
       personalDetails = await personalDetailsRepository.findOne({
         where: { id: String(profileId) },
-        select: ["firstName", "lastName", "bio", "mobileNumber", "emailAddress", "linkedIn", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender"]
+        select: ["firstName", "lastName", "bio", "mobileNumber", "emailAddress", "linkedIn", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender", "isAdmin", "active", "userRole", "subRole"]
       });
     }
 
