@@ -197,11 +197,11 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     const userId = req.userId;
     let { profileId } = req.query;
 
-    let isMyProfile = true;
+    let isMyProfile = false;
 
     if (!profileId) {
+      isMyProfile = true;
       profileId = userId;
-      isMyProfile = false;
     }
 
     if (!userId) {
