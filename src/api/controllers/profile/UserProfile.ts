@@ -195,7 +195,14 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const userId = req.userId;
-    let { profileId = userId } = req.query;
+    let { profileId } = req.query;
+
+    let isMyProfile = true;
+
+    if (!profileId) {
+      profileId = userId;
+      isMyProfile = false;
+    }
 
     if (!userId) {
       return res.status(400).json({
@@ -219,9 +226,19 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     });
 
     // Fetch user details
-    const personalDetails = await personalDetailsRepository.findOne({
-      where: { id: String(profileId) },
-    });
+    let personalDetails;
+    if (!isMyProfile) {
+      personalDetails = await personalDetailsRepository.findOne({
+        where: { id: String(profileId) },
+        select: ["firstName", "lastName", "bio", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender"]
+      });
+    }
+    else {
+      personalDetails = await personalDetailsRepository.findOne({
+        where: { id: String(profileId) },
+        select: ["firstName", "lastName", "bio", "mobileNumber", "emailAddress", "linkedIn", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender"]
+      });
+    }
 
     const ristrictionRepo = AppDataSource.getRepository(Ristriction);
     const ristrict = await ristrictionRepo.findOne({ where: { userId: personalDetails?.id } });
