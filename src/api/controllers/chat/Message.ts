@@ -463,3 +463,40 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
     return res.status(500).json({ status: "error", message: "Error fetching message history" });
   }
 };
+
+export const deleteMessage = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+  try {
+    const { id } = req.params;
+    const userId = req.userId;
+
+    if (!id) {
+      return res.status(400).json({ message: 'Message ID is required.' });
+    }
+
+    const messageRepository = AppDataSource.getRepository(Message);
+    const message = await messageRepository.findOne({ where: { id } });
+
+    if (!message) {
+      return res.status(404).json({ status: "fail", message: 'Message not found.' });
+    }
+
+    if (userId && message?.senderId !== userId) {
+      return res.status(401).json({ status: "fail", message: 'You are not authorized to delete this message.' });
+    }
+
+    await messageRepository.delete(id);
+
+    return res.status(200).json({
+      status: "success",
+      message: 'Message deleted successfully.',
+    });
+
+  } catch (error: any) {
+    console.error('DeleteMessage Error:', error);
+    return res.status(500).json({
+      status: "error",
+      message: 'Internal server error. Could not delete message.',
+      error: error.message,
+    });
+  }
+};
