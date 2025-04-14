@@ -374,6 +374,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
             ? await generatePresignedUrl(user.profilePictureUploadId)
             : null;
           return {
+            connectionId: null,
             userId: user.id,
             firstName: user.firstName,
             lastName: user.lastName,
@@ -383,7 +384,7 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
             bio: user.bio,
             mutual: false,
             me: false,
-            // status: true,
+            status: "accepted",
           };
         })
       );
