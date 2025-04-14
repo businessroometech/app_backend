@@ -102,38 +102,38 @@ const leetMap: Record<string, string> = {
 export const checkExplicitText = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { content } = req.body;
-        if (!content) return res.status(400).json({ message: "Text is required" });
+        if (content) {
 
-        const normalize = (text: string): string => {
-            return text.toLowerCase().split('').map(char => leetMap[char] || char).join('');
-        };
+            const normalize = (text: string): string => {
+                return text.toLowerCase().split('').map(char => leetMap[char] || char).join('');
+            };
 
-        const original = content.toLowerCase();
-        const normalized = normalize(original);
+            const original = content.toLowerCase();
+            const normalized = normalize(original);
 
-        const hasFlaggedWord = flaggedWords.some(word => {
-            const pattern = new RegExp(`\\b${word}\\b`, 'i');
-            const normalizedPattern = new RegExp(`\\b${word}\\b`, 'i');
+            const hasFlaggedWord = flaggedWords.some(word => {
+                const pattern = new RegExp(`\\b${word}\\b`, 'i');
+                const normalizedPattern = new RegExp(`\\b${word}\\b`, 'i');
 
-            return pattern.test(original) || normalizedPattern.test(normalized);
-        });
+                return pattern.test(original) || normalizedPattern.test(normalized);
+            });
 
-        if (hasFlaggedWord) {
-            return res.status(400).json({ message: "Explicit or threatening content detected" });
+            if (hasFlaggedWord) {
+                return res.status(400).json({ message: "Explicit or threatening content detected" });
+            }
+
+            const params = {
+                TextList: [content],
+                LanguageCode: "en"
+            };
+
+            const result = await comprehend.batchDetectSentiment(params).promise();
+            const sentiment = result.ResultList[0].Sentiment;
+
+            if (sentiment === "NEGATIVE") {
+                return res.status(400).json({ message: "Negative sentiment detected in text" });
+            }
         }
-
-        const params = {
-            TextList: [content],
-            LanguageCode: "en"
-        };
-
-        const result = await comprehend.batchDetectSentiment(params).promise();
-        const sentiment = result.ResultList[0].Sentiment;
-
-        if (sentiment === "NEGATIVE") {
-            return res.status(400).json({ message: "Negative sentiment detected in text" });
-        }
-
         next();
     } catch (error) {
         console.error("Error in text moderation:", error);

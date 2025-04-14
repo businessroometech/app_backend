@@ -601,6 +601,13 @@ export const getUserConnectionRequests = async (req: AuthenticatedRequest, res: 
           ? await generatePresignedUrl(user.profilePictureUploadId)
           : null;
 
+        if (user) {
+          user.emailAddress = "";
+          user.mobileNumber = "";
+          user.linkedIn = "";
+          user.password = "";
+        }
+
         return {
           connectionId: connection.id,
           requesterId: connection.requesterId,
