@@ -18,6 +18,7 @@ import { MessageHistory } from '@/api/entity/chat/MessageHistory';
 import { getSocketInstance } from '@/socket';
 import sharp from 'sharp';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -103,6 +104,17 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       return res.status(404).json({ status: "error", message: "User not found." });
     }
 
+    //------------------------ explict text -----------------------------------
+
+    const bioCheck = await analyzeTextContent(bio);
+
+    if (!bioCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: bioCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
+
     if (bio && bio?.length > 60) {
       return res.status(400).json({ status: "error", message: "Bio must be under 60 characters." });
     }
@@ -159,7 +171,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
     // if (personalDetails.stage === 0) personalDetails.stage = 1;
 
     personalDetails.updatedBy = "system";
-    personalDetails.active = 1;
+    // personalDetails.active = 1;
 
     await userRepository.save(personalDetails);
 
@@ -183,7 +195,14 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const userId = req.userId;
-    let { profileId = userId } = req.query;
+    let { profileId } = req.query;
+
+    let isMyProfile = false;
+
+    if (!profileId) {
+      isMyProfile = true;
+      profileId = userId;
+    }
 
     if (!userId) {
       return res.status(400).json({
@@ -207,9 +226,19 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response): 
     });
 
     // Fetch user details
-    const personalDetails = await personalDetailsRepository.findOne({
-      where: { id: String(profileId) },
-    });
+    let personalDetails;
+    if (!isMyProfile) {
+      personalDetails = await personalDetailsRepository.findOne({
+        where: { id: String(profileId) },
+        select: [ "id","firstName", "lastName", "bio", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender", "isAdmin", "active", "userRole", "subRole"]
+      });
+    }
+    else {
+      personalDetails = await personalDetailsRepository.findOne({
+        where: { id: String(profileId) },
+        select: ["id","firstName", "lastName", "bio", "mobileNumber", "emailAddress", "linkedIn", "profilePictureUploadId", "bgPictureUploadId", "badgeName", "city", "country", "countryCode", "createdAt", "updatedAt", "dob", "gender", "isAdmin", "active", "userRole", "subRole"]
+      });
+    }
 
     const ristrictionRepo = AppDataSource.getRepository(Ristriction);
     const ristrict = await ristrictionRepo.findOne({ where: { userId: personalDetails?.id } });

@@ -43,38 +43,104 @@ export const flaggedWords = [
     // Other offensive terms
     'fatso', 'lardass', 'ugly', 'retard', 'midget', 'dwarf', 'cripple', 'gimp', 'psycho',
     'sociopath', 'schizo', 'illegal alien', 'wetback', 'beaner', 'ghetto', 'trailer trash',
-    'white trash', 'redneck', 'hillbilly', 'incest', 'bestiality', 'necrophilia'
+    'white trash', 'redneck', 'hillbilly', 'incest', 'bestiality', 'necrophilia',
+
+    'jihad', 'jihadist', 'mujahedeen', 'fatwa', 'takfir', 'shariah law', 'kafir', 'infidel',
+    'caliphate', 'shaheed', 'martyrdom', 'beheading', 'apostate', 'ummah uprising',
+
+    // Names of known radical groups (if needed for detection)
+    'isis', 'daesh', 'al-qaeda', 'taliban', 'boko haram', 'al-shabaab', 'hezbollah',
+
+    // Phrases sometimes seen in extremist slogans (context matters)
+    'death to infidels', 'holy war', 'kuffar must die', 'shariah for all', 'convert or die',
+    'allahu akbar'
 ];
+
+// export const checkExplicitText = async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//         const { content } = req.body;
+//         if (!content) return res.status(400).json({ message: "Text is required" });
+
+//         const lowerContent = content.toLowerCase();
+//         const hasFlaggedWord = flaggedWords.some(word => lowerContent.includes(word));
+//         if (hasFlaggedWord) {
+//             return res.status(400).json({ message: "Explicit or threatening content detected" });
+//         }
+
+//         const params = {
+//             TextList: [content],
+//             LanguageCode: "en"
+//         };
+
+//         const result = await comprehend.batchDetectSentiment(params).promise();
+//         const sentiment = result.ResultList[0].Sentiment;
+
+//         if (sentiment === "NEGATIVE") {
+//             return res.status(400).json({ message: "Negative sentiment detected in text" });
+//         }
+
+//         next();
+//     } catch (error) {
+//         console.error("Error in text moderation:", error);
+//         res.status(500).json({ message: "Error checking text content" });
+//     }
+// };
+
+const leetMap: Record<string, string> = {
+    '0': 'o',
+    '1': 'i',
+    '3': 'e',
+    '4': 'a',
+    '5': 's',
+    '7': 't',
+    '8': 'b',
+    '@': 'a',
+    '$': 's',
+    '!': 'i'
+};
 
 export const checkExplicitText = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { content } = req.body;
-        if (!content) return res.status(400).json({ message: "Text is required" });
+        if (content) {
 
-        const lowerContent = content.toLowerCase();
-        const hasFlaggedWord = flaggedWords.some(word => lowerContent.includes(word));
-        if (hasFlaggedWord) {
-            return res.status(400).json({ message: "Explicit or threatening content detected" });
+            const normalize = (text: string): string => {
+                return text.toLowerCase().split('').map(char => leetMap[char] || char).join('');
+            };
+
+            const original = content.toLowerCase();
+            const normalized = normalize(original);
+
+            const hasFlaggedWord = flaggedWords.some(word => {
+                const pattern = new RegExp(`\\b${word}\\b`, 'i');
+                const normalizedPattern = new RegExp(`\\b${word}\\b`, 'i');
+
+                return pattern.test(original) || normalizedPattern.test(normalized);
+            });
+
+            if (hasFlaggedWord) {
+                return res.status(400).json({ message: "Explicit or threatening content detected" });
+            }
+
+            const params = {
+                TextList: [content],
+                LanguageCode: "en"
+            };
+
+            const result = await comprehend.batchDetectSentiment(params).promise();
+            const sentiment = result.ResultList[0].Sentiment;
+
+            if (sentiment === "NEGATIVE") {
+                return res.status(400).json({ message: "Negative sentiment detected in text" });
+            }
         }
-
-        const params = {
-            TextList: [content],
-            LanguageCode: "en"
-        };
-
-        const result = await comprehend.batchDetectSentiment(params).promise();
-        const sentiment = result.ResultList[0].Sentiment;
-
-        if (sentiment === "NEGATIVE") {
-            return res.status(400).json({ message: "Negative sentiment detected in text" });
-        }
-
         next();
     } catch (error) {
         console.error("Error in text moderation:", error);
         res.status(500).json({ message: "Error checking text content" });
     }
 };
+
 
 // Middleware to check for explicit images
 // export const checkExplicitImage = async (req: Request, res: Response, next: NextFunction) => {

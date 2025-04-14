@@ -34,7 +34,7 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
     // Generate a verification token
     const verificationToken = jwt.sign(
       { userId: user.id },
-      process.env.ACCESS_SECRET_KEY!,
+      process.env.VERIFICATION_SECRET_KEY!,
       { expiresIn: '1h' }
     );
 
