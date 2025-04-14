@@ -20,6 +20,7 @@ import { getInTouch, createAccount, transfer } from '@/api/controllers/LandingPa
 // import { uploadMiddleware2 } from '@/api/controllers/posts/UserPost';
 // import { getOnlineUsers } from "../../../socket";
 // import { sendVerificationEmail, verifyEmail } from '@/api/controllers/auth/EmailVerification';
+import { DeleteUserPhoto } from '../../controllers/auth/DeleteUserPhoto';
 
 const Router = express.Router();
 
@@ -55,5 +56,7 @@ Router.post('/delete-me', authenticate, deleteUser);
 Router.post('/block-user', authenticate, blockUser);
 
 Router.post('/farmaan-bhejdo', farmaan);
+
+Router.post('/delete-user-photo', authenticate, DeleteUserPhoto);
 
 export default Router;
