@@ -19,7 +19,7 @@ export const DeleteUserPhoto = async (req: AuthenticatedRequest, res: Response):
     });
 
     if (!isAdmin)
-      return res.status(403).json({ success: false, message: 'You are not authenticated to perform this action' });
+      return res.status(403).json({ success: false, message: 'You are not authorized to perform this action' });
 
     const user = await personalRepo.findOne({
       where: { id: targetUserId },
@@ -37,7 +37,7 @@ export const DeleteUserPhoto = async (req: AuthenticatedRequest, res: Response):
 
     return res.status(200).json({ success: true, message: 'User photo deleted by admin' });
   } catch (err: any) {
-    console.error('ERROR => ', err);
+    // console.error('ERROR => ', err);
     return res.status(500).json({
       message: 'Internal server error',
       error: err.message,
