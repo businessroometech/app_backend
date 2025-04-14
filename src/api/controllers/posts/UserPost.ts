@@ -1359,7 +1359,7 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
         originalPostedTimeline: post.originalPostedAt ? formatTimestamp(post.originalPostedAt) : '',
       },
       userDetails: {
-        postedId: user?.id,
+        id: user?.id,
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
         timestamp: formatTimestamp(post.createdAt),
