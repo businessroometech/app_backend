@@ -11,7 +11,6 @@ import {
 
 @Entity({ name: 'NestedCommentLike' })
 export class NestedCommentLike extends BaseEntity {
-
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -27,8 +26,8 @@ export class NestedCommentLike extends BaseEntity {
   @Column({ type: 'uuid' })
   nestedCommentId!: string;
 
-  @Column({ type: "int" , default: 0})
-  reactionId !: number;
+  @Column({ type: 'int', default: 0 })
+  reactionId!: number;
 
   @Column({ type: 'bool', default: false })
   status!: boolean;
@@ -50,7 +49,6 @@ export class NestedCommentLike extends BaseEntity {
   })
   updatedAt!: Date;
 
-
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.id = this.generateUUID();
@@ -59,5 +57,4 @@ export class NestedCommentLike extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
-
 }

@@ -6,14 +6,17 @@ import {
   CreateDateColumn,
   Entity,
   ManyToMany,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Reaction } from './posts/Reaction';
 import { Mention } from './posts/Mention';
-import { nullable } from 'zod';
+// import { nullable } from 'zod';
 // import { Hashtag } from './Hashtag/Hashtag';
+import { PersonalDetails } from './personal/PersonalDetails';
 
 @Entity({ name: 'UserPost' })
 export class UserPost extends BaseEntity {
@@ -22,6 +25,10 @@ export class UserPost extends BaseEntity {
 
   @Column({ type: 'uuid' })
   userId!: string;
+
+  @ManyToOne(() => PersonalDetails, (user) => user.user, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userIdRef' })
+  userIdRef!: PersonalDetails;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   title!: string;

@@ -20,7 +20,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     const { senderId, receiverId, content, documentKeys } = req.body;
 
     if (!senderId || !receiverId || !content) {
-      return res.status(400).json({ status: "error", message: "sender id, receiverId and content is required" });
+      return res.status(400).json({ status: 'error', message: 'sender id, receiverId and content is required' });
     }
 
     const messageRepository = AppDataSource.getRepository(Message);
@@ -40,8 +40,8 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     let mh: any = await messageHistoryRepo.findOne({
       where: [
         { senderId, receiverId },
-        { senderId: receiverId, receiverId: senderId }
-      ]
+        { senderId: receiverId, receiverId: senderId },
+      ],
     });
 
     if (!mh) {
@@ -58,10 +58,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const history = await messageHistoryRepo.find({
-      where: [
-        { senderId: userId },
-        { receiverId: userId }
-      ],
+      where: [{ senderId: userId }, { receiverId: userId }],
     });
 
     const unreadMessagesCount1 = await Promise.all(
@@ -90,24 +87,25 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       totalUnReadCount: unreadMessagesCount1?.length,
     });
 
-
     const NotifyRepo = AppDataSource.getRepository(Notify);
     const [notifcation, notifyCount] = await NotifyRepo.findAndCount({ where: { recieverId: userId, isRead: false } });
 
     const messageRepo = AppDataSource.getRepository(Message);
 
-    const unreadMessagesCount2 = (await Promise.all(
-      (history || []).map(async (his) => {
-        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
-        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+    const unreadMessagesCount2 = (
+      await Promise.all(
+        (history || []).map(async (his) => {
+          let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+          let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
 
-        const count = await messageRepo.count({
-          where: { receiverId: myId, senderId: otherId, isRead: false },
-        });
+          const count = await messageRepo.count({
+            where: { receiverId: myId, senderId: otherId, isRead: false },
+          });
 
-        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
-      })
-    )).filter((item) => item !== null);
+          return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+        })
+      )
+    ).filter((item) => item !== null);
 
     io.to(userId).emit('initialize', {
       userId,
@@ -130,14 +128,14 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
     const limit = Number(req.query.limit);
 
     if (!senderId || !receiverId) {
-      return res.status(400).json({ message: "SenderId and ReceiverId are required." });
+      return res.status(400).json({ message: 'SenderId and ReceiverId are required.' });
     }
 
     const numericPage = page;
     const numericLimit = limit;
 
     if (isNaN(numericPage) || isNaN(numericLimit) || numericPage <= 0 || numericLimit <= 0) {
-      return res.status(400).json({ message: "Page and limit must be positive numbers." });
+      return res.status(400).json({ message: 'Page and limit must be positive numbers.' });
     }
 
     const skip = (numericPage - 1) * numericLimit;
@@ -149,14 +147,14 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
         { senderId, receiverId },
         { senderId: receiverId, receiverId: senderId },
       ],
-      order: { createdAt: "DESC" },
+      order: { createdAt: 'DESC' },
       skip,
       take: numericLimit,
     });
 
     res.status(200).json({
-      status: "success",
-      message: "Messages fetched successfully",
+      status: 'success',
+      message: 'Messages fetched successfully',
       data: {
         total,
         messages,
@@ -166,8 +164,8 @@ export const getMessagesUserWise = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching messages:", error);
-    res.status(500).json({ message: "Failed to fetch messages.", error });
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ message: 'Failed to fetch messages.', error });
   }
 };
 
@@ -178,7 +176,7 @@ export const getAllUnreadMessages = async (req: AuthenticatedRequest, res: Respo
     const receiverId = userId;
 
     if (!receiverId) {
-      return res.status(400).json({ message: "ReceiverId are required." });
+      return res.status(400).json({ message: 'ReceiverId are required.' });
     }
 
     const messageRepository = AppDataSource.getRepository(Message);
@@ -193,16 +191,16 @@ export const getAllUnreadMessages = async (req: AuthenticatedRequest, res: Respo
       .getRawMany();
 
     res.status(200).json({
-      status: "success",
-      message: "Messages fetched successfully",
+      status: 'success',
+      message: 'Messages fetched successfully',
       data: {
         result,
-        unReadCount: result.length
+        unReadCount: result.length,
       },
     });
   } catch (error) {
-    console.error("Error fetching messages:", error);
-    res.status(500).json({ message: "Failed to fetch messages.", error });
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ message: 'Failed to fetch messages.', error });
   }
 };
 
@@ -218,7 +216,7 @@ export const markMessageAsRead = async (req: AuthenticatedRequest, res: Response
       .createQueryBuilder()
       .update(Message)
       .set({ isRead: true })
-      .where("receiverId = :receiverId AND senderId = :senderId", { receiverId, senderId })
+      .where('receiverId = :receiverId AND senderId = :senderId', { receiverId, senderId })
       .execute();
 
     const io = getSocketInstance();
@@ -230,24 +228,23 @@ export const markMessageAsRead = async (req: AuthenticatedRequest, res: Response
     const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
 
     const history = await messageHistoryRepo.find({
-      where: [
-        { senderId: userId },
-        { receiverId: userId }
-      ],
+      where: [{ senderId: userId }, { receiverId: userId }],
     });
 
-    const unreadMessagesCount = (await Promise.all(
-      (history || []).map(async (his) => {
-        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
-        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+    const unreadMessagesCount = (
+      await Promise.all(
+        (history || []).map(async (his) => {
+          let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+          let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
 
-        const count = await messageRepo.count({
-          where: { receiverId: myId, senderId: otherId, isRead: false },
-        });
+          const count = await messageRepo.count({
+            where: { receiverId: myId, senderId: otherId, isRead: false },
+          });
 
-        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
-      })
-    )).filter((item) => item !== null);
+          return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+        })
+      )
+    ).filter((item) => item !== null);
 
     io.to(userId).emit('initialize', {
       userId,
@@ -270,11 +267,11 @@ export const getOnlineUsers = async (req: Request, res: Response) => {
   try {
     const activeUserRepo = AppDataSource.getRepository(ActiveUser);
     const users = await activeUserRepo.find({ where: { isActive: true } });
-    return res.status(200).json({ status: "success", message: "Fetched active users", data: { activeUsers: users } });
+    return res.status(200).json({ status: 'success', message: 'Fetched active users', data: { activeUsers: users } });
   } catch (error) {
-    return res.status(500).json({ status: "error", message: "Error fetching users" });
+    return res.status(500).json({ status: 'error', message: 'Error fetching users' });
   }
-}
+};
 
 export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -290,9 +287,9 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
     const connections = await connectionRepository.find({
       where: [
         { requesterId: userId, status: 'accepted' },
-        { receiverId: userId, status: 'accepted' }
+        { receiverId: userId, status: 'accepted' },
       ],
-      relations: ['requester', 'receiver']
+      relations: ['requester', 'receiver'],
     });
 
     const filteredConnections = connections.filter((conn) => {
@@ -304,8 +301,10 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
       const requesterFullName = `${requester.firstName} ${requester.lastName}`.toLowerCase();
       const receiverFullName = `${receiver.firstName} ${receiver.lastName}`.toLowerCase();
 
-      const isRequesterValid = requester.active === 1 && conn.requesterId !== userId && requesterFullName.includes(searchQuery);
-      const isReceiverValid = receiver.active === 1 && conn.receiverId !== userId && receiverFullName.includes(searchQuery);
+      const isRequesterValid =
+        requester.active === 1 && conn.requesterId !== userId && requesterFullName.includes(searchQuery);
+      const isReceiverValid =
+        receiver.active === 1 && conn.receiverId !== userId && receiverFullName.includes(searchQuery);
 
       return isRequesterValid || isReceiverValid;
     });
@@ -321,8 +320,10 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
           userRole: user?.userRole,
           email: user?.emailAddress,
           bio: user?.bio,
-          profileImgUrl: profilePictureUploadId ? await generatePresignedUrl(profilePictureUploadId).catch(() => null) : null,
-          badgeName: user?.badgeName
+          profileImgUrl: profilePictureUploadId
+            ? await generatePresignedUrl(profilePictureUploadId).catch(() => null)
+            : null,
+          badgeName: user?.badgeName,
         };
       })
     );
@@ -330,54 +331,51 @@ export const searchConnectionsByName = async (req: AuthenticatedRequest, res: Re
     return res.status(200).json({
       status: 'success',
       message: 'Connections retrieved successfully',
-      data: filteredConnectionsFinal
+      data: filteredConnectionsFinal,
     });
-
   } catch (error: any) {
     console.error('Error searching connections:', error);
     return res.status(500).json({
       status: 'error',
       message: 'Internal server error',
-      error: error.message
+      error: error.message,
     });
   }
 };
-
 
 export const getMessageHistory = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(400).json({ success: false, message: "Sender ID is required" });
+      return res.status(400).json({ success: false, message: 'Sender ID is required' });
     }
 
     const messageHistoryRepo = AppDataSource.getRepository(MessageHistory);
 
     const history = await messageHistoryRepo.find({
-      where: [
-        { senderId: userId },
-        { receiverId: userId }
-      ],
-      order: { createdAt: "DESC" },
+      where: [{ senderId: userId }, { receiverId: userId }],
+      order: { createdAt: 'DESC' },
     });
 
     const userRepo = AppDataSource.getRepository(PersonalDetails);
     const activeUserRepo = AppDataSource.getRepository(ActiveUser);
     const messageRepository = AppDataSource.getRepository(Message);
 
-    const unreadMessagesCount = (await Promise.all(
-      (history || []).map(async (his) => {
-        let myId = his.receiverId === userId ? his.receiverId : his.senderId;
-        let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
+    const unreadMessagesCount = (
+      await Promise.all(
+        (history || []).map(async (his) => {
+          let myId = his.receiverId === userId ? his.receiverId : his.senderId;
+          let otherId = his.receiverId === userId ? his.senderId : his.receiverId;
 
-        const count = await messageRepository.count({
-          where: { receiverId: myId, senderId: otherId, isRead: false },
-        });
+          const count = await messageRepository.count({
+            where: { receiverId: myId, senderId: otherId, isRead: false },
+          });
 
-        return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
-      })
-    )).filter((item) => item !== null);
+          return count > 0 ? { senderId: otherId, receiverId: myId, unReadCount: count } : null;
+        })
+      )
+    ).filter((item) => item !== null);
 
     // const formattedHistory = await Promise.all(
     //   history.map(async (record) => {
@@ -443,7 +441,9 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
           userId: otherId,
           isActive: activeOtherUser?.isActive || false,
           userName: otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : null,
-          userImg: otherUser?.profilePictureUploadId ? await generatePresignedUrl(otherUser.profilePictureUploadId) : null,
+          userImg: otherUser?.profilePictureUploadId
+            ? await generatePresignedUrl(otherUser.profilePictureUploadId)
+            : null,
           userEmail: otherUser?.emailAddress ? otherUser?.emailAddress : null,
           userRole: otherUser?.userRole,
           userBio: otherUser?.bio,
@@ -456,10 +456,12 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
       })
     );
 
-
-    return res.status(200).json({ status: "success", data: { history: formattedHistory, unreadUserCount: unreadMessagesCount ? unreadMessagesCount.length : 0 } });
+    return res.status(200).json({
+      status: 'success',
+      data: { history: formattedHistory, unreadUserCount: unreadMessagesCount ? unreadMessagesCount.length : 0 },
+    });
   } catch (error) {
-    console.error("Error fetching message history:", error);
-    return res.status(500).json({ status: "error", message: "Error fetching message history" });
+    console.error('Error fetching message history:', error);
+    return res.status(500).json({ status: 'error', message: 'Error fetching message history' });
   }
 };

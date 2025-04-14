@@ -15,18 +15,21 @@ import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'Like' })
 export class Like extends BaseEntity {
-
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
   userId!: string;
 
+  @ManyToOne(() => PersonalDetails, (user) => user.likeRef, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userIdRef' })
+  userRef!: PersonalDetails;
+
   @Column({ type: 'uuid' })
   postId!: string;
 
-  @Column({ type: "int" , default: 0})
-  reactionId !: number;
+  @Column({ type: 'int', default: 0 })
+  reactionId!: number;
 
   @Column({ type: 'bool', default: false })
   status!: boolean;
@@ -56,5 +59,4 @@ export class Like extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
-
 }

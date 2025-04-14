@@ -33,8 +33,7 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
       if (like.reactionId != reactionId) {
         like.status = true;
         like.reactionId = reactionId;
-      }
-      else {
+      } else {
         // like.status = false;
         like.status = !like.status;
         // like.reactionId = 1000;
@@ -42,9 +41,10 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
     } else {
       like = Like.create({
         userId,
+        userRef: { id: userId },
         postId,
         status: true,
-        reactionId
+        reactionId,
       });
     }
     await like.save();
@@ -74,9 +74,7 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
 
     if (likedPost.userId !== userId && like.status) {
       try {
-        const imageKey = likedByUser.profilePictureUploadId
-          ? likedByUser.profilePictureUploadId
-          : null;
+        const imageKey = likedByUser.profilePictureUploadId ? likedByUser.profilePictureUploadId : null;
 
         await createNotification(
           NotificationType.REACTION,
@@ -85,7 +83,7 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
           `${likedByUser.firstName} ${likedByUser.lastName} reacted on your post`,
           {
             imageKey,
-            postId: likedPost.id
+            postId: likedPost.id,
           }
         );
 
@@ -97,16 +95,15 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
           metaData: {
             imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
             postId: likedPost.id,
-            isReadCount: notification.length
-          }
-        }
+            isReadCount: notification.length,
+          },
+        };
 
         const io = getSocketInstance();
         const roomId = likedOnUser.id;
         io.to(roomId).emit('newNotification', notify);
-
       } catch (error) {
-        console.error("Error creating notification:", error);
+        console.error('Error creating notification:', error);
       }
     }
 
@@ -138,7 +135,6 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'invalid postId.' });
     }
 
-
     const likeRepository = AppDataSource.getRepository(Like);
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
 
@@ -150,8 +146,7 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
         take: limitNumber,
         skip: offset,
       });
-    }
-    else {
+    } else {
       likes = await likeRepository.find({
         where: { postId, status: true },
         take: limitNumber,
@@ -168,8 +163,10 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
           ...like,
           user: {
             ...user,
-            profilePictureUploadUrl: user?.profilePictureUploadId ? await generatePresignedUrl(user?.profilePictureUploadId) : null
-          }
+            profilePictureUploadUrl: user?.profilePictureUploadId
+              ? await generatePresignedUrl(user?.profilePictureUploadId)
+              : null,
+          },
         };
       })
     );
@@ -203,8 +200,7 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
       if (like.reactionId != reactionId) {
         like.status = true;
         like.reactionId = reactionId;
-      }
-      else {
+      } else {
         // like.status = false;
         like.status = !like.status;
         // like.reactionId = 1000;
@@ -215,7 +211,7 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
         postId,
         commentId,
         status: true,
-        reactionId
+        reactionId,
       });
     }
 
@@ -246,9 +242,7 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
 
     if (likedCommentOfPost.userId !== userId && like.status) {
       try {
-        const imageKey = likedByUser.profilePictureUploadId
-          ? likedByUser.profilePictureUploadId
-          : null;
+        const imageKey = likedByUser.profilePictureUploadId ? likedByUser.profilePictureUploadId : null;
 
         await createNotification(
           NotificationType.COMMENT_LIKE,
@@ -271,18 +265,15 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
             imageUrl: imageKey ? await generatePresignedUrl(imageKey) : null,
             postId: likedCommentOfPost.id,
             commentId: commentId,
-            isReadCount: notification.length
-          }
-        }
-
+            isReadCount: notification.length,
+          },
+        };
 
         const io = getSocketInstance();
         const roomId = likedOnUser.id;
         io.to(roomId).emit('newNotification', notify);
-
-
       } catch (error) {
-        console.error("Error creating notification:", error);
+        console.error('Error creating notification:', error);
       }
     }
 
@@ -316,7 +307,9 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
 
         return {
           ...like,
-          user: user ? { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.emailAddress } : null,
+          user: user
+            ? { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.emailAddress }
+            : null,
         };
       })
     );
@@ -343,7 +336,7 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     const likeRepository = AppDataSource.getRepository(Like);
 
     const likes = await likeRepository.find({ where: { postId, status: true } });
-    console.log("First likes", likes);
+    console.log('First likes', likes);
 
     if (!likes) {
       return res.status(404).json({ status: 'error', message: 'post not available.' });
@@ -358,13 +351,13 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     const getUserLike = async (userId: string) => {
       const like = await likeRepository.findOne({ where: { userId, postId } });
       return like;
-    }
+    };
 
     const likers = await Promise.all(
       users.map(async (user) => ({
         ...user,
         likerUrl: user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null,
-        like: await getUserLike(user.id)
+        like: await getUserLike(user.id),
       }))
     );
 
@@ -414,7 +407,6 @@ export const getPostCommentersList = async (req: Request, res: Response) => {
   }
 };
 
-
 export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { postId, commentId, nestedCommentId, reactionId } = req.body;
@@ -422,7 +414,9 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
     const userId = req.userId;
 
     if (!userId || !postId || !commentId || !nestedCommentId) {
-      return res.status(400).json({ status: 'error', message: 'userId, postId, nestedCommentId and commentId are required.' });
+      return res
+        .status(400)
+        .json({ status: 'error', message: 'userId, postId, nestedCommentId and commentId are required.' });
     }
 
     const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
@@ -433,8 +427,7 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
       if (like.reactionId != reactionId) {
         like.status = true;
         like.reactionId = reactionId;
-      }
-      else {
+      } else {
         // like.status = false;
         like.status = !like.status;
         // like.reactionId = 1000;
@@ -446,7 +439,7 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
         commentId,
         nestedCommentId,
         status: true,
-        reactionId
+        reactionId,
       });
     }
 
@@ -477,9 +470,7 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
 
     if (likedNestedCommentOfPost.userId !== userId && like.status) {
       try {
-        const imageKey = likedByUser.profilePictureUploadId
-          ? likedByUser.profilePictureUploadId
-          : null;
+        const imageKey = likedByUser.profilePictureUploadId ? likedByUser.profilePictureUploadId : null;
 
         await createNotification(
           NotificationType.REPLY_LIKE,
@@ -490,13 +481,12 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
             imageKey,
             postId: likedNestedCommentOfPost.id,
             commentId: commentId,
-            nestedCommentId: nestedCommentId
+            nestedCommentId: nestedCommentId,
           }
         );
 
         const notifyRepo = AppDataSource.getRepository(Notify);
         const notification = await notifyRepo.find({ where: { recieverId: likedOnUser?.id, isRead: false } });
-
 
         const notify = {
           message: `${likedByUser.firstName} ${likedByUser.lastName} reacted on your reply`,
@@ -505,16 +495,15 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
             postId: likedNestedCommentOfPost.id,
             commentId: commentId,
             nestedCommentId: nestedCommentId,
-            isReadCount: notification.length
-          }
-        }
+            isReadCount: notification.length,
+          },
+        };
 
         const io = getSocketInstance();
         const roomId = likedOnUser.id;
         io.to(roomId).emit('newNotification', notify);
-
       } catch (error) {
-        console.error("Error creating notification:", error);
+        console.error('Error creating notification:', error);
       }
     }
 

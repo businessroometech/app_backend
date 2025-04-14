@@ -12,7 +12,7 @@ import { PersonalDetails } from '../../entity/personal/PersonalDetails';
 import { Comment } from '../../entity/posts/Comment';
 import { Like } from '../../entity/posts/Like';
 import { generatePresignedUrl } from '../s3/awsControllers';
-import { In, Not } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Reaction } from '../../entity/posts/Reaction';
 // import { Mention } from '../../entity/posts/Mention';
 import { broadcastMessage, getSocketInstance } from '@/socket';
@@ -202,6 +202,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
         const newPost = postRepository.create({
           userId,
+          userIdRef: userId,
           title: post.title,
           content: post.content,
           hashtags: post.hashtags,
@@ -235,6 +236,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     } else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
       const newPost = postRepository.create({
         userId,
+        userIdRef: userId,
         isPoll,
         isDiscussion,
         discussionTopic: topic,
@@ -245,6 +247,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
     } else if (isDiscussion && discussionTopic) {
       const newPost = postRepository.create({
         userId,
+        userIdRef: userId,
         isDiscussion,
         discussionContent,
         discussionTopic,
@@ -279,6 +282,7 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
 
       const newPost = postRepository.create({
         userId,
+        userIdRef: userId,
         title,
         content,
         hashtags,
@@ -645,7 +649,7 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     // Fetch user details
     const userRepository = AppDataSource.getRepository(PersonalDetails);
     const user = await userRepository.findOne({
-      where: { id: id },
+      where: { id: id, active: 1 },
       // select: ['id', 'firstName', 'lastName', 'userRole', 'profilePictureUploadId', 'bgPictureUploadId', 'badgeName', 'isBadgeOn'],
     });
 
@@ -713,10 +717,10 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
         };
       })
     );
-
+    ``;
     // Fetch profile picture URL
     const imgUrl = user.profilePictureUploadId ? await generatePresignedUrl(user.profilePictureUploadId) : null;
-    console.log(imgUrl);
+    // console.log(imgUrl);
 
     // Format posts with related data
     const blockedPostRepo = AppDataSource.getRepository(BlockedPost);
@@ -1102,13 +1106,14 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
 // find and update user post
 export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
-    const { id, title, content, hashtags, mentionId, mediaIds, likeIds, commentIds, shareIds } = req.body;
+    const { id, title, content, hashtags, mention, mediaIds, likeIds, commentIds, shareIds } = req.body;
 
     const userId = req.userId;
 
     // Check if the user ID exists in the PersonalDetails repository
     // Get the PersonalDetails repository
     const userRepository = AppDataSource.getRepository(PersonalDetails);
+    const mentionRepository = AppDataSource.getRepository(MentionUser);
 
     // Check if the user exists
     const user = await userRepository.findOne({
@@ -1130,7 +1135,7 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
     userPost!.content = content;
     userPost!.hashtags = hashtags;
 
-    await userPost!.save();
+    const savedPost = await userPost!.save();
 
     return res.status(200).json({
       message: 'User post updated successfully.',

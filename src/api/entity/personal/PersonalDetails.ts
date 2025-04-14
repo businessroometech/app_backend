@@ -20,6 +20,7 @@ import { MentionUser } from '../mention/mention';
 import { Reaction } from '../posts/Reaction';
 import { Like } from '../posts/Like';
 import { BlockedUser } from '../posts/BlockedUser';
+import { UserPost } from '../UserPost';
 
 interface Address {
   addressLine1: string;
@@ -246,4 +247,10 @@ export class PersonalDetails extends BaseEntity {
 
   @OneToMany(() => MentionUser, (mention) => mention.mentionBy)
   mentionsMade!: MentionUser[];
+
+  @OneToMany(() => UserPost, (user) => user.userIdRef)
+  user!: UserPost[];
+
+  @OneToMany(() => Like, (like) => like.userRef)
+  likeRef!: Like[];
 }
