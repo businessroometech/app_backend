@@ -21,15 +21,16 @@
 import fs from 'fs';
 import path from 'path';
 
+const mailListPath = path.join(__dirname, 'mailList.txt');
+
 const disposableDomains = new Set(
-  fs
-    .readFileSync(path.join(__dirname, 'mailList.txt'), 'utf8')
+  fs.readFileSync(mailListPath, 'utf8')
     .split('\n')
     .map((domain) => domain.trim().toLowerCase())
     .filter(Boolean)
 );
 
-export function isDisposable(email: string) {
-  const domain = email.split('@')[1].toLowerCase().trim();
+export function isDisposable(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase().trim();
   return disposableDomains.has(domain);
 }

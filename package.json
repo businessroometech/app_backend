@@ -10,6 +10,7 @@
     "build-local": "node esbuild.config.js",
     "build-prod": "npm i && rimraf dist && node esbuild.config.js",
     "build": "npm i && rimraf dist && node esbuild.config.js",
+    "postbuild": "cp src/api/middlewares/disposable-mail/mailList.txt dist/api/middlewares/disposable-mail/",
     "build1": "npm i && rimraf dist && tsup",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
