@@ -9,6 +9,7 @@ import { promise } from 'zod';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Notify } from '@/api/entity/notify/Notify';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -18,6 +19,18 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId: any = req.userId;
     const { senderId, receiverId, content, documentKeys } = req.body;
+
+    //------------------------ explict text -----------------------------------
+
+    const messageCheck = await analyzeTextContent(content);
+
+    if (!messageCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: messageCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
+
 
     if (senderId !== userId) {
       return res.status(400).json({ status: "fail", message: "Invalid User" });
