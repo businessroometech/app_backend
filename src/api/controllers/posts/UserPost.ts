@@ -24,6 +24,7 @@ import { PollEntry } from '@/api/entity/posts/PollEntry';
 import { createNotification } from '../notify/Notify';
 import { NotificationType, Notify } from '@/api/entity/notify/Notify';
 import { MentionUser } from '../../entity/mention/mention';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 
 export const formatTimestamp = (createdAt: Date): string => {
   const now = Date.now();
@@ -234,6 +235,17 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
         }
       }
     } else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
+
+    //------------------------ explict text -----------------------------------
+          
+      const questionCheck = await analyzeTextContent(question);
+          
+      if (!questionCheck?.allowed) {
+        return  res.status(400).json({ status: "fail", message: questionCheck?.reason });
+      }
+          
+    // ---------------------------------------------------------------------------
+          
       const newPost = postRepository.create({
         userId,
         userIdRef: userId,
@@ -245,6 +257,17 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       });
       savedPost = await postRepository.save(newPost);
     } else if (isDiscussion && discussionTopic) {
+
+    //------------------------ explict text -----------------------------------
+          
+    const discussionContentCheck = await analyzeTextContent(discussionContent);
+          
+    if (!discussionContentCheck?.allowed) {
+      return  res.status(400).json({ status: "fail", message: discussionContentCheck?.reason });
+    }
+              
+    // ---------------------------------------------------------------------------
+      
       const newPost = postRepository.create({
         userId,
         userIdRef: userId,
@@ -279,6 +302,17 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
           }
         }
       }
+
+      //------------------------ explict text -----------------------------------
+          
+      const contentCheck = await analyzeTextContent(content);
+          
+      if (!contentCheck?.allowed) {
+        return  res.status(400).json({ status: "fail", message: contentCheck?.reason });
+      }
+              
+      // ---------------------------------------------------------------------------
+      
 
       const newPost = postRepository.create({
         userId,

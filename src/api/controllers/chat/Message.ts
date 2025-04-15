@@ -39,6 +39,20 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ status: "fail", message: "Invalid User" });
     }
 
+
+    //------------------------ explict text -----------------------------------
+
+    const contentCheck = await analyzeTextContent(content);
+
+
+    if (!contentCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: contentCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
+
+
     const messageRepository = AppDataSource.getRepository(Message);
 
     const message = messageRepository.create({
