@@ -9,6 +9,7 @@ import { promise } from 'zod';
 import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { generatePresignedUrl } from '../s3/awsControllers';
 import { Notify } from '@/api/entity/notify/Notify';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -19,12 +20,23 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
     const userId: any = req.userId;
     const { senderId, receiverId, content, documentKeys } = req.body;
 
-    if (senderId !== userId) {
-      return res.status(400).json({ status: "fail", message: "Invalid User" });
+    //------------------------ explict text -----------------------------------
+
+    const messageCheck = await analyzeTextContent(content);
+
+    if (!messageCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: messageCheck?.reason });
+      return;
     }
+
+    // ---------------------------------------------------------------------------
 
     if (!senderId || !receiverId || !content) {
       return res.status(400).json({ status: 'error', message: 'sender id, receiverId and content is required' });
+    }
+
+    if (senderId !== userId) {
+      return res.status(400).json({ status: "fail", message: "Invalid User" });
     }
 
     const messageRepository = AppDataSource.getRepository(Message);
@@ -445,10 +457,8 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
           userId: otherId,
           isActive: activeOtherUser?.isActive || false,
           userName: otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : null,
-          userImg: otherUser?.profilePictureUploadId
-            ? await generatePresignedUrl(otherUser.profilePictureUploadId)
-            : null,
-          userEmail: otherUser?.emailAddress ? otherUser?.emailAddress : null,
+          userImg: otherUser?.profilePictureUploadId ? await generatePresignedUrl(otherUser.profilePictureUploadId) : null,
+          // userEmail: otherUser?.emailAddress ? otherUser?.emailAddress : null,
           userRole: otherUser?.userRole,
           userBio: otherUser?.bio,
           badgeName: otherUser?.badgeName,
