@@ -44,7 +44,7 @@ export const flaggedWords = [
     'sociopath', 'schizo', 'illegal alien', 'wetback', 'beaner', 'ghetto', 'trailer trash',
     'white trash', 'redneck', 'hillbilly', 'incest', 'bestiality', 'necrophilia',
 
-    'jihad', 'jihadist', 'mujahedeen', 'fatwa', 'takfir', 'shariah law', 'kafir', 'infidel',
+    'jihad', "Jihadi", 'jihadist', 'Zihad', "Zihadi", 'Zihadist', 'jihaad', "Jihaadi", 'jihaadist', 'Zihaad', "Zihaadi", 'Zihaadist', 'mujahedeen', 'fatwa', 'takfir', 'shariah law', 'kafir', 'infidel',
     'caliphate', 'shaheed', 'martyrdom', 'beheading', 'apostate', 'ummah uprising',
 
     // Names of known radical groups (if needed for detection)
@@ -103,7 +103,7 @@ export const flaggedWords = [
     , "Maula", "Khalistan", "Kashmir", "zindabad", "murdabad", "sikhs for justice", "RSS", "Hinduphobia", "Islamophobia", "sikhs", "religion", "religious",
     , "Rape", "Brahman", "Pandit", "Shudar", "vaishya", "kshatriya", "Allhamdullilah", "We want justice", "Black live matters", "Black live", "All live matters", "LOC", "POK", "Prophet", "Hajj", "Haj", "Shit"
     , "Murder", "zihaad", "zihad", "allahu", "alahu", "", "aqbar", "filistine", "filisteen"
-    , "Killer", "bom", "boomb", "bomb", "blast", "blaast", "allahamdullilah","aatank", "atank", "maqsad", "militent", "militant",
+    , "Killer", "bom", "boomb", "bomb", "blast", "blaast", "allahamdullilah", "aatank", "atank", "maqsad", "militent", "militant",
     , "Sex"
     , "Prostitute"
     , "call girl"
