@@ -33,18 +33,17 @@
 //     "src/**/*.ts"
 //   ]
 // }
+
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "ESNext",
+    "module": "commonjs",
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Node",
     "outDir": "dist",
     "importsNotUsedAsValues": "remove",
     "esModuleInterop": true,
@@ -53,18 +52,13 @@
     "noPropertyAccessFromIndexSignature": false,
     "skipLibCheck": true,
     "ignoreDeprecations": "5.0",
-    "types": [
-      "vitest/globals"
-    ],
+    "types": ["vitest/globals"],
+
     // for decorators support
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
   "extends": [],
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "src/**/*.ts"
-  ]
+  "exclude": ["node_modules"],
+  "include": ["src/**/*.ts"]
 }

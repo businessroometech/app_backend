@@ -7,7 +7,7 @@ import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
 import { analyzeTextContent } from '../helpers/ExplicitText';
-import { isDisposable } from '../../middlewares/disposable-mail/disposable';
+// import { isDisposable } from '../../middlewares/disposable-mail/disposable';
 
 // export const signup = async (req: Request, res: Response): Promise<void> => {
 //   const queryRunner = AppDataSource.createQueryRunner();
@@ -353,10 +353,10 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (isDisposable(emailAddress)) {
-      res.status(400).json({ status: 'error', message: 'Disposable email addresses not allowed' });
-      return;
-    }
+    // if (isDisposable(emailAddress)) {
+    //   res.status(400).json({ status: 'error', message: 'Disposable email addresses not allowed' });
+    //   return;
+    // }
 
     if (!validator.isEmail(emailAddress)) {
       res.status(400).json({ status: 'error', message: 'Invalid email address format.' });
