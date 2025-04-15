@@ -360,41 +360,41 @@ export const getUserConnections = async (req: AuthenticatedRequest, res: Respons
       } as FindOptionsWhere<PersonalDetails>,
     });
 
-    if (profileUser?.isAdmin) {
-      const users = await userRepository.find({
-        where: {
-          id: Not(targetUserId),
-          active: 1
-        }
-      });
+    // if (profileUser?.isAdmin) {
+    //   const users = await userRepository.find({
+    //     where: {
+    //       id: Not(targetUserId),
+    //       active: 1
+    //     }
+    //   });
 
-      const connectionsList = await Promise.all(
-        users.map(async (user) => {
-          const profilePictureUrl = user.profilePictureUploadId
-            ? await generatePresignedUrl(user.profilePictureUploadId)
-            : null;
-          return {
-            connectionId: null,
-            userId: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            userRole: user.userRole,
-            profilePictureUrl,
-            bagdeName: user.badgeName,
-            bio: user.bio,
-            mutual: false,
-            me: false,
-            status: "accepted",
-          };
-        })
-      );
+    //   const connectionsList = await Promise.all(
+    //     users.map(async (user) => {
+    //       const profilePictureUrl = user.profilePictureUploadId
+    //         ? await generatePresignedUrl(user.profilePictureUploadId)
+    //         : null;
+    //       return {
+    //         connectionId: null,
+    //         userId: user.id,
+    //         firstName: user.firstName,
+    //         lastName: user.lastName,
+    //         userRole: user.userRole,
+    //         profilePictureUrl,
+    //         bagdeName: user.badgeName,
+    //         bio: user.bio,
+    //         mutual: false,
+    //         me: false,
+    //         status: "accepted",
+    //       };
+    //     })
+    //   );
 
-      res.status(200).json({
-        status: "success",
-        message: "All connections fetched",
-        connections: connectionsList
-      });
-    }
+    //   res.status(200).json({
+    //     status: "success",
+    //     message: "All connections fetched",
+    //     connections: connectionsList
+    //   });
+    // }
 
     if (!profileUser) {
       return res.status(404).json({ message: 'Profile user not found or inactive.' });

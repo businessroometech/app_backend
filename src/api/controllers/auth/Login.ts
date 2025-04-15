@@ -192,6 +192,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const accessToken = generateAccessToken(user, rememberMe);
 
+    if(user)
+    {
+      user.password = "";
+    }
+
     res.status(200).json({
       status: 'success',
       message: 'Logged in successfully.',

@@ -40,6 +40,10 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'sender id, receiverId and content is required' });
     }
 
+    if (senderId !== userId) {
+      return res.status(400).json({ status: "fail", message: "Invalid User" });
+    }
+
     const messageRepository = AppDataSource.getRepository(Message);
 
     const message = messageRepository.create({
@@ -458,10 +462,8 @@ export const getMessageHistory = async (req: AuthenticatedRequest, res: Response
           userId: otherId,
           isActive: activeOtherUser?.isActive || false,
           userName: otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : null,
-          userImg: otherUser?.profilePictureUploadId
-            ? await generatePresignedUrl(otherUser.profilePictureUploadId)
-            : null,
-          userEmail: otherUser?.emailAddress ? otherUser?.emailAddress : null,
+          userImg: otherUser?.profilePictureUploadId ? await generatePresignedUrl(otherUser.profilePictureUploadId) : null,
+          // userEmail: otherUser?.emailAddress ? otherUser?.emailAddress : null,
           userRole: otherUser?.userRole,
           userBio: otherUser?.bio,
           badgeName: otherUser?.badgeName,
