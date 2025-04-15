@@ -4,10 +4,13 @@ import {
   BeforeInsert,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'NestedCommentLike' })
 export class NestedCommentLike extends BaseEntity {
@@ -16,6 +19,10 @@ export class NestedCommentLike extends BaseEntity {
 
   @Column({ type: 'uuid' })
   userId!: string;
+
+  @ManyToOne(() => PersonalDetails, (user) => user.nestedCommentLikeRef, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userRef' })
+  userRef!: PersonalDetails;
 
   @Column({ type: 'uuid' })
   postId!: string;

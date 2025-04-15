@@ -15,12 +15,15 @@ import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'CommentLike' })
 export class CommentLike extends BaseEntity {
-
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
   userId!: string;
+
+  @ManyToOne(() => PersonalDetails, (user) => user.commentLikeRef, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userRef' })
+  userRef!: PersonalDetails;
 
   @Column({ type: 'uuid' })
   postId!: string;
@@ -48,8 +51,8 @@ export class CommentLike extends BaseEntity {
   })
   updatedAt!: Date;
 
-  @Column({ type: "int" , default: 0})
-  reactionId !: number;
+  @Column({ type: 'int', default: 0 })
+  reactionId!: number;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
@@ -59,5 +62,4 @@ export class CommentLike extends BaseEntity {
   private generateUUID() {
     return randomBytes(16).toString('hex');
   }
-
 }

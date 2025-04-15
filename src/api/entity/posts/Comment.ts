@@ -4,14 +4,16 @@ import {
   BeforeInsert,
   Column,
   CreateDateColumn,
+  JoinColumn,
   Entity,
   OneToMany,
-  ManyToMany,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Mention } from './Mention';
 // import { Hashtag } from '../Hashtag/Hashtag';
+import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'Comment' })
 export class Comment extends BaseEntity {
@@ -20,6 +22,10 @@ export class Comment extends BaseEntity {
 
   @Column({ type: 'uuid' })
   userId!: string;
+
+  @ManyToOne(() => PersonalDetails, (user) => user.commentRef, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userRef' })
+  userRef!: PersonalDetails;
 
   @Column({ type: 'uuid' })
   postId!: string;

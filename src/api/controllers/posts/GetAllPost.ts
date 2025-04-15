@@ -221,10 +221,26 @@ export const getAllPost = async (req: AuthenticatedRequest, res: Response): Prom
 
     // Fetch related comments, likes, and users
     const postIds = paginatedPosts.map((post) => post.id);
-    const [comments, likes] = await Promise.all([
-      commentRepository.find({ where: { postId: In(postIds) } }),
-      likeRepository.find({ where: { postId: In(postIds), status: true } }),
-    ]);
+
+    // const [comments, likes] = await Promise.all([
+    //   commentRepository.find({ where: { postId: In(postIds) } }),
+    //   likeRepository.find({ where: { postId: In(postIds), status: true } }),
+    // ]);
+
+    const comments = await commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.userRef', 'userRef')
+      .where('comment.postId IN (:...postIds)', { postIds })
+      .andWhere('userRef.active = :active', { active: 1 })
+      .getMany();
+
+    const likes = await likeRepository
+      .createQueryBuilder('like')
+      .leftJoinAndSelect('like.userIdRef', 'userIdRef')
+      .where('like.postId IN (:...postIds)', { postIds })
+      .andWhere('like.status = :status', { status: true })
+      .andWhere('userIdRef.active = :active', { active: 1 })
+      .getMany();
 
     const likedByConnections = connectionLikes.reduce(
       (acc, like) => {

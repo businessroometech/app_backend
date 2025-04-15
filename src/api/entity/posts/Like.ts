@@ -23,7 +23,7 @@ export class Like extends BaseEntity {
 
   @ManyToOne(() => PersonalDetails, (user) => user.likeRef, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userIdRef' })
-  userRef!: PersonalDetails;
+  userIdRef!: PersonalDetails;
 
   @Column({ type: 'uuid' })
   postId!: string;

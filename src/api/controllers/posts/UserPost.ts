@@ -680,10 +680,25 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     const commentRepository = AppDataSource.getRepository(Comment);
     const likeRepository = AppDataSource.getRepository(Like);
 
-    const [comments, likes] = await Promise.all([
-      commentRepository.find({ where: { postId: In(postIds) } }),
-      likeRepository.find({ where: { postId: In(postIds), status: true } }),
-    ]);
+    // const [comments, likes] = await Promise.all([
+    //   commentRepository.find({ where: { postId: In(postIds) } }),
+    //   likeRepository.find({ where: { postId: In(postIds), status: true } }),
+    // ]);
+
+    const comments = await commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.userRef', 'userRef')
+      .where('comment.postId IN (:...postIds)', { postIds })
+      .andWhere('userRef.active = :active', { active: 1 })
+      .getMany();
+
+    const likes = await likeRepository
+      .createQueryBuilder('like')
+      .leftJoinAndSelect('like.userIdRef', 'userIdRef')
+      .where('like.postId IN (:...postIds)', { postIds })
+      .andWhere('like.status = :status', { status: true })
+      .andWhere('userIdRef.active = :active', { active: 1 })
+      .getMany();
 
     // Fetch media URLs for posts
     // const mediaKeysWithUrls = await Promise.all(
@@ -694,11 +709,20 @@ export const FindUserPost = async (req: AuthenticatedRequest, res: Response): Pr
     // );
 
     // Format comments for each post
-    const postComments = await commentRepository.find({
-      where: { postId: In(postIds) },
-      order: { createdAt: 'ASC' },
-      take: 5, // Limit comments per post
-    });
+    // const postComments = await commentRepository.find({
+    //   where: { postId: In(postIds) },
+    //   order: { createdAt: 'ASC' },
+    //   take: 5,
+    // });
+
+    const postComments = await commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.userRef', 'user') // assuming userRef is the relation name
+      .where('comment.postId IN (:...postIds)', { postIds })
+      .andWhere('user.active = :active', { active: 1 })
+      .orderBy('comment.createdAt', 'ASC')
+      .take(5)
+      .getMany();
 
     const formattedComments = await Promise.all(
       postComments.map(async (comment) => {
@@ -1259,8 +1283,8 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
     const likeRepository = AppDataSource.getRepository(Like);
 
     const [comments, likes] = await Promise.all([
-      commentRepository.find({ where: { postId } }),
-      likeRepository.find({ where: { postId, status: true } }),
+      commentRepository.find({ where: { postId, userRef: { active: 1 } } }),
+      likeRepository.find({ where: { postId, status: true, userIdRef: { active: 1 } } }),
     ]);
 
     const generateSafePresignedUrl = async (key: string) => {
@@ -1314,11 +1338,22 @@ export const GetUserPostById = async (req: Request, res: Response): Promise<Resp
       }
     }
 
+    // const likesByReactionId = await likeRepository
+    //   .createQueryBuilder('like')
+    //   .select('like.reactionId', 'reactionId')
+    //   .addSelect('COUNT(like.id)', 'count')
+    //   .where('like.postId = :postId', { postId: post.id })
+    //   .groupBy('like.reactionId')
+    //   .orderBy('count', 'DESC')
+    //   .limit(3)
+    //   .getRawMany();
     const likesByReactionId = await likeRepository
       .createQueryBuilder('like')
+      .leftJoin('like.userIdRef', 'user')
       .select('like.reactionId', 'reactionId')
       .addSelect('COUNT(like.id)', 'count')
       .where('like.postId = :postId', { postId: post.id })
+      .andWhere('user.active = :active', { active: 1 })
       .groupBy('like.reactionId')
       .orderBy('count', 'DESC')
       .limit(3)

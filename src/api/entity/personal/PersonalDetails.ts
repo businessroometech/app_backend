@@ -21,6 +21,10 @@ import { Reaction } from '../posts/Reaction';
 import { Like } from '../posts/Like';
 import { BlockedUser } from '../posts/BlockedUser';
 import { UserPost } from '../UserPost';
+import { Comment } from '../posts/Comment';
+import { NestedComment } from '../posts/NestedComment';
+import { CommentLike } from '../posts/CommentLike';
+import { NestedCommentLike } from '../posts/NestedCommentLike';
 
 interface Address {
   addressLine1: string;
@@ -251,6 +255,18 @@ export class PersonalDetails extends BaseEntity {
   @OneToMany(() => UserPost, (user) => user.userIdRef)
   user!: UserPost[];
 
-  @OneToMany(() => Like, (like) => like.userRef)
+  @OneToMany(() => Like, (like) => like.userIdRef)
   likeRef!: Like[];
+
+  @OneToMany(() => Comment, (comment) => comment.userRef)
+  commentRef!: Like[];
+
+  @OneToMany(() => NestedComment, (nestedComment) => nestedComment.userRef)
+  nestedCommentRef!: NestedComment[];
+
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.userRef)
+  commentLikeRef!: CommentLike[];
+
+  @OneToMany(() => NestedCommentLike, (nestedCommentLike) => nestedCommentLike.userRef)
+  nestedCommentLikeRef!: NestedCommentLike[];
 }

@@ -41,7 +41,7 @@ export const createLike = async (req: AuthenticatedRequest, res: Response) => {
     } else {
       like = Like.create({
         userId,
-        userRef: { id: userId },
+        userIdRef: { id: userId },
         postId,
         status: true,
         reactionId,
@@ -141,17 +141,38 @@ export const getAllLikesForPost = async (req: Request, res: Response) => {
     // Fetch likes for the given post
     let likes;
     if (reactionId) {
-      likes = await likeRepository.find({
-        where: { postId, status: true, reactionId: Number(reactionId) },
-        take: limitNumber,
-        skip: offset,
-      });
+      // likes = await likeRepository.find({
+      //   where: { postId, status: true, reactionId: Number(reactionId) },
+      //   take: limitNumber,
+      //   skip: offset,
+      // });
+
+      likes = await likeRepository
+        .createQueryBuilder('like')
+        .leftJoinAndSelect('like.userIdRef', 'user')
+        .where('like.postId = :postId', { postId })
+        .andWhere('like.status = true')
+        .andWhere('like.reactionId = :reactionId', { reactionId: Number(reactionId) })
+        .andWhere('user.active = :active', { active: 1 })
+        .take(limitNumber)
+        .skip(offset)
+        .getMany();
     } else {
-      likes = await likeRepository.find({
-        where: { postId, status: true },
-        take: limitNumber,
-        skip: offset,
-      });
+      // likes = await likeRepository.find({
+      //   where: { postId, status: true},
+      //   take: limitNumber,
+      //   skip: offset,
+      // });
+
+      likes = await likeRepository
+        .createQueryBuilder('like')
+        .leftJoinAndSelect('like.userIdRef', 'user')
+        .where('like.postId = :postId', { postId })
+        .andWhere('like.status = true')
+        .andWhere('user.active = :active', { active: 1 })
+        .take(limitNumber)
+        .skip(offset)
+        .getMany();
     }
 
     // Fetch user details for each like
@@ -208,6 +229,7 @@ export const createCommentLike = async (req: AuthenticatedRequest, res: Response
     } else {
       like = commentLikeRepository.create({
         userId,
+        userRef: { id: userId },
         postId,
         commentId,
         status: true,
@@ -297,7 +319,7 @@ export const getAllLikesForComment = async (req: Request, res: Response) => {
 
     // Fetch likes for the given post and comment
     const likes = await commentLikeRepository.find({
-      where: { postId, commentId, status: true },
+      where: { postId, commentId, status: true, userRef: { active: 1 } },
     });
 
     // Fetch user details for each like
@@ -335,8 +357,18 @@ export const getUserPostLikeList = async (req: Request, res: Response) => {
     }
     const likeRepository = AppDataSource.getRepository(Like);
 
-    const likes = await likeRepository.find({ where: { postId, status: true } });
-    console.log('First likes', likes);
+    // const likes = await likeRepository.find({ where: { postId, status: true } });
+
+    const likes = await likeRepository
+      .createQueryBuilder('like')
+      .leftJoinAndSelect('like.userIdRef', 'user')
+      .where('like.postId = :postId', { postId })
+      .andWhere('like.status = true')
+      .andWhere('user.active = :active', { active: 1 })
+      .getMany();
+
+    // console.log('First likes', likes);
+    // console.log(likes.length);
 
     if (!likes) {
       return res.status(404).json({ status: 'error', message: 'post not available.' });
@@ -379,10 +411,16 @@ export const getPostCommentersList = async (req: Request, res: Response) => {
 
     const commentLikeRepository = AppDataSource.getRepository(Comment);
 
-    const comment = await commentLikeRepository.find({ where: { postId } });
+    // const comment = await commentLikeRepository.find({ where: { postId } });
+    const comment = await commentLikeRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.userRef', 'user')
+      .where('comment.postId = :postId', { postId })
+      .andWhere('user.active = :active', { active: 1 })
+      .getMany();
 
     if (!comment) {
-      return res.status(404).json({ status: 'error', message: 'Post not available.' });
+      return res.status(404).json({ status: 'error', message: 'not available.' });
     }
     if (comment.length === 0) {
       return res.status(204).json({ status: 'success', message: 'No comments available for this post.' });
@@ -421,7 +459,7 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
 
     const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
 
-    let like = await nestedCommentLikeRepository.findOne({ where: { userId, postId, commentId } });
+    let like = await nestedCommentLikeRepository.findOne({ where: { userId, postId, commentId, nestedCommentId } });
 
     if (like) {
       if (like.reactionId != reactionId) {
@@ -435,6 +473,7 @@ export const createNestedCommentLike = async (req: AuthenticatedRequest, res: Re
     } else {
       like = nestedCommentLikeRepository.create({
         userId,
+        userRef: { id: userId },
         postId,
         commentId,
         nestedCommentId,

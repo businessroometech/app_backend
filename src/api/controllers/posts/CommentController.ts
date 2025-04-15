@@ -38,18 +38,16 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
       return res.status(400).json({ status: 'error', message: 'userId, postId, and text are required.' });
     }
 
-
     //------------------------ explict text -----------------------------------
 
     const textCheck = await analyzeTextContent(text);
 
     if (!textCheck?.allowed) {
-      res.status(400).json({ status: "fail", message: textCheck?.reason });
+      res.status(400).json({ status: 'fail', message: textCheck?.reason });
       return;
     }
 
     // ---------------------------------------------------------------------------
-
 
     const mentionRepository = AppDataSource.getRepository(MentionUser);
 
@@ -78,7 +76,15 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
       return res.status(200).json({ status: 'success', message: 'Comment updated successfully.', data: { comment } });
     }
 
-    const newComment = Comment.create({ userId, postId, text, hashtags, createdBy: 'system', updatedBy: 'system' });
+    const newComment = Comment.create({
+      userId,
+      userRef: { id: userId },
+      postId,
+      text,
+      hashtags,
+      createdBy: 'system',
+      updatedBy: 'system',
+    });
 
     if (req.files) {
       let uploadedDocumentUrl: { key: string; type: string } | undefined;
@@ -291,12 +297,21 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
     const commentRepository = AppDataSource.getRepository(Comment);
 
     const comments =
-      (await commentRepository.find({
-        where: { postId },
-        order: { createdAt: 'ASC' },
-        take: itemsPerPage,
-        skip,
-      })) || [];
+      //   await commentRepository.find({
+      //   where: { postId },
+      //   order: { createdAt: 'ASC' },
+      //   take: itemsPerPage,
+      //   skip,
+      // })
+      (await commentRepository
+        .createQueryBuilder('comment')
+        .leftJoinAndSelect('comment.userRef', 'user')
+        .where('comment.postId = :postId', { postId })
+        .andWhere('user.active = :active', { active: 1 })
+        .orderBy('comment.createdAt', 'ASC')
+        .take(itemsPerPage)
+        .skip(skip)
+        .getMany()) || [];
 
     if (comments.length === 0) {
       return res.status(200).json({
@@ -315,15 +330,17 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
         });
         const commentLikeRepository = AppDataSource.getRepository(CommentLike);
         const [commentLikes, totalCommentLikes] = await commentLikeRepository.findAndCount({
-          where: { commentId: comment.id, status: true },
+          where: { commentId: comment.id, status: true, userRef: { active: 1 } },
         });
-        const commentLike = await commentLikeRepository.findOne({ where: { userId, commentId: comment.id } });
+        const commentLike = await commentLikeRepository.findOne({
+          where: { userId, commentId: comment.id, userRef: { active: 1 } },
+        });
 
         //-------------------------------------------------------------------- for nested comments---------------------------------------------------
         const nestedCommentRepository = AppDataSource.getRepository(NestedComment);
 
         const nestedComments = await nestedCommentRepository.find({
-          where: { commentId: comment.id },
+          where: { commentId: comment.id, userRef: { active: 1 } },
           order: { createdAt: 'ASC' },
         });
 
@@ -348,10 +365,15 @@ export const getComments = async (req: AuthenticatedRequest, res: Response) => {
 
             const nestedCommentLikeRepository = AppDataSource.getRepository(NestedCommentLike);
             const [nestedCommentLikes, totalNestedCommentLikes] = await nestedCommentLikeRepository.findAndCount({
-              where: { nestedCommentId: comment.id, commentId: comment.commentId, status: true },
+              where: {
+                nestedCommentId: comment.id,
+                commentId: comment.commentId,
+                status: true,
+                userRef: { active: 1 },
+              },
             });
             const nestedCommentLike = await nestedCommentLikeRepository.findOne({
-              where: { userId, commentId: comment.commentId, nestedCommentId: comment.id },
+              where: { userId, commentId: comment.commentId, nestedCommentId: comment.id, userRef: { active: 1 } },
             });
 
             if (!commenter) {
@@ -680,12 +702,11 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
     const textCheck = await analyzeTextContent(text);
 
     if (!textCheck?.allowed) {
-      res.status(400).json({ status: "fail", message: textCheck?.reason });
+      res.status(400).json({ status: 'fail', message: textCheck?.reason });
       return;
     }
 
     // ---------------------------------------------------------------------------
-
 
     const nestedCommentRepo = AppDataSource.getRepository(NestedComment);
     const userRepo = AppDataSource.getRepository(PersonalDetails);
@@ -735,6 +756,7 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
     savedComment = await nestedCommentRepo.save(
       nestedCommentRepo.create({
         userId,
+        userRef: { id: userId },
         postId,
         commentId,
         text,
@@ -948,7 +970,7 @@ export const getNestedComments = async (req: Request, res: Response) => {
     const nestedCommentRepository = AppDataSource.getRepository(NestedComment);
 
     const nestedComments = await nestedCommentRepository.find({
-      where: { commentId },
+      where: { commentId, userRef: { active: 1 } },
       order: { createdAt: 'ASC' },
     });
 
@@ -1132,8 +1154,8 @@ export const getCommentLikeUserList = async (req: Request, res: Response) => {
     const personalDetailsRepository = AppDataSource.getRepository(PersonalDetails);
     const connectionRepository = AppDataSource.getRepository(Connection);
 
-    const commentLikes = await commentLikeRepository.find({ where: { commentId } });
-    const totalLikes = await commentLikeRepository.count({ where: { commentId } });
+    const commentLikes = await commentLikeRepository.find({ where: { commentId, userRef: { active: 1 } } });
+    const totalLikes = await commentLikeRepository.count({ where: { commentId, userRef: { active: 1 } } });
 
     const likeList = await Promise.all(
       commentLikes.map(async (like) => {

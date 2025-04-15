@@ -4,6 +4,8 @@ import {
   BeforeInsert,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
   Entity,
   OneToMany,
   ManyToMany,
@@ -12,6 +14,7 @@ import {
 } from 'typeorm';
 import { Mention } from './Mention';
 // import { Hashtag } from '../Hashtag/Hashtag';
+import { PersonalDetails } from '../personal/PersonalDetails';
 
 @Entity({ name: 'NestedComment' })
 export class NestedComment extends BaseEntity {
@@ -20,6 +23,10 @@ export class NestedComment extends BaseEntity {
 
   @Column({ type: 'uuid' })
   userId!: string;
+
+  @ManyToOne(() => PersonalDetails, (user) => user.nestedCommentRef, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userRef' })
+  userRef!: PersonalDetails;
 
   @Column({ type: 'uuid' })
   postId!: string;
