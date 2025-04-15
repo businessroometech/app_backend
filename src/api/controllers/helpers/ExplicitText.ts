@@ -1,5 +1,4 @@
 import AWS from 'aws-sdk';
-import { Request, Response, NextFunction } from 'express';
 
 AWS.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -103,7 +102,7 @@ export const flaggedWords = [
     , "Molana", "Maulana", "Palestine", "Palestinians", "Palestinian", "Mulla", "Dalla", "Khuda", "Islam", "Allahu Akbar", "Agbar", "Allah"
     , "Maula", "Khalistan", "Free Kashmir", "zindabad", "murdabad", "sikhs for justice", "RSS", "Hinduphobia", "Islamophobia", "sikhs", "religion", "religious",
     , "Rape", "Brahman", "Pandit", "Shudar", "vaishya", "kshatriya", "Allhamdullilah", "We want justice", "Black live matters", "Black live", "All live matters", "LOC", "POK", "Prophet", "Hajj", "Haj", "Shit"
-    , "Murder"
+    , "Murder", "zihaad", "zihad", "allahu", "aqbar", "filistine", "filisteen"
     , "Killer"
     , "Sex"
     , "Prostitute"
