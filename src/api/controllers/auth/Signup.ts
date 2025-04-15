@@ -6,6 +6,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
+import { isDisposable } from '../../middlewares/disposable-mail/disposable';
 
 // export const signup = async (req: Request, res: Response): Promise<void> => {
 //   const queryRunner = AppDataSource.createQueryRunner();
@@ -99,7 +100,7 @@ import bcrypt from 'bcryptjs';
 //       gender,
 //       userRole,
 //       dob,
-//       active: 1, 
+//       active: 1,
 //       linkedIn,
 //       createdBy,
 //       updatedBy,
@@ -312,8 +313,8 @@ import bcrypt from 'bcryptjs';
 //     await queryRunner.rollbackTransaction();
 //     console.error('Error during signup:', error);
 
-//     res.status(500).json({ 
-//       status: 'error', 
+//     res.status(500).json({
+//       status: 'error',
 //       message: 'Something went wrong! Please try again later.',
 //       error: process.env.NODE_ENV === 'development' ? error.message : undefined
 //     });
@@ -351,6 +352,11 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    if (isDisposable(emailAddress)) {
+      res.status(400).json({ status: 'error', message: 'Disposable email addresses not allowed' });
+      return;
+    }
+
     if (!validator.isEmail(emailAddress)) {
       res.status(400).json({ status: 'error', message: 'Invalid email address format.' });
       return;
@@ -371,7 +377,8 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     ) {
       res.status(400).json({
         status: 'error',
-        message: 'Password must be at least 8 characters long and include uppercase letters, lowercase letters, and digits.',
+        message:
+          'Password must be at least 8 characters long and include uppercase letters, lowercase letters, and digits.',
       });
       return;
     }
@@ -415,7 +422,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       gender,
       userRole,
       dob,
-      active: 0, 
+      active: 0,
       linkedIn,
       createdBy,
       updatedBy,
@@ -432,11 +439,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     await restrictionRepository.save(restriction);
 
     // Generate verification token
-    const verificationToken = jwt.sign(
-      { userId: user.id },
-      process.env.ACCESS_SECRET_KEY!,
-      { expiresIn: '1h' }
-    );
+    const verificationToken = jwt.sign({ userId: user.id }, process.env.ACCESS_SECRET_KEY!, { expiresIn: '1h' });
 
     const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/signin?token=${verificationToken}`;
 
@@ -449,7 +452,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         pass: process.env.EMAIL_PASSWORD,
       },
     });
-
 
     // Send verification email
     await transporter.sendMail({
