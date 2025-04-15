@@ -19,7 +19,6 @@ import { getSocketInstance } from '@/socket';
 import sharp from 'sharp';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import { analyzeTextContent } from '../helpers/ExplicitText';
-import { analyzeTextContent } from '../helpers/ExplicitText';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
