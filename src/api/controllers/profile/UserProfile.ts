@@ -194,14 +194,7 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
     const userId = req.userId;
-    let { profileId } = req.query;
-
-    let isMyProfile = false;
-
-    if (!profileId) {
-      isMyProfile = true;
-      profileId = userId;
-    }
+    
     let { profileId } = req.query;
 
     let isMyProfile = false;

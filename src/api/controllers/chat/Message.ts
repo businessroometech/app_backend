@@ -31,11 +31,6 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
 
     // ---------------------------------------------------------------------------
 
-
-    if (senderId !== userId) {
-      return res.status(400).json({ status: "fail", message: "Invalid User" });
-    }
-
     if (!senderId || !receiverId || !content) {
       return res.status(400).json({ status: 'error', message: 'sender id, receiverId and content is required' });
     }
