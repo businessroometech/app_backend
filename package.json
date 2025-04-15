@@ -4,6 +4,7 @@
   "description": "An Express boilerplate backend",
   "main": "index.ts",
   "private": false,
+  "type": "module",
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
     "dev1": "ts-node src/index.ts",
