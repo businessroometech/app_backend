@@ -6,6 +6,7 @@ import { PersonalDetails } from '@/api/entity/personal/PersonalDetails';
 import { Ristriction } from '@/api/entity/ristrictions/Ristriction';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
+import { analyzeTextContent } from '../helpers/ExplicitText';
 import { isDisposable } from '../../middlewares/disposable-mail/disposable';
 
 // export const signup = async (req: Request, res: Response): Promise<void> => {
@@ -382,6 +383,23 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
+
+    //------------------------ explict text -----------------------------------
+
+    const firstNameCheck = await analyzeTextContent(firstName);
+    const lastNameCheck = await analyzeTextContent(lastName);
+
+    if (!firstNameCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: firstNameCheck?.reason });
+      return;
+    }
+
+    if (!lastNameCheck?.allowed) {
+      res.status(400).json({ status: "fail", message: lastNameCheck?.reason });
+      return;
+    }
+
+    // ---------------------------------------------------------------------------
 
     if (firstName.length > 50 || lastName.length > 50) {
       res.status(400).json({
