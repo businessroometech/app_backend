@@ -32,7 +32,7 @@ import { suggestUsersByEmail } from '@/api/controllers/posts/Mention';
 import { blockPost, blockUser, reportedPost, reportedUser, unblockUser } from '@/api/controllers/posts/Blocked';
 import { getAllPost } from '@/api/controllers/posts/GetAllPost';
 import { authenticate, createPostRestrict } from '@/api/middlewares/auth/Authenticate';
-// import { filterInappropriateMedia } from '@/api/middlewares/post/InappropriatePostDetection';
+// import { checkExplicitText } from '@/api/middlewares/post/ExplictContent';
 
 const Router = express.Router();
 
