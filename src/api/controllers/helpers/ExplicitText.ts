@@ -28,19 +28,19 @@ export const flaggedWords = [
     ' shank ', ' maim ', ' torture ', ' abuse ', ' abusing ',
 
     // Drugs and illegal substances
-    ' drug ', ' drugs ', ' cocaine ', ' heroin ', ' meth ', ' methamphetamine ', ' crack ', ' weed ',
-    ' marijuana ', ' pot ', ' hash ', ' lsd ', ' ecstasy ', ' mdma ', ' ketamine ', ' opium ',
+    ' drug ', ' drugs ', ' cocaine ', ' heroin ', ' meth ', ' methamphetamine ', ' weed ',
+    ' marijuana ', ' lsd ', ' ecstasy ', ' mdma ', ' ketamine ', ' opium ',
     ' oxycontin ', ' percocet ', ' vicodin ', ' xanax ', ' valium ', ' adderall ', ' psychedelic ',
-    ' overdose ', ' inject ', ' snort ', ' smoke ', ' dealer ', ' trafficking ',
+    ' inject ', ' snort ', ' trafficking ', ' pimp ',
 
     // General profanity
-    ' damn ', ' hell ', ' crap ', ' douche ', ' jerk ', ' idiot ', ' moron ', ' stupid ', ' suck ',
+    ' hell ', ' crap ', ' douche ', ' jerk ', ' idiot ', ' moron ', ' stupid ', ' suck ',
     ' sucks ', ' sucker ', ' motherfucker ', ' bullshit ', ' piss ', ' pissed ', ' fag ', ' freaking ',
     ' screw ', ' screwed ', ' twat ', ' wanker ', ' bollocks ', ' arse ', ' arsehole ', ' bugger ',
-    ' bloody ', ' minge ', ' knob ', ' prick ', ' bellend ', ' nonce ', ' spastic ', ' spaz ',
+    ' bloody ', ' minge ', ' prick ', ' bellend ', ' nonce ', ' spastic ', ' spaz ',
 
     // Other offensive terms
-    ' fatso ', ' lardass ', ' ugly ', ' retard ', ' midget ', ' dwarf ', ' cripple ', ' gimp ', ' psycho ',
+    ' fatso ', ' lardass ', ' ugly ', ' retard ', ' midget ', ' dwarf ', ' cripple ', ' gimp ',
     ' sociopath ', ' schizo ', ' illegal alien ', ' wetback ', ' beaner ', ' ghetto ', ' trailer trash ',
     ' white trash ', ' redneck ', ' hillbilly ', ' incest ', ' bestiality ', ' necrophilia ',
 
@@ -77,7 +77,7 @@ export const flaggedWords = [
     ' Amen ',
     ' Yarhamuka Allah ',
     ' Astaghfiru Allah ',
-    ' allahu akbar ', ' Molana ', ' Maulana ', ' Palestine ', ' Palestinians ', ' Palestinian ', ' Mulla ', ' Dalla ', ' Khuda ', ' Islam ', ' Allahu Akbar ', ' Agbar ', ' Allah ', ' Maula ', ' Khalistan ', ' Kashmir ', ' zindabad ', ' murdabad ', ' sikhs for justice ', ' Hinduphobia ', ' Islamophobia ', ' sikhs ', ' religion ', ' religious ',
+    ' allahu akbar ', ' Molana ', ' Maulana ', ' Palestine ', ' Palestinians ', ' Palestinian ', ' Mulla ', ' Dalla ', ' Khuda ', ' Islam ', ' Allahu Akbar ', ' Agbar ', ' Allah ', ' Maula ', ' Khalistan ', ' Kashmir ', ' zindabad ', ' murdabad ', ' sikhs for justice ', ' Hinduphobia ', ' Islamophobia ', ' sikhs ',
     ' death to infidels ', ' holy war ', ' kuffar must die ', ' shariah for all ', ' convert or die '
 ];
 
@@ -99,9 +99,6 @@ export const analyzeTextContent = async (content: string): Promise<{
         
         // Check for whole word matches
         const foundWord = trimmedFlaggedWords.find(word => {
-            // Match whole words only using word boundaries
-            // const regex = new RegExp(`\\b${word}\\b`, 'i');
-            // return regex.test(normalizedContent);
             const regex = new RegExp(`(^|\\s)${word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(?=\\s|$)`, 'i');
             return regex.test(normalizedContent);
         });
