@@ -106,11 +106,14 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
 
     //------------------------ explict text -----------------------------------
 
-    const bioCheck = await analyzeTextContent(bio);
-
-    if (!bioCheck?.allowed) {
-      res.status(400).json({ status: "fail", message: bioCheck?.reason });
-      return;
+    if(bio)
+    { 
+      const bioCheck = await analyzeTextContent(bio);
+      
+      if (!bioCheck?.allowed) {
+        res.status(400).json({ status: "fail", message: bioCheck?.reason });
+        return;
+      }
     }
 
     // ---------------------------------------------------------------------------
