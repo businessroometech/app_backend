@@ -81,21 +81,74 @@ export const flaggedWords = [
     ' death to infidels ', ' holy war ', ' kuffar must die ', ' shariah for all ', ' convert or die '
 ];
 
+// export const analyzeTextContent = async (content: string): Promise<{
+//     allowed: boolean;
+//     reason?: string;
+// }> => {
+//     try {
+//         if (!content.trim()) {
+//             return { allowed: true };
+//         }
+
+//         const lowerContent = content.toLowerCase();
+//         const hasFlaggedWord = flaggedWords.some(word => lowerContent.includes(word!));
+//         if (hasFlaggedWord) {
+//             return { allowed: false, reason: "Inappropriate text detected" };
+//         }
+
+//         const params = {
+//             TextList: [content],
+//             LanguageCode: "en"
+//         };
+
+//         const result = await comprehend.batchDetectSentiment(params).promise();
+//         const sentiment = result.ResultList[0].Sentiment;
+
+//         if (sentiment === "NEGATIVE") {
+//             return { allowed: false, reason: "Negative sentiment detected" };
+//         }
+
+//         return { allowed: true };
+
+
+//     } catch (error) {
+//         console.error("Error analyzing text content:", error);
+//         return { allowed: false, reason: "Error checking text content" };
+//     }
+// };
+
 export const analyzeTextContent = async (content: string): Promise<{
     allowed: boolean;
     reason?: string;
+    flaggedWord?: string;
 }> => {
     try {
         if (!content.trim()) {
             return { allowed: true };
         }
 
-        const lowerContent = content.toLowerCase();
-        const hasFlaggedWord = flaggedWords.some(word => lowerContent.includes(word!));
-        if (hasFlaggedWord) {
-            return { allowed: false, reason: "Inappropriate text detected" };
+        // Normalize the content for better matching
+        const normalizedContent = ' ' + content.toLowerCase().replace(/[^\w\s]/g, ' ') + ' ';
+        
+        // Remove spaces from flagged words for matching
+        const trimmedFlaggedWords = flaggedWords.map(word => word.trim().toLowerCase());
+        
+        // Check for whole word matches
+        const foundWord = trimmedFlaggedWords.find(word => {
+            // Match whole words only using word boundaries
+            const regex = new RegExp(`\\b${word}\\b`, 'i');
+            return regex.test(content);
+        });
+
+        if (foundWord) {
+            return { 
+                allowed: false, 
+                reason: "Inappropriate text detected",
+                flaggedWord: foundWord 
+            };
         }
 
+        // Rest of your sentiment analysis code...
         const params = {
             TextList: [content],
             LanguageCode: "en"
@@ -109,7 +162,6 @@ export const analyzeTextContent = async (content: string): Promise<{
         }
 
         return { allowed: true };
-
 
     } catch (error) {
         console.error("Error analyzing text content:", error);
