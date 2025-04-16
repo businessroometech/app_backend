@@ -100,12 +100,12 @@ export const analyzeTextContent = async (content: string): Promise<{
         // Check for whole word matches
         const foundWord = trimmedFlaggedWords.find(word => {
             // Match whole words only using word boundaries
-            const regex = new RegExp(`\\b${word}\\b`, 'i');
+            // const regex = new RegExp(`\\b${word}\\b`, 'i');
+            // return regex.test(normalizedContent);
+            const regex = new RegExp(`(^|\\s)${word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(?=\\s|$)`, 'i');
             return regex.test(normalizedContent);
         });
 
-        // const regex = new RegExp(`(^|\\s)${word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(?=\\s|$)`, 'i');
-        // return regex.test(normalizedContent);
 
         if (foundWord) {
             return { 
