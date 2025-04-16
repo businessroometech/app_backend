@@ -48,7 +48,7 @@ export const flaggedWords = [
     ' caliphate ', ' shaheed ', ' martyrdom ', ' beheading ', ' apostate ', ' ummah uprising ',
 
     // Names of known radical groups (if needed for detection)
-    ' isis ', ' daesh ', ' al-qaeda ', ' taliban ', ' boko haram ', ' al-shabaab ', ' hezbollah ',
+    ' isis ', ' daesh ', ' al-qaeda ', ' taliban ', ' boko haram ', ' al-shabaab ', ' hezbollah ', ' zeehadi ',
     ' Sex ',
     ' Prostitute ',
     ' call girl ',
@@ -80,42 +80,6 @@ export const flaggedWords = [
     ' allahu akbar ', ' Molana ', ' Maulana ', ' Palestine ', ' Palestinians ', ' Palestinian ', ' Mulla ', ' Dalla ', ' Khuda ', ' Islam ', ' Allahu Akbar ', ' Agbar ', ' Allah ', ' Maula ', ' Khalistan ', ' Kashmir ', ' zindabad ', ' murdabad ', ' sikhs for justice ', ' Hinduphobia ', ' Islamophobia ', ' sikhs ', ' religion ', ' religious ',
     ' death to infidels ', ' holy war ', ' kuffar must die ', ' shariah for all ', ' convert or die '
 ];
-
-// export const analyzeTextContent = async (content: string): Promise<{
-//     allowed: boolean;
-//     reason?: string;
-// }> => {
-//     try {
-//         if (!content.trim()) {
-//             return { allowed: true };
-//         }
-
-//         const lowerContent = content.toLowerCase();
-//         const hasFlaggedWord = flaggedWords.some(word => lowerContent.includes(word!));
-//         if (hasFlaggedWord) {
-//             return { allowed: false, reason: "Inappropriate text detected" };
-//         }
-
-//         const params = {
-//             TextList: [content],
-//             LanguageCode: "en"
-//         };
-
-//         const result = await comprehend.batchDetectSentiment(params).promise();
-//         const sentiment = result.ResultList[0].Sentiment;
-
-//         if (sentiment === "NEGATIVE") {
-//             return { allowed: false, reason: "Negative sentiment detected" };
-//         }
-
-//         return { allowed: true };
-
-
-//     } catch (error) {
-//         console.error("Error analyzing text content:", error);
-//         return { allowed: false, reason: "Error checking text content" };
-//     }
-// };
 
 export const analyzeTextContent = async (content: string): Promise<{
     allowed: boolean;
