@@ -25,6 +25,7 @@ import { Comment } from '../posts/Comment';
 import { NestedComment } from '../posts/NestedComment';
 import { CommentLike } from '../posts/CommentLike';
 import { NestedCommentLike } from '../posts/NestedCommentLike';
+import { Notify } from '../notify/Notify';
 
 interface Address {
   addressLine1: string;
@@ -269,4 +270,7 @@ export class PersonalDetails extends BaseEntity {
 
   @OneToMany(() => NestedCommentLike, (nestedCommentLike) => nestedCommentLike.userRef)
   nestedCommentLikeRef!: NestedCommentLike[];
+
+  @OneToMany(() => Notify, (notify) => notify.senderRef)
+  notifyRef!: Notify[];
 }

@@ -61,8 +61,10 @@ export const createOrUpdateComment = async (req: AuthenticatedRequest, res: Resp
       comment.updatedBy = 'system';
       const savedComment = await comment.save();
 
-      // creating mention if available
       if (Array.isArray(mention) && mention.length > 0) {
+        await mentionRepository.delete({
+          commentId: { id: savedComment.id },
+        });
         for (const value of mention) {
           const newMention = mentionRepository.create({
             mentionTo: { id: value }, // Ensure 'value' is the ID of a PersonalDetails entity
@@ -729,6 +731,9 @@ export const createOrUpdateNestedComment = async (req: AuthenticatedRequest, res
 
       // creating mention if available
       if (Array.isArray(mention) && mention.length > 0) {
+        await mentionRepository.delete({
+          nestedCommentId: { id: savedComment.id },
+        });
         for (const value of mention) {
           const newMention = mentionRepository.create({
             mentionTo: { id: value }, // Ensure 'value' is the ID of a PersonalDetails entity

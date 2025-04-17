@@ -5,6 +5,7 @@ import { MentionUser } from '@/api/entity/mention/mention';
 import { UserPost } from '@/api/entity/UserPost';
 import { NestedComment } from '@/api/entity/posts/NestedComment';
 import { Comment } from '@/api/entity/posts/Comment';
+import { Like } from 'typeorm';
 
 export const PostMention = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -184,6 +185,58 @@ export const deleteMention = async (req: Request, res: Response): Promise<Respon
     return res.status(500).json({
       status: 'error',
       message: 'Internal server error. Could not delete mention.',
+      error: error.message,
+    });
+  }
+};
+
+export const getUsersByName = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const name = req.query.name;
+
+    const userRepository = AppDataSource.getRepository(PersonalDetails);
+
+    let usersData;
+
+    if (name) {
+      usersData = await userRepository.find({
+        where: {
+          firstName: Like(`%${name}%`),
+        },
+        select: ['id', 'firstName', 'lastName', 'userName', 'emailAddress', 'profilePictureUploadId', 'userRole'],
+      });
+    } else {
+      usersData = await userRepository
+        .createQueryBuilder('user')
+        .select([
+          'user.id',
+          'user.firstName',
+          'user.lastName',
+          'user.userName',
+          'user.emailAddress',
+          'user.profilePictureUploadId',
+          'user.userRole',
+        ])
+        .orderBy('RAND()')
+        .limit(10)
+        .getMany();
+    }
+
+    if (!usersData[0]) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Users not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      usersData,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error. Could not retrieve users.',
       error: error.message,
     });
   }

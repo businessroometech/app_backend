@@ -228,24 +228,23 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
             const newMention = mentionRepository.create({
               mentionTo: value,
               mentionBy: userId,
-              postId: { id: savedPost.id }, // Ensure postId matches the expected type
+              postId: { id: savedPost.id },
             });
             await mentionRepository.save(newMention);
           }
         }
       }
     } else if (isPoll && question && Array.isArray(pollOptions) && pollOptions.length > 0) {
+      //------------------------ explict text -----------------------------------
 
-    //------------------------ explict text -----------------------------------
-          
       const questionCheck = await analyzeTextContent(question);
-          
+
       if (!questionCheck?.allowed) {
-        return  res.status(400).json({ status: "fail", message: questionCheck?.reason });
+        return res.status(400).json({ status: 'fail', message: questionCheck?.reason });
       }
-          
-    // ---------------------------------------------------------------------------
-          
+
+      // ---------------------------------------------------------------------------
+
       const newPost = postRepository.create({
         userId,
         userIdRef: userId,
@@ -257,17 +256,16 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       });
       savedPost = await postRepository.save(newPost);
     } else if (isDiscussion && discussionTopic) {
+      //------------------------ explict text -----------------------------------
 
-    //------------------------ explict text -----------------------------------
-          
-    const discussionContentCheck = await analyzeTextContent(discussionContent);
-          
-    if (!discussionContentCheck?.allowed) {
-      return  res.status(400).json({ status: "fail", message: discussionContentCheck?.reason });
-    }
-              
-    // ---------------------------------------------------------------------------
-      
+      const discussionContentCheck = await analyzeTextContent(discussionContent);
+
+      if (!discussionContentCheck?.allowed) {
+        return res.status(400).json({ status: 'fail', message: discussionContentCheck?.reason });
+      }
+
+      // ---------------------------------------------------------------------------
+
       const newPost = postRepository.create({
         userId,
         userIdRef: userId,
@@ -304,15 +302,14 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
       }
 
       //------------------------ explict text -----------------------------------
-          
+
       const contentCheck = await analyzeTextContent(content);
-          
+
       if (!contentCheck?.allowed) {
-        return  res.status(400).json({ status: "fail", message: contentCheck?.reason });
+        return res.status(400).json({ status: 'fail', message: contentCheck?.reason });
       }
-              
+
       // ---------------------------------------------------------------------------
-      
 
       const newPost = postRepository.create({
         userId,
@@ -1194,6 +1191,21 @@ export const UpdateUserPost = async (req: AuthenticatedRequest, res: Response): 
     userPost!.hashtags = hashtags;
 
     const savedPost = await userPost!.save();
+
+    if (Array.isArray(mention) && mention.length > 0) {
+      await mentionRepository.delete({
+        postId: { id },
+      });
+
+      for (const value of mention) {
+        const newMention = mentionRepository.create({
+          mentionTo: { id: value },
+          mentionBy: { id: userId },
+          postId: { id: savedPost.id },
+        });
+        await mentionRepository.save(newMention);
+      }
+    }
 
     return res.status(200).json({
       message: 'User post updated successfully.',
