@@ -15,7 +15,7 @@ export const DeleteUserPhoto = async (req: AuthenticatedRequest, res: Response):
 
     const personalRepo = AppDataSource.getRepository(PersonalDetails);
     const isAdmin = await personalRepo.findOne({
-      where: { isAdmin: true },
+      where: { id: userId, isAdmin: true },
     });
 
     if (!isAdmin)
