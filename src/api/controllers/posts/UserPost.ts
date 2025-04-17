@@ -50,119 +50,112 @@ export interface AuthenticatedRequest extends Request {
   // isAdmin: boolean;
 }
 
-const writeFile = promisify(fs.writeFile);
-const unlink = promisify(fs.unlink);
+// const writeFile = promisify(fs.writeFile);
+// const unlink = promisify(fs.unlink);
 
 const storage = multer.memoryStorage();
 export const uploadMiddleware = multer({ storage: storage }).array('files', 10);
 
-interface HandBrakeProcess {
-  on(event: 'start', callback: (command: string) => void): HandBrakeProcess;
-  on(event: 'progress', callback: (progress: { percentComplete: number; eta: string }) => void): HandBrakeProcess;
-  on(event: 'end', callback: () => void): HandBrakeProcess;
-  on(event: 'error', callback: (err: Error) => void): HandBrakeProcess;
-}
 
-async function compressVideo(
-  videoBuffer: Buffer,
-  userId: string,
-  mimetype: string
-): Promise<{ fileKey: string; type: string }> {
-  const tempInputPath = path.join(__dirname, `temp_input_${Date.now()}.mp4`);
-  const tempOutputPath = path.join(__dirname, `temp_output_${Date.now()}.mp4`);
+// interface HandBrakeProcess {
+//   on(event: 'start', callback: (command: string) => void): HandBrakeProcess;
+//   on(event: 'progress', callback: (progress: { percentComplete: number; eta: string }) => void): HandBrakeProcess;
+//   on(event: 'end', callback: () => void): HandBrakeProcess;
+//   on(event: 'error', callback: (err: Error) => void): HandBrakeProcess;
+// }
 
-  try {
-    // Save the buffer as a temporary file
-    await writeFile(tempInputPath, videoBuffer);
 
-    return new Promise((resolve, reject) => {
-      const handbrakeProcess = hbjs.spawn({
-        input: tempInputPath,
-        output: tempOutputPath,
-        preset: 'Fast 1080p30',
-        quality: 24,
-        format: 'mp4',
-      });
+// async function compressVideo(videoBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
+//   const tempInputPath = path.join(__dirname, `temp_input_${Date.now()}.mp4`);
+//   const tempOutputPath = path.join(__dirname, `temp_output_${Date.now()}.mp4`);
 
-      (handbrakeProcess as unknown as HandBrakeProcess)
-        .on('start', (command: string) => {
-          console.log('HandBrake process started with command:', command);
-        })
-        .on('progress', (progress: { percentComplete: number; eta: string }) => {
-          console.log(`Progress: ${Math.round(progress.percentComplete)}% complete, ETA: ${progress.eta}`);
-        })
-        .on('end', async () => {
-          console.log('Compression completed:', tempOutputPath);
+//   try {
+//     // Save the buffer as a temporary file
+//     await writeFile(tempInputPath, videoBuffer);
 
-          // Get the original and compressed file sizes
-          const originalSize = fs.statSync(tempInputPath).size;
-          const compressedSize = fs.statSync(tempOutputPath).size;
+//     return new Promise((resolve, reject) => {
+//       const handbrakeProcess = hbjs.spawn({
+//         input: tempInputPath,
+//         output: tempOutputPath,
+//         preset: 'Fast 1080p30',
+//         quality: 24,
+//         format: 'mp4',
+//       });
 
-          // Log the sizes
-          console.log(`Original Size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
-          console.log(`Compressed Size: ${(compressedSize / 1024 / 1024).toFixed(2)} MB`);
+//       (handbrakeProcess as unknown as HandBrakeProcess)
+//         .on('start', (command: string) => {
+//           console.log('HandBrake process started with command:', command);
+//         })
+//         .on('progress', (progress: { percentComplete: number; eta: string }) => {
+//           console.log(
+//             `Progress: ${Math.round(progress.percentComplete)}% complete, ETA: ${progress.eta}`
+//           );
+//         })
+//         .on('end', async () => {
+//           console.log('Compression completed:', tempOutputPath);
 
-          const compressedBuffer = fs.readFileSync(tempOutputPath);
+//           // Get the original and compressed file sizes
+//           const originalSize = fs.statSync(tempInputPath).size;
+//           const compressedSize = fs.statSync(tempOutputPath).size;
 
-          const uploadedUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
+//           // Log the sizes
+//           console.log(`Original Size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
+//           console.log(`Compressed Size: ${(compressedSize / 1024 / 1024).toFixed(2)} MB`);
 
-          await unlink(tempInputPath);
-          await unlink(tempOutputPath);
+//           const compressedBuffer = fs.readFileSync(tempOutputPath);
 
-          resolve(uploadedUrl);
-        })
-        .on('error', async (err: Error) => {
-          console.error('Error during compression:', err);
+//           const uploadedUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
 
-          // Clean up temporary files in case of error
-          await unlink(tempInputPath).catch(() => {});
-          await unlink(tempOutputPath).catch(() => {});
+//           await unlink(tempInputPath);
+//           await unlink(tempOutputPath);
 
-          reject(err);
-        });
-    });
-  } catch (error) {
-    console.error('Compression error:', error);
-    await unlink(tempInputPath).catch(() => {});
-    throw error;
-  }
-}
+//           resolve(uploadedUrl);
+//         })
+//         .on('error', async (err: Error) => {
+//           console.error('Error during compression:', err);
+
+//           // Clean up temporary files in case of error
+//           await unlink(tempInputPath).catch(() => { });
+//           await unlink(tempOutputPath).catch(() => { });
+
+//           reject(err);
+//         });
+//     });
+//   } catch (error) {
+//     console.error('Compression error:', error);
+//     await unlink(tempInputPath).catch(() => { });
+//     throw error;
+//   }
+// }
 // import { uploadBufferDocumentToS3 } from './s3Upload'; // Adjust based on your structure
 
-async function compressMedia(
-  fileBuffer: Buffer,
-  userId: string,
-  mimetype: string
-): Promise<{ fileKey: string; type: string }> {
-  if (mimetype.startsWith('video/')) {
-    return compressVideo(fileBuffer, userId, mimetype);
-  } else if (mimetype.startsWith('image/')) {
-    return compressImage(fileBuffer, userId, mimetype);
-  } else {
-    throw new Error('Unsupported file type');
-  }
-}
+// async function compressMedia(fileBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
+//   if (mimetype.startsWith('video/')) {
+//     return compressVideo(fileBuffer, userId, mimetype);
+//   } else if (mimetype.startsWith('image/')) {
+//     return compressImage(fileBuffer, userId, mimetype);
+//   } else {
+//     throw new Error('Unsupported file type');
+//   }
+// }
 
-async function compressImage(
-  imageBuffer: Buffer,
-  userId: string,
-  mimetype: string
-): Promise<{ fileKey: string; type: string }> {
-  try {
-    const compressedBuffer = await sharp(imageBuffer)
-      .resize({ width: 1200 }) // Reduce resolution
-      .jpeg({ quality: 70 }) // Compress JPEG images
-      .png({ compressionLevel: 8 }) // Compress PNG images
-      .webp({ quality: 70 }) // Convert to WebP if needed
-      .toBuffer();
+// async function compressImage(imageBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
+//   try {
+//     const compressedBuffer = await sharp(imageBuffer)
+//       .resize({ width: 1200 }) // Reduce resolution
+//       .jpeg({ quality: 70 }) // Compress JPEG images
+//       .png({ compressionLevel: 8 }) // Compress PNG images
+//       .webp({ quality: 70 }) // Convert to WebP if needed
+//       .toBuffer();
 
-    const uploadUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
-    return uploadUrl;
-  } catch (error) {
-    console.error('Image compression error:', error);
-    throw error;
-  }
-}
+//     const uploadUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
+//     return uploadUrl;
+//   } catch (error) {
+//     console.error('Image compression error:', error);
+//     throw error;
+//   }
+// }
+
 
 export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
   try {
@@ -288,10 +281,10 @@ export const CreateUserPost = async (req: AuthenticatedRequest, res: Response): 
             // if (file.mimetype.startsWith('video/')) {
             //   uploadedUrl = await compressVideo(file.buffer, String(userId), file.mimetype);
             // } else {
-            //   uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
-            // }
-
-            uploadedUrl = await compressMedia(file.buffer, String(userId), file.mimetype);
+              // }
+              
+            uploadedUrl = await uploadBufferDocumentToS3(file.buffer, userId, file.mimetype);
+            // uploadedUrl = await compressMedia(file.buffer, String(userId), file.mimetype);
 
             uploadedDocumentUrls.push({
               key: uploadedUrl.fileKey,
