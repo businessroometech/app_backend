@@ -57,22 +57,22 @@ export const uploadProfileAndCover = multer({
   { name: "coverPhoto", maxCount: 1 }
 ]);
 
-async function compressImage(imageBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
-  try {
-    const compressedBuffer = await sharp(imageBuffer)
-      .resize({ width: 1200 }) // Reduce resolution
-      .jpeg({ quality: 70 }) // Compress JPEG images
-      .png({ compressionLevel: 8 }) // Compress PNG images
-      .webp({ quality: 70 }) // Convert to WebP if needed
-      .toBuffer();
+// async function compressImage(imageBuffer: Buffer, userId: string, mimetype: string): Promise<{ fileKey: string; type: string }> {
+//   try {
+//     const compressedBuffer = await sharp(imageBuffer)
+//       .resize({ width: 1200 }) // Reduce resolution
+//       .jpeg({ quality: 70 }) // Compress JPEG images
+//       .png({ compressionLevel: 8 }) // Compress PNG images
+//       .webp({ quality: 70 }) // Convert to WebP if needed
+//       .toBuffer();
 
-    const uploadUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
-    return uploadUrl;
-  } catch (error) {
-    console.error('Image compression error:', error);
-    throw error;
-  }
-}
+//     const uploadUrl: any = await uploadBufferDocumentToS3(compressedBuffer, userId, mimetype);
+//     return uploadUrl;
+//   } catch (error) {
+//     console.error('Image compression error:', error);
+//     throw error;
+//   }
+// }
 
 export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -141,29 +141,29 @@ export const UpdateUserProfile = async (req: AuthenticatedRequest, res: Response
       try {
         if (files.profilePhoto?.length) {
           console.log("Uploading profile photo:", files.profilePhoto[0].originalname);
-          // const profilePhotoKey = await uploadBufferDocumentToS3(
-          // files.profilePhoto[0].buffer,
-          // userId,
-          // files.profilePhoto[0].mimetype
-          // );
+          const profilePhotoKey = await uploadBufferDocumentToS3(
+          files.profilePhoto[0].buffer,
+          userId,
+          files.profilePhoto[0].mimetype
+          );
 
-          const profilePhotoKey = await compressImage(files.profilePhoto[0].buffer,
-            userId,
-            files.profilePhoto[0].mimetype);
+          // const profilePhotoKey = await compressImage(files.profilePhoto[0].buffer,
+          //   userId,
+          //   files.profilePhoto[0].mimetype);
 
           personalDetails.profilePictureUploadId = profilePhotoKey?.fileKey;
         }
 
         if (files.coverPhoto?.length) {
           console.log("Uploading cover photo:", files.coverPhoto[0].originalname);
-          // const coverPhotoKey = await uploadBufferDocumentToS3(
-          //   files.coverPhoto[0].buffer,
-          //   userId,
-          //   files.coverPhoto[0].mimetype
-          // );
-          const coverPhotoKey = await compressImage(files.coverPhoto[0].buffer,
+          const coverPhotoKey = await uploadBufferDocumentToS3(
+            files.coverPhoto[0].buffer,
             userId,
-            files.coverPhoto[0].mimetype);
+            files.coverPhoto[0].mimetype
+          );
+          // const coverPhotoKey = await compressImage(files.coverPhoto[0].buffer,
+          //   userId,
+          //   files.coverPhoto[0].mimetype);
           personalDetails.bgPictureUploadId = coverPhotoKey?.fileKey;
         }
       } catch (uploadError) {
