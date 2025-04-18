@@ -71,6 +71,15 @@ import { Ristriction } from './api/entity/ristrictions/Ristriction';
 import { BasicSelling } from './api/entity/business-data/BasicSelling';
 import { MentionUser } from './api/entity/mention/mention';
 
+// Migration import -
+import { UserPostNew } from './api/entity/UserPostNew';
+import { CommentNew } from './api/entity/posts/CommentNew';
+import { CommentLikeNew } from './api/entity/posts/CommentLikeNew';
+import { LikeNew } from './api/entity/posts/LikeNew';
+import { NestedCommentNew } from './api/entity/posts/NestedCommentNew';
+import { NestedCommentLikeNew } from './api/entity/posts/NestedCommentLikeNew';
+import Migration from './api/routes/data-migration/migration';
+
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -142,6 +151,12 @@ const AppDataSource = new DataSource({
     MessageHistory,
     Ristriction,
     MentionUser,
+    UserPostNew,
+    CommentNew,
+    CommentLikeNew,
+    LikeNew,
+    NestedCommentNew,
+    NestedCommentLikeNew,
   ],
   synchronize: false,
 });
@@ -188,6 +203,10 @@ app.use('/v1/socket-notifications', SocketNotificationRouting);
 app.use('/v1/business-data', BuisnessDataRoutes);
 app.use('/v1/acquireroom', acquireroomRoutes);
 app.use('/v1', mentionRouter);
+
+// data migration route
+// app.use('/migration', Migration);
+
 // Test route
 app.get('/', (req, res) => {
   res.send('Welcome to BusinessRoom');

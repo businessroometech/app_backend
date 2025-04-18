@@ -271,6 +271,6 @@ export class PersonalDetails extends BaseEntity {
   @OneToMany(() => NestedCommentLike, (nestedCommentLike) => nestedCommentLike.userRef)
   nestedCommentLikeRef!: NestedCommentLike[];
 
-  @OneToMany(() => Notify, (notify) => notify.senderRef)
-  notifyRef!: Notify[];
+  // @OneToMany(() => Notify, (notify) => notify.senderRef)
+  // notifyRef!: Notify[];
 }
