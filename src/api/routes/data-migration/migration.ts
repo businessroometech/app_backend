@@ -5,6 +5,7 @@ import { commentLikeMigrate } from '../../controllers/data-migration/commentLike
 import { LikeMigrate } from '../../controllers/data-migration/like';
 import { nestedCommentMigrate } from '../../controllers/data-migration/nestedComment';
 import { nestedCommentLikeMigrate } from '../../controllers/data-migration/nestedCommentLike';
+import { connectionMigrate } from '../../controllers/data-migration/connection';
 
 const Router = express.Router();
 
@@ -14,5 +15,6 @@ Router.get('/comment-like', commentLikeMigrate);
 Router.get('/like', LikeMigrate);
 Router.get('/nested-comment', nestedCommentMigrate);
 Router.get('/nested-comment-like', nestedCommentLikeMigrate);
+Router.get('/connections', connectionMigrate);
 
 export default Router;

@@ -13,6 +13,10 @@ import { UserPost } from '../UserPost';
 import { NestedComment } from '../posts/NestedComment';
 import { Comment } from '../posts/Comment';
 
+// import { UserPostNew as UserPost } from '../UserPostNew';
+// import { NestedCommentNew as NestedComment } from '../posts/NestedCommentNew';
+// import { CommentNew as Comment } from '../posts/CommentNew';
+
 @Entity({ name: 'UserMention' })
 export class MentionUser extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')

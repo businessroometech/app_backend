@@ -13,7 +13,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Reaction } from './posts/Reaction';
-import { Mention } from './posts/Mention';
+import { MentionUser } from './mention/mention';
 // import { nullable } from 'zod';
 // import { Hashtag } from './Hashtag/Hashtag';
 import { PersonalDetails } from './personal/PersonalDetails';
@@ -113,15 +113,15 @@ export class UserPostNew extends BaseEntity {
     return randomBytes(16).toString('hex');
   }
 
-  @OneToMany(() => Reaction, (reaction) => reaction.post, {
-    cascade: true,
-  })
-  reactions!: Reaction[];
+  // @OneToMany(() => Reaction, (reaction) => reaction.post, {
+  //   cascade: true,
+  // })
+  // reactions!: Reaction[];
 
-  @OneToMany(() => Mention, (mention) => mention.post, {
+  @OneToMany(() => MentionUser, (mention) => mention.postId, {
     cascade: true,
   })
-  mentions!: Mention[];
+  mentions!: MentionUser[];
 
   // @ManyToMany(() => Hashtag, (hashtag) => hashtag.posts)
   // hashtag!: Hashtag[];

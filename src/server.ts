@@ -78,6 +78,7 @@ import { CommentLikeNew } from './api/entity/posts/CommentLikeNew';
 import { LikeNew } from './api/entity/posts/LikeNew';
 import { NestedCommentNew } from './api/entity/posts/NestedCommentNew';
 import { NestedCommentLikeNew } from './api/entity/posts/NestedCommentLikeNew';
+import { ConnectionsNew } from './api/entity/connection/ConnectionsNew';
 import Migration from './api/routes/data-migration/migration';
 
 const logger = pino({ name: 'server start' });
@@ -157,6 +158,7 @@ const AppDataSource = new DataSource({
     LikeNew,
     NestedCommentNew,
     NestedCommentLikeNew,
+    ConnectionsNew,
   ],
   synchronize: false,
 });
@@ -205,7 +207,7 @@ app.use('/v1/acquireroom', acquireroomRoutes);
 app.use('/v1', mentionRouter);
 
 // data migration route
-// app.use('/migration', Migration);
+app.use('/migration', Migration);
 
 // Test route
 app.get('/', (req, res) => {

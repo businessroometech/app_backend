@@ -12,8 +12,8 @@ import {
 import { PersonalDetails } from '../personal/PersonalDetails';
 import { BlockedUser } from '../posts/BlockedUser';
 
-@Entity('connections')
-export class Connection extends BaseEntity {
+@Entity('connectionsNew')
+export class ConnectionsNew extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -21,7 +21,7 @@ export class Connection extends BaseEntity {
     nullable: false,
     eager: true,
   })
-  @JoinColumn({ name: 'requesterId' })
+  @JoinColumn({ name: 'requester' })
   requester!: PersonalDetails;
 
   @Column({ type: 'uuid' })
@@ -31,7 +31,7 @@ export class Connection extends BaseEntity {
     nullable: false,
     eager: true,
   })
-  @JoinColumn({ name: 'receiverId' })
+  @JoinColumn({ name: 'receiver' })
   receiver!: PersonalDetails;
 
   @Column({ type: 'uuid' })

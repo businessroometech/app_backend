@@ -15,7 +15,7 @@ build({
   tsconfig: './tsconfig.json',     // Use your TypeScript config file
   external: [
     ...externalDependencies,       // Exclude all dependencies from the bundle
-    'typeorm', 
+    'typeorm',
     'reflect-metadata',
     'swagger-ui-express',          // Additional externals
     './src/swagger_output.json'    // Avoid bundling JSON files
